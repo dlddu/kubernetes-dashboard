@@ -1,9 +1,7 @@
 package k8s
 
 import (
-	"context"
 	"sync"
-	"time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -58,10 +56,7 @@ func CheckClusterConnection() bool {
 		return false
 	}
 
-	// Try to get server version with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+	// Try to get server version (ServerVersion doesn't support context)
 	_, err = client.Discovery().ServerVersion()
 	if err != nil {
 		return false
