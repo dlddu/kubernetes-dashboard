@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Node
+web/node_modules
+web/dist
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+README.md
+
+# K8s
+k8s/
+
+# Misc
+.DS_Store
