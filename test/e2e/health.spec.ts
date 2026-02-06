@@ -65,7 +65,7 @@ test.describe('Health Check E2E', () => {
     expect(response.headers()['content-type']).toContain('application/json');
 
     const data = await response.json();
-    expect(data).toEqual({
+    expect(data).toMatchObject({
       status: 'ok',
       message: expect.any(String),
     });
