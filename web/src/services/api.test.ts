@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { checkHealth } from './api';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
 
 describe('API Service', () => {
   beforeEach(() => {
@@ -16,7 +18,7 @@ describe('API Service', () => {
         status: 'healthy',
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (mockFetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
@@ -25,7 +27,7 @@ describe('API Service', () => {
       const result = await checkHealth();
 
       // Assert
-      expect(global.fetch).toHaveBeenCalledWith('/api/health');
+      expect(mockFetch).toHaveBeenCalledWith('/api/health');
       expect(result).toEqual(mockResponse);
     });
 
@@ -35,7 +37,7 @@ describe('API Service', () => {
         status: 'healthy',
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (mockFetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
@@ -49,7 +51,7 @@ describe('API Service', () => {
 
     it('should throw error when API request fails', async () => {
       // Arrange
-      (global.fetch as any).mockResolvedValueOnce({
+      (mockFetch as any).mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -61,7 +63,7 @@ describe('API Service', () => {
 
     it('should throw error when network request fails', async () => {
       // Arrange
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      (mockFetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       // Act & Assert
       await expect(checkHealth()).rejects.toThrow('Network error');
@@ -74,7 +76,7 @@ describe('API Service', () => {
         timestamp: '2026-02-06T00:00:00Z',
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (mockFetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
       });
