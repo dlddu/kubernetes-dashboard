@@ -101,9 +101,17 @@ apply_fixtures() {
         exit 1
     fi
 
-    # Apply all YAML files in fixtures directory
+    # Apply namespace files first (must be created before other resources)
+    if [ -f "$fixtures_dir/namespace.yaml" ]; then
+        log "Applying namespace.yaml first..."
+        kubectl apply -f "$fixtures_dir/namespace.yaml"
+        # Wait for namespaces to be created
+        sleep 2
+    fi
+
+    # Apply all other YAML files in fixtures directory
     for file in "$fixtures_dir"/*.yaml; do
-        if [ -f "$file" ]; then
+        if [ -f "$file" ] && [ "$(basename "$file")" != "namespace.yaml" ]; then
             log "Applying $(basename "$file")..."
             kubectl apply -f "$file"
         fi
