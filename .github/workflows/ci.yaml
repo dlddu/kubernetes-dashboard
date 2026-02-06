@@ -1,0 +1,293 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dld-280-project-scaffolding]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify package.json exists
+        run: |
+          if [ ! -f package.json ]; then
+            echo "ERROR: package.json not found"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Vite is installed
+        run: |
+          if ! npm list vite > /dev/null 2>&1; then
+            echo "ERROR: Vite not found in dependencies"
+            exit 1
+          fi
+
+      - name: Verify Tailwind CSS is installed
+        run: |
+          if ! npm list tailwindcss > /dev/null 2>&1; then
+            echo "ERROR: Tailwind CSS not found in dependencies"
+            exit 1
+          fi
+
+      - name: Run linter
+        run: npm run lint --if-present
+
+      - name: Run type check
+        run: npm run typecheck --if-present
+
+      - name: Run tests
+        run: npm test -- --coverage
+
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          if [ ! -d dist ]; then
+            echo "ERROR: Frontend build output (dist/) not found"
+            exit 1
+          fi
+          if [ ! -f dist/index.html ]; then
+            echo "ERROR: dist/index.html not found"
+            exit 1
+          fi
+
+  go-test:
+    name: Go Tests
+    runs-on: ubuntu-latest
+    needs: [frontend-test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Verify go.mod exists
+        run: |
+          if [ ! -f go.mod ]; then
+            echo "ERROR: go.mod not found"
+            exit 1
+          fi
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: |
+          if ! go list -m k8s.io/client-go > /dev/null 2>&1; then
+            echo "ERROR: k8s.io/client-go dependency not found"
+            exit 1
+          fi
+
+      - name: Set up Node.js for frontend build
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend for embedding
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Run Go tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Check test coverage
+        run: |
+          go tool cover -func=coverage.out
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${COVERAGE}%"
+
+      - name: Upload Go coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.out
+          flags: backend
+          name: go-coverage
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [go-test, frontend-test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Build Go binary
+        run: go build -o kubernetes-dashboard .
+
+      - name: Test binary execution
+        run: |
+          ./kubernetes-dashboard &
+          SERVER_PID=$!
+          sleep 3
+
+          # Test health endpoint
+          if ! curl -f http://localhost:8080/api/health; then
+            echo "ERROR: Health endpoint not responding"
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          # Test SPA serving
+          if ! curl -f http://localhost:8080/; then
+            echo "ERROR: SPA not being served"
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          kill $SERVER_PID
+          echo "Integration tests passed!"
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [go-test, frontend-test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Dockerfile exists
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "ERROR: Dockerfile not found"
+            exit 1
+          fi
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: kubernetes-dashboard:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Docker container test
+        run: |
+          docker run -d -p 8080:8080 --name test-container kubernetes-dashboard:test
+          sleep 5
+
+          # Test health endpoint
+          if ! curl -f http://localhost:8080/api/health; then
+            echo "ERROR: Docker container health check failed"
+            docker logs test-container
+            docker stop test-container
+            exit 1
+          fi
+
+          # Verify JSON response
+          RESPONSE=$(curl -s http://localhost:8080/api/health)
+          if ! echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null 2>&1; then
+            echo "ERROR: Invalid health response: $RESPONSE"
+            docker stop test-container
+            exit 1
+          fi
+
+          docker stop test-container
+          echo "Docker container tests passed!"
+
+  k8s-manifest-validation:
+    name: Kubernetes Manifest Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify manifest directory exists
+        run: |
+          if [ ! -d k8s ]; then
+            echo "ERROR: k8s directory not found"
+            exit 1
+          fi
+
+      - name: Verify required manifests exist
+        run: |
+          REQUIRED_FILES=("deployment.yaml" "service.yaml" "rbac.yaml")
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "k8s/$file" ]; then
+              echo "ERROR: Required file k8s/$file not found"
+              exit 1
+            fi
+          done
+
+      - name: Install kubeconform
+        run: |
+          wget https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz
+          tar xf kubeconform-linux-amd64.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Validate manifests with kubeconform
+        run: |
+          kubeconform -summary -output json k8s/*.yaml
+
+      - name: Check RBAC configuration
+        run: |
+          if ! grep -q "kind: ServiceAccount" k8s/rbac.yaml; then
+            echo "ERROR: ServiceAccount not found in RBAC manifest"
+            exit 1
+          fi
+          if ! grep -q "kind: ClusterRole" k8s/rbac.yaml; then
+            echo "ERROR: ClusterRole not found in RBAC manifest"
+            exit 1
+          fi
+          if ! grep -q "kind: ClusterRoleBinding" k8s/rbac.yaml; then
+            echo "ERROR: ClusterRoleBinding not found in RBAC manifest"
+            exit 1
+          fi
