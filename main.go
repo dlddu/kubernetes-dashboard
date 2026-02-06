@@ -2,18 +2,36 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/dlddu/kubernetes-dashboard/handlers"
+	"github.com/dlddu/kubernetes-dashboard/pkg/k8s"
 )
 
 //go:embed frontend/dist
 var frontendFS embed.FS
 
 func main() {
+	// Parse command line flags
+	kubeconfigPath := flag.String("kubeconfig", "", "Path to kubeconfig file")
+	flag.Parse()
+
+	// Set kubeconfig path from flag or environment variable
+	if *kubeconfigPath != "" {
+		k8s.SetKubeconfigPath(*kubeconfigPath)
+		log.Printf("Using kubeconfig from flag: %s", *kubeconfigPath)
+	} else if envKubeconfig := os.Getenv("KUBECONFIG"); envKubeconfig != "" {
+		k8s.SetKubeconfigPath(envKubeconfig)
+		log.Printf("Using kubeconfig from KUBECONFIG env: %s", envKubeconfig)
+	} else {
+		log.Println("No kubeconfig specified, will try in-cluster config")
+	}
+
 	router := setupRouter()
 
 	log.Println("Starting server on :8080")

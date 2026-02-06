@@ -1,0 +1,22 @@
+---
+# Test Namespace
+# Used for E2E testing to isolate test resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-namespace
+  labels:
+    purpose: e2e-testing
+    environment: test
+    managed-by: kubernetes-dashboard-e2e
+---
+# Monitoring Namespace
+# Used for testing monitoring and observability features
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    purpose: e2e-testing
+    environment: test
+    managed-by: kubernetes-dashboard-e2e

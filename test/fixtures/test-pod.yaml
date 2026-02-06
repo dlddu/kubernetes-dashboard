@@ -1,0 +1,152 @@
+---
+# Standalone Test Pod
+# Used for E2E testing pod management and viewing
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-standalone-pod
+  namespace: test-namespace
+  labels:
+    app: standalone-pod
+    purpose: e2e-testing
+    environment: test
+spec:
+  containers:
+    - name: main
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "Standalone pod running..."
+          while true; do
+            echo "Timestamp: $(date)"
+            sleep 30
+          done
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+  restartPolicy: Always
+---
+# Multi-container Pod for testing
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-multicontainer-pod
+  namespace: test-namespace
+  labels:
+    app: multicontainer-pod
+    purpose: e2e-testing
+    environment: test
+spec:
+  containers:
+    - name: main-container
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+          name: http
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+    - name: sidecar-container
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "Sidecar starting..."
+          while true; do
+            echo "Sidecar check at $(date)"
+            sleep 60
+          done
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+  restartPolicy: Always
+---
+# Pod with Init Container
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-init-container-pod
+  namespace: test-namespace
+  labels:
+    app: init-container-pod
+    purpose: e2e-testing
+    environment: test
+spec:
+  initContainers:
+    - name: init-setup
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "Initializing..."
+          sleep 5
+          echo "Initialization complete"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+  containers:
+    - name: main
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+          name: http
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+  restartPolicy: Always
+---
+# Pod in monitoring namespace
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prometheus-mock
+  namespace: monitoring
+  labels:
+    app: prometheus
+    purpose: e2e-testing
+    environment: test
+spec:
+  containers:
+    - name: prometheus
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "Mock Prometheus running..."
+          while true; do
+            echo "Collecting metrics at $(date)"
+            sleep 60
+          done
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+  restartPolicy: Always

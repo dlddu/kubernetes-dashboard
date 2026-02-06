@@ -1,6 +1,7 @@
 export interface HealthResponse {
   status: string;
   message: string;
+  cluster_connected?: boolean;
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {

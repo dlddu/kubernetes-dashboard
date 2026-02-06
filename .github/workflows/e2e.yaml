@@ -1,0 +1,260 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e-test:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Go for backend
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Verify go.mod exists
+        run: |
+          if [ ! -f go.mod ]; then
+            echo "ERROR: go.mod not found"
+            exit 1
+          fi
+
+      - name: Download Go dependencies
+        run: go mod download
+
+      # Set up Node.js for frontend and Playwright
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # Build frontend
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Verify frontend build
+        run: |
+          if [ ! -d frontend/dist ]; then
+            echo "ERROR: Frontend build output not found"
+            exit 1
+          fi
+
+      # Build Go backend with embedded frontend
+      - name: Build Go backend
+        run: go build -o kubernetes-dashboard .
+
+      # Build Docker image for deployment
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: kubernetes-dashboard:e2e-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Set up kind cluster
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: kubernetes-dashboard-e2e
+          wait: 120s
+
+      - name: Verify kind cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl version
+
+      # Load Docker image into kind
+      - name: Load image into kind
+        run: |
+          kind load docker-image kubernetes-dashboard:e2e-test --name kubernetes-dashboard-e2e
+
+      # Apply test fixtures
+      - name: Create test namespaces
+        run: |
+          kubectl create namespace test-namespace || true
+          kubectl create namespace monitoring || true
+
+      - name: Apply test fixtures
+        run: |
+          kubectl apply -f test/fixtures/test-namespace.yaml
+          kubectl apply -f test/fixtures/test-secret.yaml
+          kubectl apply -f test/fixtures/test-deployment.yaml
+          kubectl apply -f test/fixtures/test-pod.yaml
+
+      - name: Wait for test deployments to be ready
+        run: |
+          kubectl wait --for=condition=available --timeout=120s \
+            deployment/test-nginx -n test-namespace || true
+          kubectl wait --for=condition=available --timeout=120s \
+            deployment/test-app -n test-namespace || true
+
+      - name: Verify test resources
+        run: |
+          echo "=== Namespaces ==="
+          kubectl get namespaces
+
+          echo ""
+          echo "=== Pods in test-namespace ==="
+          kubectl get pods -n test-namespace
+
+          echo ""
+          echo "=== Deployments in test-namespace ==="
+          kubectl get deployments -n test-namespace
+
+          echo ""
+          echo "=== Secrets in test-namespace ==="
+          kubectl get secrets -n test-namespace
+
+          echo ""
+          echo "=== Services in test-namespace ==="
+          kubectl get services -n test-namespace
+
+      # Start backend server with kubeconfig
+      - name: Start backend server in background
+        run: |
+          export KUBECONFIG=$HOME/.kube/config
+          ./kubernetes-dashboard &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+
+          # Wait for server to be ready
+          echo "Waiting for backend to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/api/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i: Backend not ready yet..."
+            sleep 2
+          done
+
+      - name: Verify backend is running
+        run: |
+          curl -f http://localhost:8080/api/health
+          curl -f http://localhost:8080/
+
+      # Install Playwright
+      - name: Install Playwright dependencies
+        run: |
+          npm install -D @playwright/test@latest
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify Playwright installation
+        run: npx playwright --version
+
+      # Run E2E tests
+      - name: Run Playwright E2E tests
+        env:
+          CI: true
+          KUBECONFIG: ${{ env.HOME }}/.kube/config
+        run: npx playwright test
+
+      # Upload test results
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload Playwright test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
+      # Debug on failure
+      - name: Show backend logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend may have crashed ==="
+          ps aux | grep kubernetes-dashboard || true
+
+      - name: Show kind cluster state on failure
+        if: failure()
+        run: |
+          echo "=== Cluster Info ==="
+          kubectl cluster-info || true
+
+          echo ""
+          echo "=== All Pods ==="
+          kubectl get pods -A || true
+
+          echo ""
+          echo "=== Events ==="
+          kubectl get events -A --sort-by='.lastTimestamp' || true
+
+      # Cleanup
+      - name: Stop backend server
+        if: always()
+        run: |
+          if [ -n "${SERVER_PID:-}" ]; then
+            kill $SERVER_PID || true
+          fi
+
+  e2e-test-scripts:
+    name: Test E2E Setup Scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kind
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: script-test
+          wait: 60s
+
+      - name: Test kind-setup.sh script
+        run: |
+          chmod +x scripts/kind-setup.sh
+          ./scripts/kind-setup.sh script-test
+
+      - name: Verify cluster is functional
+        run: |
+          kubectl get nodes
+          kubectl get namespaces
+          kubectl get pods -A
+
+      - name: Test kind-teardown.sh script
+        run: |
+          chmod +x scripts/kind-teardown.sh
+          ./scripts/kind-teardown.sh script-test
+
+      - name: Verify cluster is deleted
+        run: |
+          if kind get clusters | grep -q "script-test"; then
+            echo "ERROR: Cluster still exists after teardown"
+            exit 1
+          fi
+          echo "Cluster successfully deleted"
