@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+*_test.go
+test/
+coverage/
+*.test
+*.out
+
+# Frontend development
+frontend/node_modules
+frontend/.vite
+frontend/dist
+frontend/coverage
+
+# Go
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build artifacts
+bin/
+build/
+dist/
+
+# Kubernetes
+k8s/
+
+# CI/CD
+.github/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
