@@ -1,0 +1,196 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, dld-280-project-scaffolding]
+  pull_request:
+    branches: [main]
+
+env:
+  KIND_CLUSTER_NAME: k8s-dashboard-e2e
+  GO_VERSION: '1.21'
+  NODE_VERSION: '20'
+
+jobs:
+  e2e-test:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      # 3. Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 4. Install kind
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+          kind version
+
+      # 5. Install kubectl
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      # 6. Create kind cluster
+      - name: Create kind cluster
+        run: |
+          chmod +x test/kind-setup.sh
+          ./test/kind-setup.sh create
+
+      # 7. Verify kind cluster is ready
+      - name: Verify kind cluster
+        run: ./test/kind-setup.sh verify
+
+      # 8. Apply Kubernetes test fixtures
+      - name: Apply test fixtures
+        run: ./test/kind-setup.sh apply-fixtures
+
+      # 9. Show cluster info
+      - name: Show cluster info
+        run: ./test/kind-setup.sh info
+
+      # 10. Install Go dependencies
+      - name: Install Go dependencies
+        run: |
+          go mod download
+          go mod tidy
+
+      # 11. Build frontend
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # 12. Verify frontend build
+      - name: Verify frontend build
+        run: |
+          if [ ! -d frontend/dist ]; then
+            echo "ERROR: Frontend build failed - dist/ not found"
+            exit 1
+          fi
+          if [ ! -f frontend/dist/index.html ]; then
+            echo "ERROR: Frontend build failed - index.html not found"
+            exit 1
+          fi
+          echo "Frontend build successful"
+
+      # 13. Build Go backend
+      - name: Build Go backend
+        run: go build -o kubernetes-dashboard .
+
+      # 14. Start backend server in background
+      - name: Start backend server
+        run: |
+          # The KUBECONFIG is already set by kind when creating the cluster
+          # It uses the default ~/.kube/config location
+          ./kubernetes-dashboard &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+
+          # Wait for server to start
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/api/health > /dev/null 2>&1; then
+              echo "Backend server is ready"
+              exit 0
+            fi
+            echo "Waiting for backend server to start... ($i/30)"
+            sleep 2
+          done
+
+          echo "ERROR: Backend server failed to start"
+          exit 1
+
+      # 15. Verify backend health
+      - name: Verify backend health
+        run: |
+          response=$(curl -s http://localhost:8080/api/health)
+          echo "Health response: $response"
+
+          if ! echo "$response" | jq -e '.status == "ok"' > /dev/null 2>&1; then
+            echo "ERROR: Backend health check failed"
+            exit 1
+          fi
+
+          echo "Backend health check passed"
+
+      # 16. Install Playwright dependencies
+      - name: Install Playwright dependencies
+        run: npm install -D @playwright/test@latest
+
+      # 17. Install Playwright browsers
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # 18. Run Playwright e2e tests
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          BASE_URL: http://localhost:8080
+          CI: true
+
+      # 19. Upload Playwright report on failure
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      # 20. Upload Playwright test results
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
+      # 21. Stop backend server
+      - name: Stop backend server
+        if: always()
+        run: |
+          if [ -n "${{ env.SERVER_PID }}" ]; then
+            kill ${{ env.SERVER_PID }} || true
+          fi
+
+      # 22. Delete kind cluster
+      - name: Delete kind cluster
+        if: always()
+        run: ./test/kind-setup.sh delete
+
+      # 23. Show logs on failure
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend logs ==="
+          # Backend logs would be shown if we had captured them
+
+          echo ""
+          echo "=== Kubernetes resources ==="
+          kubectl get all --all-namespaces || true
+
+          echo ""
+          echo "=== Pod logs ==="
+          kubectl logs --all-containers --tail=50 -l environment=test || true

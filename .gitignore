@@ -51,3 +51,10 @@ kubernetes-dashboard
 # Temporary files
 tmp/
 temp/
+
+# Playwright
+node_modules/
+playwright-report/
+test-results/
+playwright/.cache/
+package-lock.json

@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-namespace
+  labels:
+    app: kubernetes-dashboard
+    environment: test
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-namespace-2
+  labels:
+    app: kubernetes-dashboard
+    environment: test
