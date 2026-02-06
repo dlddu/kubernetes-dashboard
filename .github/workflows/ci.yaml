@@ -252,18 +252,6 @@ jobs:
             fi
           done
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.28.0'
-
-      - name: Validate manifests with kubectl
-        run: |
-          for file in k8s/*.yaml; do
-            echo "Validating $file..."
-            kubectl apply --dry-run=client -f "$file"
-          done
-
       - name: Install kubeconform
         run: |
           wget https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz
