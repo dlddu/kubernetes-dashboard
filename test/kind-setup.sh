@@ -105,8 +105,29 @@ apply_fixtures() {
     if [ -f "$fixtures_dir/namespace.yaml" ]; then
         log "Applying namespace.yaml first..."
         kubectl apply -f "$fixtures_dir/namespace.yaml"
-        # Wait for namespaces to be created
-        sleep 2
+
+        # Wait for default service accounts to be created in test namespaces
+        log "Waiting for default service accounts to be ready..."
+        local max_retries=30
+        local retry_count=0
+        local namespaces=("test-namespace" "test-namespace-2")
+
+        for ns in "${namespaces[@]}"; do
+            while [ $retry_count -lt $max_retries ]; do
+                if kubectl get serviceaccount default -n "$ns" &> /dev/null; then
+                    success "Default service account ready in namespace: $ns"
+                    break
+                fi
+                retry_count=$((retry_count + 1))
+                sleep 1
+            done
+
+            if [ $retry_count -eq $max_retries ]; then
+                error "Timeout waiting for default service account in namespace: $ns"
+                exit 1
+            fi
+            retry_count=0
+        done
     fi
 
     # Apply all other YAML files in fixtures directory
