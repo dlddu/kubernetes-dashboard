@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchHealth } from './health';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 describe('Health API', () => {
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('Health API', () => {
       message: 'Backend is healthy',
     };
 
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -25,14 +25,14 @@ describe('Health API', () => {
     const result = await fetchHealth();
 
     // Assert
-    expect(global.fetch).toHaveBeenCalledWith('/api/health');
+    expect(globalThis.fetch).toHaveBeenCalledWith('/api/health');
     expect(result.status).toBe('ok');
     expect(result.message).toBeDefined();
   });
 
   it('should handle network errors gracefully', async () => {
     // Arrange
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+    (globalThis.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
     // Act & Assert
     await expect(fetchHealth()).rejects.toThrow('Network error');
@@ -40,7 +40,7 @@ describe('Health API', () => {
 
   it('should handle non-200 responses', async () => {
     // Arrange
-    (global.fetch as any).mockResolvedValueOnce({
+    (globalThis.fetch as any).mockResolvedValueOnce({
       ok: false,
       status: 500,
       statusText: 'Internal Server Error',

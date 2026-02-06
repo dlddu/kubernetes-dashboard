@@ -7,12 +7,6 @@ import (
 	"testing"
 )
 
-// HealthResponse represents the expected health check response
-type HealthResponse struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-}
-
 // TestHealthHandler tests the /api/health endpoint
 func TestHealthHandler(t *testing.T) {
 	t.Run("should return 200 OK with health check response", func(t *testing.T) {
