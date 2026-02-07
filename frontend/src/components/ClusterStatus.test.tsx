@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import ClusterStatus from './ClusterStatus';
@@ -156,9 +157,8 @@ describe('ClusterStatus', () => {
       rerender(<ClusterStatus status="connected" />);
 
       // Assert
-      const connectedStatus = screen.getByText(/connected/i) ||
-                              screen.getByTestId('cluster-status-indicator');
-      expect(connectedStatus).toBeInTheDocument();
+      const statusIndicator = screen.getByTestId('cluster-status-indicator');
+      expect(statusIndicator).toHaveAttribute('data-status', 'connected');
     });
   });
 

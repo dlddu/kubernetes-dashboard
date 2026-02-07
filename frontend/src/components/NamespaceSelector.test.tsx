@@ -107,10 +107,7 @@ describe('NamespaceSelector', () => {
       });
 
       const selector = screen.getByRole('combobox', { name: /namespace/i }) || screen.getByTestId('namespace-selector');
-      fireEvent.click(selector);
-
-      const defaultOption = await screen.findByText(/^default$/i);
-      fireEvent.click(defaultOption);
+      fireEvent.change(selector, { target: { value: 'default' } });
 
       // Assert
       await waitFor(() => {
@@ -135,10 +132,7 @@ describe('NamespaceSelector', () => {
       });
 
       const selector = screen.getByRole('combobox', { name: /namespace/i }) || screen.getByTestId('namespace-selector');
-      fireEvent.click(selector);
-
-      const defaultOption = await screen.findByText(/^default$/i);
-      fireEvent.click(defaultOption);
+      fireEvent.change(selector, { target: { value: 'default' } });
 
       // Assert
       await waitFor(() => {

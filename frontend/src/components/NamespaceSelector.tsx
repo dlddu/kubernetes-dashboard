@@ -2,7 +2,7 @@ import { FC, useState, useEffect } from 'react';
 import { fetchNamespaces, Namespace } from '../api/namespaces';
 
 interface NamespaceSelectorProps {
-  onChange?: (namespace: string) => void;
+  onChange?: (value: string) => void;
 }
 
 const NamespaceSelector: FC<NamespaceSelectorProps> = ({ onChange }) => {
@@ -10,7 +10,6 @@ const NamespaceSelector: FC<NamespaceSelectorProps> = ({ onChange }) => {
   const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const loadNamespaces = async () => {
     setLoading(true);
@@ -31,7 +30,6 @@ const NamespaceSelector: FC<NamespaceSelectorProps> = ({ onChange }) => {
 
   const handleSelect = (namespace: string) => {
     setSelectedNamespace(namespace);
-    setIsOpen(false);
     if (onChange) {
       onChange(namespace);
     }
@@ -102,7 +100,6 @@ const NamespaceSelector: FC<NamespaceSelectorProps> = ({ onChange }) => {
           aria-busy="false"
           value={selectedNamespace}
           onChange={(e) => handleSelect(e.target.value)}
-          onClick={() => setIsOpen(true)}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All Namespaces</option>
