@@ -23,14 +23,17 @@ WORKDIR /app
 # Copy go mod files
 COPY go.mod go.sum* ./
 
-# Download dependencies and tidy
-RUN go mod download && go mod tidy
+# Download dependencies
+RUN go mod download
 
 # Copy source code
 COPY . .
 
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# Ensure go.mod is tidy before building
+RUN go mod tidy
 
 # Build Go binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kubernetes-dashboard .
