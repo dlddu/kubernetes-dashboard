@@ -74,7 +74,7 @@ describe('OverviewTab', () => {
   describe('loading state', () => {
     it('should show skeleton cards while loading', async () => {
       // Arrange
-      let resolvePromise: (value: any) => void;
+      let resolvePromise: (value: Record<string, unknown>) => void;
       vi.mocked(overviewApi.fetchOverview).mockImplementation(
         () => new Promise((resolve) => {
           resolvePromise = resolve;
@@ -102,7 +102,7 @@ describe('OverviewTab', () => {
 
     it('should show skeleton for each card type', async () => {
       // Arrange
-      let resolvePromise: (value: any) => void;
+      let resolvePromise: (value: Record<string, unknown>) => void;
       vi.mocked(overviewApi.fetchOverview).mockImplementation(
         () => new Promise((resolve) => {
           resolvePromise = resolve;
