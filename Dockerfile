@@ -32,6 +32,9 @@ COPY . .
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
+# Ensure go.mod is tidy before building
+RUN go mod tidy
+
 # Build Go binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kubernetes-dashboard .
 
