@@ -18,7 +18,9 @@ describe('UsageBar', () => {
       render(<UsageBar percentage={75.5} type="cpu" />);
 
       // Assert
-      expect(screen.getByText(/75\.5%/)).toBeInTheDocument();
+      const progressbar = screen.getByRole('progressbar');
+      expect(progressbar).toHaveAttribute('aria-label', 'cpu usage 75.5%');
+      expect(progressbar).toHaveAttribute('aria-valuenow', '75.5');
     });
 
     it('should render bar visualization', () => {
@@ -45,7 +47,9 @@ describe('UsageBar', () => {
       render(<UsageBar percentage={0} type="cpu" />);
 
       // Assert
-      expect(screen.getByText(/0%|0\.0%/)).toBeInTheDocument();
+      const progressbar = screen.getByRole('progressbar');
+      expect(progressbar).toHaveAttribute('aria-label', 'cpu usage 0.0%');
+      expect(progressbar).toHaveAttribute('aria-valuenow', '0');
       const fill = screen.getByTestId('usage-bar-fill');
       expect(fill.style.width).toBe('0%');
     });
@@ -55,7 +59,9 @@ describe('UsageBar', () => {
       render(<UsageBar percentage={100} type="cpu" />);
 
       // Assert
-      expect(screen.getByText(/100%|100\.0%/)).toBeInTheDocument();
+      const progressbar = screen.getByRole('progressbar');
+      expect(progressbar).toHaveAttribute('aria-label', 'cpu usage 100.0%');
+      expect(progressbar).toHaveAttribute('aria-valuenow', '100');
       const fill = screen.getByTestId('usage-bar-fill');
       expect(fill.style.width).toBe('100%');
     });
@@ -65,7 +71,9 @@ describe('UsageBar', () => {
       render(<UsageBar percentage={45.678} type="cpu" />);
 
       // Assert
-      expect(screen.getByText(/45\.6|45\.7/)).toBeInTheDocument();
+      const progressbar = screen.getByRole('progressbar');
+      expect(progressbar).toHaveAttribute('aria-label', 'cpu usage 45.7%');
+      expect(progressbar).toHaveAttribute('aria-valuenow', '45.678');
     });
 
     it('should format percentage to 1 decimal place', () => {
@@ -73,7 +81,9 @@ describe('UsageBar', () => {
       render(<UsageBar percentage={33.333} type="memory" />);
 
       // Assert
-      expect(screen.getByText(/33\.3%/)).toBeInTheDocument();
+      const progressbar = screen.getByRole('progressbar');
+      expect(progressbar).toHaveAttribute('aria-label', 'memory usage 33.3%');
+      expect(progressbar).toHaveAttribute('aria-valuenow', '33.333');
     });
   });
 
@@ -222,7 +232,9 @@ describe('UsageBar', () => {
       render(<UsageBar percentage={0.1} type="cpu" />);
 
       // Assert
-      expect(screen.getByText(/0\.1%/)).toBeInTheDocument();
+      const progressbar = screen.getByRole('progressbar');
+      expect(progressbar).toHaveAttribute('aria-label', 'cpu usage 0.1%');
+      expect(progressbar).toHaveAttribute('aria-valuenow', '0.1');
       const fill = screen.getByTestId('usage-bar-fill');
       expect(fill.style.width).toBe('0.1%');
     });
@@ -232,7 +244,9 @@ describe('UsageBar', () => {
       render(<UsageBar percentage={45.6789} type="memory" />);
 
       // Assert
-      expect(screen.getByText(/45\.6|45\.7/)).toBeInTheDocument();
+      const progressbar = screen.getByRole('progressbar');
+      expect(progressbar).toHaveAttribute('aria-label', 'memory usage 45.7%');
+      expect(progressbar).toHaveAttribute('aria-valuenow', '45.6789');
     });
   });
 
