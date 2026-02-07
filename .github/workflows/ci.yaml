@@ -181,6 +181,21 @@ jobs:
             exit 1
           fi
 
+          # Test namespaces endpoint
+          if ! curl -f http://localhost:8080/api/namespaces; then
+            echo "ERROR: Namespaces endpoint not responding"
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          # Verify namespaces JSON response
+          NAMESPACE_RESPONSE=$(curl -s http://localhost:8080/api/namespaces)
+          if ! echo "$NAMESPACE_RESPONSE" | jq -e '.items' > /dev/null 2>&1; then
+            echo "ERROR: Invalid namespaces response: $NAMESPACE_RESPONSE"
+            kill $SERVER_PID
+            exit 1
+          fi
+
           # Test SPA serving
           if ! curl -f http://localhost:8080/; then
             echo "ERROR: SPA not being served"
@@ -236,6 +251,22 @@ jobs:
           RESPONSE=$(curl -s http://localhost:8080/api/health)
           if ! echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null 2>&1; then
             echo "ERROR: Invalid health response: $RESPONSE"
+            docker stop test-container
+            exit 1
+          fi
+
+          # Test namespaces endpoint
+          if ! curl -f http://localhost:8080/api/namespaces; then
+            echo "ERROR: Namespaces endpoint not responding"
+            docker logs test-container
+            docker stop test-container
+            exit 1
+          fi
+
+          # Verify namespaces JSON response
+          NAMESPACE_RESPONSE=$(curl -s http://localhost:8080/api/namespaces)
+          if ! echo "$NAMESPACE_RESPONSE" | jq -e '.items' > /dev/null 2>&1; then
+            echo "ERROR: Invalid namespaces response: $NAMESPACE_RESPONSE"
             docker stop test-container
             exit 1
           fi
