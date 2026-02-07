@@ -23,11 +23,6 @@ export function UsageBar({ percentage, type }: UsageBarProps) {
 
   return (
     <div data-testid="usage-bar" data-type={type}>
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-sm text-gray-600">
-          {formattedPercentage}%
-        </span>
-      </div>
       <div
         data-testid="usage-bar-container"
         className="w-full h-2 bg-gray-200 rounded-full overflow-hidden"
