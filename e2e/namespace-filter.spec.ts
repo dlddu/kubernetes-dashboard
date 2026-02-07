@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Namespace Filter', () => {
   test.skip('should display namespace dropdown in TopBar on page load', async ({ page }) => {
-    // This test is skipped as TopBar and NamespaceSelector components are not yet implemented
+    // Remove .skip after implementing TopBar, NamespaceSelector, and /api/namespaces endpoint
 
     // Arrange: Navigate to the home page
     await page.goto('/');
@@ -24,7 +24,7 @@ test.describe('Namespace Filter', () => {
   });
 
   test.skip('should show "All Namespaces" as default selected value', async ({ page }) => {
-    // This test is skipped as TopBar and NamespaceSelector components are not yet implemented
+    // Remove .skip after implementing TopBar, NamespaceSelector, and /api/namespaces endpoint
 
     // Arrange: Navigate to the home page
     await page.goto('/');
@@ -40,7 +40,7 @@ test.describe('Namespace Filter', () => {
   });
 
   test.skip('should display list of namespaces in dropdown when opened', async ({ page }) => {
-    // This test is skipped as TopBar, NamespaceSelector components and namespace API are not yet implemented
+    // Remove .skip after implementing TopBar, NamespaceSelector, and /api/namespaces endpoint
 
     // Arrange: Navigate to the home page
     await page.goto('/');
@@ -67,7 +67,7 @@ test.describe('Namespace Filter', () => {
   });
 
   test.skip('should update selected value when specific namespace is chosen', async ({ page }) => {
-    // This test is skipped as TopBar, NamespaceSelector components and namespace API are not yet implemented
+    // Remove .skip after implementing TopBar, NamespaceSelector, and /api/namespaces endpoint
 
     // Arrange: Navigate to the home page and open dropdown
     await page.goto('/');
@@ -91,7 +91,7 @@ test.describe('Namespace Filter', () => {
   });
 
   test.skip('should persist selected namespace when navigating between pages', async ({ page }) => {
-    // This test is skipped as TopBar, NamespaceSelector components and routing are not yet implemented
+    // Remove .skip after implementing TopBar, NamespaceSelector, and NamespaceContext with routing
 
     // Arrange: Navigate to home page, select a namespace
     await page.goto('/');
@@ -115,7 +115,7 @@ test.describe('Namespace Filter', () => {
   });
 
   test.skip('should display namespace selector on mobile viewport', async ({ page }) => {
-    // This test is skipped as TopBar and NamespaceSelector components are not yet implemented
+    // Remove .skip after implementing TopBar and NamespaceSelector with responsive design
 
     // Arrange: Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE dimensions
@@ -139,7 +139,7 @@ test.describe('Namespace Filter', () => {
 
 test.describe('Namespace Filter - Edge Cases', () => {
   test.skip('should handle empty namespace list gracefully', async ({ page }) => {
-    // This test is skipped as NamespaceSelector component and API are not yet implemented
+    // Remove .skip after implementing NamespaceSelector with empty state handling
 
     // Arrange: Navigate to the page (assuming API returns empty namespaces)
     await page.goto('/');
@@ -162,7 +162,7 @@ test.describe('Namespace Filter - Edge Cases', () => {
   });
 
   test.skip('should display loading state while fetching namespaces', async ({ page }) => {
-    // This test is skipped as NamespaceSelector component and API are not yet implemented
+    // Remove .skip after implementing NamespaceSelector with loading state
 
     // Arrange: Navigate to the page
     await page.goto('/');
@@ -185,7 +185,7 @@ test.describe('Namespace Filter - Edge Cases', () => {
   });
 
   test.skip('should handle API error when fetching namespaces', async ({ page }) => {
-    // This test is skipped as NamespaceSelector component and error handling are not yet implemented
+    // Remove .skip after implementing NamespaceSelector with error handling
 
     // Arrange: Navigate to the page (assuming API returns an error)
     await page.goto('/');
@@ -211,7 +211,7 @@ test.describe('Namespace Filter - Edge Cases', () => {
 
 test.describe('Namespace Filter - ClusterStatus Integration', () => {
   test.skip('should show cluster status alongside namespace selector', async ({ page }) => {
-    // This test is skipped as TopBar, ClusterStatus, and NamespaceSelector components are not yet implemented
+    // Remove .skip after implementing TopBar with ClusterStatus and NamespaceSelector
 
     // Arrange: Navigate to the home page
     await page.goto('/');
@@ -232,7 +232,7 @@ test.describe('Namespace Filter - ClusterStatus Integration', () => {
   });
 
   test.skip('should update namespace selector when cluster changes', async ({ page }) => {
-    // This test is skipped as multi-cluster support is not yet implemented
+    // Remove .skip after implementing multi-cluster support (future feature)
 
     // Arrange: Navigate to the home page with initial cluster
     await page.goto('/');
