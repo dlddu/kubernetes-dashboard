@@ -1,12 +1,17 @@
-.PHONY: help test test-go test-frontend test-docker test-k8s test-scaffolding build clean
+.PHONY: help test test-go test-frontend test-docker test-k8s test-scaffolding test-e2e build clean
+
+# Include E2E testing targets
+include Makefile.e2e
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
 	@echo ''
 	@echo 'Available targets:'
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) Makefile.e2e | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-test: test-scaffolding test-go test-frontend ## Run all tests
+test: test-scaffolding test-go test-frontend ## Run all tests (unit + integration)
+
+test-e2e: e2e-all ## Run E2E tests (full cycle: setup + test + teardown)
 
 test-scaffolding: ## Verify project scaffolding is complete
 	@echo "Running scaffolding tests..."
