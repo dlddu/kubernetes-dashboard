@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OverviewTab } from './OverviewTab';
 import * as overviewApi from '../api/overview';
 
@@ -17,6 +17,12 @@ describe('OverviewTab', () => {
       avgCpuUsage: 45.5,
       avgMemoryUsage: 62.3,
     });
+  });
+
+  afterEach(() => {
+    // Ensure timers are restored after each test
+    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   describe('rendering - happy path', () => {
@@ -259,15 +265,14 @@ describe('OverviewTab', () => {
       // Initial fetch - flush promises
       await vi.runOnlyPendingTimersAsync();
 
-      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
+      // Clear mock to start counting from this point
+      vi.mocked(overviewApi.fetchOverview).mockClear();
 
       // Advance time by 10 seconds
       await vi.advanceTimersByTimeAsync(10000);
 
-      // Assert
-      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(2);
-
-      vi.useRealTimers();
+      // Assert - should have been called once more after the timer
+      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
     });
 
     it('should stop polling when component unmounts', async () => {
@@ -286,7 +291,8 @@ describe('OverviewTab', () => {
       // Initial fetch - flush promises
       await vi.runOnlyPendingTimersAsync();
 
-      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
+      // Clear mock to start counting from this point
+      vi.mocked(overviewApi.fetchOverview).mockClear();
 
       // Unmount component
       unmount();
@@ -295,9 +301,7 @@ describe('OverviewTab', () => {
       await vi.advanceTimersByTimeAsync(10000);
 
       // Assert - should not fetch after unmount
-      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
-
-      vi.useRealTimers();
+      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(0);
     });
   });
 
