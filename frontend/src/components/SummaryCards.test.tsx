@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { SummaryCards } from './SummaryCards';
 
@@ -225,7 +225,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/73\.5%/)).toBeInTheDocument();
+      const cpuCard = screen.getByTestId('cpu-card');
+      expect(within(cpuCard).getByText(/73\.5%/)).toBeInTheDocument();
     });
 
     it('should show "CPU Usage" label', () => {
@@ -270,7 +271,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/0%|0\.0%/)).toBeInTheDocument();
+      const cpuCard = screen.getByTestId('cpu-card');
+      expect(within(cpuCard).getByText(/0\.0%/)).toBeInTheDocument();
     });
 
     it('should handle high CPU usage', () => {
@@ -285,7 +287,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/99\.9%/)).toBeInTheDocument();
+      const cpuCard = screen.getByTestId('cpu-card');
+      expect(within(cpuCard).getByText(/99\.9%/)).toBeInTheDocument();
     });
   });
 
@@ -302,7 +305,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/81\.2%/)).toBeInTheDocument();
+      const memoryCard = screen.getByTestId('memory-card');
+      expect(within(memoryCard).getByText(/81\.2%/)).toBeInTheDocument();
     });
 
     it('should show "Memory Usage" label', () => {
@@ -347,7 +351,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/0%|0\.0%/)).toBeInTheDocument();
+      const memoryCard = screen.getByTestId('memory-card');
+      expect(within(memoryCard).getByText(/0\.0%/)).toBeInTheDocument();
     });
 
     it('should handle high Memory usage', () => {
@@ -362,7 +367,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/98\.5%/)).toBeInTheDocument();
+      const memoryCard = screen.getByTestId('memory-card');
+      expect(within(memoryCard).getByText(/98\.5%/)).toBeInTheDocument();
     });
   });
 
@@ -429,7 +435,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/45\.6|45\.7/)).toBeInTheDocument();
+      const cpuCard = screen.getByTestId('cpu-card');
+      expect(within(cpuCard).getByText(/45\.7%/)).toBeInTheDocument();
     });
 
     it('should handle decimal Memory percentages', () => {
@@ -444,7 +451,8 @@ describe('SummaryCards', () => {
       );
 
       // Assert
-      expect(screen.getByText(/62\.3|62\.4/)).toBeInTheDocument();
+      const memoryCard = screen.getByTestId('memory-card');
+      expect(within(memoryCard).getByText(/62\.3%/)).toBeInTheDocument();
     });
   });
 });
