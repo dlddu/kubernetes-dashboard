@@ -9,17 +9,19 @@ vi.mock('../api/overview');
 describe('OverviewTab', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.clearAllTimers();
+    // Mock fetchOverview by default to prevent hanging tests
+    vi.mocked(overviewApi.fetchOverview).mockResolvedValue({
+      nodes: { ready: 3, total: 5 },
+      unhealthyPods: 2,
+      avgCpuUsage: 45.5,
+      avgMemoryUsage: 62.3,
+    });
   });
 
   describe('rendering - happy path', () => {
     it('should render without crashing', async () => {
-      // Arrange
-      vi.mocked(overviewApi.fetchOverview).mockResolvedValue({
-        nodes: { ready: 3, total: 5 },
-        unhealthyPods: 2,
-        avgCpuUsage: 45.5,
-        avgMemoryUsage: 62.3,
-      });
+      // Arrange - using default mock from beforeEach
 
       // Act
       render(<OverviewTab />);
@@ -70,39 +72,62 @@ describe('OverviewTab', () => {
   });
 
   describe('loading state', () => {
-    it('should show skeleton cards while loading', () => {
+    it('should show skeleton cards while loading', async () => {
       // Arrange
+      let resolvePromise: (value: any) => void;
       vi.mocked(overviewApi.fetchOverview).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({
-          nodes: { ready: 3, total: 5 },
-          unhealthyPods: 2,
-          avgCpuUsage: 45.5,
-          avgMemoryUsage: 62.3,
-        }), 100))
+        () => new Promise((resolve) => {
+          resolvePromise = resolve;
+        })
       );
 
       // Act
       render(<OverviewTab />);
 
-      // Assert - Should show 4 skeleton cards
+      // Assert - Should show 4 skeleton cards while loading
       const skeletons = screen.getAllByTestId('skeleton-card');
       expect(skeletons).toHaveLength(4);
+
+      // Cleanup - resolve promise to prevent hanging
+      resolvePromise!({
+        nodes: { ready: 3, total: 5 },
+        unhealthyPods: 2,
+        avgCpuUsage: 45.5,
+        avgMemoryUsage: 62.3,
+      });
+      await waitFor(() => {
+        expect(screen.queryByTestId('skeleton-card')).not.toBeInTheDocument();
+      });
     });
 
-    it('should show skeleton for each card type', () => {
+    it('should show skeleton for each card type', async () => {
       // Arrange
+      let resolvePromise: (value: any) => void;
       vi.mocked(overviewApi.fetchOverview).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise((resolve) => {
+          resolvePromise = resolve;
+        })
       );
 
       // Act
       render(<OverviewTab />);
 
-      // Assert
+      // Assert - while loading
       expect(screen.getByTestId('nodes-skeleton')).toBeInTheDocument();
       expect(screen.getByTestId('pods-skeleton')).toBeInTheDocument();
       expect(screen.getByTestId('cpu-skeleton')).toBeInTheDocument();
       expect(screen.getByTestId('memory-skeleton')).toBeInTheDocument();
+
+      // Cleanup - resolve promise to prevent hanging
+      resolvePromise!({
+        nodes: { ready: 3, total: 5 },
+        unhealthyPods: 2,
+        avgCpuUsage: 45.5,
+        avgMemoryUsage: 62.3,
+      });
+      await waitFor(() => {
+        expect(screen.queryByTestId('skeleton-card')).not.toBeInTheDocument();
+      });
     });
 
     it('should hide skeleton after data loads', async () => {
@@ -231,18 +256,16 @@ describe('OverviewTab', () => {
       // Act
       render(<OverviewTab />);
 
-      // Initial fetch
-      await waitFor(() => {
-        expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
-      });
+      // Initial fetch - flush promises
+      await vi.runOnlyPendingTimersAsync();
+
+      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
 
       // Advance time by 10 seconds
-      vi.advanceTimersByTime(10000);
+      await vi.advanceTimersByTimeAsync(10000);
 
       // Assert
-      await waitFor(() => {
-        expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(2);
-      });
+      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(2);
 
       vi.useRealTimers();
     });
@@ -260,15 +283,16 @@ describe('OverviewTab', () => {
       // Act
       const { unmount } = render(<OverviewTab />);
 
-      await waitFor(() => {
-        expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
-      });
+      // Initial fetch - flush promises
+      await vi.runOnlyPendingTimersAsync();
+
+      expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);
 
       // Unmount component
       unmount();
 
       // Advance time
-      vi.advanceTimersByTime(10000);
+      await vi.advanceTimersByTimeAsync(10000);
 
       // Assert - should not fetch after unmount
       expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(1);

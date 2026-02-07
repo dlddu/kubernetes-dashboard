@@ -315,18 +315,14 @@ describe('usePolling Hook', () => {
       // Act
       renderHook(() => usePolling(callback, interval));
 
-      // Assert - initial call
-      await waitFor(() => {
-        expect(callback).toHaveBeenCalledTimes(1);
-      }, { timeout: 1000 });
+      // Assert - initial call (synchronous in fake timers)
+      expect(callback).toHaveBeenCalledTimes(1);
 
-      // Advance time
-      vi.advanceTimersByTime(interval);
+      // Advance time and flush promises
+      await vi.advanceTimersByTimeAsync(interval);
 
       // Assert - second call after interval
-      await waitFor(() => {
-        expect(callback).toHaveBeenCalledTimes(2);
-      }, { timeout: 1000 });
+      expect(callback).toHaveBeenCalledTimes(2);
     });
   });
 
