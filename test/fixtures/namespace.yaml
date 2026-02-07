@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dashboard-test
+  labels:
+    app: kubernetes-dashboard
+    env: test
+    purpose: e2e-testing
+  annotations:
+    description: "Namespace for E2E testing of Kubernetes Dashboard"

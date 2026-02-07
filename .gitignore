@@ -51,3 +51,12 @@ kubernetes-dashboard
 # Temporary files
 tmp/
 temp/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+
+# Kubernetes
+kubeconfig
+*.kubeconfig

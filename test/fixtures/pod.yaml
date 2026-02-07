@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-test
+  namespace: dashboard-test
+  labels:
+    app: busybox-test
+    env: test
+    type: standalone
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sleep
+      - "3600"
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+    env:
+    - name: TEST_ENV
+      value: "e2e-testing"
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+  restartPolicy: Always
