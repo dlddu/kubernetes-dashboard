@@ -33,7 +33,6 @@ export function PollingIndicator({ lastUpdated, isLoading = false }: PollingIndi
     const diffSeconds = Math.floor(diffMs / 1000);
     const diffMinutes = Math.floor(diffSeconds / 60);
     const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
 
     if (diffSeconds < 5) {
       return 'Just now';
@@ -107,7 +106,7 @@ export function PollingIndicator({ lastUpdated, isLoading = false }: PollingIndi
           <span>Last updated:</span>
           <time
             role="time"
-            dateTime={lastUpdated?.toISOString()}
+            dateTime={lastUpdated && !isNaN(lastUpdated.getTime()) ? lastUpdated.toISOString() : undefined}
           >
             {relativeTime}
           </time>

@@ -5,10 +5,11 @@ import { usePolling } from './usePolling';
 describe('usePolling Hook', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.stubGlobal('document', {
-      ...document,
-      visibilityState: 'visible',
-      hidden: false,
+    // Ensure document is visible by default
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      writable: true,
+      value: false,
     });
   });
 
@@ -240,14 +241,14 @@ describe('usePolling Hook', () => {
 
       callback.mockClear();
 
-      // Act - Update interval
+      // Act - Update interval (triggers immediate call + restarts interval)
       rerender({ interval: newInterval });
 
       // Advance by new interval
       vi.advanceTimersByTime(newInterval);
 
-      // Assert - should call at new interval
-      expect(callback).toHaveBeenCalledTimes(1);
+      // Assert - should call twice: once on interval change (immediate), once after interval
+      expect(callback).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -314,17 +315,18 @@ describe('usePolling Hook', () => {
       // Act
       renderHook(() => usePolling(callback, interval));
 
-      // Assert
+      // Assert - initial call
       await waitFor(() => {
         expect(callback).toHaveBeenCalledTimes(1);
-      });
+      }, { timeout: 1000 });
 
       // Advance time
       vi.advanceTimersByTime(interval);
 
+      // Assert - second call after interval
       await waitFor(() => {
         expect(callback).toHaveBeenCalledTimes(2);
-      });
+      }, { timeout: 1000 });
     });
   });
 

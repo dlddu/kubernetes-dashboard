@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 export function usePolling(callback: () => void, intervalMs: number = 10000) {
   const savedCallback = useRef(callback);
-  const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalIdRef = useRef<number | null>(null);
 
   // Update ref when callback changes
   useEffect(() => {
@@ -11,7 +11,11 @@ export function usePolling(callback: () => void, intervalMs: number = 10000) {
 
   useEffect(() => {
     // Call immediately on mount
-    savedCallback.current();
+    try {
+      savedCallback.current();
+    } catch (error) {
+      console.error('Polling callback error:', error);
+    }
 
     // Start polling
     const startPolling = () => {
@@ -19,7 +23,11 @@ export function usePolling(callback: () => void, intervalMs: number = 10000) {
         clearInterval(intervalIdRef.current);
       }
       intervalIdRef.current = setInterval(() => {
-        savedCallback.current();
+        try {
+          savedCallback.current();
+        } catch (error) {
+          console.error('Polling callback error:', error);
+        }
       }, intervalMs);
     };
 
@@ -37,7 +45,11 @@ export function usePolling(callback: () => void, intervalMs: number = 10000) {
         stopPolling();
       } else {
         // Call immediately when tab becomes visible
-        savedCallback.current();
+        try {
+          savedCallback.current();
+        } catch (error) {
+          console.error('Polling callback error:', error);
+        }
         startPolling();
       }
     };

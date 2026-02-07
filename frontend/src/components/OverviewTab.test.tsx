@@ -45,8 +45,8 @@ describe('OverviewTab', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText(/3.*5/)).toBeInTheDocument(); // nodes ready/total
-        expect(screen.getByText(/2/)).toBeInTheDocument(); // unhealthy pods
+        expect(screen.getByTestId('nodes-card')).toHaveTextContent('3 / 5');
+        expect(screen.getByTestId('pods-card')).toHaveTextContent('2');
       });
     });
 
@@ -394,8 +394,7 @@ describe('OverviewTab', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText(/8/)).toBeInTheDocument();
-        expect(screen.getByText(/10/)).toBeInTheDocument();
+        expect(screen.getByTestId('nodes-card')).toHaveTextContent('8 / 10');
       });
     });
 
@@ -413,7 +412,7 @@ describe('OverviewTab', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText('7')).toBeInTheDocument();
+        expect(screen.getByTestId('pods-card')).toHaveTextContent('7');
       });
     });
 
@@ -431,7 +430,7 @@ describe('OverviewTab', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText(/88\.5%/)).toBeInTheDocument();
+        expect(screen.getByTestId('cpu-card')).toHaveTextContent('88.5%');
       });
     });
 
@@ -449,7 +448,7 @@ describe('OverviewTab', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText(/91\.2%/)).toBeInTheDocument();
+        expect(screen.getByTestId('memory-card')).toHaveTextContent('91.2%');
       });
     });
   });

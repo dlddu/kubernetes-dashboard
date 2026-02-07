@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PollingIndicator } from './PollingIndicator';
 
@@ -108,8 +108,8 @@ describe('PollingIndicator', () => {
       // Act
       render(<PollingIndicator lastUpdated={lastUpdated} />);
 
-      // Assert
-      expect(screen.getByText(/1 second ago/i)).toBeInTheDocument();
+      // Assert - < 5 seconds shows "Just now"
+      expect(screen.getByText(/just now/i)).toBeInTheDocument();
     });
 
     it('should handle singular "1 minute ago"', () => {
@@ -156,7 +156,7 @@ describe('PollingIndicator', () => {
 
       // Assert
       const spinner = screen.getByTestId('loading-spinner');
-      expect(spinner.className).toMatch(/animate-spin/);
+      expect(spinner.classList.contains('animate-spin')).toBe(true);
     });
   });
 
@@ -250,7 +250,9 @@ describe('PollingIndicator', () => {
       expect(screen.getByText(/just now/i)).toBeInTheDocument();
 
       // Advance time by 30 seconds
-      vi.advanceTimersByTime(30000);
+      act(() => {
+        vi.advanceTimersByTime(30000);
+      });
 
       // Assert - should update to show elapsed time
       expect(screen.getByText(/30 seconds ago/i)).toBeInTheDocument();
