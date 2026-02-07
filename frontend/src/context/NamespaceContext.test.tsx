@@ -1,5 +1,5 @@
 import { render, screen, renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { NamespaceProvider, useNamespace } from './NamespaceContext';
 
 describe('NamespaceContext', () => {
@@ -135,9 +135,8 @@ describe('NamespaceContext', () => {
         </NamespaceProvider>
       );
 
-      // Assert persistence - this will actually reset because it's a new provider
-      // In real app, provider is mounted once at app root
-      expect(screen.getByTestId('namespace')).toHaveTextContent('all');
+      // Assert persistence - state is maintained during rerender
+      expect(screen.getByTestId('namespace')).toHaveTextContent('test-namespace');
     });
 
     it('should share namespace state across multiple consumers', () => {

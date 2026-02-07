@@ -2,7 +2,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface NamespaceContextType {
   selectedNamespace: string;
-  setSelectedNamespace: (namespace: string) => void;
+  setSelectedNamespace: (_namespace: string) => void;
 }
 
 const NamespaceContext = createContext<NamespaceContextType | undefined>(

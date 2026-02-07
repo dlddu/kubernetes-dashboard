@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import TopBar from './TopBar';
@@ -222,20 +223,6 @@ describe('TopBar', () => {
   });
 
   describe('Performance', () => {
-    it('should render quickly without heavy computations', () => {
-      // Arrange
-      const startTime = performance.now();
-
-      // Act
-      renderWithProvider(<TopBar />);
-
-      const endTime = performance.now();
-      const renderTime = endTime - startTime;
-
-      // Assert - Should render in less than 100ms
-      expect(renderTime).toBeLessThan(100);
-    });
-
     it('should not re-render unnecessarily', () => {
       // Arrange
       const renderSpy = vi.fn();

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchNamespaces } from '../api/namespaces';
 import { useNamespace } from '../context/NamespaceContext';
 
