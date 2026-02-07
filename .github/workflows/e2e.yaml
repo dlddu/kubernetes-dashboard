@@ -24,7 +24,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.23'
           cache: true
 
       - name: Set up Node.js
@@ -113,6 +113,11 @@ jobs:
             echo "ERROR: Invalid health response"
             exit 1
           fi
+
+      - name: Install Playwright system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Install Playwright
         run: |
