@@ -24,7 +24,7 @@ describe('NamespaceSelector', () => {
       expect(selector).toBeInTheDocument();
     });
 
-    it('should display dropdown with accessible role', () => {
+    it('should display dropdown with accessible role', async () => {
       // Arrange
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
 
@@ -32,9 +32,11 @@ describe('NamespaceSelector', () => {
       render(<NamespaceSelector />);
 
       // Assert
-      const dropdown = screen.getByRole('combobox', { name: /namespace/i });
-      expect(dropdown).toBeInTheDocument();
-      expect(dropdown).toBeEnabled();
+      await waitFor(() => {
+        const dropdown = screen.getByRole('combobox', { name: /namespace/i });
+        expect(dropdown).toBeInTheDocument();
+        expect(dropdown).toBeEnabled();
+      });
     });
 
     it('should show "All Namespaces" as default option', async () => {
@@ -290,7 +292,7 @@ describe('NamespaceSelector', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.queryByRole('listbox')).not.toBeVisible();
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
       });
     });
 
@@ -328,12 +330,22 @@ describe('NamespaceSelector', () => {
       // Act
       render(<NamespaceSelector />);
 
-      // Assert
+      // Wait for loading to complete
       await waitFor(() => {
-        const selector = screen.getByRole('combobox');
-        fireEvent.click(selector);
+        expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
       });
 
+      // Wait for loading state to finish
+      await waitFor(() => {
+        const selector = screen.getByRole('combobox');
+        expect(selector).toBeEnabled();
+      });
+
+      // Open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
       await waitFor(() => {
         const emptyMessage = screen.getByText(/no namespaces available/i);
         expect(emptyMessage).toBeInTheDocument();
