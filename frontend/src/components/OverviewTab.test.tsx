@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OverviewTab } from './OverviewTab';
 import * as overviewApi from '../api/overview';
+import { OverviewResponse } from '../api/overview';
 
 // Mock the overview API
 vi.mock('../api/overview');
@@ -80,7 +81,7 @@ describe('OverviewTab', () => {
   describe('loading state', () => {
     it('should show skeleton cards while loading', async () => {
       // Arrange
-      let resolvePromise: (value: Record<string, unknown>) => void;
+      let resolvePromise: (value: OverviewResponse) => void;
       vi.mocked(overviewApi.fetchOverview).mockImplementation(
         () => new Promise((resolve) => {
           resolvePromise = resolve;
@@ -108,7 +109,7 @@ describe('OverviewTab', () => {
 
     it('should show skeleton for each card type', async () => {
       // Arrange
-      let resolvePromise: (value: Record<string, unknown>) => void;
+      let resolvePromise: (value: OverviewResponse) => void;
       vi.mocked(overviewApi.fetchOverview).mockImplementation(
         () => new Promise((resolve) => {
           resolvePromise = resolve;
