@@ -23,8 +23,8 @@ WORKDIR /app
 # Copy go mod files
 COPY go.mod go.sum* ./
 
-# Download dependencies
-RUN go mod download
+# Download dependencies and tidy
+RUN go mod download && go mod tidy
 
 # Copy source code
 COPY . .
