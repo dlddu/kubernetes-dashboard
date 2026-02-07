@@ -117,12 +117,25 @@ jobs:
       - name: Install Playwright system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+          sudo apt-get install -y \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2t64 || sudo apt-get install -y libasound2
 
       - name: Install Playwright
         run: |
           npm install -D @playwright/test@1.40.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Run Playwright E2E tests
         run: |
