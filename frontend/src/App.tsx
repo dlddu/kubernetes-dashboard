@@ -7,7 +7,6 @@ function App() {
       <div className="min-h-screen bg-gray-50">
         <TopBar />
         <main className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-6">Kubernetes Dashboard</h1>
           <div className="bg-white rounded-lg shadow p-6">
             <p className="text-gray-600">
               Welcome to the Kubernetes Dashboard. This is a modern web interface for managing Kubernetes clusters.
