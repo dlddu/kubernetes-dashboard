@@ -128,7 +128,7 @@ describe('UnhealthyPodPreview', () => {
       render(<UnhealthyPodPreview pods={[]} />);
 
       // Assert
-      const emptyMessage = screen.getByText(/no unhealthy pods|all pods are healthy/i);
+      const emptyMessage = screen.getByText(/no unhealthy pods/i);
       expect(emptyMessage).toBeInTheDocument();
     });
 
@@ -137,7 +137,7 @@ describe('UnhealthyPodPreview', () => {
       render(<UnhealthyPodPreview pods={[]} />);
 
       // Assert
-      expect(screen.getByText(/healthy|running normally/i)).toBeInTheDocument();
+      expect(screen.getByText(/all pods are healthy and running normally/i)).toBeInTheDocument();
     });
 
     it('should show checkmark icon in empty state', () => {

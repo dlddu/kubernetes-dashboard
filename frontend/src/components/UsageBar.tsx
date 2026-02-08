@@ -23,11 +23,12 @@ export function UsageBar({ percentage, label, className = '', showText = false }
   const barColor = getBarColor();
 
   return (
-    <div data-testid="usage-bar" className={`w-full ${className}`}>
+    <div className={`w-full ${className}`}>
       {label && <div className="mb-1 text-sm font-medium text-gray-700">{label}</div>}
       <div className="flex items-center gap-2">
         <div className="flex-1 relative">
           <div
+            data-testid="usage-bar"
             className="h-3 bg-gray-200 rounded overflow-hidden"
             role="progressbar"
             aria-valuenow={clampedPercentage}
