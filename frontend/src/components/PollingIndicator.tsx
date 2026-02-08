@@ -19,7 +19,7 @@ export function PollingIndicator({
 
   useEffect(() => {
     if (!lastUpdated) {
-      setTimeAgo('never updated');
+      setTimeAgo('No data');
       return;
     }
 

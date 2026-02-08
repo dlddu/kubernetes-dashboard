@@ -22,13 +22,20 @@ export function UsageBar({ percentage, label, className = '', showText = false }
 
   const barColor = getBarColor();
 
+  // Format display text
+  const formatPercentage = (val: number) => {
+    if (val % 1 === 0) {
+      return `${val}%`;
+    }
+    const rounded = Math.round(val * 10) / 10;
+    return `${rounded.toFixed(1)}%`;
+  };
+
   return (
-    <div className={`w-full ${className}`}>
-      {label && <div className="mb-1 text-sm font-medium text-gray-700">{label}</div>}
+    <div className={`w-full ${className}`} data-testid="usage-bar">
       <div className="flex items-center gap-2">
         <div className="flex-1 relative">
           <div
-            data-testid="usage-bar"
             className="h-3 bg-gray-200 rounded overflow-hidden"
             role="progressbar"
             aria-valuenow={clampedPercentage}
@@ -48,7 +55,7 @@ export function UsageBar({ percentage, label, className = '', showText = false }
           </div>
         </div>
         <div className="text-sm font-medium text-gray-700 min-w-[3rem] text-right">
-          {clampedPercentage % 1 === 0 ? `${clampedPercentage}%` : `${clampedPercentage.toFixed(1)}%`}
+          {formatPercentage(clampedPercentage)}
         </div>
       </div>
     </div>

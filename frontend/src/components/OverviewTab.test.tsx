@@ -401,8 +401,8 @@ describe('OverviewTab', () => {
 
       // Assert
       await waitFor(() => {
-        const overviewTab = screen.getByTestId('overview-tab');
-        expect(overviewTab.className).toMatch(/grid-cols-2/);
+        const summaryCards = screen.getByTestId('summary-cards-container');
+        expect(summaryCards.className).toMatch(/grid-cols-2/);
       });
     });
 

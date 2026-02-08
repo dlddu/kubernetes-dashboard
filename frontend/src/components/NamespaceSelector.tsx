@@ -60,10 +60,10 @@ export function NamespaceSelector({ onChange }: NamespaceSelectorProps) {
   if (isLoading) {
     return (
       <div data-testid="namespace-selector" className="relative">
-        <div data-testid="namespace-loading" className="namespace-skeleton">
+        <div data-testid="namespace-loading">
           <button
             disabled
-            className="h-10 px-4 border border-gray-300 rounded bg-gray-200 animate-pulse w-48"
+            className="h-10 px-4 border border-gray-300 rounded bg-gray-200 w-48"
             role="combobox"
             aria-label="Namespace selector"
             aria-expanded={false}

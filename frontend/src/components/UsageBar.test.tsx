@@ -142,7 +142,9 @@ describe('UsageBar', () => {
 
       // Assert
       const progressBar = screen.getByRole('progressbar');
-      const width = progressBar.style.width;
+      expect(progressBar).toHaveAttribute('aria-valuenow', '100');
+      const fill = screen.getByTestId('usage-bar-fill');
+      const width = fill.style.width;
       expect(parseFloat(width)).toBeLessThanOrEqual(100);
     });
 

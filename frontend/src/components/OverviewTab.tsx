@@ -112,10 +112,10 @@ export function OverviewTab({ namespace }: OverviewTabProps) {
       data-testid="overview-tab"
       role="tabpanel"
       aria-label="Overview tab"
-      className="p-6 overflow-y-auto grid grid-cols-2 md:grid-cols-4"
+      className="p-6 overflow-y-auto"
     >
       {/* Polling Indicator */}
-      <div className="mb-4 flex justify-end col-span-2 md:col-span-4">
+      <div className="mb-4 flex justify-end">
         <PollingIndicator
           lastUpdated={lastUpdated}
           loading={loading}
@@ -127,7 +127,7 @@ export function OverviewTab({ namespace }: OverviewTabProps) {
       {data && <SummaryCards data={data} />}
 
       {/* Additional sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 col-span-2 md:col-span-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
         <UnhealthyPodPreview pods={[]} />
         <NodeQuickView nodes={[]} />
       </div>

@@ -109,7 +109,7 @@ export function NodeQuickView({
                 <div className="text-sm text-gray-600">{node.status}</div>
               </div>
               <div className="space-y-2 ml-5">
-                <div>
+                <div data-testid="cpu-usage-bar">
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600">CPU</span>
                     <span className="font-medium">{node.cpuUsage.toFixed(1)}%</span>
@@ -117,10 +117,9 @@ export function NodeQuickView({
                   <UsageBar
                     percentage={node.cpuUsage}
                     label={`CPU usage for ${node.name}`}
-                    data-testid="cpu-usage-bar"
                   />
                 </div>
-                <div>
+                <div data-testid="memory-usage-bar">
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600">Memory</span>
                     <span className="font-medium">{node.memoryUsage.toFixed(1)}%</span>
@@ -128,7 +127,6 @@ export function NodeQuickView({
                   <UsageBar
                     percentage={node.memoryUsage}
                     label={`Memory usage for ${node.name}`}
-                    data-testid="memory-usage-bar"
                   />
                 </div>
               </div>
