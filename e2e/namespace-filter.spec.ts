@@ -15,8 +15,7 @@ test.describe('Namespace Filter', () => {
     await expect(topBar).toBeVisible();
 
     // Assert: NamespaceSelector should be visible within TopBar
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
     await expect(namespaceSelector).toBeVisible();
 
     // Assert: Dropdown should be interactive
@@ -31,11 +30,9 @@ test.describe('Namespace Filter', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the namespace selector
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
 
     // Assert: Default value should be "All Namespaces"
-    await expect(namespaceSelector).toHaveValue('all');
     await expect(namespaceSelector).toContainText(/all namespaces/i);
   });
 
@@ -47,22 +44,19 @@ test.describe('Namespace Filter', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Open the namespace dropdown
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
     await namespaceSelector.click();
 
     // Assert: Dropdown menu should be visible
-    const dropdownMenu = page.getByRole('listbox').or(page.getByTestId('namespace-dropdown-menu'));
+    const dropdownMenu = page.getByRole('listbox');
     await expect(dropdownMenu).toBeVisible();
 
     // Assert: "All Namespaces" option should be present
-    const allNamespacesOption = page.getByRole('option', { name: /all namespaces/i })
-      .or(page.getByTestId('namespace-option-all'));
+    const allNamespacesOption = page.getByRole('option', { name: /all namespaces/i });
     await expect(allNamespacesOption).toBeVisible();
 
     // Assert: At least one namespace option should be visible (e.g., "default")
-    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
-      .or(page.getByTestId('namespace-option-default'));
+    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i });
     await expect(defaultNamespaceOption).toBeVisible();
   });
 
@@ -72,21 +66,18 @@ test.describe('Namespace Filter', () => {
     // Arrange: Navigate to the home page and open dropdown
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
     await namespaceSelector.click();
 
     // Act: Select "default" namespace from the dropdown
-    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
-      .or(page.getByTestId('namespace-option-default'));
+    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i });
     await defaultNamespaceOption.click();
 
     // Assert: Selector should show "default" as selected value
-    await expect(namespaceSelector).toHaveValue('default');
     await expect(namespaceSelector).toContainText(/^default$/i);
 
     // Assert: Dropdown menu should be closed
-    const dropdownMenu = page.getByRole('listbox').or(page.getByTestId('namespace-dropdown-menu'));
+    const dropdownMenu = page.getByRole('listbox');
     await expect(dropdownMenu).not.toBeVisible();
   });
 
@@ -96,11 +87,9 @@ test.describe('Namespace Filter', () => {
     // Arrange: Navigate to home page, select a namespace
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
     await namespaceSelector.click();
-    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
-      .or(page.getByTestId('namespace-option-default'));
+    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i });
     await defaultNamespaceOption.click();
 
     // Act: Navigate to another page (e.g., pods page)
@@ -108,9 +97,7 @@ test.describe('Namespace Filter', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Selected namespace should still be "default"
-    const namespaceSelectorAfterNav = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelectorAfterNav).toHaveValue('default');
+    const namespaceSelectorAfterNav = page.getByRole('combobox', { name: /namespace/i });
     await expect(namespaceSelectorAfterNav).toContainText(/^default$/i);
   });
 
@@ -123,8 +110,7 @@ test.describe('Namespace Filter', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the namespace selector
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
 
     // Assert: Namespace selector should be visible and accessible on mobile
     await expect(namespaceSelector).toBeVisible();
@@ -132,7 +118,7 @@ test.describe('Namespace Filter', () => {
 
     // Assert: Should be tappable (click should work)
     await namespaceSelector.click();
-    const dropdownMenu = page.getByRole('listbox').or(page.getByTestId('namespace-dropdown-menu'));
+    const dropdownMenu = page.getByRole('listbox');
     await expect(dropdownMenu).toBeVisible();
   });
 });
@@ -146,13 +132,11 @@ test.describe('Namespace Filter - Edge Cases', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Open the namespace dropdown
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
     await namespaceSelector.click();
 
     // Assert: Should show "All Namespaces" option even if no namespaces exist
-    const allNamespacesOption = page.getByRole('option', { name: /all namespaces/i })
-      .or(page.getByTestId('namespace-option-all'));
+    const allNamespacesOption = page.getByRole('option', { name: /all namespaces/i });
     await expect(allNamespacesOption).toBeVisible();
 
     // Assert: Should show a message indicating no namespaces are available
@@ -168,8 +152,7 @@ test.describe('Namespace Filter - Edge Cases', () => {
     await page.goto('/');
 
     // Act: Look for loading indicator immediately after navigation
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
 
     // Assert: Should show loading state (disabled or with loading indicator)
     // Note: This assertion may need to be adjusted based on actual loading implementation
@@ -192,8 +175,7 @@ test.describe('Namespace Filter - Edge Cases', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Open the namespace dropdown
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
 
     // Assert: Selector should still be functional with fallback behavior
     await expect(namespaceSelector).toBeVisible();
@@ -204,7 +186,7 @@ test.describe('Namespace Filter - Edge Cases', () => {
       .or(page.getByTestId('namespace-error-message'));
 
     // Either error message is shown OR only "All Namespaces" is available
-    const dropdownMenu = page.getByRole('listbox').or(page.getByTestId('namespace-dropdown-menu'));
+    const dropdownMenu = page.getByRole('listbox');
     await expect(dropdownMenu).toBeVisible();
   });
 });
@@ -223,8 +205,7 @@ test.describe('Namespace Filter - ClusterStatus Integration', () => {
 
     const clusterStatus = page.getByTestId('cluster-status')
       .or(topBar.getByText(/cluster/i));
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
 
     // Assert: Both components should be visible
     await expect(clusterStatus).toBeVisible();
@@ -247,9 +228,8 @@ test.describe('Namespace Filter - ClusterStatus Integration', () => {
     }
 
     // Assert: Namespace selector should reload with new cluster's namespaces
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelector).toHaveValue('all');
+    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i });
+    await expect(namespaceSelector).toContainText(/all namespaces/i);
     await expect(namespaceSelector).toBeEnabled();
   });
 });
