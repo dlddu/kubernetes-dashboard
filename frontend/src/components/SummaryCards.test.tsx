@@ -26,7 +26,7 @@ describe('SummaryCards', () => {
       render(<SummaryCards data={mockData} />);
 
       // Assert
-      const cards = screen.getAllByTestId('summary-card');
+      const cards = screen.getAllByRole('article');
       expect(cards).toHaveLength(4);
     });
 
@@ -204,7 +204,7 @@ describe('SummaryCards', () => {
 
       // Assert
       const cpuCard = screen.getByTestId('summary-card-avg-cpu');
-      expect(cpuCard).toHaveTextContent('100%');
+      expect(cpuCard).toHaveTextContent('100.0%');
     });
   });
 
@@ -271,7 +271,7 @@ describe('SummaryCards', () => {
 
       // Assert
       const memoryCard = screen.getByTestId('summary-card-avg-memory');
-      expect(memoryCard).toHaveTextContent('100%');
+      expect(memoryCard).toHaveTextContent('100.0%');
     });
   });
 
@@ -321,7 +321,7 @@ describe('SummaryCards', () => {
       render(<SummaryCards data={mockData} />);
 
       // Assert
-      const cards = screen.getAllByTestId('summary-card');
+      const cards = screen.getAllByRole('article');
       cards.forEach((card) => {
         expect(card).toHaveClass(/border|rounded|shadow|p-/);
       });
@@ -332,7 +332,7 @@ describe('SummaryCards', () => {
       render(<SummaryCards data={mockData} />);
 
       // Assert
-      const cards = screen.getAllByTestId('summary-card');
+      const cards = screen.getAllByRole('article');
       cards.forEach((card) => {
         expect(card.className).toMatch(/hover:/);
       });
@@ -353,7 +353,7 @@ describe('SummaryCards', () => {
       render(<SummaryCards data={data} />);
 
       // Assert
-      const cards = screen.getAllByTestId('summary-card');
+      const cards = screen.getAllByRole('article');
       expect(cards).toHaveLength(4);
     });
 
