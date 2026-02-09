@@ -199,8 +199,7 @@ test.describe('Namespace Context Integration', () => {
     await expect(namespaceSelector).toHaveAttribute('aria-expanded', 'true');
 
     // Act: Click outside the dropdown (e.g., on the main content area)
-    const mainContent = page.getByRole('main')
-      .or(page.locator('body'));
+    const mainContent = page.locator('main');
     await mainContent.click({ position: { x: 10, y: 200 } });
 
     // Assert: Dropdown menu should be closed
