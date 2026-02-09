@@ -208,7 +208,7 @@ describe('OverviewTab', () => {
       await waitFor(() => {
         const errorMessage = screen.getByTestId('summary-cards-error');
         expect(errorMessage).toBeInTheDocument();
-        expect(errorMessage).toHaveTextContent(/error loading/i);
+        expect(errorMessage).toHaveTextContent(/unable to load/i);
       });
     });
 

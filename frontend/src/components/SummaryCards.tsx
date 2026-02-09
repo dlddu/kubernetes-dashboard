@@ -22,14 +22,14 @@ export function SummaryCards({ data }: SummaryCardsProps) {
     {
       testId: 'summary-card-avg-cpu',
       label: 'Avg CPU',
-      value: `${data.avgCpu}%`,
+      value: `${data.avgCpu.toFixed(1)}%`,
       showBar: true,
       barValue: data.avgCpu,
     },
     {
       testId: 'summary-card-avg-memory',
       label: 'Avg Memory',
-      value: `${data.avgMemory}%`,
+      value: `${data.avgMemory.toFixed(1)}%`,
       showBar: true,
       barValue: data.avgMemory,
     },
