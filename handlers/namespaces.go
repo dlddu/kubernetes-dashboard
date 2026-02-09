@@ -58,8 +58,7 @@ func NamespacesHandler(w http.ResponseWriter, r *http.Request) {
 
 // getKubernetesClient creates and returns a Kubernetes client
 func getKubernetesClient() (*kubernetes.Clientset, error) {
-	// Create in-cluster config
-	config, err := rest.InClusterConfig()
+	config, err := getKubernetesConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -71,4 +70,15 @@ func getKubernetesClient() (*kubernetes.Clientset, error) {
 	}
 
 	return clientset, nil
+}
+
+// getKubernetesConfig creates and returns Kubernetes config
+func getKubernetesConfig() (*rest.Config, error) {
+	// Create in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }

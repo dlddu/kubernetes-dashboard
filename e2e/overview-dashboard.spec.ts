@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe.skip('Overview Dashboard - SummaryCards', () => {
+test.describe('Overview Dashboard - SummaryCards', () => {
   test('should render all 4 summary cards on Overview tab', async ({ page }) => {
     // Test for SummaryCards component rendering
 
@@ -99,7 +99,7 @@ test.describe.skip('Overview Dashboard - SummaryCards', () => {
   });
 });
 
-test.describe.skip('Overview Dashboard - UnhealthyPodPreview', () => {
+test.describe('Overview Dashboard - UnhealthyPodPreview', () => {
   test('should display UnhealthyPodPreview section', async ({ page }) => {
     // Test for UnhealthyPodPreview component visibility
 
@@ -207,7 +207,7 @@ test.describe.skip('Overview Dashboard - UnhealthyPodPreview', () => {
   });
 });
 
-test.describe.skip('Overview Dashboard - NodeQuickView', () => {
+test.describe('Overview Dashboard - NodeQuickView', () => {
   test('should display NodeQuickView section', async ({ page }) => {
     // Test for NodeQuickView component visibility
 
@@ -346,7 +346,7 @@ test.describe.skip('Overview Dashboard - NodeQuickView', () => {
   });
 });
 
-test.describe.skip('Overview Dashboard - PollingIndicator', () => {
+test.describe('Overview Dashboard - PollingIndicator', () => {
   test('should display PollingIndicator on Overview tab', async ({ page }) => {
     // Test for PollingIndicator component visibility
 
@@ -463,7 +463,7 @@ test.describe.skip('Overview Dashboard - PollingIndicator', () => {
   });
 });
 
-test.describe.skip('Overview Dashboard - Integration Tests', () => {
+test.describe('Overview Dashboard - Integration Tests', () => {
   test('should display all overview components together', async ({ page }) => {
     // Test for full page integration
 
