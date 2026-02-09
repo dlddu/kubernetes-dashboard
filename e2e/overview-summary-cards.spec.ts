@@ -14,7 +14,7 @@ test.describe('Overview Tab - Summary Cards', () => {
     await expect(overviewSection).toBeVisible();
 
     // Assert: Should display exactly 4 summary cards
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: Each card should be visible
@@ -41,11 +41,11 @@ test.describe('Overview Tab - Summary Cards', () => {
       .or(nodesCard.getByTestId('summary-card-label'));
     await expect(nodesLabel).toBeVisible();
 
-    // Assert: Card should display a numeric value
+    // Assert: Card should display a value in "ready/total" format
     const nodesValue = nodesCard.getByTestId('summary-card-value')
       .or(nodesCard.locator('[data-value]'));
     await expect(nodesValue).toBeVisible();
-    await expect(nodesValue).toContainText(/^\d+$/);
+    await expect(nodesValue).toContainText(/^\d+\/\d+$/);
   });
 
   test('should display Unhealthy Pods summary card with correct label and value', async ({ page }) => {
@@ -166,7 +166,7 @@ test.describe('Overview Tab - Summary Cards Layout', () => {
     // This might be "repeat(2, 1fr)" or similar
 
     // Assert: All 4 cards should still be visible
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: Cards should be arranged in 2 rows of 2 cards each
@@ -199,7 +199,7 @@ test.describe('Overview Tab - Summary Cards Layout', () => {
     await expect(cardsContainer).toBeVisible();
 
     // Assert: All 4 cards should be visible
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: All cards should be on the same row on desktop (similar Y position)
@@ -245,7 +245,7 @@ test.describe('Overview Tab - Loading State', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: After loading, skeleton cards should be replaced with real cards
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: Skeleton cards should no longer be visible
@@ -269,7 +269,7 @@ test.describe('Overview Tab - Loading State', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: All cards should be loaded and visible
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: No elements should have aria-busy="true" after loading
@@ -293,7 +293,7 @@ test.describe('Overview Tab - Error State', () => {
 
     // Assert: If error occurs, error message should be visible
     // OR cards should be visible (depending on API state)
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
 
     // Either error is shown or cards are loaded successfully
     const errorVisible = await errorMessage.isVisible().catch(() => false);
@@ -332,7 +332,7 @@ test.describe('Overview Tab - Error State', () => {
       await page.waitForLoadState('networkidle');
 
       // Assert: Should either show cards or error message again
-      const summaryCards = page.getByTestId('summary-card');
+      const summaryCards = page.getByRole('article');
       const errorMessage = page.getByTestId('summary-cards-error');
 
       const cardsVisible = (await summaryCards.count()) > 0;
@@ -387,10 +387,12 @@ test.describe('Overview Tab - Data Accuracy', () => {
     const nodesValue = nodesCard.getByTestId('summary-card-value');
     const displayedNodeCount = await nodesValue.innerText();
 
-    // Assert: Value should be a valid number
-    expect(displayedNodeCount).toMatch(/^\d+$/);
-    const nodeCount = parseInt(displayedNodeCount, 10);
-    expect(nodeCount).toBeGreaterThanOrEqual(0);
+    // Assert: Value should be in "ready/total" format
+    expect(displayedNodeCount).toMatch(/^\d+\/\d+$/);
+    const [ready, total] = displayedNodeCount.split('/').map(n => parseInt(n, 10));
+    expect(ready).toBeGreaterThanOrEqual(0);
+    expect(total).toBeGreaterThanOrEqual(0);
+    expect(ready).toBeLessThanOrEqual(total);
 
     // Note: In a real E2E test environment, you would verify this against
     // the actual cluster state using kubectl or K8s API
