@@ -1,16 +1,10 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NamespaceSelector } from './NamespaceSelector';
-import { NamespaceProvider } from '../contexts/NamespaceContext';
 import * as namespacesApi from '../api/namespaces';
 
 // Mock the namespaces API
 vi.mock('../api/namespaces');
-
-// Helper to render with NamespaceProvider
-const renderWithProvider = (ui: React.ReactElement) => {
-  return render(<NamespaceProvider>{ui}</NamespaceProvider>);
-};
 
 describe('NamespaceSelector', () => {
   beforeEach(() => {
@@ -23,7 +17,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert - Component should render
       const selector = screen.getByTestId('namespace-selector');
@@ -35,7 +29,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       await waitFor(() => {
@@ -50,7 +44,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'kube-system']);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       await waitFor(() => {
@@ -67,7 +61,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(mockNamespaces);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       await waitFor(() => {
@@ -81,7 +75,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(mockNamespaces);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Wait for data to load
       await waitFor(() => {
@@ -109,7 +103,7 @@ describe('NamespaceSelector', () => {
       );
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert - Should show loading state immediately
       const loadingIndicator = screen.getByTestId('namespace-loading');
@@ -128,7 +122,7 @@ describe('NamespaceSelector', () => {
       );
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       const skeleton = screen.getByTestId('namespace-skeleton');
@@ -143,7 +137,7 @@ describe('NamespaceSelector', () => {
       );
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       const selector = screen.getByRole('combobox');
@@ -159,7 +153,7 @@ describe('NamespaceSelector', () => {
       );
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       await waitFor(() => {
@@ -175,7 +169,7 @@ describe('NamespaceSelector', () => {
       );
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       await waitFor(() => {
@@ -192,7 +186,7 @@ describe('NamespaceSelector', () => {
         .mockResolvedValueOnce(['default']);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Wait for error state
       await waitFor(() => {
@@ -216,7 +210,7 @@ describe('NamespaceSelector', () => {
       );
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       await waitFor(() => {
@@ -232,7 +226,7 @@ describe('NamespaceSelector', () => {
       const mockNamespaces = ['default', 'production'];
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(mockNamespaces);
 
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
@@ -254,7 +248,7 @@ describe('NamespaceSelector', () => {
       const mockNamespaces = ['default', 'production', 'staging'];
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(mockNamespaces);
 
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
@@ -281,7 +275,7 @@ describe('NamespaceSelector', () => {
       const mockNamespaces = ['default', 'production'];
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(mockNamespaces);
 
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
@@ -308,7 +302,7 @@ describe('NamespaceSelector', () => {
       const mockNamespaces = ['default', 'production'];
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(mockNamespaces);
 
-      renderWithProvider(<NamespaceSelector onChange={mockOnChange} />);
+      render(<NamespaceSelector onChange={mockOnChange} />);
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
@@ -334,7 +328,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue([]);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -364,7 +358,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue([longNamespace]);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
@@ -386,7 +380,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(specialNamespaces);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
@@ -410,7 +404,7 @@ describe('NamespaceSelector', () => {
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
 
       // Act
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       // Assert
       await waitFor(() => {
@@ -424,7 +418,7 @@ describe('NamespaceSelector', () => {
       const mockNamespaces = ['default', 'production', 'staging'];
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(mockNamespaces);
 
-      renderWithProvider(<NamespaceSelector />);
+      render(<NamespaceSelector />);
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();

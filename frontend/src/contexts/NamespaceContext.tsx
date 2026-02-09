@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface NamespaceContextType {
   selectedNamespace: string;
@@ -7,27 +7,8 @@ interface NamespaceContextType {
 
 const NamespaceContext = createContext<NamespaceContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'kubernetes-dashboard-namespace';
-
 export function NamespaceProvider({ children }: { children: ReactNode }) {
-  const [selectedNamespace, setSelectedNamespace] = useState<string>(() => {
-    // Initialize from localStorage if available
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored || 'all';
-    } catch {
-      return 'all';
-    }
-  });
-
-  useEffect(() => {
-    // Persist to localStorage whenever it changes
-    try {
-      localStorage.setItem(STORAGE_KEY, selectedNamespace);
-    } catch {
-      // Ignore localStorage errors
-    }
-  }, [selectedNamespace]);
+  const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
 
   return (
     <NamespaceContext.Provider value={{ selectedNamespace, setSelectedNamespace }}>
