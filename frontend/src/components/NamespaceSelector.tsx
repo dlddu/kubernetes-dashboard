@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchNamespaces } from '../api/namespaces';
-import { useNamespace } from '../contexts/NamespaceContext';
 
 interface NamespaceSelectorProps {
   onChange?: (namespace: string) => void;
@@ -8,11 +7,10 @@ interface NamespaceSelectorProps {
 
 export function NamespaceSelector({ onChange }: NamespaceSelectorProps) {
   const [namespaces, setNamespaces] = useState<string[]>([]);
-  const { selectedNamespace, setSelectedNamespace } = useNamespace();
+  const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadNamespaces = async () => {
     setIsLoading(true);
@@ -30,22 +28,6 @@ export function NamespaceSelector({ onChange }: NamespaceSelectorProps) {
   useEffect(() => {
     loadNamespaces();
   }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
 
   const handleSelect = (namespace: string) => {
     setSelectedNamespace(namespace);
@@ -126,7 +108,7 @@ export function NamespaceSelector({ onChange }: NamespaceSelectorProps) {
   }
 
   return (
-    <div data-testid="namespace-selector" className="relative" ref={dropdownRef}>
+    <div data-testid="namespace-selector" className="relative">
       <div className="relative">
         <button
           type="button"
