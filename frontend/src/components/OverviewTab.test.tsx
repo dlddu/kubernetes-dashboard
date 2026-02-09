@@ -376,7 +376,7 @@ describe('OverviewTab', () => {
       await waitFor(() => {
         const overviewTab = screen.getByTestId('overview-tab');
         // Should have overflow classes for mobile scrolling
-        expect(overviewTab.className).toMatch(/overflow-/);
+        expect(overviewTab).toHaveClass('overflow-auto');
       });
     });
   });
