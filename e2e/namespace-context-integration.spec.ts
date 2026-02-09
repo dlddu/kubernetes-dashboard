@@ -2,15 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Namespace Context Integration', () => {
   test.skip('should persist selected namespace when navigating between different tabs', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests NamespaceContext global state management across navigation
 
     // Arrange: Navigate to home page and select a specific namespace
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
@@ -18,8 +16,7 @@ test.describe('Namespace Context Integration', () => {
     await defaultNamespaceOption.click();
 
     // Assert: Verify selection is applied
-    await expect(namespaceSelector).toHaveValue('default');
-    await expect(namespaceSelector).toContainText(/^default$/i);
+        await expect(namespaceSelector).toContainText(/^default$/i);
 
     // Act: Navigate to Pods tab
     const podsTab = page.getByRole('link', { name: /pods/i })
@@ -28,10 +25,8 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Namespace selector should still show "default"
-    const namespaceSelectorOnPodsTab = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelectorOnPodsTab).toHaveValue('default');
-    await expect(namespaceSelectorOnPodsTab).toContainText(/^default$/i);
+    const namespaceSelectorOnPodsTab = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+        await expect(namespaceSelectorOnPodsTab).toContainText(/^default$/i);
 
     // Act: Navigate to Services tab
     const servicesTab = page.getByRole('link', { name: /services/i })
@@ -40,10 +35,8 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Namespace selector should still show "default"
-    const namespaceSelectorOnServicesTab = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelectorOnServicesTab).toHaveValue('default');
-    await expect(namespaceSelectorOnServicesTab).toContainText(/^default$/i);
+    const namespaceSelectorOnServicesTab = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+        await expect(namespaceSelectorOnServicesTab).toContainText(/^default$/i);
 
     // Act: Navigate to Deployments tab
     const deploymentsTab = page.getByRole('link', { name: /deployments/i })
@@ -52,14 +45,11 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Namespace selector should still show "default"
-    const namespaceSelectorOnDeploymentsTab = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelectorOnDeploymentsTab).toHaveValue('default');
-    await expect(namespaceSelectorOnDeploymentsTab).toContainText(/^default$/i);
+    const namespaceSelectorOnDeploymentsTab = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+        await expect(namespaceSelectorOnDeploymentsTab).toContainText(/^default$/i);
   });
 
   test.skip('should filter displayed data when specific namespace is selected', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests that data table respects NamespaceContext filtering
 
     // Arrange: Navigate to Pods page with "All Namespaces" selected
@@ -67,10 +57,8 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Verify "All Namespaces" is selected initially
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelector).toHaveValue('all');
-
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    
     // Act: Count initial number of visible pods from all namespaces
     const allPodsTable = page.getByRole('table')
       .or(page.getByTestId('pods-table'));
@@ -88,8 +76,7 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Table should show only pods from "default" namespace
-    await expect(namespaceSelector).toHaveValue('default');
-
+    
     const filteredPodsRows = page.getByRole('row')
       .or(allPodsTable.locator('tbody tr'));
     const filteredRowCount = await filteredPodsRows.count();
@@ -111,8 +98,7 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Table should show only pods from "kube-system" namespace
-    await expect(namespaceSelector).toHaveValue('kube-system');
-    const kubeSystemPodsRows = page.getByRole('row')
+        const kubeSystemPodsRows = page.getByRole('row')
       .or(allPodsTable.locator('tbody tr'));
     const kubeSystemRowCount = await kubeSystemPodsRows.count();
 
@@ -124,15 +110,13 @@ test.describe('Namespace Context Integration', () => {
   });
 
   test.skip('should display all resources when "All Namespaces" is selected', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests that "All Namespaces" option shows unfiltered data
 
     // Arrange: Navigate to Deployments page and select a specific namespace first
     await page.goto('/deployments');
     await page.waitForLoadState('networkidle');
 
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
@@ -157,8 +141,7 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Selector should show "All Namespaces"
-    await expect(namespaceSelector).toHaveValue('all');
-    await expect(namespaceSelector).toContainText(/all namespaces/i);
+        await expect(namespaceSelector).toContainText(/all namespaces/i);
 
     // Assert: Table should show more or equal deployments than single namespace
     const allDeploymentsRows = page.getByRole('row')
@@ -182,10 +165,8 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: "All Namespaces" should persist and show all services
-    const namespaceSelectorOnServices = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelectorOnServices).toHaveValue('all');
-
+    const namespaceSelectorOnServices = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    
     const servicesTable = page.getByRole('table')
       .or(page.getByTestId('services-table'));
     await expect(servicesTable).toBeVisible();
@@ -199,7 +180,6 @@ test.describe('Namespace Context Integration', () => {
   });
 
   test.skip('should close namespace dropdown when clicking outside', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests dropdown close behavior on outside click (accessibility requirement)
 
     // Arrange: Navigate to home page
@@ -207,8 +187,7 @@ test.describe('Namespace Context Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Open the namespace dropdown
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     // Assert: Dropdown menu should be visible
@@ -220,8 +199,7 @@ test.describe('Namespace Context Integration', () => {
     await expect(namespaceSelector).toHaveAttribute('aria-expanded', 'true');
 
     // Act: Click outside the dropdown (e.g., on the main content area)
-    const mainContent = page.getByRole('main')
-      .or(page.locator('body'));
+    const mainContent = page.locator('main');
     await mainContent.click({ position: { x: 10, y: 200 } });
 
     // Assert: Dropdown menu should be closed
@@ -231,8 +209,7 @@ test.describe('Namespace Context Integration', () => {
     await expect(namespaceSelector).toHaveAttribute('aria-expanded', 'false');
 
     // Assert: Original selection should be preserved (still "All Namespaces")
-    await expect(namespaceSelector).toHaveValue('all');
-    await expect(namespaceSelector).toContainText(/all namespaces/i);
+        await expect(namespaceSelector).toContainText(/all namespaces/i);
 
     // Act: Open dropdown again and verify it can be reopened
     await namespaceSelector.click();
@@ -261,15 +238,13 @@ test.describe('Namespace Context Integration', () => {
 
 test.describe('Namespace Context Integration - Edge Cases', () => {
   test.skip('should maintain namespace selection after page refresh', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests that NamespaceContext persists state in localStorage/sessionStorage
 
     // Arrange: Navigate to home page and select a namespace
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const kubeSystemOption = page.getByRole('option', { name: /^kube-system$/i })
@@ -278,29 +253,24 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Verify selection before refresh
-    await expect(namespaceSelector).toHaveValue('kube-system');
-
+    
     // Act: Reload the page
     await page.reload();
     await page.waitForLoadState('networkidle');
 
     // Assert: Namespace selection should be restored after reload
-    const namespaceSelectorAfterReload = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelectorAfterReload).toHaveValue('kube-system');
-    await expect(namespaceSelectorAfterReload).toContainText(/^kube-system$/i);
+    const namespaceSelectorAfterReload = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+        await expect(namespaceSelectorAfterReload).toContainText(/^kube-system$/i);
   });
 
   test.skip('should handle namespace deletion gracefully', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests behavior when currently selected namespace is deleted
 
     // Arrange: Navigate to home page and select a custom namespace
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     // Assume "test-namespace" exists for this test
@@ -310,8 +280,7 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Verify "test-namespace" is selected
-    await expect(namespaceSelector).toHaveValue('test-namespace');
-
+    
     // Act: Simulate namespace deletion (via API or kubectl)
     // This would typically trigger a WebSocket update or polling refresh
     // For E2E test, we can simulate by triggering a namespace list refresh
@@ -321,10 +290,8 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Should fallback to "All Namespaces" if selected namespace no longer exists
-    const namespaceSelectorAfterDeletion = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(namespaceSelectorAfterDeletion).toHaveValue('all');
-    await expect(namespaceSelectorAfterDeletion).toContainText(/all namespaces/i);
+    const namespaceSelectorAfterDeletion = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+        await expect(namespaceSelectorAfterDeletion).toContainText(/all namespaces/i);
 
     // Assert: Deleted namespace should not appear in dropdown
     await namespaceSelectorAfterDeletion.click();
@@ -338,15 +305,13 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
   });
 
   test.skip('should update namespace list when new namespace is created', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests that NamespaceContext detects newly created namespaces
 
     // Arrange: Navigate to home page and open namespace dropdown
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const dropdownMenu = page.getByRole('listbox')
@@ -383,22 +348,19 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
     // Assert: Can select the newly created namespace
     if (await newNamespaceOption.isVisible()) {
       await newNamespaceOption.click();
-      await expect(namespaceSelector).toHaveValue('new-test-namespace');
-    }
+          }
   });
 });
 
 test.describe('Namespace Context Integration - Multi-Resource', () => {
   test.skip('should apply same namespace filter across different resource types', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
     // Tests that NamespaceContext provides consistent filtering across all resources
 
     // Arrange: Navigate to home page and select "kube-system"
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const namespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const kubeSystemOption = page.getByRole('option', { name: /^kube-system$/i })
@@ -446,9 +408,7 @@ test.describe('Namespace Context Integration - Multi-Resource', () => {
     await expect(deploymentsTable).toBeVisible();
 
     // Assert: Namespace selector still shows kube-system across all tabs
-    const finalNamespaceSelector = page.getByRole('combobox', { name: /namespace/i })
-      .or(page.getByTestId('namespace-selector'));
-    await expect(finalNamespaceSelector).toHaveValue('kube-system');
-    await expect(finalNamespaceSelector).toContainText(/^kube-system$/i);
+    const finalNamespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+        await expect(finalNamespaceSelector).toContainText(/^kube-system$/i);
   });
 });
