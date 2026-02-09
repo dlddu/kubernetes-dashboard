@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 // NamespacesHandler handles the /api/namespaces endpoint
@@ -56,15 +60,23 @@ func NamespacesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(namespaces)
 }
 
-// getKubernetesClient creates and returns a Kubernetes client
+// getKubernetesClient creates and returns a Kubernetes client.
+// It tries KUBECONFIG env var, then ~/.kube/config, then in-cluster config.
 func getKubernetesClient() (*kubernetes.Clientset, error) {
-	// Create in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		kubeconfig := os.Getenv("KUBECONFIG")
+		if kubeconfig == "" {
+			if home := homedir.HomeDir(); home != "" {
+				kubeconfig = filepath.Join(home, ".kube", "config")
+			}
+		}
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// Create clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
