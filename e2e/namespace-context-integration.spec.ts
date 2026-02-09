@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Namespace Context Integration', () => {
-  test.skip('should persist selected namespace when navigating between different tabs', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should persist selected namespace when navigating between different tabs', async ({ page }) => {
     // Tests NamespaceContext global state management across navigation
 
     // Arrange: Navigate to home page and select a specific namespace
@@ -58,8 +57,7 @@ test.describe('Namespace Context Integration', () => {
     await expect(namespaceSelectorOnDeploymentsTab).toContainText(/^default$/i);
   });
 
-  test.skip('should filter displayed data when specific namespace is selected', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should filter displayed data when specific namespace is selected', async ({ page }) => {
     // Tests that data table respects NamespaceContext filtering
 
     // Arrange: Navigate to Pods page with "All Namespaces" selected
@@ -123,8 +121,7 @@ test.describe('Namespace Context Integration', () => {
     expect(kubeSystemColumnCount).toBeGreaterThan(0);
   });
 
-  test.skip('should display all resources when "All Namespaces" is selected', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should display all resources when "All Namespaces" is selected', async ({ page }) => {
     // Tests that "All Namespaces" option shows unfiltered data
 
     // Arrange: Navigate to Deployments page and select a specific namespace first
@@ -198,8 +195,7 @@ test.describe('Namespace Context Integration', () => {
     expect(servicesRowCount).toBeGreaterThan(0);
   });
 
-  test.skip('should close namespace dropdown when clicking outside', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should close namespace dropdown when clicking outside', async ({ page }) => {
     // Tests dropdown close behavior on outside click (accessibility requirement)
 
     // Arrange: Navigate to home page
@@ -260,8 +256,7 @@ test.describe('Namespace Context Integration', () => {
 });
 
 test.describe('Namespace Context Integration - Edge Cases', () => {
-  test.skip('should maintain namespace selection after page refresh', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should maintain namespace selection after page refresh', async ({ page }) => {
     // Tests that NamespaceContext persists state in localStorage/sessionStorage
 
     // Arrange: Navigate to home page and select a namespace
@@ -291,8 +286,7 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
     await expect(namespaceSelectorAfterReload).toContainText(/^kube-system$/i);
   });
 
-  test.skip('should handle namespace deletion gracefully', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should handle namespace deletion gracefully', async ({ page }) => {
     // Tests behavior when currently selected namespace is deleted
 
     // Arrange: Navigate to home page and select a custom namespace
@@ -337,8 +331,7 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
     await expect(deletedNamespaceOption).not.toBeVisible();
   });
 
-  test.skip('should update namespace list when new namespace is created', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should update namespace list when new namespace is created', async ({ page }) => {
     // Tests that NamespaceContext detects newly created namespaces
 
     // Arrange: Navigate to home page and open namespace dropdown
@@ -389,8 +382,7 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
 });
 
 test.describe('Namespace Context Integration - Multi-Resource', () => {
-  test.skip('should apply same namespace filter across different resource types', async ({ page }) => {
-    // TODO: NamespaceContext와 NamespaceSelector 통합 구현 후 활성화
+  test('should apply same namespace filter across different resource types', async ({ page }) => {
     // Tests that NamespaceContext provides consistent filtering across all resources
 
     // Arrange: Navigate to home page and select "kube-system"
