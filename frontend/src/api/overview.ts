@@ -1,9 +1,16 @@
+export interface UnhealthyPodInfo {
+  name: string;
+  namespace: string;
+  status: string;
+}
+
 export interface OverviewData {
   nodes: {
     ready: number;
     total: number;
   };
   unhealthyPods: number;
+  unhealthyPodsList?: UnhealthyPodInfo[];
   avgCpuPercent: number;
   avgMemoryPercent: number;
 }
