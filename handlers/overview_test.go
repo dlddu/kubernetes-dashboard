@@ -7,6 +7,14 @@ import (
 	"testing"
 )
 
+// skipIfNoCluster skips the test if no Kubernetes cluster is available.
+func skipIfNoCluster(t *testing.T) {
+	t.Helper()
+	if _, err := getKubernetesClient(); err != nil {
+		t.Skipf("skipping: no k8s cluster available (%v)", err)
+	}
+}
+
 // TestOverviewHandler tests the /api/overview endpoint
 func TestOverviewHandler(t *testing.T) {
 	t.Run("should return 200 OK with overview data", func(t *testing.T) {
@@ -78,6 +86,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return valid overview response structure", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -104,6 +114,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return nodes with ready and total counts", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -136,6 +148,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return non-negative unhealthyPods count", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -163,6 +177,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return avgCpuPercent between 0 and 100", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -190,6 +206,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return avgMemoryPercent between 0 and 100", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -257,6 +275,8 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 	})
 
 	t.Run("should filter pods by namespace when specified", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview?namespace=kube-system", nil)
 		w := httptest.NewRecorder()
@@ -280,6 +300,8 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 	})
 
 	t.Run("should return all namespaces data when namespace not specified", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -321,6 +343,8 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 	})
 
 	t.Run("should handle non-existent namespace gracefully", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview?namespace=non-existent-namespace", nil)
 		w := httptest.NewRecorder()
