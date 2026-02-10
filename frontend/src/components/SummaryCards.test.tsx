@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SummaryCards } from './SummaryCards';
 import { NamespaceProvider } from '../contexts/NamespaceContext';
@@ -15,7 +15,7 @@ const renderWithProvider = (ui: React.ReactElement) => {
 describe('SummaryCards', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
   afterEach(() => {
@@ -54,7 +54,7 @@ describe('SummaryCards', () => {
 
       // Assert
       await waitFor(() => {
-        const cards = screen.getAllByTestId('summary-card');
+        const cards = screen.getAllByRole('article');
         expect(cards).toHaveLength(4);
       });
     });
@@ -76,7 +76,7 @@ describe('SummaryCards', () => {
         const nodesCard = screen.getByTestId('summary-card-nodes');
         expect(nodesCard).toBeInTheDocument();
         expect(screen.getByText('Nodes')).toBeInTheDocument();
-        expect(screen.getByText(/2.*3/)).toBeInTheDocument(); // "2 / 3" or similar
+        expect(within(nodesCard).getByTestId('summary-card-value')).toHaveTextContent('2 / 3');
       });
     });
 
@@ -118,7 +118,7 @@ describe('SummaryCards', () => {
         const cpuCard = screen.getByTestId('summary-card-avg-cpu');
         expect(cpuCard).toBeInTheDocument();
         expect(screen.getByText('Avg CPU')).toBeInTheDocument();
-        expect(screen.getByText(/45\.5%/)).toBeInTheDocument();
+        expect(within(cpuCard).getByTestId('summary-card-value')).toHaveTextContent('45.5%');
 
         const usageBar = cpuCard.querySelector('[data-testid="usage-bar"]');
         expect(usageBar).toBeInTheDocument();
@@ -142,7 +142,7 @@ describe('SummaryCards', () => {
         const memoryCard = screen.getByTestId('summary-card-avg-memory');
         expect(memoryCard).toBeInTheDocument();
         expect(screen.getByText('Avg Memory')).toBeInTheDocument();
-        expect(screen.getByText(/62\.3%/)).toBeInTheDocument();
+        expect(within(memoryCard).getByTestId('summary-card-value')).toHaveTextContent('62.3%');
 
         const usageBar = memoryCard.querySelector('[data-testid="usage-bar"]');
         expect(usageBar).toBeInTheDocument();
@@ -257,7 +257,7 @@ describe('SummaryCards', () => {
       // Assert
       await waitFor(() => {
         expect(overviewApi.fetchOverview).toHaveBeenCalledTimes(2);
-        const cards = screen.getAllByTestId('summary-card');
+        const cards = screen.getAllByRole('article');
         expect(cards).toHaveLength(4);
       });
     });
@@ -436,7 +436,8 @@ describe('SummaryCards', () => {
       // Assert
       await waitFor(() => {
         expect(screen.getByText('0')).toBeInTheDocument();
-        expect(screen.getByText(/0%/)).toBeInTheDocument();
+        const cpuCard = screen.getByTestId('summary-card-avg-cpu');
+        expect(within(cpuCard).getByTestId('summary-card-value')).toHaveTextContent('0.0%');
       });
     });
 
@@ -455,7 +456,8 @@ describe('SummaryCards', () => {
       // Assert
       await waitFor(() => {
         expect(screen.getByText('999')).toBeInTheDocument();
-        expect(screen.getByText(/99\.9%/)).toBeInTheDocument();
+        const cpuCard = screen.getByTestId('summary-card-avg-cpu');
+        expect(within(cpuCard).getByTestId('summary-card-value')).toHaveTextContent('99.9%');
       });
     });
 
