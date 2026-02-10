@@ -143,7 +143,7 @@ describe('UsageBar', () => {
       // Assert
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute('aria-valuenow', '100');
-      expect(progressBar).toHaveTextContent(/100(\\.0)?%/);
+      expect(progressBar).toHaveTextContent(/100(\.0)?%/);
     });
 
     it('should handle very small percentages', () => {
