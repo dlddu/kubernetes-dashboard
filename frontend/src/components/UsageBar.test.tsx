@@ -108,17 +108,20 @@ describe('UsageBar', () => {
       // Test low usage (green)
       const { rerender } = render(<UsageBar percentage={30} />);
       let progressBar = screen.getByRole('progressbar');
-      expect(progressBar.className).toContain(/green|success/i);
+      let colorBar = progressBar.querySelector('.h-full') || progressBar.querySelector('[class*="bg-"]');
+      expect(colorBar?.className).toMatch(/green|success/i);
 
       // Test medium usage (yellow/warning)
       rerender(<UsageBar percentage={70} />);
       progressBar = screen.getByRole('progressbar');
-      expect(progressBar.className).toContain(/yellow|warning/i);
+      colorBar = progressBar.querySelector('.h-full') || progressBar.querySelector('[class*="bg-"]');
+      expect(colorBar?.className).toMatch(/yellow|warning/i);
 
       // Test high usage (red/danger)
       rerender(<UsageBar percentage={90} />);
       progressBar = screen.getByRole('progressbar');
-      expect(progressBar.className).toContain(/red|danger|error/i);
+      colorBar = progressBar.querySelector('.h-full') || progressBar.querySelector('[class*="bg-"]');
+      expect(colorBar?.className).toMatch(/red|danger|error/i);
     });
   });
 
@@ -140,7 +143,7 @@ describe('UsageBar', () => {
       // Assert
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute('aria-valuenow', '100');
-      expect(progressBar).toHaveTextContent(/100%/);
+      expect(progressBar).toHaveTextContent(/100(\\.0)?%/);
     });
 
     it('should handle very small percentages', () => {

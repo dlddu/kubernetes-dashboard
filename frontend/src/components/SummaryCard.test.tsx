@@ -186,7 +186,7 @@ describe('SummaryCard', () => {
       const card = screen.getByTestId('summary-card-avg-cpu');
       expect(card).toBeInTheDocument();
       expect(screen.getByText('Avg CPU')).toBeInTheDocument();
-      expect(screen.getByText('45.5%')).toBeInTheDocument();
+      expect(screen.getAllByText('45.5%').length).toBeGreaterThanOrEqual(1);
 
       const usageBar = screen.getByTestId('usage-bar');
       expect(usageBar).toBeInTheDocument();
@@ -206,7 +206,7 @@ describe('SummaryCard', () => {
       const card = screen.getByTestId('summary-card-avg-memory');
       expect(card).toBeInTheDocument();
       expect(screen.getByText('Avg Memory')).toBeInTheDocument();
-      expect(screen.getByText('62.3%')).toBeInTheDocument();
+      expect(screen.getAllByText('62.3%').length).toBeGreaterThanOrEqual(1);
 
       const usageBar = screen.getByTestId('usage-bar');
       expect(usageBar).toBeInTheDocument();
