@@ -28,6 +28,7 @@ func setupRouter() http.Handler {
 	// API routes
 	mux.HandleFunc("/api/health", handlers.HealthHandler)
 	mux.HandleFunc("/api/namespaces", handlers.NamespacesHandler)
+	mux.HandleFunc("/api/overview", handlers.OverviewHandler)
 
 	// Serve frontend static files
 	frontendHandler := createFrontendHandler()

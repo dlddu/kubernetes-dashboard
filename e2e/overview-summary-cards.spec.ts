@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Overview Tab - Summary Cards', () => {
-  test.skip('should display four summary cards on Overview tab', async ({ page }) => {
+  test('should display four summary cards on Overview tab', async ({ page }) => {
     // Tests OverviewTab and SummaryCards component rendering
 
     // Arrange: Navigate to the Overview page
@@ -14,7 +14,7 @@ test.describe('Overview Tab - Summary Cards', () => {
     await expect(overviewSection).toBeVisible();
 
     // Assert: Should display exactly 4 summary cards
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: Each card should be visible
@@ -24,7 +24,7 @@ test.describe('Overview Tab - Summary Cards', () => {
     }
   });
 
-  test.skip('should display Nodes summary card with correct label and value', async ({ page }) => {
+  test('should display Nodes summary card with correct label and value', async ({ page }) => {
     // Tests Nodes SummaryCard content
 
     // Arrange: Navigate to the Overview page
@@ -45,10 +45,10 @@ test.describe('Overview Tab - Summary Cards', () => {
     const nodesValue = nodesCard.getByTestId('summary-card-value')
       .or(nodesCard.locator('[data-value]'));
     await expect(nodesValue).toBeVisible();
-    await expect(nodesValue).toContainText(/^\d+$/);
+    await expect(nodesValue).toContainText(/\d+\s*\/\s*\d+/);
   });
 
-  test.skip('should display Unhealthy Pods summary card with correct label and value', async ({ page }) => {
+  test('should display Unhealthy Pods summary card with correct label and value', async ({ page }) => {
     // Tests Unhealthy Pods SummaryCard content
 
     // Arrange: Navigate to the Overview page
@@ -72,7 +72,7 @@ test.describe('Overview Tab - Summary Cards', () => {
     await expect(unhealthyPodsValue).toContainText(/^\d+$/);
   });
 
-  test.skip('should display Avg CPU summary card with correct label and percentage', async ({ page }) => {
+  test('should display Avg CPU summary card with correct label and percentage', async ({ page }) => {
     // Tests Avg CPU SummaryCard with UsageBar component
 
     // Arrange: Navigate to the Overview page
@@ -104,7 +104,7 @@ test.describe('Overview Tab - Summary Cards', () => {
     await expect(usageBar).toHaveAttribute('aria-valuenow');
   });
 
-  test.skip('should display Avg Memory summary card with correct label and percentage', async ({ page }) => {
+  test('should display Avg Memory summary card with correct label and percentage', async ({ page }) => {
     // Tests Avg Memory SummaryCard with UsageBar component
 
     // Arrange: Navigate to the Overview page
@@ -138,7 +138,7 @@ test.describe('Overview Tab - Summary Cards', () => {
 });
 
 test.describe('Overview Tab - Summary Cards Layout', () => {
-  test.skip('should display cards in 2-column grid on mobile viewport', async ({ page }) => {
+  test('should display cards in 2-column grid on mobile viewport', async ({ page }) => {
     // Tests responsive grid layout on mobile devices
 
     // Arrange: Set mobile viewport (iPhone SE dimensions)
@@ -166,7 +166,7 @@ test.describe('Overview Tab - Summary Cards Layout', () => {
     // This might be "repeat(2, 1fr)" or similar
 
     // Assert: All 4 cards should still be visible
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: Cards should be arranged in 2 rows of 2 cards each
@@ -185,7 +185,7 @@ test.describe('Overview Tab - Summary Cards Layout', () => {
     expect(thirdCardBox!.y).toBeGreaterThan(firstCardBox!.y + 50);
   });
 
-  test.skip('should display cards in 4-column grid on desktop viewport', async ({ page }) => {
+  test('should display cards in 4-column grid on desktop viewport', async ({ page }) => {
     // Tests responsive grid layout on desktop
 
     // Arrange: Set desktop viewport
@@ -199,7 +199,7 @@ test.describe('Overview Tab - Summary Cards Layout', () => {
     await expect(cardsContainer).toBeVisible();
 
     // Assert: All 4 cards should be visible
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: All cards should be on the same row on desktop (similar Y position)
@@ -226,7 +226,7 @@ test.describe('Overview Tab - Summary Cards Layout', () => {
 });
 
 test.describe('Overview Tab - Loading State', () => {
-  test.skip('should display skeleton cards while loading data', async ({ page }) => {
+  test('should display skeleton cards while loading data', async ({ page }) => {
     // Tests loading state with skeleton placeholders
 
     // Arrange: Navigate to the page and intercept API to delay response
@@ -245,14 +245,14 @@ test.describe('Overview Tab - Loading State', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: After loading, skeleton cards should be replaced with real cards
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: Skeleton cards should no longer be visible
     await expect(skeletonCards.first()).not.toBeVisible();
   });
 
-  test.skip('should show loading state with proper accessibility attributes', async ({ page }) => {
+  test('should show loading state with proper accessibility attributes', async ({ page }) => {
     // Tests loading state accessibility (aria-busy, aria-live)
 
     // Arrange: Navigate to the page
@@ -269,7 +269,7 @@ test.describe('Overview Tab - Loading State', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: All cards should be loaded and visible
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
     await expect(summaryCards).toHaveCount(4);
 
     // Assert: No elements should have aria-busy="true" after loading
@@ -279,7 +279,7 @@ test.describe('Overview Tab - Loading State', () => {
 });
 
 test.describe('Overview Tab - Error State', () => {
-  test.skip('should display error message when data fetch fails', async ({ page }) => {
+  test('should display error message when data fetch fails', async ({ page }) => {
     // Tests error state when API request fails
 
     // Arrange: Navigate to the page (assume API will fail in test environment)
@@ -293,7 +293,7 @@ test.describe('Overview Tab - Error State', () => {
 
     // Assert: If error occurs, error message should be visible
     // OR cards should be visible (depending on API state)
-    const summaryCards = page.getByTestId('summary-card');
+    const summaryCards = page.getByRole('article');
 
     // Either error is shown or cards are loaded successfully
     const errorVisible = await errorMessage.isVisible().catch(() => false);
@@ -302,7 +302,7 @@ test.describe('Overview Tab - Error State', () => {
     expect(errorVisible || cardsVisible).toBeTruthy();
   });
 
-  test.skip('should display retry button on error state', async ({ page }) => {
+  test('should display retry button on error state', async ({ page }) => {
     // Tests retry functionality in error state
 
     // Arrange: Navigate to the page and wait for potential error
@@ -332,7 +332,7 @@ test.describe('Overview Tab - Error State', () => {
       await page.waitForLoadState('networkidle');
 
       // Assert: Should either show cards or error message again
-      const summaryCards = page.getByTestId('summary-card');
+      const summaryCards = page.getByRole('article');
       const errorMessage = page.getByTestId('summary-cards-error');
 
       const cardsVisible = (await summaryCards.count()) > 0;
@@ -342,7 +342,7 @@ test.describe('Overview Tab - Error State', () => {
     }
   });
 
-  test.skip('should display user-friendly error message with details', async ({ page }) => {
+  test('should display user-friendly error message with details', async ({ page }) => {
     // Tests error message clarity and helpfulness
 
     // Arrange: Navigate to the page
@@ -375,7 +375,7 @@ test.describe('Overview Tab - Error State', () => {
 });
 
 test.describe('Overview Tab - Data Accuracy', () => {
-  test.skip('should display correct node count from cluster', async ({ page }) => {
+  test('should display correct node count from cluster', async ({ page }) => {
     // Tests that Nodes card shows accurate data from Kubernetes API
 
     // Arrange: Navigate to the Overview page
@@ -387,16 +387,18 @@ test.describe('Overview Tab - Data Accuracy', () => {
     const nodesValue = nodesCard.getByTestId('summary-card-value');
     const displayedNodeCount = await nodesValue.innerText();
 
-    // Assert: Value should be a valid number
-    expect(displayedNodeCount).toMatch(/^\d+$/);
-    const nodeCount = parseInt(displayedNodeCount, 10);
-    expect(nodeCount).toBeGreaterThanOrEqual(0);
+    // Assert: Value should be in "ready / total" format
+    expect(displayedNodeCount).toMatch(/^\d+\s*\/\s*\d+$/);
+    const parts = displayedNodeCount.split('/').map((s: string) => parseInt(s.trim(), 10));
+    expect(parts[0]).toBeGreaterThanOrEqual(0);
+    expect(parts[1]).toBeGreaterThanOrEqual(0);
+    expect(parts[0]).toBeLessThanOrEqual(parts[1]);
 
     // Note: In a real E2E test environment, you would verify this against
     // the actual cluster state using kubectl or K8s API
   });
 
-  test.skip('should update unhealthy pods count when pod status changes', async ({ page }) => {
+  test('should update unhealthy pods count when pod status changes', async ({ page }) => {
     // Tests real-time updates to Unhealthy Pods card
 
     // Arrange: Navigate to the Overview page
@@ -425,7 +427,7 @@ test.describe('Overview Tab - Data Accuracy', () => {
     expect(updatedCount).toMatch(/^\d+$/);
   });
 
-  test.skip('should display CPU usage as percentage between 0-100', async ({ page }) => {
+  test('should display CPU usage as percentage between 0-100', async ({ page }) => {
     // Tests that Avg CPU displays valid percentage values
 
     // Arrange: Navigate to the Overview page
@@ -451,7 +453,7 @@ test.describe('Overview Tab - Data Accuracy', () => {
     expect(parseFloat(ariaValue!)).toBeCloseTo(cpuPercentage, 1);
   });
 
-  test.skip('should display Memory usage as percentage between 0-100', async ({ page }) => {
+  test('should display Memory usage as percentage between 0-100', async ({ page }) => {
     // Tests that Avg Memory displays valid percentage values
 
     // Arrange: Navigate to the Overview page
