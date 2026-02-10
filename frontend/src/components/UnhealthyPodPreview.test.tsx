@@ -2,6 +2,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnhealthyPodPreview } from './UnhealthyPodPreview';
 
+interface ErrorWithStatus extends Error {
+  status?: number;
+}
+
 // Mock the overview API
 vi.mock('@/api/overview', () => ({
   fetchOverview: vi.fn(),
@@ -580,8 +584,8 @@ describe('UnhealthyPodPreview', () => {
 
     it('should handle 404 errors', async () => {
       // Arrange
-      const error = new Error('Not found');
-      (error as any).status = 404;
+      const error = new Error('Not found') as ErrorWithStatus;
+      error.status = 404;
       vi.mocked(fetchOverview).mockRejectedValueOnce(error);
 
       // Act
@@ -596,8 +600,8 @@ describe('UnhealthyPodPreview', () => {
 
     it('should handle 500 errors', async () => {
       // Arrange
-      const error = new Error('Internal server error');
-      (error as any).status = 500;
+      const error = new Error('Internal server error') as ErrorWithStatus;
+      error.status = 500;
       vi.mocked(fetchOverview).mockRejectedValueOnce(error);
 
       // Act
