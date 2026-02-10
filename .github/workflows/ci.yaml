@@ -4,7 +4,6 @@ on:
   push:
     branches: [main, dld-280-project-scaffolding]
   pull_request:
-    branches: [main]
 
 jobs:
   frontend-test:
