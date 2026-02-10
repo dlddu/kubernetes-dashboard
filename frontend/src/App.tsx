@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { NamespaceProvider } from './contexts/NamespaceContext';
 import { TopBar } from './components/TopBar';
 import { SummaryCards } from './components/SummaryCards';
@@ -5,7 +6,13 @@ import { UnhealthyPodPreview } from './components/UnhealthyPodPreview';
 
 function App() {
   // TODO: Replace with React Router when implementing full Pods page
-  const currentPath = window.location.pathname;
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPath(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   return (
     <NamespaceProvider>
@@ -14,8 +21,8 @@ function App() {
         <main className="container mx-auto px-4 py-8">
           {currentPath === '/pods' ? (
             // TODO: Implement full Pods page (separate task)
-            <div data-testid="pods-tab" className="space-y-6">
-              <h1 className="text-2xl font-bold text-gray-900">Pods</h1>
+            <div className="space-y-6">
+              <h1 data-testid="pods-tab" className="text-2xl font-bold text-gray-900">Pods</h1>
             </div>
           ) : (
             <div data-testid="overview-tab" className="space-y-6">

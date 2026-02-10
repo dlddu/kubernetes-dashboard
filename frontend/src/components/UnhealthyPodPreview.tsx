@@ -140,6 +140,11 @@ export function UnhealthyPodPreview({ namespace }: UnhealthyPodPreviewProps) {
           <a
             data-testid="view-more-link"
             href="/pods"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState({}, '', '/pods');
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
           >
             View all pods ({unhealthyPods.length} total)
