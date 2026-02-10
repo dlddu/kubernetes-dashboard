@@ -48,7 +48,11 @@ kubectl apply -f "$SCRIPT_DIR/secret.yaml"
 log_info "Creating standalone pod..."
 kubectl apply -f "$SCRIPT_DIR/pod.yaml"
 
-# 4. Apply deployment
+# 4. Apply unhealthy pod (intentionally fails for testing)
+log_info "Creating unhealthy pod (will remain in ImagePullBackOff state)..."
+kubectl apply -f "$SCRIPT_DIR/unhealthy-pod.yaml"
+
+# 5. Apply deployment
 log_info "Creating deployment..."
 kubectl apply -f "$SCRIPT_DIR/deployment.yaml"
 
@@ -56,15 +60,21 @@ kubectl apply -f "$SCRIPT_DIR/deployment.yaml"
 log_info "Waiting for deployments to be ready..."
 kubectl wait --for=condition=Available deployment/nginx-test -n dashboard-test --timeout=120s
 
-# Wait for pods to be ready
-log_info "Waiting for pods to be ready..."
+# Wait for healthy pods to be ready (skip unhealthy-test-pod)
+log_info "Waiting for healthy pods to be ready..."
 kubectl wait --for=condition=Ready pod/busybox-test -n dashboard-test --timeout=60s
 
 # Display status
 log_info "Test fixtures applied successfully!"
 echo ""
+log_warn "Note: unhealthy-test-pod is intentionally configured to fail (ImagePullBackOff)"
+echo ""
 log_info "Resources in dashboard-test namespace:"
 kubectl get all,secrets,configmaps -n dashboard-test
+
+echo ""
+log_info "Pod status details:"
+kubectl get pods -n dashboard-test -o wide
 
 echo ""
 log_info "To clean up, run: kubectl delete namespace dashboard-test"
