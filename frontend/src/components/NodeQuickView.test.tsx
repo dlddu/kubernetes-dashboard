@@ -173,7 +173,8 @@ describe('NodeQuickView', () => {
       // Assert
       const loadingIndicator = screen.getByTestId('loading-indicator');
       expect(loadingIndicator).toBeInTheDocument();
-      expect(loadingIndicator.className).toMatch(/animate/);
+      const spinner = loadingIndicator.querySelector('.animate-spin');
+      expect(spinner).toBeInTheDocument();
     });
   });
 
