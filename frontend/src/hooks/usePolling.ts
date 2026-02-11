@@ -11,7 +11,7 @@ export function usePolling(
   interval: number = 10000
 ): UsePollingReturn {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const callbackRef = useRef(callback);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isVisibleRef = useRef<boolean>(true);

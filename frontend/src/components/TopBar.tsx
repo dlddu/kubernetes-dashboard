@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { NamespaceSelector } from './NamespaceSelector';
 import { ClusterStatus } from './ClusterStatus';
 import { PollingIndicator } from './PollingIndicator';
