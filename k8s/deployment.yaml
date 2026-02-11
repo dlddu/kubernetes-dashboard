@@ -17,7 +17,7 @@ spec:
       serviceAccountName: kubernetes-dashboard
       containers:
       - name: kubernetes-dashboard
-        image: kubernetes-dashboard:latest
+        image: ghcr.io/dlddu/kubernetes-dashboard:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
