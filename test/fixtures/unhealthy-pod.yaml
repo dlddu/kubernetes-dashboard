@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unhealthy-test-pod-1
+  namespace: dashboard-test
+  labels:
+    app: unhealthy-test
+    env: test
+    type: unhealthy
+    status: failing
+spec:
+  containers:
+  - name: nonexistent-container
+    image: nonexistent-image:latest
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+    env:
+    - name: TEST_ENV
+      value: "e2e-testing-unhealthy"
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unhealthy-test-pod-2
+  namespace: dashboard-test
+  labels:
+    app: unhealthy-test
+    env: test
+    type: unhealthy
+    status: failing
+spec:
+  containers:
+  - name: invalid-container
+    image: invalid-registry.example.com/no-such-image:v1
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unhealthy-test-pod-3
+  namespace: dashboard-test
+  labels:
+    app: unhealthy-test
+    env: test
+    type: unhealthy
+    status: failing
+spec:
+  containers:
+  - name: bad-image-container
+    image: this-image-does-not-exist:never
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unhealthy-test-pod-4
+  namespace: dashboard-test
+  labels:
+    app: unhealthy-test
+    env: test
+    type: unhealthy
+    status: failing
+spec:
+  containers:
+  - name: missing-image-container
+    image: fake-repo/missing-image:latest
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+  restartPolicy: Always

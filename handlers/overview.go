@@ -17,12 +17,20 @@ type NodesResponse struct {
 	Total int `json:"total"`
 }
 
+// UnhealthyPodInfo represents detailed information about an unhealthy pod
+type UnhealthyPodInfo struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Status    string `json:"status"`
+}
+
 // OverviewResponse represents the overview data
 type OverviewResponse struct {
-	Nodes            NodesResponse `json:"nodes"`
-	UnhealthyPods    int           `json:"unhealthyPods"`
-	AvgCpuPercent    float64       `json:"avgCpuPercent"`
-	AvgMemoryPercent float64       `json:"avgMemoryPercent"`
+	Nodes             NodesResponse       `json:"nodes"`
+	UnhealthyPods     int                 `json:"unhealthyPods"`
+	UnhealthyPodsList []UnhealthyPodInfo  `json:"unhealthyPodsList,omitempty"`
+	AvgCpuPercent     float64             `json:"avgCpuPercent"`
+	AvgMemoryPercent  float64             `json:"avgMemoryPercent"`
 }
 
 // OverviewHandler handles the /api/overview endpoint
@@ -90,11 +98,19 @@ func getOverviewData(clientset *kubernetes.Clientset, namespace string) (*Overvi
 		return nil, err
 	}
 
-	// Calculate unhealthy pods
+	// Calculate unhealthy pods and collect their details
 	unhealthyPods := 0
+	var unhealthyPodsList []UnhealthyPodInfo
 	for _, pod := range podList.Items {
 		if !isPodHealthy(pod) {
 			unhealthyPods++
+			// Get pod status
+			status := getPodStatus(pod)
+			unhealthyPodsList = append(unhealthyPodsList, UnhealthyPodInfo{
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+				Status:    status,
+			})
 		}
 	}
 
@@ -106,9 +122,10 @@ func getOverviewData(clientset *kubernetes.Clientset, namespace string) (*Overvi
 			Ready: readyNodes,
 			Total: totalNodes,
 		},
-		UnhealthyPods:    unhealthyPods,
-		AvgCpuPercent:    avgCpu,
-		AvgMemoryPercent: avgMemory,
+		UnhealthyPods:     unhealthyPods,
+		UnhealthyPodsList: unhealthyPodsList,
+		AvgCpuPercent:     avgCpu,
+		AvgMemoryPercent:  avgMemory,
 	}
 
 	return overview, nil
@@ -128,6 +145,42 @@ func isNodeReady(node corev1.Node) bool {
 func isPodHealthy(pod corev1.Pod) bool {
 	// A pod is healthy if it's in Running phase
 	return pod.Status.Phase == corev1.PodRunning
+}
+
+// getPodStatus returns the status string for a pod
+func getPodStatus(pod corev1.Pod) string {
+	// Check if pod is in a terminal state
+	if pod.Status.Phase == corev1.PodSucceeded {
+		return "Succeeded"
+	}
+	if pod.Status.Phase == corev1.PodFailed {
+		return "Failed"
+	}
+	if pod.Status.Phase == corev1.PodUnknown {
+		return "Unknown"
+	}
+	if pod.Status.Phase == corev1.PodPending {
+		return "Pending"
+	}
+
+	// Check container statuses for more detailed information
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.State.Waiting != nil {
+			reason := containerStatus.State.Waiting.Reason
+			if reason != "" {
+				return reason
+			}
+		}
+		if containerStatus.State.Terminated != nil {
+			reason := containerStatus.State.Terminated.Reason
+			if reason != "" {
+				return reason
+			}
+		}
+	}
+
+	// Return phase as default
+	return string(pod.Status.Phase)
 }
 
 // calculateResourceUsage calculates average CPU and memory usage

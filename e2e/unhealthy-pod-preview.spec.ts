@@ -3,10 +3,10 @@ import { test, expect } from '@playwright/test';
 /**
  * E2E Tests for UnhealthyPodPreview Component (DLD-325)
  *
- * TDD Red Phase: All tests are skipped until component is implemented.
+ * TDD Red Phase: Tests activated - components ready for implementation.
  * These tests define the expected behavior of the UnhealthyPodPreview component.
  */
-test.describe.skip('UnhealthyPodPreview Component', () => {
+test.describe('UnhealthyPodPreview Component', () => {
   test('should display up to 3 unhealthy pods in preview', async ({ page }) => {
     // Tests that UnhealthyPodPreview component limits display to maximum 3 pods
 
