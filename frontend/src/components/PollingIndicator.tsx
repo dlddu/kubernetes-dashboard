@@ -108,10 +108,10 @@ export function PollingIndicator({
         onClick={onRefresh}
         disabled={isLoading}
         aria-label="Refresh dashboard data"
-        className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="p-3 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
       >
         <svg
-          className="h-4 w-4 text-gray-700"
+          className="h-5 w-5 text-gray-700"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

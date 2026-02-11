@@ -259,7 +259,7 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     });
 
     // Act: Wait longer than the polling interval
-    await page.waitForTimeout(35000); // Wait 35 seconds
+    await page.waitForTimeout(29000); // Wait 29 seconds (under Playwright 30s timeout)
 
     // Assert: Last update time should NOT have changed (polling paused)
     const timeAfterHidden = await lastUpdateTime.innerText();
