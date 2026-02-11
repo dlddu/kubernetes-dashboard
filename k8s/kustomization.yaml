@@ -8,5 +8,5 @@ resources:
 
 images:
   - name: kubernetes-dashboard
-    newName: ghcr.io/kubernetes-dashboard/kubernetes-dashboard
+    newName: ghcr.io/dlddu/kubernetes-dashboard
     newTag: latest
