@@ -5,7 +5,7 @@ metadata:
   labels:
     app: kubernetes-dashboard
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: kubernetes-dashboard
@@ -17,19 +17,11 @@ spec:
       serviceAccountName: kubernetes-dashboard
       containers:
       - name: kubernetes-dashboard
-        image: kubernetes-dashboard:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/dlddu/kubernetes-dashboard:latest
         ports:
         - containerPort: 8080
           name: http
           protocol: TCP
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
         livenessProbe:
           httpGet:
             path: /api/health
