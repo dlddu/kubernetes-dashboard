@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  * which displays a quick overview of cluster nodes with CPU/Memory usage bars.
  */
 test.describe('NodeQuickView Component', () => {
-  test.skip('should display node items with name, status, and usage bars', async ({ page }) => {
+  test('should display node items with name, status, and usage bars', async ({ page }) => {
     // Tests that NodeQuickView displays all required node information
 
     // Arrange: Navigate to the Overview page
@@ -50,7 +50,7 @@ test.describe('NodeQuickView Component', () => {
     await expect(memoryUsageBar).toBeVisible();
   });
 
-  test.skip('should display CPU and Memory usage bars with correct accessibility attributes', async ({ page }) => {
+  test('should display CPU and Memory usage bars with correct accessibility attributes', async ({ page }) => {
     // Tests UsageBar accessibility for CPU and Memory metrics
 
     // Arrange: Navigate to the Overview page
@@ -100,7 +100,7 @@ test.describe('NodeQuickView Component', () => {
     expect(memoryPercentage).toBeLessThanOrEqual(100);
   });
 
-  test.skip('should display warning indicator for NotReady nodes', async ({ page }) => {
+  test('should display warning indicator for NotReady nodes', async ({ page }) => {
     // Tests that unhealthy nodes show visual warning indicators
 
     // Arrange: Navigate to the Overview page
@@ -132,7 +132,7 @@ test.describe('NodeQuickView Component', () => {
     }
   });
 
-  test.skip('should display "all nodes healthy" message when all nodes are Ready', async ({ page }) => {
+  test('should display "all nodes healthy" message when all nodes are Ready', async ({ page }) => {
     // Tests empty state when all nodes are healthy
 
     // Note: This test requires a test environment with all healthy nodes
@@ -181,7 +181,7 @@ test.describe('NodeQuickView Component', () => {
     }
   });
 
-  test.skip('should navigate to Nodes page when "view more" link is clicked', async ({ page }) => {
+  test('should navigate to Nodes page when "view more" link is clicked', async ({ page }) => {
     // Tests navigation from NodeQuickView to Nodes page
 
     // Arrange: Navigate to the Overview page
@@ -218,7 +218,7 @@ test.describe('NodeQuickView Component', () => {
     await expect(nodesPage).toBeVisible();
   });
 
-  test.skip('should display node items ordered by status (NotReady first)', async ({ page }) => {
+  test('should display node items ordered by status (NotReady first)', async ({ page }) => {
     // Tests that unhealthy nodes are prioritized in the display order
 
     // Arrange: Navigate to the Overview page
@@ -250,7 +250,7 @@ test.describe('NodeQuickView Component', () => {
     }
   });
 
-  test.skip('should limit display to maximum 5 nodes in preview', async ({ page }) => {
+  test('should limit display to maximum 5 nodes in preview', async ({ page }) => {
     // Tests that NodeQuickView limits the number of displayed nodes
 
     // Arrange: Navigate to the Overview page
@@ -277,7 +277,7 @@ test.describe('NodeQuickView Component', () => {
     }
   });
 
-  test.skip('should update node status in real-time when node state changes', async ({ page }) => {
+  test('should update node status in real-time when node state changes', async ({ page }) => {
     // Tests real-time updates to node status display
 
     // Arrange: Navigate to the Overview page
@@ -313,7 +313,7 @@ test.describe('NodeQuickView Component', () => {
 });
 
 test.describe('NodeQuickView Component - Loading and Error States', () => {
-  test.skip('should display loading state while fetching node data', async ({ page }) => {
+  test('should display loading state while fetching node data', async ({ page }) => {
     // Tests loading state with skeleton or spinner
 
     // Arrange: Navigate to the page
@@ -343,7 +343,7 @@ test.describe('NodeQuickView Component - Loading and Error States', () => {
     }
   });
 
-  test.skip('should display error message when node data fetch fails', async ({ page }) => {
+  test('should display error message when node data fetch fails', async ({ page }) => {
     // Tests error state when API request fails
 
     // Arrange: Navigate to the page (assume API will fail in test environment)
@@ -366,7 +366,7 @@ test.describe('NodeQuickView Component - Loading and Error States', () => {
     expect(errorVisible || nodesVisible).toBeTruthy();
   });
 
-  test.skip('should display retry button on error state', async ({ page }) => {
+  test('should display retry button on error state', async ({ page }) => {
     // Tests retry functionality in error state
 
     // Arrange: Navigate to the page and wait for potential error
@@ -407,7 +407,7 @@ test.describe('NodeQuickView Component - Loading and Error States', () => {
 });
 
 test.describe('NodeQuickView Component - Responsive Design', () => {
-  test.skip('should display correctly on mobile viewport', async ({ page }) => {
+  test('should display correctly on mobile viewport', async ({ page }) => {
     // Tests mobile viewport rendering
 
     // Arrange: Set mobile viewport (iPhone SE dimensions)
@@ -444,7 +444,7 @@ test.describe('NodeQuickView Component - Responsive Design', () => {
     await expect(usageBars.first()).toBeVisible();
   });
 
-  test.skip('should display correctly on desktop viewport', async ({ page }) => {
+  test('should display correctly on desktop viewport', async ({ page }) => {
     // Tests desktop viewport rendering
 
     // Arrange: Set desktop viewport

@@ -24,6 +24,14 @@ type UnhealthyPodInfo struct {
 	Status    string `json:"status"`
 }
 
+// NodeInfo represents detailed information about a node
+type NodeInfo struct {
+	Name          string  `json:"name"`
+	Status        string  `json:"status"`
+	CpuPercent    float64 `json:"cpuPercent"`
+	MemoryPercent float64 `json:"memoryPercent"`
+}
+
 // OverviewResponse represents the overview data
 type OverviewResponse struct {
 	Nodes             NodesResponse       `json:"nodes"`
@@ -31,6 +39,7 @@ type OverviewResponse struct {
 	UnhealthyPodsList []UnhealthyPodInfo  `json:"unhealthyPodsList,omitempty"`
 	AvgCpuPercent     float64             `json:"avgCpuPercent"`
 	AvgMemoryPercent  float64             `json:"avgMemoryPercent"`
+	NodesList         []NodeInfo          `json:"nodesList,omitempty"`
 }
 
 // OverviewHandler handles the /api/overview endpoint
@@ -117,6 +126,9 @@ func getOverviewData(clientset *kubernetes.Clientset, namespace string) (*Overvi
 	// Calculate CPU and Memory averages
 	avgCpu, avgMemory := calculateResourceUsage(nodeList.Items)
 
+	// Build nodes list with detailed information
+	nodesList := buildNodesList(nodeList.Items)
+
 	overview := &OverviewResponse{
 		Nodes: NodesResponse{
 			Ready: readyNodes,
@@ -126,6 +138,7 @@ func getOverviewData(clientset *kubernetes.Clientset, namespace string) (*Overvi
 		UnhealthyPodsList: unhealthyPodsList,
 		AvgCpuPercent:     avgCpu,
 		AvgMemoryPercent:  avgMemory,
+		NodesList:         nodesList,
 	}
 
 	return overview, nil
@@ -225,6 +238,76 @@ func calculateResourceUsage(nodes []corev1.Node) (float64, float64) {
 
 	if totalMemoryCapacity.Value() > 0 {
 		memoryPercent = float64(totalMemoryUsed.Value()) / float64(totalMemoryCapacity.Value()) * 100
+	}
+
+	// Ensure values are between 0 and 100
+	if cpuPercent < 0 {
+		cpuPercent = 0
+	}
+	if cpuPercent > 100 {
+		cpuPercent = 100
+	}
+	if memoryPercent < 0 {
+		memoryPercent = 0
+	}
+	if memoryPercent > 100 {
+		memoryPercent = 100
+	}
+
+	return cpuPercent, memoryPercent
+}
+
+// buildNodesList creates a list of NodeInfo from Kubernetes nodes
+func buildNodesList(nodes []corev1.Node) []NodeInfo {
+	nodesList := make([]NodeInfo, 0, len(nodes))
+
+	for _, node := range nodes {
+		// Determine node status
+		status := "NotReady"
+		if isNodeReady(node) {
+			status = "Ready"
+		}
+
+		// Calculate CPU and memory percentages for this node
+		cpuPercent, memoryPercent := calculateNodeResourceUsage(node)
+
+		nodesList = append(nodesList, NodeInfo{
+			Name:          node.Name,
+			Status:        status,
+			CpuPercent:    cpuPercent,
+			MemoryPercent: memoryPercent,
+		})
+	}
+
+	return nodesList
+}
+
+// calculateNodeResourceUsage calculates CPU and memory usage for a single node
+func calculateNodeResourceUsage(node corev1.Node) (float64, float64) {
+	// Get capacity
+	cpuCapacity := node.Status.Capacity[corev1.ResourceCPU]
+	memCapacity := node.Status.Capacity[corev1.ResourceMemory]
+
+	// Get allocatable
+	cpuAllocatable := node.Status.Allocatable[corev1.ResourceCPU]
+	memAllocatable := node.Status.Allocatable[corev1.ResourceMemory]
+
+	// Calculate used = capacity - allocatable
+	cpuUsed := cpuCapacity.DeepCopy()
+	cpuUsed.Sub(cpuAllocatable)
+
+	memUsed := memCapacity.DeepCopy()
+	memUsed.Sub(memAllocatable)
+
+	// Calculate percentages
+	var cpuPercent, memoryPercent float64
+
+	if cpuCapacity.MilliValue() > 0 {
+		cpuPercent = float64(cpuUsed.MilliValue()) / float64(cpuCapacity.MilliValue()) * 100
+	}
+
+	if memCapacity.Value() > 0 {
+		memoryPercent = float64(memUsed.Value()) / float64(memCapacity.Value()) * 100
 	}
 
 	// Ensure values are between 0 and 100
