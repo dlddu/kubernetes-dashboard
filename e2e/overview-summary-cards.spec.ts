@@ -259,8 +259,7 @@ test.describe('Overview Tab - Loading State', () => {
     await page.goto('/');
 
     // Act: Locate the summary cards container during loading
-    const cardsContainer = page.getByTestId('summary-cards-container')
-      .or(page.locator('[aria-live="polite"]'));
+    const cardsContainer = page.getByTestId('summary-cards-container');
 
     // Assert: Container should have aria-live attribute for screen readers
     await expect(cardsContainer).toHaveAttribute('aria-live', 'polite');
