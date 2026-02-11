@@ -138,17 +138,17 @@ describe('PollingIndicator', () => {
       expect(timeDisplay).toBeInTheDocument();
     });
 
-    it('should use singular form for 1 second ago', () => {
+    it('should display seconds ago for times between 5-59 seconds', () => {
       // Arrange
       const onRefresh = vi.fn();
-      const lastUpdate = new Date(Date.now() - 1000); // 1 second ago
+      const lastUpdate = new Date(Date.now() - 6000); // 6 seconds ago
 
       // Act
       render(<PollingIndicator onRefresh={onRefresh} lastUpdate={lastUpdate} />);
 
       // Assert
       const timeDisplay = screen.getByTestId('last-update-time');
-      expect(timeDisplay.textContent).toMatch(/1\s*second\s*ago/i);
+      expect(timeDisplay.textContent).toMatch(/6\s*seconds\s*ago/i);
     });
 
     it('should use singular form for 1 minute ago', () => {
