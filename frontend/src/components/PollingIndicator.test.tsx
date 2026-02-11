@@ -130,10 +130,8 @@ describe('PollingIndicator', () => {
         vi.advanceTimersByTime(10000);
       });
 
-      // Assert updated state
-      await waitFor(() => {
-        expect(timeElement).toHaveTextContent(/10 seconds? ago/i);
-      });
+      // Assert updated state (no waitFor needed - state is already updated after act)
+      expect(timeElement).toHaveTextContent(/10 seconds? ago/i);
     });
 
     it('should handle null lastUpdated gracefully', () => {

@@ -124,11 +124,9 @@ describe('usePolling', () => {
         vi.advanceTimersByTime(interval);
       });
 
-      // Assert
-      await waitFor(() => {
-        expect(result.current.lastUpdated).not.toBe(firstUpdate);
-        expect(result.current.lastUpdated!.getTime()).toBeGreaterThan(firstUpdate!.getTime());
-      });
+      // Assert (no waitFor needed - state is already updated after act)
+      expect(result.current.lastUpdated).not.toBe(firstUpdate);
+      expect(result.current.lastUpdated!.getTime()).toBeGreaterThan(firstUpdate!.getTime());
     });
   });
 
@@ -265,11 +263,9 @@ describe('usePolling', () => {
         result.current.refetch();
       });
 
-      // Assert
-      await waitFor(() => {
-        expect(result.current.lastUpdated).not.toBe(beforeRefetch);
-        expect(result.current.lastUpdated!.getTime()).toBeGreaterThan(beforeRefetch!.getTime());
-      });
+      // Assert (no waitFor needed - state is already updated after act)
+      expect(result.current.lastUpdated).not.toBe(beforeRefetch);
+      expect(result.current.lastUpdated!.getTime()).toBeGreaterThan(beforeRefetch!.getTime());
     });
 
     it('should work when page is hidden', () => {
