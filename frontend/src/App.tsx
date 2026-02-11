@@ -3,6 +3,7 @@ import { NamespaceProvider } from './contexts/NamespaceContext';
 import { TopBar } from './components/TopBar';
 import { SummaryCards } from './components/SummaryCards';
 import { UnhealthyPodPreview } from './components/UnhealthyPodPreview';
+import { NodeQuickView } from './components/NodeQuickView';
 
 function App() {
   // TODO: Replace with React Router when implementing full Pods page
@@ -24,10 +25,16 @@ function App() {
             <div className="space-y-6">
               <h1 data-testid="pods-tab" className="text-2xl font-bold text-gray-900">Pods</h1>
             </div>
+          ) : currentPath === '/nodes' ? (
+            // TODO: Implement full Nodes page (separate task)
+            <div data-testid="nodes-page" className="space-y-6">
+              <h1 className="text-2xl font-bold text-gray-900">Nodes</h1>
+            </div>
           ) : (
             <div data-testid="overview-tab" className="space-y-6">
               <SummaryCards />
               <UnhealthyPodPreview />
+              <NodeQuickView />
               <div className="bg-white rounded-lg shadow p-6">
                 <p className="text-gray-600">
                   Welcome to the Kubernetes Dashboard. This is a modern web interface for managing Kubernetes clusters.
