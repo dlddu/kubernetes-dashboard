@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { fetchOverview, NodeInfo } from '@/api/overview';
+import { usePolling } from '../hooks/usePolling';
 import { UsageBar } from './UsageBar';
 
 interface NodeQuickViewProps {
@@ -11,7 +12,7 @@ export function NodeQuickView({ namespace }: NodeQuickViewProps = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -22,11 +23,10 @@ export function NodeQuickView({ namespace }: NodeQuickViewProps = {}) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, [namespace]);
+
+  // Use polling hook with 10 second interval
+  usePolling(loadData, 10000);
 
   const handleRetry = () => {
     loadData();

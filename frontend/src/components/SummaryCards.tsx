@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchOverview, OverviewData } from '../api/overview';
 import { useNamespace } from '../contexts/NamespaceContext';
+import { usePolling } from '../hooks/usePolling';
 import { SummaryCard } from './SummaryCard';
 import { UsageBar } from './UsageBar';
 
@@ -10,7 +11,7 @@ export function SummaryCards() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadOverview = async () => {
+  const loadOverview = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -25,18 +26,10 @@ export function SummaryCards() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    // Load data immediately
-    loadOverview();
-
-    // Set up polling interval (10 seconds)
-    const interval = setInterval(loadOverview, 10000);
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
   }, [selectedNamespace]);
+
+  // Use polling hook with 10 second interval
+  usePolling(loadOverview, 10000);
 
   const handleRetry = () => {
     loadOverview();

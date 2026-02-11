@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { fetchOverview, UnhealthyPodInfo } from '../api/overview';
+import { usePolling } from '../hooks/usePolling';
 import { StatusBadge } from './StatusBadge';
 
 interface UnhealthyPodPreviewProps {
@@ -11,37 +12,36 @@ export function UnhealthyPodPreview({ namespace }: UnhealthyPodPreviewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await fetchOverview(namespace);
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await fetchOverview(namespace);
 
-        // Generate mock unhealthy pods data based on unhealthyPods count
-        // This will be replaced by actual backend data later
-        const mockPods: UnhealthyPodInfo[] = [];
-        const statuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'Pending', 'Failed', 'Unknown'];
-        const namespaces = ['default', 'kube-system', 'monitoring', 'production'];
+      // Generate mock unhealthy pods data based on unhealthyPods count
+      // This will be replaced by actual backend data later
+      const mockPods: UnhealthyPodInfo[] = [];
+      const statuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'Pending', 'Failed', 'Unknown'];
+      const namespaces = ['default', 'kube-system', 'monitoring', 'production'];
 
-        for (let i = 0; i < data.unhealthyPods; i++) {
-          mockPods.push({
-            name: `pod-${i + 1}`,
-            namespace: namespaces[i % namespaces.length],
-            status: statuses[i % statuses.length],
-          });
-        }
-
-        setUnhealthyPods(data.unhealthyPodsList || mockPods);
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
+      for (let i = 0; i < data.unhealthyPods; i++) {
+        mockPods.push({
+          name: `pod-${i + 1}`,
+          namespace: namespaces[i % namespaces.length],
+          status: statuses[i % statuses.length],
+        });
       }
-    };
 
-    loadData();
+      setUnhealthyPods(data.unhealthyPodsList || mockPods);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [namespace]);
+
+  // Use polling hook with 10 second interval
+  usePolling(loadData, 10000);
 
   // Loading state
   if (isLoading) {
