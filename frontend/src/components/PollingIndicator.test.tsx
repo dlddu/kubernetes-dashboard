@@ -466,7 +466,7 @@ describe('PollingIndicator', () => {
     it('should handle missing onRefresh prop', () => {
       // Act & Assert - should render without crashing
       expect(() => {
-        render(<PollingIndicator onRefresh={undefined as any} />);
+        render(<PollingIndicator onRefresh={undefined as unknown as () => void} />);
       }).not.toThrow();
     });
 

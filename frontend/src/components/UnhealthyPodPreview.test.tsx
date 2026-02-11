@@ -11,6 +11,15 @@ vi.mock('@/api/overview', () => ({
   fetchOverview: vi.fn(),
 }));
 
+// Mock the usePolling hook
+vi.mock('@/hooks/usePolling', () => ({
+  usePolling: vi.fn(() => ({
+    refresh: vi.fn(),
+    lastUpdate: new Date(),
+    isLoading: false,
+  })),
+}));
+
 // Mock the StatusBadge component
 vi.mock('./StatusBadge', () => ({
   StatusBadge: ({ status, testId }: { status: string; testId?: string }) => (

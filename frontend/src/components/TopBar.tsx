@@ -5,13 +5,10 @@ import { PollingIndicator } from './PollingIndicator';
 import { usePolling } from '../hooks/usePolling';
 
 export function TopBar() {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
   // Callback for polling (dashboard-wide refresh)
   const refreshDashboard = useCallback(async () => {
     // Trigger a refresh event that components can listen to
     window.dispatchEvent(new CustomEvent('dashboard-refresh'));
-    setRefreshTrigger((prev) => prev + 1);
   }, []);
 
   // Use polling hook for the dashboard
