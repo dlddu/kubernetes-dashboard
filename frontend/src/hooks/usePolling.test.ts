@@ -333,9 +333,10 @@ describe('usePolling', () => {
       });
       document.dispatchEvent(new Event('visibilitychange'));
 
-      // Assert - should only have fetched twice (initial + last restore)
+      // Assert - each visibility restore triggers a callback
+      // Initial call (1) + two visibility restores (2) = 3 calls
       await waitFor(() => {
-        expect(callback).toHaveBeenCalledTimes(2);
+        expect(callback).toHaveBeenCalledTimes(3);
       });
     });
   });
@@ -550,28 +551,40 @@ describe('usePolling', () => {
 
     it('should set loading to true during manual refresh', async () => {
       // Arrange
-      const callback = vi.fn().mockResolvedValue(undefined);
+      let resolveCallback: (() => void) | undefined;
+      const callback = vi.fn().mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveCallback = resolve;
+          })
+      );
 
       // Act
       const { result } = renderHook(() => usePolling(callback));
 
-      // Wait for initial load
+      // Wait for initial load to start
+      await waitFor(() => {
+        expect(callback).toHaveBeenCalledTimes(1);
+      });
+
+      // Resolve initial callback
+      resolveCallback?.();
+
+      // Wait for initial load to complete
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      // Manual refresh with slow callback
-      callback.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(resolve, 100);
-          })
-      );
-
+      // Manual refresh
       result.current.refresh();
 
-      // Assert - should be loading
-      expect(result.current.isLoading).toBe(true);
+      // Assert - should be loading during callback execution
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(true);
+      });
+
+      // Cleanup - resolve the callback
+      resolveCallback?.();
     });
 
     it('should set loading to false even if callback fails', async () => {

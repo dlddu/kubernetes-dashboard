@@ -25,7 +25,7 @@ export function PollingIndicator({
       const lastUpdateTime = lastUpdate.getTime();
       const secondsAgo = Math.floor((now - lastUpdateTime) / 1000);
 
-      if (secondsAgo < 10) {
+      if (secondsAgo < 5) {
         setRelativeTime('just now');
       } else if (secondsAgo < 60) {
         const unit = secondsAgo === 1 ? 'second' : 'seconds';

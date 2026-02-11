@@ -7,6 +7,15 @@ import * as overviewApi from '../api/overview';
 // Mock the overview API
 vi.mock('../api/overview');
 
+// Mock the usePolling hook
+vi.mock('../hooks/usePolling', () => ({
+  usePolling: vi.fn(() => ({
+    refresh: vi.fn(),
+    lastUpdate: new Date(),
+    isLoading: false,
+  })),
+}));
+
 // Helper to render with NamespaceProvider
 const renderWithProvider = (ui: React.ReactElement) => {
   return render(<NamespaceProvider>{ui}</NamespaceProvider>);

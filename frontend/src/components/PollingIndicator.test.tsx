@@ -65,7 +65,7 @@ describe('PollingIndicator', () => {
   });
 
   describe('last update time display', () => {
-    it('should show "just now" when last updated within 10 seconds', () => {
+    it('should show "just now" when last updated within 5 seconds', () => {
       // Arrange
       const onRefresh = vi.fn();
       const lastUpdate = new Date();
@@ -78,7 +78,7 @@ describe('PollingIndicator', () => {
       expect(timeDisplay.textContent).toMatch(/just now/i);
     });
 
-    it('should show "N seconds ago" when last updated over 10 seconds ago', () => {
+    it('should show "N seconds ago" when last updated over 5 seconds ago', () => {
       // Arrange
       const onRefresh = vi.fn();
       const lastUpdate = new Date(Date.now() - 15000); // 15 seconds ago
