@@ -219,8 +219,10 @@ jobs:
 
   docker-build:
     name: Docker Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     needs: [go-test, frontend-test]
+    permissions:
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -235,19 +237,26 @@ jobs:
             exit 1
           fi
 
-      - name: Build Docker image
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          load: true
-          tags: kubernetes-dashboard:test
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run Docker container test
         run: |
-          docker run -d -p 8080:8080 --name test-container kubernetes-dashboard:test
+          docker pull ghcr.io/${{ github.repository }}:latest
+          docker run -d -p 8080:8080 --name test-container ghcr.io/${{ github.repository }}:latest
           sleep 5
 
           # Test health endpoint
