@@ -6,11 +6,8 @@ import { test, expect } from '@playwright/test';
  * TDD Red Phase: Tests written - component not yet implemented.
  * These tests define the expected behavior of the PollingIndicator component,
  * which displays auto-refresh status and last update timestamp.
- *
- * Note: These tests are skipped until the component is implemented.
- * To activate them, remove .skip() from the test.describe() blocks.
  */
-test.describe.skip('PollingIndicator Component', () => {
+test.describe('PollingIndicator Component', () => {
   test('should display PollingIndicator in TopBar on page load', async ({ page }) => {
     // Tests that PollingIndicator component is visible in the TopBar
 
@@ -114,7 +111,7 @@ test.describe.skip('PollingIndicator Component', () => {
   });
 });
 
-test.describe.skip('PollingIndicator Component - Manual Refresh', () => {
+test.describe('PollingIndicator Component - Manual Refresh', () => {
   test('should trigger immediate data refresh when refresh button is clicked', async ({ page }) => {
     // Tests manual refresh functionality
 
@@ -222,7 +219,7 @@ test.describe.skip('PollingIndicator Component - Manual Refresh', () => {
   });
 });
 
-test.describe.skip('PollingIndicator Component - Page Visibility', () => {
+test.describe('PollingIndicator Component - Page Visibility', () => {
   test('should pause polling when tab becomes inactive', async ({ page, context }) => {
     // Tests that polling stops when page is not visible
     // Note: Testing Page Visibility API in E2E is challenging due to browser limitations
@@ -395,7 +392,7 @@ test.describe.skip('PollingIndicator Component - Page Visibility', () => {
   });
 });
 
-test.describe.skip('PollingIndicator Component - Time Display Format', () => {
+test.describe('PollingIndicator Component - Time Display Format', () => {
   test('should display last update time in human-readable format', async ({ page }) => {
     // Tests that last update time uses relative time format
 
@@ -497,7 +494,7 @@ test.describe.skip('PollingIndicator Component - Time Display Format', () => {
   });
 });
 
-test.describe.skip('PollingIndicator Component - Accessibility', () => {
+test.describe('PollingIndicator Component - Accessibility', () => {
   test('should have proper ARIA labels for screen readers', async ({ page }) => {
     // Tests accessibility attributes
 
@@ -594,7 +591,7 @@ test.describe.skip('PollingIndicator Component - Accessibility', () => {
   });
 });
 
-test.describe.skip('PollingIndicator Component - Responsive Design', () => {
+test.describe('PollingIndicator Component - Responsive Design', () => {
   test('should display correctly on mobile viewport', async ({ page }) => {
     // Tests mobile viewport rendering
 

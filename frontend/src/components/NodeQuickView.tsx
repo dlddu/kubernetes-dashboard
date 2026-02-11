@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchOverview, NodeInfo } from '@/api/overview';
 import { UsageBar } from './UsageBar';
+import { usePolling } from '../hooks/usePolling';
 
 interface NodeQuickViewProps {
   namespace?: string;
@@ -24,6 +25,10 @@ export function NodeQuickView({ namespace }: NodeQuickViewProps = {}) {
     }
   };
 
+  // Use polling hook for automatic refresh
+  usePolling(loadData);
+
+  // Re-load when namespace changes
   useEffect(() => {
     loadData();
   }, [namespace]);
