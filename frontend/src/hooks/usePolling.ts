@@ -22,7 +22,7 @@ export function usePolling(
   const isVisible = useVisibilityChange();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const callbackRef = useRef(callback);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   // Keep callback reference up to date
   useEffect(() => {
@@ -31,8 +31,13 @@ export function usePolling(
 
   // Execute callback and update timestamp
   const execute = useCallback(() => {
-    callbackRef.current();
-    setLastUpdated(new Date());
+    try {
+      callbackRef.current();
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Polling callback error:', error);
+      setLastUpdated(new Date()); // Still update timestamp
+    }
   }, []);
 
   // Manual refetch function

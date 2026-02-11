@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { fetchOverview, OverviewData } from '../api/overview';
 import { useNamespace } from '../contexts/NamespaceContext';
 import { usePolling } from '../hooks/usePolling';

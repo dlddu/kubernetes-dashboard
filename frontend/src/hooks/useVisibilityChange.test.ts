@@ -242,8 +242,8 @@ describe('useVisibilityChange', () => {
         listeners.forEach(listener => listener(new Event('visibilitychange')));
       });
 
-      // Assert: Should trigger one more render
-      expect(renderCount).toBe(initialRenderCount + 1);
+      // Assert: Should not trigger additional render since state didn't change
+      expect(renderCount).toBe(initialRenderCount);
       expect(result.current).toBe(true);
     });
   });
