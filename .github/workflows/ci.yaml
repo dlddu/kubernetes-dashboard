@@ -219,7 +219,7 @@ jobs:
 
   docker-build:
     name: Docker Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     needs: [go-test, frontend-test]
     permissions:
       packages: write
