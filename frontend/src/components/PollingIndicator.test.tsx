@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PollingIndicator } from './PollingIndicator';
 
@@ -126,7 +126,9 @@ describe('PollingIndicator', () => {
       expect(timeElement).toHaveTextContent(/just now/i);
 
       // Advance time by 10 seconds
-      vi.advanceTimersByTime(10000);
+      await act(async () => {
+        vi.advanceTimersByTime(10000);
+      });
 
       // Assert updated state
       await waitFor(() => {

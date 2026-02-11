@@ -114,8 +114,13 @@ describe('usePolling', () => {
       const { result } = renderHook(() => usePolling(callback, interval));
       const firstUpdate = result.current.lastUpdated;
 
+      // Advance time by 1ms to ensure different timestamp
+      await act(async () => {
+        vi.advanceTimersByTime(1);
+      });
+
       // Advance time and trigger next poll
-      act(() => {
+      await act(async () => {
         vi.advanceTimersByTime(interval);
       });
 
@@ -251,12 +256,12 @@ describe('usePolling', () => {
       const beforeRefetch = result.current.lastUpdated;
 
       // Advance time slightly
-      act(() => {
+      await act(async () => {
         vi.advanceTimersByTime(1000);
       });
 
       // Call refetch
-      act(() => {
+      await act(async () => {
         result.current.refetch();
       });
 

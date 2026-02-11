@@ -68,7 +68,11 @@ export function PollingIndicator({
 
   const handleRefresh = () => {
     if (!isLoading) {
-      onRefresh();
+      try {
+        onRefresh();
+      } catch (error) {
+        console.error('Refresh failed:', error);
+      }
     }
   };
 
