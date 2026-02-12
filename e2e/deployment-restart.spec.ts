@@ -393,16 +393,12 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
     const confirmButton = confirmDialog.getByTestId('confirm-button');
     await confirmButton.click();
 
-    // Assert: Should show "Restarting..." state in the deployment card or dialog
-    const restartingIndicator = page.getByText(/restarting/i)
-      .or(page.getByTestId('restarting-indicator'))
-      .or(page.locator('[aria-busy="true"]'));
-
-    await expect(restartingIndicator).toBeVisible();
+    // Assert: Should show "Restarting..." state in the confirm button
+    await expect(confirmButton).toHaveAttribute('aria-busy', 'true');
 
     // Assert: The text should indicate restarting state
-    const indicatorText = await restartingIndicator.innerText();
-    expect(indicatorText.toLowerCase()).toMatch(/restarting/);
+    const confirmButtonText = await confirmButton.innerText();
+    expect(confirmButtonText.toLowerCase()).toMatch(/restarting/);
   });
 
   test('should close dialog when Cancel button is clicked', async ({ page }) => {
@@ -542,7 +538,7 @@ test.describe('Workloads Tab - Deployment Restart Accessibility', () => {
     // Assert: Button should have descriptive aria-label or text
     const ariaLabel = await restartButton.getAttribute('aria-label');
     const buttonText = await restartButton.innerText();
-    const hasAccessibleName = ariaLabel || buttonText.length > 0;
+    const hasAccessibleName = !!(ariaLabel || buttonText.length > 0);
     expect(hasAccessibleName).toBe(true);
   });
 
