@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Nodes Tab - Basic Rendering', () => {
-  test.skip('should display nodes page when navigating to /nodes', async ({ page }) => {
+  test('should display nodes page when navigating to /nodes', async ({ page }) => {
     // Tests that Nodes page is accessible and renders correctly
 
     // Arrange: Navigate to the Nodes page
@@ -28,7 +28,7 @@ test.describe('Nodes Tab - Basic Rendering', () => {
     await expect(pageHeading).toBeVisible();
   });
 
-  test.skip('should display node cards for all cluster nodes', async ({ page }) => {
+  test('should display node cards for all cluster nodes', async ({ page }) => {
     // Tests that NodeCard components are rendered for each node
 
     // Arrange: Navigate to the Nodes page
@@ -48,7 +48,7 @@ test.describe('Nodes Tab - Basic Rendering', () => {
     await expect(nodeCards.first()).toBeVisible();
   });
 
-  test.skip('should display node name in each NodeCard', async ({ page }) => {
+  test('should display node name in each NodeCard', async ({ page }) => {
     // Tests that each NodeCard displays the node's name
 
     // Arrange: Navigate to the Nodes page
@@ -71,7 +71,7 @@ test.describe('Nodes Tab - Basic Rendering', () => {
 });
 
 test.describe('Nodes Tab - NodeCard Components', () => {
-  test.skip('should display StatusBadge with node status in each NodeCard', async ({ page }) => {
+  test('should display StatusBadge with node status in each NodeCard', async ({ page }) => {
     // Tests that each NodeCard shows the node's status using StatusBadge component
 
     // Arrange: Navigate to the Nodes page
@@ -93,7 +93,7 @@ test.describe('Nodes Tab - NodeCard Components', () => {
     expect(statusText.toLowerCase()).toMatch(/ready|notready/i);
   });
 
-  test.skip('should display CPU usage bar in each NodeCard', async ({ page }) => {
+  test('should display CPU usage bar in each NodeCard', async ({ page }) => {
     // Tests that each NodeCard displays CPU usage with UsageBar component
 
     // Arrange: Navigate to the Nodes page
@@ -117,7 +117,7 @@ test.describe('Nodes Tab - NodeCard Components', () => {
     await expect(cpuProgressBar).toBeVisible();
   });
 
-  test.skip('should display Memory usage bar in each NodeCard', async ({ page }) => {
+  test('should display Memory usage bar in each NodeCard', async ({ page }) => {
     // Tests that each NodeCard displays Memory usage with UsageBar component
 
     // Arrange: Navigate to the Nodes page
@@ -141,7 +141,7 @@ test.describe('Nodes Tab - NodeCard Components', () => {
     await expect(memoryProgressBar).toBeVisible();
   });
 
-  test.skip('should display pod count in each NodeCard', async ({ page }) => {
+  test('should display pod count in each NodeCard', async ({ page }) => {
     // Tests that each NodeCard shows the number of pods running on the node
 
     // Arrange: Navigate to the Nodes page
@@ -164,7 +164,7 @@ test.describe('Nodes Tab - NodeCard Components', () => {
 });
 
 test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
-  test.skip('should have proper accessibility attributes for CPU usage bar', async ({ page }) => {
+  test('should have proper accessibility attributes for CPU usage bar', async ({ page }) => {
     // Tests ARIA attributes for CPU usage progressbar
 
     // Arrange: Navigate to the Nodes page
@@ -191,7 +191,7 @@ test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
     expect(cpuPercentage).toBeLessThanOrEqual(100);
   });
 
-  test.skip('should have proper accessibility attributes for Memory usage bar', async ({ page }) => {
+  test('should have proper accessibility attributes for Memory usage bar', async ({ page }) => {
     // Tests ARIA attributes for Memory usage progressbar
 
     // Arrange: Navigate to the Nodes page
@@ -218,7 +218,7 @@ test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
     expect(memoryPercentage).toBeLessThanOrEqual(100);
   });
 
-  test.skip('should have aria-label for CPU usage bar describing the metric', async ({ page }) => {
+  test('should have aria-label for CPU usage bar describing the metric', async ({ page }) => {
     // Tests that CPU usage bar has descriptive aria-label
 
     // Arrange: Navigate to the Nodes page
@@ -242,7 +242,7 @@ test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
 });
 
 test.describe('Nodes Tab - Ready Node Status', () => {
-  test.skip('should display Ready status badge with success variant for healthy nodes', async ({ page }) => {
+  test('should display Ready status badge with success variant for healthy nodes', async ({ page }) => {
     // Tests that Ready nodes show success-style status badge
 
     // Arrange: Navigate to the Nodes page
@@ -283,7 +283,7 @@ test.describe('Nodes Tab - Ready Node Status', () => {
     expect(foundReadyNode).toBe(true);
   });
 
-  test.skip('should render usage bars correctly for Ready nodes', async ({ page }) => {
+  test('should render usage bars correctly for Ready nodes', async ({ page }) => {
     // Tests that Ready nodes display functional CPU/Memory usage bars
 
     // Arrange: Navigate to the Nodes page
@@ -329,7 +329,7 @@ test.describe('Nodes Tab - Ready Node Status', () => {
     expect(memoryWidth).toBeGreaterThan(0);
   });
 
-  test.skip('should display pod count for Ready nodes', async ({ page }) => {
+  test('should display pod count for Ready nodes', async ({ page }) => {
     // Tests that Ready nodes show accurate pod count
 
     // Arrange: Navigate to the Nodes page
@@ -367,7 +367,7 @@ test.describe('Nodes Tab - Ready Node Status', () => {
 });
 
 test.describe('Nodes Tab - NotReady Node Handling', () => {
-  test.skip('should display NotReady status badge with error variant for unhealthy nodes', async ({ page }) => {
+  test('should display NotReady status badge with error variant for unhealthy nodes', async ({ page }) => {
     // Tests that NotReady nodes show error-style status badge
 
     // Arrange: Navigate to the Nodes page
@@ -402,7 +402,7 @@ test.describe('Nodes Tab - NotReady Node Handling', () => {
 });
 
 test.describe('Nodes Tab - Loading and Error States', () => {
-  test.skip('should display loading state while fetching node data', async ({ page }) => {
+  test('should display loading state while fetching node data', async ({ page }) => {
     // Tests loading skeleton or spinner during data fetch
 
     // Arrange: Navigate to the Nodes page
@@ -432,7 +432,7 @@ test.describe('Nodes Tab - Loading and Error States', () => {
     }
   });
 
-  test.skip('should display error message when node data fetch fails', async ({ page }) => {
+  test('should display error message when node data fetch fails', async ({ page }) => {
     // Tests error state when API request fails
 
     // Arrange: Navigate to the Nodes page
@@ -454,7 +454,7 @@ test.describe('Nodes Tab - Loading and Error States', () => {
     expect(errorVisible || nodesVisible).toBeTruthy();
   });
 
-  test.skip('should display retry button on error state', async ({ page }) => {
+  test('should display retry button on error state', async ({ page }) => {
     // Tests retry functionality in error state
 
     // Arrange: Navigate to the Nodes page
@@ -487,7 +487,7 @@ test.describe('Nodes Tab - Loading and Error States', () => {
 });
 
 test.describe('Nodes Tab - Responsive Design', () => {
-  test.skip('should display correctly on mobile viewport', async ({ page }) => {
+  test('should display correctly on mobile viewport', async ({ page }) => {
     // Tests mobile viewport rendering with stacked node cards
 
     // Arrange: Set mobile viewport (iPhone SE dimensions)
@@ -523,7 +523,7 @@ test.describe('Nodes Tab - Responsive Design', () => {
     await expect(cpuUsageBar).toBeVisible();
   });
 
-  test.skip('should display correctly on tablet viewport', async ({ page }) => {
+  test('should display correctly on tablet viewport', async ({ page }) => {
     // Tests tablet viewport rendering with grid layout
 
     // Arrange: Set tablet viewport (iPad dimensions)
@@ -547,7 +547,7 @@ test.describe('Nodes Tab - Responsive Design', () => {
     }
   });
 
-  test.skip('should display correctly on desktop viewport', async ({ page }) => {
+  test('should display correctly on desktop viewport', async ({ page }) => {
     // Tests desktop viewport rendering with multi-column grid
 
     // Arrange: Set desktop viewport
@@ -577,7 +577,7 @@ test.describe('Nodes Tab - Responsive Design', () => {
 });
 
 test.describe('Nodes Tab - Navigation and Integration', () => {
-  test.skip('should be accessible from the Overview page NodeQuickView', async ({ page }) => {
+  test('should be accessible from the Overview page NodeQuickView', async ({ page }) => {
     // Tests navigation from Overview page to Nodes tab
 
     // Arrange: Navigate to the Overview page
@@ -603,7 +603,7 @@ test.describe('Nodes Tab - Navigation and Integration', () => {
     }
   });
 
-  test.skip('should show more nodes than NodeQuickView preview', async ({ page }) => {
+  test('should show more nodes than NodeQuickView preview', async ({ page }) => {
     // Tests that Nodes tab shows all nodes, not just preview limit
 
     // Arrange: Get node count from Overview page
@@ -627,7 +627,7 @@ test.describe('Nodes Tab - Navigation and Integration', () => {
     // If cluster has >5 nodes, full view should show more
   });
 
-  test.skip('should maintain data consistency with NodeQuickView', async ({ page }) => {
+  test('should maintain data consistency with NodeQuickView', async ({ page }) => {
     // Tests that node data is consistent between Overview and Nodes tab
 
     // Arrange: Get first node name from Overview page
