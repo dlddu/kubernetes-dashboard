@@ -6,6 +6,7 @@ import { UnhealthyPodPreview } from './components/UnhealthyPodPreview';
 import { NodeQuickView } from './components/NodeQuickView';
 import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
+import { PodsTab } from './components/PodsTab';
 
 function App() {
   // TODO: Replace with React Router when implementing full Pods page
@@ -23,10 +24,7 @@ function App() {
         <TopBar />
         <main className="container mx-auto px-4 py-8">
           {currentPath === '/pods' ? (
-            // TODO: Implement full Pods page (separate task)
-            <div className="space-y-6">
-              <h1 data-testid="pods-tab" className="text-2xl font-bold text-gray-900">Pods</h1>
-            </div>
+            <PodsTab />
           ) : currentPath === '/nodes' ? (
             <NodesTab />
           ) : currentPath === '/workloads' ? (

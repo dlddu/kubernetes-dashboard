@@ -361,6 +361,13 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
   test('should show "Restarting..." state when Confirm button is clicked', async ({ page }) => {
     // Tests that confirming restart shows a loading/restarting state
 
+    // Arrange: Intercept the restart API to keep the "Restarting..." state visible
+    // Without this, the API may complete too fast for the assertion to observe the state
+    await page.route('**/api/deployments/**/restart', async route => {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'Restart initiated' }) });
+    });
+
     // Arrange: Navigate to the Workloads page
     await page.goto('/workloads');
     await page.waitForLoadState('networkidle');
@@ -397,8 +404,7 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
     await expect(confirmButton).toHaveAttribute('aria-busy', 'true');
 
     // Assert: The text should indicate restarting state
-    const confirmButtonText = await confirmButton.innerText();
-    expect(confirmButtonText.toLowerCase()).toMatch(/restarting/);
+    await expect(confirmButton).toContainText(/restarting/i);
   });
 
   test('should close dialog when Cancel button is clicked', async ({ page }) => {
