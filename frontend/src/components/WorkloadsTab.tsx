@@ -73,7 +73,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
   };
 
   return (
-    <div data-testid="workloads-tab" className="space-y-6">
+    <div data-testid="workloads-page" className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Workloads</h1>
 
       {isLoading && (

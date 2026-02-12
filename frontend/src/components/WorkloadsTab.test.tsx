@@ -23,7 +23,7 @@ describe('WorkloadsTab Component', () => {
       render(<WorkloadsTab />);
 
       // Assert
-      const workloadsTab = screen.getByTestId('workloads-tab');
+      const workloadsTab = screen.getByTestId('workloads-page');
       expect(workloadsTab).toBeInTheDocument();
     });
 
