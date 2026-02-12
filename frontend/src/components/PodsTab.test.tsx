@@ -38,7 +38,7 @@ describe('PodsTab Component', () => {
       render(<PodsTab />);
 
       // Assert
-      const heading = screen.getByRole('heading', { name: /pods/i });
+      const heading = screen.getByRole('heading', { name: 'Pods', level: 1 });
       expect(heading).toBeInTheDocument();
     });
 
@@ -616,7 +616,7 @@ describe('PodsTab Component', () => {
       const podsTab = screen.getByTestId('pods-page');
       expect(podsTab).toBeInTheDocument();
 
-      const heading = screen.getByRole('heading', { name: /pods/i });
+      const heading = screen.getByRole('heading', { name: 'Pods', level: 1 });
       expect(heading).toBeInTheDocument();
     });
   });
