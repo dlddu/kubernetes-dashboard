@@ -30,6 +30,7 @@ func setupRouter() http.Handler {
 	mux.HandleFunc("/api/namespaces", handlers.NamespacesHandler)
 	mux.HandleFunc("/api/overview", handlers.OverviewHandler)
 	mux.HandleFunc("/api/nodes", handlers.NodesHandler)
+	mux.HandleFunc("/api/pods/unhealthy", handlers.UnhealthyPodsHandler)
 	mux.HandleFunc("/api/deployments", handlers.DeploymentsHandler)
 	mux.HandleFunc("/api/deployments/", handlers.DeploymentRestartHandler)
 
