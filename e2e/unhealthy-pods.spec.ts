@@ -32,7 +32,7 @@ test.describe('Unhealthy Pods Page - Basic Rendering', () => {
     await expect(podsPage).toBeVisible();
 
     // Assert: Page should have appropriate title/heading
-    const pageHeading = page.getByRole('heading', { name: /pods/i });
+    const pageHeading = page.getByRole('heading', { name: 'Pods', exact: true });
     await expect(pageHeading).toBeVisible();
   });
 
@@ -729,7 +729,7 @@ test.describe('Unhealthy Pods Page - Responsive Design', () => {
     }
 
     // Assert: Page heading should be visible
-    const pageHeading = page.getByRole('heading', { name: /pods/i });
+    const pageHeading = page.getByRole('heading', { name: 'Pods', exact: true });
     await expect(pageHeading).toBeVisible();
   });
 });
@@ -744,7 +744,7 @@ test.describe('Unhealthy Pods Page - Accessibility', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Main page heading should be h1
-    const mainHeading = page.getByRole('heading', { level: 1, name: /pods/i });
+    const mainHeading = page.getByRole('heading', { level: 1, name: 'Pods', exact: true });
     await expect(mainHeading).toBeVisible();
 
     // Assert: "Unhealthy Pods" section should have appropriate heading level

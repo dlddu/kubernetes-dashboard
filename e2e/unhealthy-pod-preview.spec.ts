@@ -143,7 +143,7 @@ test.describe('UnhealthyPodPreview Component', () => {
     // Assert: Pods tab should be active/visible
     const podsTab = page.getByTestId('pods-tab')
       .or(page.getByRole('tab', { name: /pods/i, selected: true }))
-      .or(page.getByRole('heading', { name: /pods/i }));
+      .or(page.getByRole('heading', { name: 'Pods', exact: true }));
     await expect(podsTab).toBeVisible();
   });
 });
