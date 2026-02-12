@@ -128,7 +128,7 @@ export function UnhealthyPodPreview({ namespace }: UnhealthyPodPreviewProps) {
                   data-testid="unhealthy-pod-namespace"
                   className="text-xs text-gray-500 mt-1"
                 >
-                  namespace: {pod.namespace}
+                  {pod.namespace}
                 </div>
               </div>
               <div className="ml-4 flex-shrink-0">
