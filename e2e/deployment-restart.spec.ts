@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Workloads Tab - Deployment Card Display', () => {
-  test.skip('should display workloads page when navigating to /workloads', async ({ page }) => {
+  test('should display workloads page when navigating to /workloads', async ({ page }) => {
     // Tests that Workloads page is accessible and renders correctly
 
     // Arrange: Navigate to the Workloads page
@@ -29,7 +29,7 @@ test.describe('Workloads Tab - Deployment Card Display', () => {
     await expect(pageHeading).toBeVisible();
   });
 
-  test.skip('should display deployment cards for all cluster deployments', async ({ page }) => {
+  test('should display deployment cards for all cluster deployments', async ({ page }) => {
     // Tests that DeploymentCard components are rendered for each deployment
 
     // Arrange: Navigate to the Workloads page
@@ -49,7 +49,7 @@ test.describe('Workloads Tab - Deployment Card Display', () => {
     await expect(deploymentCards.first()).toBeVisible();
   });
 
-  test.skip('should display nginx-test deployment from test fixture', async ({ page }) => {
+  test('should display nginx-test deployment from test fixture', async ({ page }) => {
     // Tests that the test fixture deployment (nginx-test) is displayed
 
     // Arrange: Navigate to the Workloads page
@@ -82,7 +82,7 @@ test.describe('Workloads Tab - Deployment Card Display', () => {
 });
 
 test.describe('Workloads Tab - DeploymentCard Information Display', () => {
-  test.skip('should display deployment name in DeploymentCard', async ({ page }) => {
+  test('should display deployment name in DeploymentCard', async ({ page }) => {
     // Tests that DeploymentCard displays the deployment name
 
     // Arrange: Navigate to the Workloads page
@@ -117,7 +117,7 @@ test.describe('Workloads Tab - DeploymentCard Information Display', () => {
     expect(nameText).toBe('nginx-test');
   });
 
-  test.skip('should display deployment namespace in DeploymentCard', async ({ page }) => {
+  test('should display deployment namespace in DeploymentCard', async ({ page }) => {
     // Tests that DeploymentCard displays the deployment namespace
 
     // Arrange: Navigate to the Workloads page
@@ -152,7 +152,7 @@ test.describe('Workloads Tab - DeploymentCard Information Display', () => {
     expect(namespaceText).toBe('dashboard-test');
   });
 
-  test.skip('should display deployment ready ratio in DeploymentCard', async ({ page }) => {
+  test('should display deployment ready ratio in DeploymentCard', async ({ page }) => {
     // Tests that DeploymentCard displays the ready/total replica ratio
 
     // Arrange: Navigate to the Workloads page
@@ -187,7 +187,7 @@ test.describe('Workloads Tab - DeploymentCard Information Display', () => {
     expect(readyText).toMatch(/2\/2/);
   });
 
-  test.skip('should display all deployment information together', async ({ page }) => {
+  test('should display all deployment information together', async ({ page }) => {
     // Tests that DeploymentCard displays name, namespace, and ready ratio together
 
     // Arrange: Navigate to the Workloads page
@@ -230,7 +230,7 @@ test.describe('Workloads Tab - DeploymentCard Information Display', () => {
 });
 
 test.describe('Workloads Tab - Deployment Restart Button', () => {
-  test.skip('should display Restart button in DeploymentCard', async ({ page }) => {
+  test('should display Restart button in DeploymentCard', async ({ page }) => {
     // Tests that DeploymentCard displays a Restart button
 
     // Arrange: Navigate to the Workloads page
@@ -268,7 +268,7 @@ test.describe('Workloads Tab - Deployment Restart Button', () => {
     expect(buttonText.toLowerCase()).toMatch(/restart/);
   });
 
-  test.skip('should show confirmation dialog when Restart button is clicked', async ({ page }) => {
+  test('should show confirmation dialog when Restart button is clicked', async ({ page }) => {
     // Tests that clicking Restart button opens a confirmation dialog
 
     // Arrange: Navigate to the Workloads page
@@ -309,7 +309,7 @@ test.describe('Workloads Tab - Deployment Restart Button', () => {
 });
 
 test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
-  test.skip('should display Confirm and Cancel buttons in dialog', async ({ page }) => {
+  test('should display Confirm and Cancel buttons in dialog', async ({ page }) => {
     // Tests that confirmation dialog has both Confirm and Cancel buttons
 
     // Arrange: Navigate to the Workloads page
@@ -358,7 +358,7 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
     expect(cancelText.toLowerCase()).toMatch(/cancel|no/);
   });
 
-  test.skip('should show "Restarting..." state when Confirm button is clicked', async ({ page }) => {
+  test('should show "Restarting..." state when Confirm button is clicked', async ({ page }) => {
     // Tests that confirming restart shows a loading/restarting state
 
     // Arrange: Navigate to the Workloads page
@@ -393,19 +393,15 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
     const confirmButton = confirmDialog.getByTestId('confirm-button');
     await confirmButton.click();
 
-    // Assert: Should show "Restarting..." state in the deployment card or dialog
-    const restartingIndicator = page.getByText(/restarting/i)
-      .or(page.getByTestId('restarting-indicator'))
-      .or(page.locator('[aria-busy="true"]'));
-
-    await expect(restartingIndicator).toBeVisible();
+    // Assert: Should show "Restarting..." state in the confirm button
+    await expect(confirmButton).toHaveAttribute('aria-busy', 'true');
 
     // Assert: The text should indicate restarting state
-    const indicatorText = await restartingIndicator.innerText();
-    expect(indicatorText.toLowerCase()).toMatch(/restarting/);
+    const confirmButtonText = await confirmButton.innerText();
+    expect(confirmButtonText.toLowerCase()).toMatch(/restarting/);
   });
 
-  test.skip('should close dialog when Cancel button is clicked', async ({ page }) => {
+  test('should close dialog when Cancel button is clicked', async ({ page }) => {
     // Tests that clicking Cancel closes the confirmation dialog without restarting
 
     // Arrange: Navigate to the Workloads page
@@ -455,7 +451,7 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
     await expect(nginxDeploymentCard).toBeVisible();
   });
 
-  test.skip('should maintain deployment information during dialog interaction', async ({ page }) => {
+  test('should maintain deployment information during dialog interaction', async ({ page }) => {
     // Tests that deployment information remains consistent during dialog opening/closing
 
     // Arrange: Navigate to the Workloads page
@@ -509,7 +505,7 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
 });
 
 test.describe('Workloads Tab - Deployment Restart Accessibility', () => {
-  test.skip('should have proper accessibility for Restart button', async ({ page }) => {
+  test('should have proper accessibility for Restart button', async ({ page }) => {
     // Tests ARIA attributes and keyboard accessibility for Restart button
 
     // Arrange: Navigate to the Workloads page
@@ -542,11 +538,11 @@ test.describe('Workloads Tab - Deployment Restart Accessibility', () => {
     // Assert: Button should have descriptive aria-label or text
     const ariaLabel = await restartButton.getAttribute('aria-label');
     const buttonText = await restartButton.innerText();
-    const hasAccessibleName = ariaLabel || buttonText.length > 0;
+    const hasAccessibleName = !!(ariaLabel || buttonText.length > 0);
     expect(hasAccessibleName).toBe(true);
   });
 
-  test.skip('should have proper accessibility for confirmation dialog', async ({ page }) => {
+  test('should have proper accessibility for confirmation dialog', async ({ page }) => {
     // Tests ARIA attributes for confirmation dialog
 
     // Arrange: Navigate to the Workloads page
