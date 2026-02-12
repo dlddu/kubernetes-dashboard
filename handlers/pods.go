@@ -108,15 +108,15 @@ func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]
 
 // isPodHealthyDetailed checks if a pod is healthy
 // A pod is considered unhealthy if:
-// - It's not in Running phase, OR
+// - It's not in Running phase (except Succeeded), OR
 // - It has container issues (Waiting or Terminated state)
 func isPodHealthyDetailed(pod corev1.Pod) bool {
-	// If pod is not running, it's unhealthy
-	if pod.Status.Phase != corev1.PodRunning {
-		return false
+	// Succeeded pods are considered healthy (completed jobs)
+	if pod.Status.Phase == corev1.PodSucceeded {
+		return true
 	}
 
-	// Check for container issues even if phase is Running
+	// Check for container issues first (e.g., ImagePullBackOff, CrashLoopBackOff)
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		// Container is waiting (e.g., ImagePullBackOff, CrashLoopBackOff)
 		if containerStatus.State.Waiting != nil {
@@ -126,6 +126,11 @@ func isPodHealthyDetailed(pod corev1.Pod) bool {
 		if containerStatus.State.Terminated != nil {
 			return false
 		}
+	}
+
+	// If pod is not running and has no container status issues, it's unhealthy
+	if pod.Status.Phase != corev1.PodRunning {
+		return false
 	}
 
 	return true

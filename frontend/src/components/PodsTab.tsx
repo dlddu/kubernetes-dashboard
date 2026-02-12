@@ -37,7 +37,9 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
       <h1 className="text-2xl font-bold text-gray-900">Pods</h1>
 
       <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Unhealthy Pods</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Unhealthy Pods {!isLoading && !error && `(${pods.length})`}
+        </h2>
 
         {isLoading && (
           <div
