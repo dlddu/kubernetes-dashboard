@@ -138,21 +138,8 @@ func isPodHealthyDetailed(pod corev1.Pod) bool {
 
 // getPodStatusDetailed returns the detailed status string for a pod
 func getPodStatusDetailed(pod corev1.Pod) string {
-	// Check if pod is in a terminal state
-	if pod.Status.Phase == corev1.PodSucceeded {
-		return "Succeeded"
-	}
-	if pod.Status.Phase == corev1.PodFailed {
-		return "Failed"
-	}
-	if pod.Status.Phase == corev1.PodUnknown {
-		return "Unknown"
-	}
-	if pod.Status.Phase == corev1.PodPending {
-		return "Pending"
-	}
-
-	// Check container statuses for more detailed information
+	// Check container statuses first for more detailed information
+	// This ensures we catch specific issues like ImagePullBackOff, CrashLoopBackOff, etc.
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.State.Waiting != nil {
 			reason := containerStatus.State.Waiting.Reason
@@ -166,6 +153,20 @@ func getPodStatusDetailed(pod corev1.Pod) string {
 				return reason
 			}
 		}
+	}
+
+	// If no container status reason found, check pod phase
+	if pod.Status.Phase == corev1.PodSucceeded {
+		return "Succeeded"
+	}
+	if pod.Status.Phase == corev1.PodFailed {
+		return "Failed"
+	}
+	if pod.Status.Phase == corev1.PodUnknown {
+		return "Unknown"
+	}
+	if pod.Status.Phase == corev1.PodPending {
+		return "Pending"
 	}
 
 	// Return phase as default
