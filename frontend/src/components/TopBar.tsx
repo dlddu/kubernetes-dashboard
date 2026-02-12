@@ -1,7 +1,19 @@
+import { useCallback } from 'react';
 import { NamespaceSelector } from './NamespaceSelector';
 import { ClusterStatus } from './ClusterStatus';
+import { PollingIndicator } from './PollingIndicator';
+import { usePolling } from '../hooks/usePolling';
 
 export function TopBar() {
+  // Callback for polling (dashboard-wide refresh)
+  const refreshDashboard = useCallback(async () => {
+    // Trigger a refresh event that components can listen to
+    window.dispatchEvent(new CustomEvent('dashboard-refresh'));
+  }, []);
+
+  // Use polling hook for the dashboard
+  const { refresh, lastUpdate, isLoading } = usePolling(refreshDashboard);
+
   return (
     <header
       role="banner"
@@ -16,6 +28,11 @@ export function TopBar() {
             </h1>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <PollingIndicator
+              lastUpdate={lastUpdate}
+              onRefresh={refresh}
+              isLoading={isLoading}
+            />
             <NamespaceSelector />
             <ClusterStatus />
           </div>

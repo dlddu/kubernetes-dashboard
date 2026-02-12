@@ -3,6 +3,7 @@ import { fetchOverview, OverviewData } from '../api/overview';
 import { useNamespace } from '../contexts/NamespaceContext';
 import { SummaryCard } from './SummaryCard';
 import { UsageBar } from './UsageBar';
+import { usePolling } from '../hooks/usePolling';
 
 export function SummaryCards() {
   const { selectedNamespace } = useNamespace();
@@ -27,15 +28,12 @@ export function SummaryCards() {
     }
   };
 
+  // Use polling hook for automatic refresh
+  usePolling(loadOverview);
+
+  // Re-load when namespace changes
   useEffect(() => {
-    // Load data immediately
     loadOverview();
-
-    // Set up polling interval (10 seconds)
-    const interval = setInterval(loadOverview, 10000);
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
   }, [selectedNamespace]);
 
   const handleRetry = () => {
