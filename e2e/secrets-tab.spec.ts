@@ -327,7 +327,7 @@ test.describe('Secrets Tab - Accessibility', () => {
 
     // Assert: Accordion header should have button role
     const accordionHeader = firstAccordion.getByTestId('secret-accordion-header');
-    await expect(accordionHeader).toHaveRole('button');
+    await expect(accordionHeader).toHaveAttribute('role', 'button');
 
     // Assert: Should have aria-expanded attribute
     await expect(accordionHeader).toHaveAttribute('aria-expanded');
