@@ -5,6 +5,7 @@ import { SummaryCards } from './components/SummaryCards';
 import { UnhealthyPodPreview } from './components/UnhealthyPodPreview';
 import { NodeQuickView } from './components/NodeQuickView';
 import { NodesTab } from './components/NodesTab';
+import { WorkloadsTab } from './components/WorkloadsTab';
 
 function App() {
   // TODO: Replace with React Router when implementing full Pods page
@@ -28,6 +29,8 @@ function App() {
             </div>
           ) : currentPath === '/nodes' ? (
             <NodesTab />
+          ) : currentPath === '/workloads' ? (
+            <WorkloadsTab />
           ) : (
             <div data-testid="overview-tab" className="space-y-6">
               <SummaryCards />
