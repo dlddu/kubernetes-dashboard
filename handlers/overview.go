@@ -155,8 +155,25 @@ func isNodeReady(node corev1.Node) bool {
 }
 
 // isPodHealthy checks if a pod is healthy
+// Uses the same logic as isPodHealthyDetailed to ensure consistency
+// between Overview and Pods pages
 func isPodHealthy(pod corev1.Pod) bool {
-	// A pod is healthy if it's in Running phase
+	// Succeeded pods are considered healthy (completed jobs)
+	if pod.Status.Phase == corev1.PodSucceeded {
+		return true
+	}
+
+	// Check for container issues (e.g., ImagePullBackOff, CrashLoopBackOff)
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.State.Waiting != nil {
+			return false
+		}
+		if containerStatus.State.Terminated != nil {
+			return false
+		}
+	}
+
+	// Pod is healthy if in Running phase
 	return pod.Status.Phase == corev1.PodRunning
 }
 
