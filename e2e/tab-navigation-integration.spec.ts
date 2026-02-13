@@ -20,7 +20,7 @@ import { test, expect } from '@playwright/test';
 test.use({ viewport: { width: 375, height: 812 } });
 
 test.describe('Tab Navigation - Basic Tab Switching', () => {
-  test.skip('should display BottomTabBar with 5 tabs on mobile viewport', async ({ page }) => {
+  test('should display BottomTabBar with 5 tabs on mobile viewport', async ({ page }) => {
     // Tests that BottomTabBar renders all 5 tabs correctly
 
     // Arrange: Navigate to home page with mobile viewport
@@ -48,7 +48,7 @@ test.describe('Tab Navigation - Basic Tab Switching', () => {
     await expect(bottomTabBar).toHaveAttribute('role', 'navigation');
   });
 
-  test.skip('should switch to Overview tab when Overview button is clicked', async ({ page }) => {
+  test('should switch to Overview tab when Overview button is clicked', async ({ page }) => {
     // Tests navigation to Overview tab displays cluster summary
 
     // Arrange: Navigate to home page
@@ -71,7 +71,7 @@ test.describe('Tab Navigation - Basic Tab Switching', () => {
     await expect(overviewTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should switch to Nodes tab when Nodes button is clicked', async ({ page }) => {
+  test('should switch to Nodes tab when Nodes button is clicked', async ({ page }) => {
     // Tests navigation to Nodes tab displays node list
 
     // Arrange: Start from Overview page
@@ -98,7 +98,7 @@ test.describe('Tab Navigation - Basic Tab Switching', () => {
     expect(await nodeCards.count()).toBeGreaterThanOrEqual(1);
   });
 
-  test.skip('should switch to Workloads tab when Workloads button is clicked', async ({ page }) => {
+  test('should switch to Workloads tab when Workloads button is clicked', async ({ page }) => {
     // Tests navigation to Workloads/Deployments tab
 
     // Arrange: Start from Overview page
@@ -122,7 +122,7 @@ test.describe('Tab Navigation - Basic Tab Switching', () => {
     await expect(workloadsTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should switch to Pods tab when Pods button is clicked', async ({ page }) => {
+  test('should switch to Pods tab when Pods button is clicked', async ({ page }) => {
     // Tests navigation to Pods tab displays unhealthy pod list
 
     // Arrange: Start from Overview page
@@ -145,7 +145,7 @@ test.describe('Tab Navigation - Basic Tab Switching', () => {
     await expect(podsTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should switch to Secrets tab when Secrets button is clicked', async ({ page }) => {
+  test('should switch to Secrets tab when Secrets button is clicked', async ({ page }) => {
     // Tests navigation to Secrets tab displays secret list
 
     // Arrange: Start from Overview page
@@ -170,7 +170,7 @@ test.describe('Tab Navigation - Basic Tab Switching', () => {
 });
 
 test.describe('Tab Navigation - Unhealthy Pod Badge', () => {
-  test.skip('should display badge count on Pods tab icon for unhealthy pods', async ({ page }) => {
+  test('should display badge count on Pods tab icon for unhealthy pods', async ({ page }) => {
     // Tests that Pods tab shows count of unhealthy pods in badge
 
     // Arrange: Navigate to home page
@@ -197,7 +197,7 @@ test.describe('Tab Navigation - Unhealthy Pod Badge', () => {
     }
   });
 
-  test.skip('should update badge count when unhealthy pod count changes', async ({ page }) => {
+  test('should update badge count when unhealthy pod count changes', async ({ page }) => {
     // Tests badge count reactivity to pod state changes
 
     // Arrange: Navigate to home page and get initial badge count
@@ -228,7 +228,7 @@ test.describe('Tab Navigation - Unhealthy Pod Badge', () => {
     }
   });
 
-  test.skip('should hide badge when all pods are healthy', async ({ page }) => {
+  test('should hide badge when all pods are healthy', async ({ page }) => {
     // Tests that badge is hidden when unhealthy pod count is 0
 
     // Arrange: Navigate to home page
@@ -258,7 +258,7 @@ test.describe('Tab Navigation - Unhealthy Pod Badge', () => {
     }
   });
 
-  test.skip('should display correct badge count matching unhealthy pods list', async ({ page }) => {
+  test('should display correct badge count matching unhealthy pods list', async ({ page }) => {
     // Tests badge count accuracy against actual unhealthy pods
 
     // Arrange: Navigate to home page and get badge count
@@ -292,7 +292,7 @@ test.describe('Tab Navigation - Unhealthy Pod Badge', () => {
 });
 
 test.describe('Tab Navigation - Mobile Viewport Layout', () => {
-  test.skip('should render without layout breakage on 375px viewport', async ({ page }) => {
+  test('should render without layout breakage on 375px viewport', async ({ page }) => {
     // Tests mobile layout integrity on standard mobile width
 
     // Arrange: Navigate to home page (viewport already set to 375px)
@@ -323,7 +323,7 @@ test.describe('Tab Navigation - Mobile Viewport Layout', () => {
     }
   });
 
-  test.skip('should display tab icons without text overflow on mobile', async ({ page }) => {
+  test('should display tab icons without text overflow on mobile', async ({ page }) => {
     // Tests that tab labels don't overflow on narrow viewport
 
     // Arrange: Navigate to home page
@@ -349,7 +349,7 @@ test.describe('Tab Navigation - Mobile Viewport Layout', () => {
     }
   });
 
-  test.skip('should maintain tab bar visibility when scrolling page content', async ({ page }) => {
+  test('should maintain tab bar visibility when scrolling page content', async ({ page }) => {
     // Tests that BottomTabBar remains fixed at bottom during scroll
 
     // Arrange: Navigate to Nodes page with multiple node cards
@@ -379,7 +379,7 @@ test.describe('Tab Navigation - Mobile Viewport Layout', () => {
     expect(positionStyle).toMatch(/fixed|sticky/);
   });
 
-  test.skip('should handle touch interactions on mobile viewport', async ({ page }) => {
+  test('should handle touch interactions on mobile viewport', async ({ page }) => {
     // Tests touch/tap interactions work correctly on mobile
 
     // Arrange: Navigate to home page
@@ -409,7 +409,7 @@ test.describe('Tab Navigation - Mobile Viewport Layout', () => {
 });
 
 test.describe('Tab Navigation - Namespace Filtering Integration', () => {
-  test.skip('should filter Nodes tab data when namespace is changed', async ({ page }) => {
+  test('should filter Nodes tab data when namespace is changed', async ({ page }) => {
     // Tests namespace filter affects Nodes tab content
 
     // Arrange: Navigate to Nodes tab
@@ -439,7 +439,7 @@ test.describe('Tab Navigation - Namespace Filtering Integration', () => {
     expect(filteredCount).toBeGreaterThanOrEqual(1);
   });
 
-  test.skip('should filter Workloads tab data when namespace is changed', async ({ page }) => {
+  test('should filter Workloads tab data when namespace is changed', async ({ page }) => {
     // Tests namespace filter affects Workloads/Deployments tab content
 
     // Arrange: Navigate to Workloads tab
@@ -482,7 +482,7 @@ test.describe('Tab Navigation - Namespace Filtering Integration', () => {
     }
   });
 
-  test.skip('should filter Pods tab data when namespace is changed', async ({ page }) => {
+  test('should filter Pods tab data when namespace is changed', async ({ page }) => {
     // Tests namespace filter affects Pods tab (unhealthy pods list)
 
     // Arrange: Navigate to Pods tab
@@ -517,7 +517,7 @@ test.describe('Tab Navigation - Namespace Filtering Integration', () => {
     expect(filteredCount).toBeLessThanOrEqual(initialCount);
   });
 
-  test.skip('should filter Secrets tab data when namespace is changed', async ({ page }) => {
+  test('should filter Secrets tab data when namespace is changed', async ({ page }) => {
     // Tests namespace filter affects Secrets tab content
 
     // Arrange: Navigate to Secrets tab
@@ -560,7 +560,7 @@ test.describe('Tab Navigation - Namespace Filtering Integration', () => {
     }
   });
 
-  test.skip('should persist namespace selection when switching between tabs', async ({ page }) => {
+  test('should persist namespace selection when switching between tabs', async ({ page }) => {
     // Tests namespace context persists across tab navigation
 
     // Arrange: Navigate to home and select "default" namespace
@@ -617,7 +617,7 @@ test.describe('Tab Navigation - Namespace Filtering Integration', () => {
 });
 
 test.describe('Tab Navigation - Loading and Error States', () => {
-  test.skip('should display LoadingSkeleton while tab content is loading', async ({ page }) => {
+  test('should display LoadingSkeleton while tab content is loading', async ({ page }) => {
     // Tests loading state during tab navigation
 
     // Arrange: Navigate to home page
@@ -647,7 +647,7 @@ test.describe('Tab Navigation - Loading and Error States', () => {
     }
   });
 
-  test.skip('should display ErrorRetry component when tab data fetch fails', async ({ page }) => {
+  test('should display ErrorRetry component when tab data fetch fails', async ({ page }) => {
     // Tests error state handling in tab content
 
     // Arrange: Navigate to Pods tab
@@ -665,7 +665,7 @@ test.describe('Tab Navigation - Loading and Error States', () => {
     expect(errorVisible || contentVisible).toBeTruthy();
   });
 
-  test.skip('should retry data fetch when retry button is clicked in ErrorRetry', async ({ page }) => {
+  test('should retry data fetch when retry button is clicked in ErrorRetry', async ({ page }) => {
     // Tests retry functionality in error state
 
     // Arrange: Navigate to Workloads tab
@@ -697,7 +697,7 @@ test.describe('Tab Navigation - Loading and Error States', () => {
     }
   });
 
-  test.skip('should display EmptyState when tab has no data to show', async ({ page }) => {
+  test('should display EmptyState when tab has no data to show', async ({ page }) => {
     // Tests empty state display when resource list is empty
 
     // Arrange: Navigate to Secrets tab
@@ -729,7 +729,7 @@ test.describe('Tab Navigation - Loading and Error States', () => {
 });
 
 test.describe('Tab Navigation - Accessibility', () => {
-  test.skip('should support keyboard navigation between tabs', async ({ page }) => {
+  test('should support keyboard navigation between tabs', async ({ page }) => {
     // Tests keyboard accessibility for tab navigation
 
     // Arrange: Navigate to home page and focus first tab
@@ -758,7 +758,7 @@ test.describe('Tab Navigation - Accessibility', () => {
     await expect(nodesTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should have proper ARIA labels for all tab buttons', async ({ page }) => {
+  test('should have proper ARIA labels for all tab buttons', async ({ page }) => {
     // Tests ARIA accessibility attributes
 
     // Arrange: Navigate to home page
@@ -783,7 +783,7 @@ test.describe('Tab Navigation - Accessibility', () => {
     await expect(nodesTab).toHaveRole('button');
   });
 
-  test.skip('should indicate active tab with aria-current attribute', async ({ page }) => {
+  test('should indicate active tab with aria-current attribute', async ({ page }) => {
     // Tests active tab indication for screen readers
 
     // Arrange: Navigate to Pods tab

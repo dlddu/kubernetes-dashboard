@@ -18,7 +18,7 @@ export function TopBar() {
     <header
       role="banner"
       data-testid="top-bar"
-      className="bg-white border-b border-gray-200 shadow-sm"
+      className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm"
     >
       <div className="container mx-auto px-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
