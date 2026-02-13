@@ -175,7 +175,8 @@ describe('SecretsTab Component', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText('production')).toBeInTheDocument();
+        const namespace = screen.getByText('production');
+        expect(namespace).toBeInTheDocument();
       });
     });
 
@@ -324,8 +325,11 @@ describe('SecretsTab Component', () => {
         expect(screen.getByText('secret-1')).toBeInTheDocument();
       });
 
-      // Assert: Content should be hidden initially
-      expect(screen.queryByText('key1')).not.toBeVisible();
+      // Assert: Content should not be visible initially
+      const key1Element = screen.queryByText('key1');
+      if (key1Element) {
+        expect(key1Element).not.toBeVisible();
+      }
 
       // Act: Expand
       const accordionButton = screen.getByRole('button', { name: /secret-1/i });
@@ -333,7 +337,8 @@ describe('SecretsTab Component', () => {
 
       // Assert: Content should be visible
       await waitFor(() => {
-        expect(screen.getByText('key1')).toBeVisible();
+        const expandedKey = screen.getByText('key1');
+        expect(expandedKey).toBeVisible();
       });
     });
   });

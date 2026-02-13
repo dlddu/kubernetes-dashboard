@@ -163,7 +163,8 @@ describe('LoadingSkeleton Component', () => {
 
       // Assert
       const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton.className).toMatch(/animate-pulse|animate-shimmer|shimmer/);
+      const children = skeleton.querySelectorAll('[class*="animate"]');
+      expect(children.length).toBeGreaterThan(0);
     });
 
     it('should apply shimmer to line variant', () => {

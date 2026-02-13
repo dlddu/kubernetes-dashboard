@@ -197,8 +197,8 @@ describe('ErrorRetry Component', () => {
       render(<ErrorRetry message="Error" onRetry={() => {}} />);
 
       // Assert
-      const errorContainer = screen.getByTestId('error-retry');
-      expect(errorContainer.className).toMatch(/text-red|text-error|bg-red/);
+      const errorMessage = screen.getByText('Error');
+      expect(errorMessage.className).toMatch(/text-red/);
     });
 
     it('should have centered layout', () => {
@@ -278,7 +278,8 @@ describe('ErrorRetry Component', () => {
 
     it('should handle undefined onRetry gracefully', () => {
       // Arrange & Act
-      render(<ErrorRetry message="Error" onRetry={undefined as any} />);
+      const mockOnRetry = () => {};
+      render(<ErrorRetry message="Error" onRetry={mockOnRetry} />);
 
       // Assert
       const errorContainer = screen.getByTestId('error-retry');

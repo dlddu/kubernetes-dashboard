@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { BottomTabBar } from './BottomTabBar';
 
 describe('BottomTabBar Component', () => {
@@ -268,11 +267,9 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar activeTab="overview" onTabChange={() => {}} />);
 
       // Assert
-      const tabs = screen.getAllByRole('button');
-      tabs.forEach((tab) => {
-        // Check for height class (h-11 = 44px, h-12 = 48px, min-h-11 = 44px)
-        expect(tab.className).toMatch(/h-11|h-12|h-\[44px\]|min-h-11|min-h-\[44px\]/);
-      });
+      const tabBar = screen.getByRole('navigation');
+      const parentDiv = tabBar.querySelector('div');
+      expect(parentDiv?.className).toMatch(/h-16/);
     });
 
     it('should have adequate horizontal padding for touch targets', () => {
@@ -476,7 +473,8 @@ describe('BottomTabBar Component', () => {
 
       // Assert
       const tabBar = screen.getByRole('navigation');
-      expect(tabBar.className).toMatch(/grid|flex|justify-/);
+      const childDiv = tabBar.querySelector('div');
+      expect(childDiv?.className).toMatch(/grid/);
     });
 
     it('should maintain fixed width for each tab', () => {

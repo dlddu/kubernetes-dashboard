@@ -240,8 +240,8 @@ describe('EmptyState Component', () => {
       render(<EmptyState message="No data" />);
 
       // Assert
-      const emptyState = screen.getByTestId('empty-state');
-      expect(emptyState.className).toMatch(/text-gray|text-slate|text-muted/);
+      const message = screen.getByText('No data');
+      expect(message.className).toMatch(/text-gray/);
     });
 
     it('should have larger icon size', () => {
@@ -250,7 +250,8 @@ describe('EmptyState Component', () => {
 
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon.className).toMatch(/w-|h-|size-/);
+      const svg = icon.querySelector('svg');
+      expect(svg?.className).toMatch(/w-16|h-16/);
     });
   });
 
@@ -429,7 +430,7 @@ describe('EmptyState Component', () => {
 
     it('should handle undefined onAction with action button text', () => {
       // Arrange & Act
-      render(<EmptyState message="Empty" actionButtonText="Click" onAction={undefined as any} />);
+      render(<EmptyState message="Empty" actionButtonText="Click" />);
 
       // Assert
       const emptyState = screen.getByTestId('empty-state');
