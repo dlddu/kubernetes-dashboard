@@ -33,6 +33,8 @@ func setupRouter() http.Handler {
 	mux.HandleFunc("/api/pods/unhealthy", handlers.UnhealthyPodsHandler)
 	mux.HandleFunc("/api/deployments", handlers.DeploymentsHandler)
 	mux.HandleFunc("/api/deployments/", handlers.DeploymentRestartHandler)
+	mux.HandleFunc("/api/secrets/", handlers.SecretDetailHandler)
+	mux.HandleFunc("/api/secrets", handlers.SecretsHandler)
 
 	// Serve frontend static files
 	frontendHandler := createFrontendHandler()

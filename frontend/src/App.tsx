@@ -7,6 +7,7 @@ import { NodeQuickView } from './components/NodeQuickView';
 import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
+import { SecretsTab } from './components/SecretsTab';
 
 function App() {
   // TODO: Replace with React Router when implementing full Pods page
@@ -29,6 +30,8 @@ function App() {
             <NodesTab />
           ) : currentPath === '/workloads' ? (
             <WorkloadsTab />
+          ) : currentPath === '/secrets' ? (
+            <SecretsTab />
           ) : (
             <div data-testid="overview-tab" className="space-y-6">
               <SummaryCards />
