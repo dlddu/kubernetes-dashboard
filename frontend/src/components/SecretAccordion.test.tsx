@@ -39,7 +39,7 @@ describe('SecretAccordion Component', () => {
       };
 
       // Act
-      render(<SecretAccordion secret={secret} />);
+      render(<SecretAccordion secret={secret} isOpen={false} />);
 
       // Assert: Details should not be visible initially
       const detailsContent = screen.queryByTestId('secret-details');
@@ -107,10 +107,20 @@ describe('SecretAccordion Component', () => {
         json: async () => mockSecretDetail,
       });
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
       await user.click(accordionHeader);
+
+      // Rerender with isOpen=true
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Details should become visible
       await waitFor(() => {
@@ -141,18 +151,27 @@ describe('SecretAccordion Component', () => {
         json: async () => mockSecretDetail,
       });
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
 
       // Expand
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
       await waitFor(() => {
         expect(screen.queryByTestId('secret-details')).toBeVisible();
       });
 
       // Collapse
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={false} onToggle={mockOnToggle} />);
 
       // Assert: Details should be hidden again
       await waitFor(() => {
@@ -188,10 +207,18 @@ describe('SecretAccordion Component', () => {
         json: async () => mockSecretDetail,
       });
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Should call detail API
       await waitFor(() => {
@@ -209,7 +236,7 @@ describe('SecretAccordion Component', () => {
       };
 
       // Act
-      render(<SecretAccordion secret={secret} />);
+      render(<SecretAccordion secret={secret} isOpen={false} />);
 
       // Assert: Should not call API while collapsed
       expect(global.fetch).not.toHaveBeenCalled();
@@ -239,10 +266,18 @@ describe('SecretAccordion Component', () => {
           )
       );
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Should show loading indicator
       const loadingIndicator =
@@ -273,21 +308,31 @@ describe('SecretAccordion Component', () => {
         json: async () => mockSecretDetail,
       });
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
 
       // First expand
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
       });
 
       // Collapse
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={false} onToggle={mockOnToggle} />);
 
       // Re-expand
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Should not fetch again (cached)
       expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -320,10 +365,18 @@ describe('SecretAccordion Component', () => {
         json: async () => mockSecretDetail,
       });
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Should display keys
       await waitFor(() => {
@@ -356,10 +409,18 @@ describe('SecretAccordion Component', () => {
         json: async () => mockSecretDetail,
       });
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Values should be masked initially
       await waitFor(() => {
@@ -381,10 +442,18 @@ describe('SecretAccordion Component', () => {
 
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionHeader = screen.getByText('my-secret');
       await user.click(accordionHeader);
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Should show error message
       await waitFor(() => {
@@ -509,13 +578,21 @@ describe('SecretAccordion Component', () => {
         json: async () => mockSecretDetail,
       });
 
+      let isOpen = false;
+      const mockOnToggle = vi.fn(() => {
+        isOpen = !isOpen;
+      });
+
       // Act
-      render(<SecretAccordion secret={secret} />);
+      const { rerender } = render(
+        <SecretAccordion secret={secret} isOpen={isOpen} onToggle={mockOnToggle} />
+      );
       const accordionButton = screen.getByRole('button', { name: /my-secret/i });
 
       // Tab to accordion and press Enter
       accordionButton.focus();
       await user.keyboard('{Enter}');
+      rerender(<SecretAccordion secret={secret} isOpen={true} onToggle={mockOnToggle} />);
 
       // Assert: Should expand on Enter key
       await waitFor(() => {

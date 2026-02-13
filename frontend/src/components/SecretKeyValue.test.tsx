@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -126,10 +125,12 @@ describe('SecretKeyValue Component', () => {
     it('should copy value to clipboard when Copy button is clicked', async () => {
       // Arrange
       const user = userEvent.setup();
-      const mockClipboard = {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      };
-      Object.assign(navigator, { clipboard: mockClipboard });
+      const mockWriteText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: mockWriteText },
+        writable: true,
+        configurable: true,
+      });
 
       render(<SecretKeyValue secretKey="api-key" value="abc123xyz" />);
 
@@ -138,16 +139,18 @@ describe('SecretKeyValue Component', () => {
       await user.click(copyButton);
 
       // Assert: Should call clipboard API with the value
-      expect(mockClipboard.writeText).toHaveBeenCalledWith('abc123xyz');
+      expect(mockWriteText).toHaveBeenCalledWith('abc123xyz');
     });
 
     it('should show copied confirmation after copying', async () => {
       // Arrange
       const user = userEvent.setup();
-      const mockClipboard = {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      };
-      Object.assign(navigator, { clipboard: mockClipboard });
+      const mockWriteText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: mockWriteText },
+        writable: true,
+        configurable: true,
+      });
 
       render(<SecretKeyValue secretKey="token" value="mytoken" />);
 
@@ -164,10 +167,12 @@ describe('SecretKeyValue Component', () => {
     it('should copy value even when hidden', async () => {
       // Arrange
       const user = userEvent.setup();
-      const mockClipboard = {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      };
-      Object.assign(navigator, { clipboard: mockClipboard });
+      const mockWriteText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: mockWriteText },
+        writable: true,
+        configurable: true,
+      });
 
       render(<SecretKeyValue secretKey="password" value="secretpassword" />);
 
@@ -176,7 +181,7 @@ describe('SecretKeyValue Component', () => {
       await user.click(copyButton);
 
       // Assert: Should copy the actual value
-      expect(mockClipboard.writeText).toHaveBeenCalledWith('secretpassword');
+      expect(mockWriteText).toHaveBeenCalledWith('secretpassword');
     });
   });
 
@@ -366,10 +371,12 @@ describe('SecretKeyValue Component', () => {
     it('should handle copy failure gracefully', async () => {
       // Arrange
       const user = userEvent.setup();
-      const mockClipboard = {
-        writeText: vi.fn().mockRejectedValue(new Error('Copy failed')),
-      };
-      Object.assign(navigator, { clipboard: mockClipboard });
+      const mockWriteText = vi.fn().mockRejectedValue(new Error('Copy failed'));
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: mockWriteText },
+        writable: true,
+        configurable: true,
+      });
 
       render(<SecretKeyValue secretKey="password" value="secret" />);
 
