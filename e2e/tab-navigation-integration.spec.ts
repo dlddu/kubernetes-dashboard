@@ -79,28 +79,23 @@ test.describe('Bottom Tab Navigation - Basic Rendering', () => {
     await expect(bottomTabBar).toBeVisible();
 
     // Assert: Overview tab should be visible
-    const overviewTab = page.getByTestId('tab-overview')
-      .or(page.getByRole('link', { name: /overview/i }));
+    const overviewTab = page.getByTestId('tab-overview');
     await expect(overviewTab).toBeVisible();
 
     // Assert: Pods tab should be visible
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     await expect(podsTab).toBeVisible();
 
     // Assert: Nodes tab should be visible
-    const nodesTab = page.getByTestId('tab-nodes')
-      .or(page.getByRole('link', { name: /nodes/i }));
+    const nodesTab = page.getByTestId('tab-nodes');
     await expect(nodesTab).toBeVisible();
 
     // Assert: Deployments tab should be visible
-    const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('link', { name: /deployments/i }));
+    const deploymentsTab = page.getByTestId('tab-deployments');
     await expect(deploymentsTab).toBeVisible();
 
     // Assert: Secrets tab should be visible
-    const secretsTab = page.getByTestId('tab-secrets')
-      .or(page.getByRole('link', { name: /secrets/i }));
+    const secretsTab = page.getByTestId('tab-secrets');
     await expect(secretsTab).toBeVisible();
 
     // Assert: Exactly 5 tabs should be present
@@ -152,8 +147,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click Overview tab
-    const overviewTab = page.getByTestId('tab-overview')
-      .or(page.getByRole('link', { name: /overview/i }));
+    const overviewTab = page.getByTestId('tab-overview');
     await overviewTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -177,8 +171,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click Pods tab
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     await podsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -203,8 +196,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click Nodes tab
-    const nodesTab = page.getByTestId('tab-nodes')
-      .or(page.getByRole('link', { name: /nodes/i }));
+    const nodesTab = page.getByTestId('tab-nodes');
     await nodesTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -229,8 +221,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click Deployments tab
-    const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('link', { name: /deployments/i }));
+    const deploymentsTab = page.getByTestId('tab-deployments');
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -255,8 +246,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click Secrets tab
-    const secretsTab = page.getByTestId('tab-secrets')
-      .or(page.getByRole('link', { name: /secrets/i }));
+    const secretsTab = page.getByTestId('tab-secrets');
     await secretsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -286,8 +276,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     expect(scrollPosition).toBeGreaterThan(0);
 
     // Act: Click Overview tab
-    const overviewTab = page.getByTestId('tab-overview')
-      .or(page.getByRole('link', { name: /overview/i }));
+    const overviewTab = page.getByTestId('tab-overview');
     await overviewTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -307,8 +296,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the Pods tab
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     await expect(podsTab).toBeVisible();
 
     // Assert: Badge should be visible if there are unhealthy pods
@@ -344,8 +332,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
     // If all pods are healthy, badge should not be visible
     if (await noPodMessage.isVisible()) {
       // Assert: Pods tab badge should not be visible
-      const podsTab = page.getByTestId('tab-pods')
-        .or(page.getByRole('link', { name: /pods/i }));
+      const podsTab = page.getByTestId('tab-pods');
       const badge = podsTab.getByTestId('unhealthy-pod-badge')
         .or(podsTab.locator('[data-badge]'));
 
@@ -365,8 +352,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Get initial badge count
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     const badge = podsTab.getByTestId('unhealthy-pod-badge')
       .or(podsTab.locator('[data-badge]'));
 
@@ -398,8 +384,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the Pods tab badge
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     const badge = podsTab.getByTestId('unhealthy-pod-badge')
       .or(podsTab.locator('[data-badge]'));
 
@@ -589,8 +574,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     await expect(namespaceSelector).toContainText(/^default$/i);
 
     // Act: Navigate to Pods tab using bottom tab bar
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     await podsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -599,8 +583,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     await expect(namespaceSelectorOnPods).toContainText(/^default$/i);
 
     // Act: Navigate to Nodes tab using bottom tab bar
-    const nodesTab = page.getByTestId('tab-nodes')
-      .or(page.getByRole('link', { name: /nodes/i }));
+    const nodesTab = page.getByTestId('tab-nodes');
     await nodesTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -609,8 +592,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     await expect(namespaceSelectorOnNodes).toContainText(/^default$/i);
 
     // Act: Navigate to Deployments tab using bottom tab bar
-    const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('link', { name: /deployments/i }));
+    const deploymentsTab = page.getByTestId('tab-deployments');
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -650,14 +632,12 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     expect(filteredCount).toBeLessThanOrEqual(initialCount);
 
     // Act: Navigate to Overview using bottom tab bar
-    const overviewTab = page.getByTestId('tab-overview')
-      .or(page.getByRole('link', { name: /overview/i }));
+    const overviewTab = page.getByTestId('tab-overview');
     await overviewTab.click();
     await page.waitForLoadState('networkidle');
 
     // Act: Navigate back to Pods using bottom tab bar
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     await podsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -688,8 +668,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Navigate to Deployments using bottom tab bar
-    const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('link', { name: /deployments/i }));
+    const deploymentsTab = page.getByTestId('tab-deployments');
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -712,8 +691,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Get initial badge count (All Namespaces)
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     const badge = podsTab.getByTestId('unhealthy-pod-badge')
       .or(podsTab.locator('[data-badge]'));
 
@@ -770,8 +748,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the Overview tab
-    const overviewTab = page.getByTestId('tab-overview')
-      .or(page.getByRole('link', { name: /overview/i }));
+    const overviewTab = page.getByTestId('tab-overview');
 
     // Assert: Overview tab should have aria-current="page"
     await expect(overviewTab).toHaveAttribute('aria-current', 'page');
@@ -794,8 +771,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the Pods tab
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
 
     // Assert: Pods tab should have aria-current="page"
     await expect(podsTab).toHaveAttribute('aria-current', 'page');
@@ -821,8 +797,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the Nodes tab
-    const nodesTab = page.getByTestId('tab-nodes')
-      .or(page.getByRole('link', { name: /nodes/i }));
+    const nodesTab = page.getByTestId('tab-nodes');
 
     // Assert: Nodes tab should have aria-current="page"
     await expect(nodesTab).toHaveAttribute('aria-current', 'page');
@@ -841,8 +816,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the Deployments tab
-    const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('link', { name: /deployments/i }));
+    const deploymentsTab = page.getByTestId('tab-deployments');
 
     // Assert: Deployments tab should have aria-current="page"
     await expect(deploymentsTab).toHaveAttribute('aria-current', 'page');
@@ -861,8 +835,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the Secrets tab
-    const secretsTab = page.getByTestId('tab-secrets')
-      .or(page.getByRole('link', { name: /secrets/i }));
+    const secretsTab = page.getByTestId('tab-secrets');
 
     // Assert: Secrets tab should have aria-current="page"
     await expect(secretsTab).toHaveAttribute('aria-current', 'page');
