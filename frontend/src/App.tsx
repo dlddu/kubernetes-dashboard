@@ -43,7 +43,7 @@ function App() {
 
   return (
     <NamespaceProvider>
-      <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
+      <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
         <TopBar />
         <main className="container mx-auto px-4 py-8">
           {currentPath === '/pods' ? (

@@ -24,7 +24,7 @@ describe('SecretsTab Component', () => {
       render(<SecretsTab />);
 
       // Assert
-      const secretsTab = screen.getByTestId('secrets-tab');
+      const secretsTab = screen.getByTestId('secrets-page');
       expect(secretsTab).toBeInTheDocument();
     });
 
@@ -542,7 +542,7 @@ describe('SecretsTab Component', () => {
         expect(screen.getByText('secret-2')).toBeInTheDocument();
       });
 
-      const secretsContainer = screen.getByTestId('secrets-tab');
+      const secretsContainer = screen.getByTestId('secrets-page');
       expect(secretsContainer).toBeInTheDocument();
     });
 
@@ -557,7 +557,7 @@ describe('SecretsTab Component', () => {
       render(<SecretsTab />);
 
       // Assert: Container should have proper accessibility attributes
-      const secretsTab = screen.getByTestId('secrets-tab');
+      const secretsTab = screen.getByTestId('secrets-page');
       expect(secretsTab).toBeInTheDocument();
 
       const heading = screen.getByRole('heading', { name: 'Secrets', level: 1 });
