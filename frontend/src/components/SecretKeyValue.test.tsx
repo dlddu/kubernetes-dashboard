@@ -158,9 +158,8 @@ describe('SecretKeyValue Component', () => {
       const copyButton = screen.getByRole('button', { name: /copy/i });
       await user.click(copyButton);
 
-      // Assert: Should show "Copied" confirmation
-      const copiedIndicator =
-        screen.queryByText(/copied/i) || screen.queryByTestId('copied-indicator');
+      // Assert: Should show "Copied" confirmation (query by test-id to avoid ambiguity)
+      const copiedIndicator = screen.queryByTestId('copied-indicator');
       expect(copiedIndicator).toBeInTheDocument();
     });
 
