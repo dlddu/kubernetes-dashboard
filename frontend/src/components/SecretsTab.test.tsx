@@ -23,7 +23,7 @@ describe('SecretsTab Component', () => {
       render(<SecretsTab />);
 
       // Assert
-      const secretsTab = screen.getByTestId('secrets-page');
+      const secretsTab = screen.getByTestId('secrets-tab');
       expect(secretsTab).toBeInTheDocument();
     });
 
@@ -86,8 +86,8 @@ describe('SecretsTab Component', () => {
 
       // Assert: Wait for data to load
       await waitFor(() => {
-        const secretCard = screen.queryByTestId('secret-card');
-        expect(secretCard).toBeInTheDocument();
+        const secretAccordion = screen.queryByTestId('secret-accordion-test-secret');
+        expect(secretAccordion).toBeInTheDocument();
       });
 
       // Loading indicator should be hidden
@@ -124,8 +124,10 @@ describe('SecretsTab Component', () => {
 
       // Assert: Wait for secrets to be rendered
       await waitFor(() => {
-        const secretCards = screen.getAllByTestId('secret-card');
-        expect(secretCards).toHaveLength(2);
+        const secretAccordion1 = screen.getByTestId('secret-accordion-secret-1');
+        const secretAccordion2 = screen.getByTestId('secret-accordion-secret-2');
+        expect(secretAccordion1).toBeInTheDocument();
+        expect(secretAccordion2).toBeInTheDocument();
       });
     });
 
@@ -779,8 +781,8 @@ describe('SecretsTab Component', () => {
 
       // Assert
       await waitFor(() => {
-        const secretCards = screen.queryAllByTestId('secret-card');
-        expect(secretCards).toHaveLength(0);
+        const secretAccordions = screen.queryAllByTestId(/^secret-accordion-/);
+        expect(secretAccordions).toHaveLength(0);
       });
     });
   });
