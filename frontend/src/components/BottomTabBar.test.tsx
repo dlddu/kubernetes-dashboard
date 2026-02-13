@@ -28,11 +28,11 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      expect(screen.getByRole('button', { name: /overview/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /pods/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /nodes/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /deployments|workloads/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /secrets/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /overview/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /pods/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /nodes/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /deployments|workloads/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /secrets/i })).toBeInTheDocument();
     });
 
     it('should have aria-label on navigation', () => {
@@ -53,7 +53,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const overviewTab = screen.getByRole('button', { name: /overview/i });
+      const overviewTab = screen.getByRole('tab', { name: /overview/i });
       expect(overviewTab).toHaveAttribute('aria-current', 'page');
     });
 
@@ -62,7 +62,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="pods" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const podsTab = screen.getByRole('button', { name: /pods/i });
+      const podsTab = screen.getByRole('tab', { name: /pods/i });
       expect(podsTab).toHaveAttribute('aria-current', 'page');
     });
 
@@ -71,7 +71,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="nodes" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const nodesTab = screen.getByRole('button', { name: /nodes/i });
+      const nodesTab = screen.getByRole('tab', { name: /nodes/i });
       expect(nodesTab).toHaveAttribute('aria-current', 'page');
     });
 
@@ -80,7 +80,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="workloads" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const workloadsTab = screen.getByRole('button', { name: /deployments|workloads/i });
+      const workloadsTab = screen.getByRole('tab', { name: /deployments|workloads/i });
       expect(workloadsTab).toHaveAttribute('aria-current', 'page');
     });
 
@@ -89,7 +89,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="secrets" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const secretsTab = screen.getByRole('button', { name: /secrets/i });
+      const secretsTab = screen.getByRole('tab', { name: /secrets/i });
       expect(secretsTab).toHaveAttribute('aria-current', 'page');
     });
 
@@ -98,7 +98,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="pods" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const currentTabs = screen.getAllByRole('button').filter((tab) => tab.getAttribute('aria-current') === 'page');
+      const currentTabs = screen.getAllByRole('tab').filter((tab) => tab.getAttribute('aria-current') === 'page');
       expect(currentTabs).toHaveLength(1);
     });
   });
@@ -161,7 +161,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="pods" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const overviewTab = screen.getByRole('button', { name: /overview/i });
+      const overviewTab = screen.getByRole('tab', { name: /overview/i });
       await user.click(overviewTab);
 
       // Assert
@@ -175,7 +175,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const podsTab = screen.getByRole('button', { name: /pods/i });
+      const podsTab = screen.getByRole('tab', { name: /pods/i });
       await user.click(podsTab);
 
       // Assert
@@ -189,7 +189,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const nodesTab = screen.getByRole('button', { name: /nodes/i });
+      const nodesTab = screen.getByRole('tab', { name: /nodes/i });
       await user.click(nodesTab);
 
       // Assert
@@ -203,7 +203,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const workloadsTab = screen.getByRole('button', { name: /deployments|workloads/i });
+      const workloadsTab = screen.getByRole('tab', { name: /deployments|workloads/i });
       await user.click(workloadsTab);
 
       // Assert
@@ -217,7 +217,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const secretsTab = screen.getByRole('button', { name: /secrets/i });
+      const secretsTab = screen.getByRole('tab', { name: /secrets/i });
       await user.click(secretsTab);
 
       // Assert
@@ -231,7 +231,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const overviewTab = screen.getByRole('button', { name: /overview/i });
+      const overviewTab = screen.getByRole('tab', { name: /overview/i });
       await user.click(overviewTab);
 
       // Assert - can be called or not, depends on implementation
@@ -250,7 +250,7 @@ describe('BottomTabBar', () => {
       await user.tab();
 
       // Assert - first tab should be focused
-      const firstButton = screen.getAllByRole('button')[0];
+      const firstButton = screen.getAllByRole('tab')[0];
       expect(firstButton).toHaveFocus();
     });
 
@@ -264,7 +264,7 @@ describe('BottomTabBar', () => {
       await user.tab(); // Focus second tab
 
       // Assert
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       expect(buttons[1]).toHaveFocus();
     });
 
@@ -275,7 +275,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const podsTab = screen.getByRole('button', { name: /pods/i });
+      const podsTab = screen.getByRole('tab', { name: /pods/i });
       podsTab.focus();
       await user.keyboard('{Enter}');
 
@@ -290,7 +290,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={onTabChange} />);
-      const nodesTab = screen.getByRole('button', { name: /nodes/i });
+      const nodesTab = screen.getByRole('tab', { name: /nodes/i });
       nodesTab.focus();
       await user.keyboard(' ');
 
@@ -304,7 +304,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       buttons[0].focus();
       await user.keyboard('{ArrowRight}');
 
@@ -318,7 +318,7 @@ describe('BottomTabBar', () => {
 
       // Act
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       buttons[1].focus();
       await user.keyboard('{ArrowLeft}');
 
@@ -373,7 +373,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       buttons.forEach((button) => {
         // Should have appropriate padding/height classes
         expect(button.className).toMatch(/h-|p-|py-|min-h/);
@@ -385,7 +385,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       buttons.forEach((button) => {
         expect(button.className).toMatch(/p-|px-|py-/);
       });
@@ -416,8 +416,8 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="pods" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const podsTab = screen.getByRole('button', { name: /pods/i });
-      const overviewTab = screen.getByRole('button', { name: /overview/i });
+      const podsTab = screen.getByRole('tab', { name: /pods/i });
+      const overviewTab = screen.getByRole('tab', { name: /overview/i });
 
       // Active and inactive tabs should have different classes
       expect(podsTab.className).not.toBe(overviewTab.className);
@@ -428,7 +428,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       buttons.forEach((button) => {
         // Each button should have text content or aria-label
         expect(button.textContent || button.getAttribute('aria-label')).toBeTruthy();
@@ -489,7 +489,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="nodes" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       const activeButtons = buttons.filter((btn) => btn.getAttribute('aria-current') === 'page');
       expect(activeButtons).toHaveLength(1);
       expect(activeButtons[0]).toHaveTextContent(/nodes/i);
@@ -500,7 +500,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const podsTab = screen.getByRole('button', { name: /pods/i });
+      const podsTab = screen.getByRole('tab', { name: /pods/i });
       expect(podsTab).not.toHaveAttribute('aria-current', 'page');
     });
 
@@ -509,7 +509,7 @@ describe('BottomTabBar', () => {
       render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const buttons = screen.getAllByRole('button');
+      const buttons = screen.getAllByRole('tab');
       buttons.forEach((button) => {
         const label = button.getAttribute('aria-label') || button.textContent;
         expect(label).toBeTruthy();
@@ -527,7 +527,7 @@ describe('BottomTabBar', () => {
       rerender(<BottomTabBar currentTab="pods" unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert
-      const podsTab = screen.getByRole('button', { name: /pods/i });
+      const podsTab = screen.getByRole('tab', { name: /pods/i });
       expect(podsTab).toHaveAttribute('aria-current', 'page');
     });
 

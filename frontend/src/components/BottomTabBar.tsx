@@ -51,12 +51,15 @@ export function BottomTabBar({ currentTab, onTabChange, unhealthyPodCount }: Bot
               key={tab.id}
               data-tab-button
               data-testid={`tab-${tab.id === 'workloads' ? 'deployments' : tab.id}`}
+              role="tab"
+              aria-label={tab.label}
+              aria-selected={isActive}
               onClick={() => onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               aria-current={isActive ? 'page' : undefined}
               className={`relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-medium transition-colors ${
                 isActive
-                  ? 'text-blue-600'
+                  ? 'active text-blue-600'
                   : 'text-gray-600 hover:text-gray-900 focus:text-blue-600'
               } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset`}
             >
