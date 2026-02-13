@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { EmptyState } from './EmptyState';
 
 describe('EmptyState Component', () => {
@@ -191,7 +191,7 @@ describe('EmptyState Component', () => {
 
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon.className).toMatch(/text-gray|text-slate/);
+      expect(icon.getAttribute('class')).toMatch(/text-gray|text-slate/);
     });
 
     it('should have green color for success empty state', () => {
@@ -200,7 +200,7 @@ describe('EmptyState Component', () => {
 
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon.className).toMatch(/text-green|text-success/);
+      expect(icon.getAttribute('class')).toMatch(/text-green|text-success/);
     });
 
     it('should have appropriate icon size', () => {
@@ -209,7 +209,7 @@ describe('EmptyState Component', () => {
 
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon.className).toMatch(/w-|h-/);
+      expect(icon.getAttribute('class')).toMatch(/w-|h-/);
     });
 
     it('should have large icon for better visibility', () => {
@@ -218,7 +218,7 @@ describe('EmptyState Component', () => {
 
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon.className).toMatch(/w-12|w-16|w-20|h-12|h-16|h-20/);
+      expect(icon.getAttribute('class')).toMatch(/w-12|w-16|w-20|h-12|h-16|h-20/);
     });
   });
 
@@ -376,7 +376,7 @@ describe('EmptyState Component', () => {
   describe('Optional Action Button', () => {
     it('should display action button when provided', () => {
       // Arrange & Act
-      render(<EmptyState message="Empty" actionText="Add Item" />);
+      render(<EmptyState message="Empty" actionText="Add Item" onAction={vi.fn()} />);
 
       // Assert
       const actionButton = screen.getByRole('button', { name: 'Add Item' });
@@ -413,7 +413,7 @@ describe('EmptyState Component', () => {
 
     it('should style action button as primary', () => {
       // Arrange & Act
-      render(<EmptyState message="Empty" actionText="Add Item" />);
+      render(<EmptyState message="Empty" actionText="Add Item" onAction={vi.fn()} />);
 
       // Assert
       const actionButton = screen.getByRole('button', { name: 'Add Item' });
@@ -422,7 +422,7 @@ describe('EmptyState Component', () => {
 
     it('should have padding on action button', () => {
       // Arrange & Act
-      render(<EmptyState message="Empty" actionText="Add Item" />);
+      render(<EmptyState message="Empty" actionText="Add Item" onAction={vi.fn()} />);
 
       // Assert
       const actionButton = screen.getByRole('button', { name: 'Add Item' });
@@ -512,14 +512,14 @@ describe('EmptyState Component', () => {
         <EmptyState message="Empty" icon="inbox" />
       );
       const firstIcon = screen.getByTestId('empty-state-icon');
-      const firstIconClass = firstIcon.className;
+      const firstIconClass = firstIcon.getAttribute('class');
 
       // Act
       rerender(<EmptyState message="Empty" icon="checkmark" />);
 
       // Assert
       const secondIcon = screen.getByTestId('empty-state-icon');
-      expect(secondIcon.className).not.toBe(firstIconClass);
+      expect(secondIcon.getAttribute('class')).not.toBe(firstIconClass);
     });
   });
 

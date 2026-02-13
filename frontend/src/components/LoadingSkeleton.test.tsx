@@ -56,8 +56,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton variant="card" />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton.className).toMatch(/rounded|border|shadow/);
+      const skeletonItem = screen.getByTestId('skeleton-item');
+      expect(skeletonItem.className).toMatch(/rounded|border|shadow/);
     });
 
     it('should render text variant for text content', () => {
@@ -65,8 +65,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton variant="text" />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton.className).toMatch(/h-4|h-5|rounded/);
+      const skeletonItem = screen.getByTestId('skeleton-item');
+      expect(skeletonItem.className).toMatch(/h-4|h-5|rounded/);
     });
 
     it('should render list variant for list items', () => {
@@ -83,8 +83,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton variant="table" />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton.className).toMatch(/w-full/);
+      const skeletonItem = screen.getByTestId('skeleton-item');
+      expect(skeletonItem.className).toMatch(/w-full/);
     });
 
     it('should default to card variant when no variant specified', () => {

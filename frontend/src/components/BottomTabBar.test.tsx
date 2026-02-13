@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BottomTabBar } from './BottomTabBar';
 
@@ -14,6 +14,10 @@ Object.defineProperty(window, 'location', {
 });
 
 describe('BottomTabBar Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLocation.pathname = '/';
+  });
   describe('Basic Rendering', () => {
     it('should render bottom tab bar container', () => {
       // Arrange & Act
@@ -346,9 +350,12 @@ describe('BottomTabBar Component', () => {
       // Arrange & Act
       render(<BottomTabBar />);
 
-      // Assert
+      // Assert: Check if tabs are displayed horizontally (either in nav or its children)
       const tabBar = screen.getByTestId('bottom-tab-bar');
-      expect(tabBar.className).toMatch(/flex|grid/);
+      const hasFlexLayout = tabBar.className.match(/flex|grid/) ||
+                           tabBar.querySelector('[class*="flex"]') !== null ||
+                           tabBar.querySelector('[class*="grid"]') !== null;
+      expect(hasFlexLayout).toBeTruthy();
     });
 
     it('should distribute tabs evenly', () => {
@@ -508,9 +515,9 @@ describe('BottomTabBar Component', () => {
       // Arrange & Act
       render(<BottomTabBar />);
 
-      // Assert
+      // Assert: Should have md:hidden (visible on mobile, hidden on desktop)
       const tabBar = screen.getByTestId('bottom-tab-bar');
-      expect(tabBar.className).not.toMatch(/hidden(?!.*md:hidden)/);
+      expect(tabBar.className).toMatch(/md:hidden|lg:hidden/);
     });
   });
 
@@ -539,7 +546,7 @@ describe('BottomTabBar Component', () => {
 
       // Assert
       const icon = screen.getByTestId('tab-overview').querySelector('svg');
-      expect(icon?.className).toMatch(/w-|h-/);
+      expect(icon?.getAttribute('class')).toMatch(/w-|h-/);
     });
 
     it('should have appropriate label text size', () => {

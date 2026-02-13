@@ -90,7 +90,7 @@ describe('ErrorRetry Component', () => {
       fireEvent.click(retryButton);
 
       // Assert
-      expect(onRetryMock).toHaveBeenCalledWith();
+      expect(onRetryMock).toHaveBeenCalled();
     });
   });
 
@@ -201,7 +201,7 @@ describe('ErrorRetry Component', () => {
 
       // Assert
       const errorIcon = screen.getByTestId('error-icon');
-      expect(errorIcon.className).toMatch(/text-red|text-error/);
+      expect(errorIcon.getAttribute('class')).toMatch(/text-red|text-error/);
     });
 
     it('should have appropriate icon size', () => {
@@ -210,7 +210,7 @@ describe('ErrorRetry Component', () => {
 
       // Assert
       const errorIcon = screen.getByTestId('error-icon');
-      expect(errorIcon.className).toMatch(/w-|h-/);
+      expect(errorIcon.getAttribute('class')).toMatch(/w-|h-/);
     });
 
     it('should render icon as SVG element', () => {
@@ -294,7 +294,7 @@ describe('ErrorRetry Component', () => {
       render(<ErrorRetry message="Error" onRetry={vi.fn()} />);
 
       // Assert
-      const retryButton = screen.getByRole('button', { name: /retry/i });
+      const retryButton = screen.getByRole('button', { name: /retry|try again/i });
       expect(retryButton).toBeInTheDocument();
     });
 

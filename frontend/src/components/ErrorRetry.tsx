@@ -13,7 +13,7 @@ export function ErrorRetry({
   retryButtonText = 'Try Again',
   className = '',
 }: ErrorRetryProps) {
-  const messageId = 'error-message-' + Math.random().toString(36).substr(2, 9);
+  const messageId = 'error-message';
 
   return (
     <div
