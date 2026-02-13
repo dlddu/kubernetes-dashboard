@@ -395,7 +395,8 @@ describe('EmptyState Component', () => {
       const icon = screen.getByTestId('empty-state-icon');
       // Check SVG child element for size classes
       const svg = icon.querySelector('svg');
-      expect(svg?.className).toMatch(/w-\d+.*h-\d+/);
+      const className = svg?.getAttribute('class') || '';
+      expect(className).toMatch(/w-\d+.*h-\d+/);
     });
 
     it('should maintain center alignment on all viewports', () => {

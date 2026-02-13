@@ -435,7 +435,7 @@ describe('SecretsTab Component', () => {
       });
 
       const secretData = screen.queryByTestId('secret-data');
-      expect(secretData).not.toBeVisible();
+      expect(secretData).not.toBeInTheDocument();
     });
 
     it('should expand secret when clicking expand button', async () => {
@@ -510,7 +510,7 @@ describe('SecretsTab Component', () => {
       // Assert
       await waitFor(() => {
         const secretData = screen.queryByTestId('secret-data');
-        expect(secretData).not.toBeVisible();
+        expect(secretData).not.toBeInTheDocument();
       });
     });
 
@@ -923,7 +923,8 @@ describe('SecretsTab Component', () => {
       // Assert
       await waitFor(() => {
         const revealButton = screen.getByTestId('reveal-secret-button');
-        expect(revealButton).toHaveAttribute('aria-label', /reveal|show/i);
+        const ariaLabel = revealButton.getAttribute('aria-label') || '';
+        expect(ariaLabel).toMatch(/reveal|show/i);
       });
     });
   });
