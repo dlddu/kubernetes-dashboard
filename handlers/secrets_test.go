@@ -7,14 +7,6 @@ import (
 	"testing"
 )
 
-// skipIfNoCluster skips the test if no Kubernetes cluster is available.
-func skipIfNoCluster(t *testing.T) {
-	t.Helper()
-	if _, err := getKubernetesClient(); err != nil {
-		t.Skip("Skipping test: Kubernetes cluster not available")
-	}
-}
-
 // TestSecretsHandler tests the GET /api/secrets endpoint
 func TestSecretsHandler(t *testing.T) {
 	t.Run("should return 200 OK with secrets list", func(t *testing.T) {
