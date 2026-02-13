@@ -20,7 +20,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Secrets Tab - Basic Rendering', () => {
-  test.skip('should display secrets as accordions in the Secrets tab', async ({ page }) => {
+  test('should display secrets as accordions in the Secrets tab', async ({ page }) => {
     // Tests that secrets created by fixtures are displayed as accordion components
 
     // Arrange: Navigate to the Secrets tab
@@ -47,7 +47,7 @@ test.describe('Secrets Tab - Basic Rendering', () => {
 });
 
 test.describe('Secrets Tab - Accordion Expand/Collapse', () => {
-  test.skip('should expand accordion and display key list when secret is clicked', async ({ page }) => {
+  test('should expand accordion and display key list when secret is clicked', async ({ page }) => {
     // Tests that clicking a secret accordion expands it and shows the keys
 
     // Arrange: Navigate to the Secrets tab
@@ -91,7 +91,7 @@ test.describe('Secrets Tab - Accordion Expand/Collapse', () => {
 });
 
 test.describe('Secrets Tab - Reveal/Hide Values', () => {
-  test.skip('should reveal base64-decoded value when Reveal button is clicked', async ({ page }) => {
+  test('should reveal base64-decoded value when Reveal button is clicked', async ({ page }) => {
     // Tests that clicking Reveal button displays the decoded secret value
 
     // Arrange: Navigate to Secrets tab and expand test-secret
@@ -135,7 +135,7 @@ test.describe('Secrets Tab - Reveal/Hide Values', () => {
     await expect(maskedValue).not.toBeVisible();
   });
 
-  test.skip('should hide value and restore masking when Hide button is clicked', async ({ page }) => {
+  test('should hide value and restore masking when Hide button is clicked', async ({ page }) => {
     // Tests that clicking Hide button masks the secret value again
 
     // Arrange: Navigate to Secrets tab, expand test-secret, and reveal username value
@@ -178,7 +178,7 @@ test.describe('Secrets Tab - Reveal/Hide Values', () => {
 });
 
 test.describe('Secrets Tab - Multi-Accordion Behavior', () => {
-  test.skip('should collapse previous accordion when a different secret is clicked', async ({ page }) => {
+  test('should collapse previous accordion when a different secret is clicked', async ({ page }) => {
     // Tests that only one accordion is expanded at a time (accordion behavior)
 
     // Arrange: Navigate to Secrets tab
@@ -221,7 +221,7 @@ test.describe('Secrets Tab - Multi-Accordion Behavior', () => {
 });
 
 test.describe('Secrets Tab - TLS Secret Handling', () => {
-  test.skip('should display TLS secret with correct keys (tls.crt, tls.key)', async ({ page }) => {
+  test('should display TLS secret with correct keys (tls.crt, tls.key)', async ({ page }) => {
     // Tests that TLS-type secrets display the correct certificate keys
 
     // Arrange: Navigate to Secrets tab
@@ -260,7 +260,7 @@ test.describe('Secrets Tab - TLS Secret Handling', () => {
 });
 
 test.describe('Secrets Tab - Loading and Error States', () => {
-  test.skip('should display loading state while fetching secrets', async ({ page }) => {
+  test('should display loading state while fetching secrets', async ({ page }) => {
     // Tests loading indicator during data fetch
 
     // Arrange: Navigate to Secrets tab
@@ -290,7 +290,7 @@ test.describe('Secrets Tab - Loading and Error States', () => {
     }
   });
 
-  test.skip('should display error message when secrets fetch fails', async ({ page }) => {
+  test('should display error message when secrets fetch fails', async ({ page }) => {
     // Tests error state when API request fails
 
     // Arrange: Navigate to Secrets tab
@@ -314,7 +314,7 @@ test.describe('Secrets Tab - Loading and Error States', () => {
 });
 
 test.describe('Secrets Tab - Accessibility', () => {
-  test.skip('should have proper ARIA attributes for accordions', async ({ page }) => {
+  test('should have proper ARIA attributes for accordions', async ({ page }) => {
     // Tests accessibility attributes on accordion components
 
     // Arrange: Navigate to Secrets tab
@@ -342,7 +342,7 @@ test.describe('Secrets Tab - Accessibility', () => {
     await expect(accordionHeader).toHaveAttribute('aria-controls');
   });
 
-  test.skip('should support keyboard navigation for accordions', async ({ page }) => {
+  test('should support keyboard navigation for accordions', async ({ page }) => {
     // Tests keyboard accessibility (Enter/Space to expand)
 
     // Arrange: Navigate to Secrets tab
@@ -369,7 +369,7 @@ test.describe('Secrets Tab - Accessibility', () => {
     await expect(firstAccordionHeader).toHaveAttribute('aria-expanded', 'true');
   });
 
-  test.skip('should have proper labels for Reveal/Hide buttons', async ({ page }) => {
+  test('should have proper labels for Reveal/Hide buttons', async ({ page }) => {
     // Tests accessibility of Reveal/Hide buttons
 
     // Arrange: Navigate to Secrets tab and expand test-secret
@@ -401,7 +401,7 @@ test.describe('Secrets Tab - Accessibility', () => {
 });
 
 test.describe('Secrets Tab - Namespace Filtering', () => {
-  test.skip('should display only secrets from dashboard-test namespace', async ({ page }) => {
+  test('should display only secrets from dashboard-test namespace', async ({ page }) => {
     // Tests that secrets are properly filtered by namespace
 
     // Arrange: Navigate to Secrets tab
@@ -425,7 +425,7 @@ test.describe('Secrets Tab - Namespace Filtering', () => {
 });
 
 test.describe('Secrets Tab - Secret Type Display', () => {
-  test.skip('should display secret type (Opaque, kubernetes.io/tls)', async ({ page }) => {
+  test('should display secret type (Opaque, kubernetes.io/tls)', async ({ page }) => {
     // Tests that secret type is visible in accordion
 
     // Arrange: Navigate to Secrets tab

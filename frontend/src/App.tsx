@@ -7,29 +7,39 @@ import { NodeQuickView } from './components/NodeQuickView';
 import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
+import { SecretsTab } from './components/SecretsTab';
+import { BottomTabBar } from './components/BottomTabBar';
+
+type TabType = 'overview' | 'nodes' | 'workloads' | 'pods' | 'secrets';
 
 function App() {
-  // TODO: Replace with React Router when implementing full Pods page
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [unhealthyPodCount, setUnhealthyPodCount] = useState<number>(0);
 
   useEffect(() => {
-    const handlePopState = () => setCurrentPath(window.location.pathname);
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // Listen for pod count updates from UnhealthyPodPreview or other components
+    const handlePodCountUpdate = (event: CustomEvent<number>) => {
+      setUnhealthyPodCount(event.detail);
+    };
+
+    window.addEventListener('unhealthy-pod-count-update', handlePodCountUpdate as EventListener);
+    return () => {
+      window.removeEventListener('unhealthy-pod-count-update', handlePodCountUpdate as EventListener);
+    };
   }, []);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    // Update URL without page reload
+    window.history.pushState({}, '', `/${tab === 'overview' ? '' : tab}`);
+  };
 
   return (
     <NamespaceProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-20">
         <TopBar />
         <main className="container mx-auto px-4 py-8">
-          {currentPath === '/pods' ? (
-            <PodsTab />
-          ) : currentPath === '/nodes' ? (
-            <NodesTab />
-          ) : currentPath === '/workloads' ? (
-            <WorkloadsTab />
-          ) : (
+          {activeTab === 'overview' && (
             <div data-testid="overview-tab" className="space-y-6">
               <SummaryCards />
               <UnhealthyPodPreview />
@@ -41,7 +51,16 @@ function App() {
               </div>
             </div>
           )}
+          {activeTab === 'nodes' && <NodesTab />}
+          {activeTab === 'workloads' && <WorkloadsTab />}
+          {activeTab === 'pods' && <PodsTab />}
+          {activeTab === 'secrets' && <SecretsTab />}
         </main>
+        <BottomTabBar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          unhealthyPodCount={unhealthyPodCount}
+        />
       </div>
     </NamespaceProvider>
   );
