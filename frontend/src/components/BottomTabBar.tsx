@@ -27,6 +27,7 @@ export function BottomTabBar({ activeTab, onTabChange, unhealthyPodCount }: Bott
             key={tab.id}
             data-testid={`tab-button-${tab.id}`}
             onClick={() => onTabChange(tab.id)}
+            aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
             className={`flex-1 flex flex-col items-center justify-center py-3 px-2 min-h-[44px] relative ${
               isActive
