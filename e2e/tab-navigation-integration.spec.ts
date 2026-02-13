@@ -25,7 +25,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Bottom Tab Navigation - Basic Rendering', () => {
-  test.skip('should display BottomTabBar component on all pages', async ({ page }) => {
+  test('should display BottomTabBar component on all pages', async ({ page }) => {
     // Tests that BottomTabBar is consistently rendered across all routes
 
     // Arrange: Set mobile viewport (iPhone SE dimensions)
@@ -66,7 +66,7 @@ test.describe('Bottom Tab Navigation - Basic Rendering', () => {
     await expect(bottomTabBar).toBeVisible();
   });
 
-  test.skip('should display all 5 navigation tabs', async ({ page }) => {
+  test('should display all 5 navigation tabs', async ({ page }) => {
     // Tests that all 5 tabs are rendered in BottomTabBar
 
     // Arrange: Set mobile viewport and navigate to home
@@ -108,7 +108,7 @@ test.describe('Bottom Tab Navigation - Basic Rendering', () => {
     await expect(allTabs).toHaveCount(5);
   });
 
-  test.skip('should render BottomTabBar with fixed position at bottom on mobile', async ({ page }) => {
+  test('should render BottomTabBar with fixed position at bottom on mobile', async ({ page }) => {
     // Tests that BottomTabBar is fixed to the bottom of viewport on mobile
 
     // Arrange: Set mobile viewport
@@ -143,7 +143,7 @@ test.describe('Bottom Tab Navigation - Basic Rendering', () => {
 });
 
 test.describe('Bottom Tab Navigation - Tab Switching', () => {
-  test.skip('should navigate to Overview page when clicking Overview tab', async ({ page }) => {
+  test('should navigate to Overview page when clicking Overview tab', async ({ page }) => {
     // Tests navigation to Overview page via tab click
 
     // Arrange: Set mobile viewport and start on Pods page
@@ -168,7 +168,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await expect(overviewTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should navigate to Pods page when clicking Pods tab', async ({ page }) => {
+  test('should navigate to Pods page when clicking Pods tab', async ({ page }) => {
     // Tests navigation to Pods page via tab click
 
     // Arrange: Set mobile viewport and start on home page
@@ -194,7 +194,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await expect(podsTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should navigate to Nodes page when clicking Nodes tab', async ({ page }) => {
+  test('should navigate to Nodes page when clicking Nodes tab', async ({ page }) => {
     // Tests navigation to Nodes page via tab click
 
     // Arrange: Set mobile viewport and start on home page
@@ -220,7 +220,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await expect(nodesTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should navigate to Deployments page when clicking Deployments tab', async ({ page }) => {
+  test('should navigate to Deployments page when clicking Deployments tab', async ({ page }) => {
     // Tests navigation to Deployments/Workloads page via tab click
 
     // Arrange: Set mobile viewport and start on home page
@@ -246,7 +246,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await expect(deploymentsTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should navigate to Secrets page when clicking Secrets tab', async ({ page }) => {
+  test('should navigate to Secrets page when clicking Secrets tab', async ({ page }) => {
     // Tests navigation to Secrets page via tab click
 
     // Arrange: Set mobile viewport and start on home page
@@ -272,7 +272,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     await expect(secretsTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should maintain scroll position when switching tabs', async ({ page }) => {
+  test('should maintain scroll position when switching tabs', async ({ page }) => {
     // Tests that tab navigation doesn't affect scroll position
 
     // Arrange: Set mobile viewport and navigate to Pods page
@@ -298,7 +298,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
 });
 
 test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
-  test.skip('should display badge with unhealthy pod count on Pods tab icon', async ({ page }) => {
+  test('should display badge with unhealthy pod count on Pods tab icon', async ({ page }) => {
     // Tests that Pods tab shows badge with count of unhealthy pods
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -329,7 +329,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
     }
   });
 
-  test.skip('should not display badge when all pods are healthy', async ({ page }) => {
+  test('should not display badge when all pods are healthy', async ({ page }) => {
     // Tests that badge is hidden when no unhealthy pods exist
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -356,7 +356,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
     }
   });
 
-  test.skip('should update badge count dynamically when pods change state', async ({ page }) => {
+  test('should update badge count dynamically when pods change state', async ({ page }) => {
     // Tests that badge count updates when pod health status changes
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -389,7 +389,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
     }
   });
 
-  test.skip('should display badge with correct styling for visibility', async ({ page }) => {
+  test('should display badge with correct styling for visibility', async ({ page }) => {
     // Tests that badge has proper styling for mobile viewport
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -425,7 +425,7 @@ test.describe('Bottom Tab Navigation - Unhealthy Pod Badge', () => {
 });
 
 test.describe('Bottom Tab Navigation - Mobile Viewport Rendering', () => {
-  test.skip('should render correctly on iPhone SE viewport (375x667)', async ({ page }) => {
+  test('should render correctly on iPhone SE viewport (375x667)', async ({ page }) => {
     // Tests rendering on smallest common mobile viewport
 
     // Arrange: Set iPhone SE viewport
@@ -458,7 +458,7 @@ test.describe('Bottom Tab Navigation - Mobile Viewport Rendering', () => {
     expect(hasHorizontalScroll).toBe(false);
   });
 
-  test.skip('should display tab icons on mobile viewport', async ({ page }) => {
+  test('should display tab icons on mobile viewport', async ({ page }) => {
     // Tests that tab icons are visible on mobile
 
     // Arrange: Set mobile viewport
@@ -490,7 +490,7 @@ test.describe('Bottom Tab Navigation - Mobile Viewport Rendering', () => {
     await expect(secretsIcon).toBeVisible();
   });
 
-  test.skip('should display tab labels on mobile viewport', async ({ page }) => {
+  test('should display tab labels on mobile viewport', async ({ page }) => {
     // Tests that tab labels are visible and readable on mobile
 
     // Arrange: Set mobile viewport
@@ -515,7 +515,7 @@ test.describe('Bottom Tab Navigation - Mobile Viewport Rendering', () => {
     await expect(secretsTab).toContainText(/secrets/i);
   });
 
-  test.skip('should have sufficient tap target size on mobile (minimum 44x44px)', async ({ page }) => {
+  test('should have sufficient tap target size on mobile (minimum 44x44px)', async ({ page }) => {
     // Tests accessibility tap target size for mobile
 
     // Arrange: Set mobile viewport
@@ -538,7 +538,7 @@ test.describe('Bottom Tab Navigation - Mobile Viewport Rendering', () => {
     }
   });
 
-  test.skip('should not interfere with page content on mobile', async ({ page }) => {
+  test('should not interfere with page content on mobile', async ({ page }) => {
     // Tests that BottomTabBar doesn't overlap with page content
 
     // Arrange: Set mobile viewport and navigate to Pods page
@@ -568,7 +568,7 @@ test.describe('Bottom Tab Navigation - Mobile Viewport Rendering', () => {
 });
 
 test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
-  test.skip('should preserve namespace selection when switching between tabs', async ({ page }) => {
+  test('should preserve namespace selection when switching between tabs', async ({ page }) => {
     // Tests that namespace context persists across tab navigation
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -619,7 +619,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     await expect(namespaceSelectorOnDeployments).toContainText(/^default$/i);
   });
 
-  test.skip('should filter Pods tab data based on selected namespace', async ({ page }) => {
+  test('should filter Pods tab data based on selected namespace', async ({ page }) => {
     // Tests that Pods tab respects namespace filter from NamespaceContext
 
     // Arrange: Set mobile viewport and navigate to Pods page
@@ -671,7 +671,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     expect(countAfterNav).toBe(filteredCount);
   });
 
-  test.skip('should filter Deployments tab data based on selected namespace', async ({ page }) => {
+  test('should filter Deployments tab data based on selected namespace', async ({ page }) => {
     // Tests that Deployments tab respects namespace filter from NamespaceContext
 
     // Arrange: Set mobile viewport and select "kube-system" namespace
@@ -703,7 +703,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
     await expect(namespaceSelectorOnDeployments).toContainText(/^kube-system$/i);
   });
 
-  test.skip('should update unhealthy pod badge when namespace filter changes', async ({ page }) => {
+  test('should update unhealthy pod badge when namespace filter changes', async ({ page }) => {
     // Tests that badge count updates based on namespace-filtered pod data
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -761,7 +761,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
 });
 
 test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
-  test.skip('should highlight Overview tab when on home page', async ({ page }) => {
+  test('should highlight Overview tab when on home page', async ({ page }) => {
     // Tests that Overview tab is visually highlighted when active
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -785,7 +785,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     await expect(podsTab).not.toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should highlight Pods tab when on Pods page', async ({ page }) => {
+  test('should highlight Pods tab when on Pods page', async ({ page }) => {
     // Tests that Pods tab is visually highlighted when active
 
     // Arrange: Set mobile viewport and navigate to Pods page
@@ -812,7 +812,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     await expect(nodesTab).not.toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should highlight Nodes tab when on Nodes page', async ({ page }) => {
+  test('should highlight Nodes tab when on Nodes page', async ({ page }) => {
     // Tests that Nodes tab is visually highlighted when active
 
     // Arrange: Set mobile viewport and navigate to Nodes page
@@ -832,7 +832,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     expect(tabClasses).toMatch(/active|current|selected/i);
   });
 
-  test.skip('should highlight Deployments tab when on Workloads page', async ({ page }) => {
+  test('should highlight Deployments tab when on Workloads page', async ({ page }) => {
     // Tests that Deployments tab is visually highlighted when active
 
     // Arrange: Set mobile viewport and navigate to Workloads page
@@ -852,7 +852,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     expect(tabClasses).toMatch(/active|current|selected/i);
   });
 
-  test.skip('should highlight Secrets tab when on Secrets page', async ({ page }) => {
+  test('should highlight Secrets tab when on Secrets page', async ({ page }) => {
     // Tests that Secrets tab is visually highlighted when active
 
     // Arrange: Set mobile viewport and navigate to Secrets page
@@ -872,7 +872,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
     expect(tabClasses).toMatch(/active|current|selected/i);
   });
 
-  test.skip('should change highlighted tab when switching between pages', async ({ page }) => {
+  test('should change highlighted tab when switching between pages', async ({ page }) => {
     // Tests that active tab highlighting updates dynamically
 
     // Arrange: Set mobile viewport and start on Overview
@@ -905,7 +905,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
 });
 
 test.describe('Bottom Tab Navigation - Accessibility', () => {
-  test.skip('should have proper ARIA labels for each tab', async ({ page }) => {
+  test('should have proper ARIA labels for each tab', async ({ page }) => {
     // Tests that all tabs have descriptive ARIA labels
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -944,7 +944,7 @@ test.describe('Bottom Tab Navigation - Accessibility', () => {
     expect(secretsLabel?.toLowerCase()).toContain('secret');
   });
 
-  test.skip('should support keyboard navigation with Tab key', async ({ page }) => {
+  test('should support keyboard navigation with Tab key', async ({ page }) => {
     // Tests keyboard navigation through tabs
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -970,7 +970,7 @@ test.describe('Bottom Tab Navigation - Accessibility', () => {
     expect(focusedElement).toMatch(/^tab-/);
   });
 
-  test.skip('should support keyboard navigation with Arrow keys', async ({ page }) => {
+  test('should support keyboard navigation with Arrow keys', async ({ page }) => {
     // Tests arrow key navigation within tab bar (if implemented)
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -1008,7 +1008,7 @@ test.describe('Bottom Tab Navigation - Accessibility', () => {
     expect(focusedTestId).toBe('tab-pods');
   });
 
-  test.skip('should support Enter key to activate focused tab', async ({ page }) => {
+  test('should support Enter key to activate focused tab', async ({ page }) => {
     // Tests Enter key activation of tabs
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -1029,7 +1029,7 @@ test.describe('Bottom Tab Navigation - Accessibility', () => {
     await expect(podsTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should have role="navigation" on BottomTabBar container', async ({ page }) => {
+  test('should have role="navigation" on BottomTabBar container', async ({ page }) => {
     // Tests proper semantic HTML for navigation landmark
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -1050,7 +1050,7 @@ test.describe('Bottom Tab Navigation - Accessibility', () => {
     expect(ariaLabel?.toLowerCase()).toMatch(/main|primary|tab|navigation/);
   });
 
-  test.skip('should announce badge count to screen readers', async ({ page }) => {
+  test('should announce badge count to screen readers', async ({ page }) => {
     // Tests that badge count is accessible to screen readers
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -1079,7 +1079,7 @@ test.describe('Bottom Tab Navigation - Accessibility', () => {
 });
 
 test.describe('Bottom Tab Navigation - Edge Cases', () => {
-  test.skip('should handle rapid tab switching without errors', async ({ page }) => {
+  test('should handle rapid tab switching without errors', async ({ page }) => {
     // Tests stability when user rapidly clicks different tabs
 
     // Arrange: Set mobile viewport and navigate to home page
@@ -1105,7 +1105,7 @@ test.describe('Bottom Tab Navigation - Edge Cases', () => {
     await expect(overviewContent).toBeVisible();
   });
 
-  test.skip('should maintain BottomTabBar on browser back/forward navigation', async ({ page }) => {
+  test('should maintain BottomTabBar on browser back/forward navigation', async ({ page }) => {
     // Tests that BottomTabBar persists during browser navigation
 
     // Arrange: Set mobile viewport and navigate through tabs
@@ -1141,7 +1141,7 @@ test.describe('Bottom Tab Navigation - Edge Cases', () => {
     await expect(bottomTabBar).toBeVisible();
   });
 
-  test.skip('should handle direct URL navigation and highlight correct tab', async ({ page }) => {
+  test('should handle direct URL navigation and highlight correct tab', async ({ page }) => {
     // Tests that active tab is correctly set when navigating via URL
 
     // Arrange: Set mobile viewport and directly navigate to Pods page
@@ -1165,7 +1165,7 @@ test.describe('Bottom Tab Navigation - Edge Cases', () => {
     await expect(podsTab).not.toHaveAttribute('aria-current', 'page');
   });
 
-  test.skip('should hide BottomTabBar on desktop viewport', async ({ page }) => {
+  test('should hide BottomTabBar on desktop viewport', async ({ page }) => {
     // Tests that BottomTabBar is hidden on larger screens (desktop)
 
     // Arrange: Set desktop viewport
@@ -1184,7 +1184,7 @@ test.describe('Bottom Tab Navigation - Edge Cases', () => {
     }
   });
 
-  test.skip('should display BottomTabBar only on mobile viewport (breakpoint test)', async ({ page }) => {
+  test('should display BottomTabBar only on mobile viewport (breakpoint test)', async ({ page }) => {
     // Tests responsive breakpoint for BottomTabBar visibility
 
     // Arrange: Start with mobile viewport
