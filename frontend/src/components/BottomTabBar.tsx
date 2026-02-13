@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface BottomTabBarProps {
   unhealthyPodCount?: number;
@@ -14,6 +14,7 @@ interface Tab {
 
 export function BottomTabBar({ unhealthyPodCount }: BottomTabBarProps) {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     const handlePopState = () => setCurrentPath(window.location.pathname);
@@ -23,6 +24,39 @@ export function BottomTabBar({ unhealthyPodCount }: BottomTabBarProps) {
 
   const navigate = (path: string) => {
     window.location.assign(path);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent, index: number, path: string) => {
+    const tabCount = tabs.length;
+    let newIndex: number | null = null;
+
+    switch (event.key) {
+      case 'ArrowRight':
+        event.preventDefault();
+        newIndex = (index + 1) % tabCount;
+        break;
+      case 'ArrowLeft':
+        event.preventDefault();
+        newIndex = (index - 1 + tabCount) % tabCount;
+        break;
+      case 'Home':
+        event.preventDefault();
+        newIndex = 0;
+        break;
+      case 'End':
+        event.preventDefault();
+        newIndex = tabCount - 1;
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        navigate(path);
+        return;
+    }
+
+    if (newIndex !== null && tabRefs.current[newIndex]) {
+      tabRefs.current[newIndex]?.focus();
+    }
   };
 
   const tabs: Tab[] = [
@@ -103,16 +137,18 @@ export function BottomTabBar({ unhealthyPodCount }: BottomTabBarProps) {
       className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-200 shadow-lg pb-safe"
     >
       <div className="flex justify-around items-center">
-        {tabs.map((tab) => (
+        {tabs.map((tab, index) => (
           <button
             key={tab.name}
+            ref={(el) => (tabRefs.current[index] = el)}
             data-testid={`tab-${tab.name}`}
             onClick={() => navigate(tab.path)}
+            onKeyDown={(e) => handleKeyDown(e, index, tab.path)}
             aria-label={tab.ariaLabel}
             aria-current={isActive(tab.path) ? 'page' : undefined}
             className={`flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-2 py-3 text-xs transition-colors ${
               isActive(tab.path)
-                ? 'text-blue-600 font-semibold'
+                ? 'text-blue-600 font-semibold active'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
