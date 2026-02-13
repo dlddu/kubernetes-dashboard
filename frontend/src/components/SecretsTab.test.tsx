@@ -12,7 +12,7 @@ describe('SecretsTab Component', () => {
   });
 
   describe('Basic Rendering', () => {
-    it('should render secrets tab container', () => {
+    it('should render secrets tab container', async () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -25,9 +25,14 @@ describe('SecretsTab Component', () => {
       // Assert
       const secretsTab = screen.getByTestId('secrets-page');
       expect(secretsTab).toBeInTheDocument();
+
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
     });
 
-    it('should display page heading', () => {
+    it('should display page heading', async () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -40,6 +45,11 @@ describe('SecretsTab Component', () => {
       // Assert
       const heading = screen.getByRole('heading', { name: /secrets/i });
       expect(heading).toBeInTheDocument();
+
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
     });
   });
 
@@ -112,7 +122,7 @@ describe('SecretsTab Component', () => {
   });
 
   describe('Loading State', () => {
-    it('should display loading indicator while fetching data', () => {
+    it('should display loading indicator while fetching data', async () => {
       // Arrange: Mock a delayed response
       (global.fetch as any).mockImplementation(
         () =>
@@ -131,6 +141,11 @@ describe('SecretsTab Component', () => {
         screen.queryByText(/loading/i);
 
       expect(loadingIndicator).toBeInTheDocument();
+
+      // Wait for async operations to complete
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
     });
 
     it('should hide loading indicator after data is loaded', async () => {
@@ -965,6 +980,11 @@ describe('SecretsTab Component', () => {
 
       const heading = screen.getByRole('heading', { name: /secrets/i });
       expect(heading).toBeInTheDocument();
+
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
     });
   });
 });

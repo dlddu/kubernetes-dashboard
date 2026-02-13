@@ -255,7 +255,9 @@ describe('EmptyState Component', () => {
 
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon).toHaveClass(/w-12|w-16|w-20|h-12|h-16|h-20/);
+      // Check SVG child element for size classes
+      const svg = icon.querySelector('svg');
+      expect(svg).toHaveClass(/w-12|w-16|w-20|h-12|h-16|h-20/);
     });
 
     it('should use muted color for icon', () => {
@@ -391,7 +393,9 @@ describe('EmptyState Component', () => {
 
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon).toHaveClass(/w-|h-/);
+      // Check SVG child element for size classes
+      const svg = icon.querySelector('svg');
+      expect(svg?.className).toMatch(/w-\d+.*h-\d+/);
     });
 
     it('should maintain center alignment on all viewports', () => {

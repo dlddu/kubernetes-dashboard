@@ -355,9 +355,8 @@ describe('BottomTabBar Component', () => {
       // Assert
       const tabs = screen.getAllByTestId(/tab-button-/);
       tabs.forEach((tab) => {
-        const styles = window.getComputedStyle(tab);
-        const height = parseInt(styles.height);
-        expect(height).toBeGreaterThanOrEqual(44);
+        // Check for min-h-[44px] class instead of computed styles (jsdom limitation)
+        expect(tab.className).toMatch(/min-h-\[44px\]/);
       });
     });
 
@@ -408,7 +407,7 @@ describe('BottomTabBar Component', () => {
 
       // Assert
       const tabBar = screen.getByRole('navigation');
-      expect(tabBar).toHaveAttribute('aria-label', /tab|navigation/i);
+      expect(tabBar).toHaveAttribute('aria-label', 'Main navigation');
     });
 
     it('should mark active tab with aria-current', () => {
@@ -441,7 +440,8 @@ describe('BottomTabBar Component', () => {
 
       // Assert
       const badge = screen.getByTestId('pods-badge');
-      expect(badge).toHaveAttribute('aria-label', /unhealthy pods|5 issues/i);
+      const ariaLabel = badge.getAttribute('aria-label');
+      expect(ariaLabel).toMatch(/unhealthy pods|5 issues/i);
     });
   });
 
