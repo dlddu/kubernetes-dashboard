@@ -19,7 +19,7 @@ test.describe('Namespace Context Integration', () => {
         await expect(namespaceSelector).toContainText(/^default$/i);
 
     // Act: Navigate to Pods tab
-    const podsTab = page.getByRole('link', { name: /pods/i })
+    const podsTab = page.getByRole('tab', { name: /pods/i })
       .or(page.getByTestId('tab-pods'));
     await podsTab.click();
     await page.waitForLoadState('networkidle');
@@ -29,7 +29,7 @@ test.describe('Namespace Context Integration', () => {
         await expect(namespaceSelectorOnPodsTab).toContainText(/^default$/i);
 
     // Act: Navigate to Services tab
-    const servicesTab = page.getByRole('link', { name: /services/i })
+    const servicesTab = page.getByRole('tab', { name: /services/i })
       .or(page.getByTestId('tab-services'));
     await servicesTab.click();
     await page.waitForLoadState('networkidle');
@@ -39,7 +39,7 @@ test.describe('Namespace Context Integration', () => {
         await expect(namespaceSelectorOnServicesTab).toContainText(/^default$/i);
 
     // Act: Navigate to Deployments tab
-    const deploymentsTab = page.getByRole('link', { name: /deployments/i })
+    const deploymentsTab = page.getByRole('tab', { name: /deployments/i })
       .or(page.getByTestId('tab-deployments'));
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
@@ -159,7 +159,7 @@ test.describe('Namespace Context Integration', () => {
     await expect(deploymentsTable.locator('tbody tr')).toHaveCount(allRowCount);
 
     // Act: Navigate to Services tab while "All Namespaces" is selected
-    const servicesTab = page.getByRole('link', { name: /services/i })
+    const servicesTab = page.getByRole('tab', { name: /services/i })
       .or(page.getByTestId('tab-services'));
     await servicesTab.click();
     await page.waitForLoadState('networkidle');
@@ -369,7 +369,7 @@ test.describe('Namespace Context Integration - Multi-Resource', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Navigate to Pods tab
-    const podsTab = page.getByRole('link', { name: /pods/i })
+    const podsTab = page.getByRole('tab', { name: /pods/i })
       .or(page.getByTestId('tab-pods'));
     await podsTab.click();
     await page.waitForLoadState('networkidle');
@@ -383,7 +383,7 @@ test.describe('Namespace Context Integration - Multi-Resource', () => {
     expect(await podNamespaceCells.count()).toBeGreaterThan(0);
 
     // Act: Navigate to Services tab
-    const servicesTab = page.getByRole('link', { name: /services/i })
+    const servicesTab = page.getByRole('tab', { name: /services/i })
       .or(page.getByTestId('tab-services'));
     await servicesTab.click();
     await page.waitForLoadState('networkidle');
@@ -397,7 +397,7 @@ test.describe('Namespace Context Integration - Multi-Resource', () => {
     expect(await serviceNamespaceCells.count()).toBeGreaterThan(0);
 
     // Act: Navigate to Deployments tab
-    const deploymentsTab = page.getByRole('link', { name: /deployments/i })
+    const deploymentsTab = page.getByRole('tab', { name: /deployments/i })
       .or(page.getByTestId('tab-deployments'));
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
