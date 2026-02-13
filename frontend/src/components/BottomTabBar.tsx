@@ -134,7 +134,7 @@ export function BottomTabBar({ unhealthyPodCount }: BottomTabBarProps) {
       data-testid="bottom-tab-bar"
       role="navigation"
       aria-label="Main navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-200 shadow-lg pb-safe"
+      className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-200 shadow-lg pb-safe z-50"
     >
       <div className="flex justify-around items-center">
         {tabs.map((tab, index) => (
@@ -142,6 +142,7 @@ export function BottomTabBar({ unhealthyPodCount }: BottomTabBarProps) {
             key={tab.name}
             ref={(el) => (tabRefs.current[index] = el)}
             data-testid={`tab-${tab.name}`}
+            role="link"
             onClick={() => navigate(tab.path)}
             onKeyDown={(e) => handleKeyDown(e, index, tab.path)}
             aria-label={tab.ariaLabel}
