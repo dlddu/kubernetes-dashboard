@@ -114,7 +114,7 @@ test.describe('Secrets Tab - Reveal/Hide Values', () => {
     const maskedValue = usernameKeyValue.getByTestId('secret-value-masked');
     await expect(maskedValue).toBeVisible();
     const maskedText = await maskedValue.innerText();
-    expect(maskedText).toMatch(/\*+/); // Should contain asterisks or similar masking
+    expect(maskedText).toMatch(/[•]+/); // Should contain asterisks or similar masking
 
     // Act: Click Reveal button
     const revealButton = usernameKeyValue.getByTestId('reveal-button');
@@ -128,7 +128,7 @@ test.describe('Secrets Tab - Reveal/Hide Values', () => {
 
     // Assert: Value should not be masked anymore
     const revealedText = await revealedValue.innerText();
-    expect(revealedText).not.toMatch(/\*+/); // Should not contain masking
+    expect(revealedText).not.toMatch(/[•]+/); // Should not contain masking
     expect(revealedText.length).toBeGreaterThan(0);
 
     // Assert: Masked value should no longer be visible
@@ -167,7 +167,7 @@ test.describe('Secrets Tab - Reveal/Hide Values', () => {
     const maskedValue = usernameKeyValue.getByTestId('secret-value-masked');
     await expect(maskedValue).toBeVisible();
     const maskedText = await maskedValue.innerText();
-    expect(maskedText).toMatch(/\*+/); // Should contain masking characters
+    expect(maskedText).toMatch(/[•]+/); // Should contain masking characters
 
     // Assert: Revealed value should no longer be visible
     await expect(revealedValue).not.toBeVisible();
