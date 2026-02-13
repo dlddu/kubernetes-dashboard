@@ -50,6 +50,7 @@ export function BottomTabBar({ currentTab, onTabChange, unhealthyPodCount }: Bot
             <button
               key={tab.id}
               data-tab-button
+              data-testid={`tab-${tab.id === 'workloads' ? 'deployments' : tab.id}`}
               onClick={() => onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               aria-current={isActive ? 'page' : undefined}
