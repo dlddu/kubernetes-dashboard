@@ -606,7 +606,7 @@ describe('SecretsTab Component', () => {
       // Assert
       await waitFor(() => {
         const secretValue = screen.getByTestId('secret-value');
-        expect(secretValue).toHaveTextContent(/\*+|hidden/);
+        expect(secretValue).toHaveTextContent(/•+|\*+|hidden/);
       });
     });
 
@@ -732,7 +732,7 @@ describe('SecretsTab Component', () => {
       // Assert
       await waitFor(() => {
         const secretValue = screen.getByTestId('secret-value');
-        expect(secretValue).toHaveTextContent(/\*+|hidden/);
+        expect(secretValue).toHaveTextContent(/•+|\*+|hidden/);
       });
     });
 
