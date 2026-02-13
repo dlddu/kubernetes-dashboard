@@ -69,7 +69,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
   };
 
   return (
-    <div data-testid="secrets-page" className="space-y-6">
+    <div data-testid="secrets-tab" className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Secrets</h1>
 
       {isLoading && (
@@ -101,8 +101,9 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
             const contentId = `${secretId}-content`;
 
             return (
-              <div key={`${secret.namespace}-${secret.name}`} data-testid="secret-card" className="bg-white rounded-lg shadow">
+              <div key={`${secret.namespace}-${secret.name}`} data-testid={`secret-accordion-${secret.name}`} className="bg-white rounded-lg shadow">
                 <button
+                  data-testid="secret-accordion-header"
                   onClick={() => toggleSecret(secret.name)}
                   className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                   aria-expanded={isExpanded}
@@ -138,19 +139,20 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
                     {Object.keys(secret.data).length === 0 ? (
                       <p className="text-gray-500 text-sm py-4">No data in this secret</p>
                     ) : (
-                      <div className="space-y-3 mt-4">
+                      <div data-testid="secret-key-list" className="space-y-3 mt-4">
                         {Object.entries(secret.data).map(([key, value]) => {
                           const revealKey = `${secret.namespace}-${secret.name}-${key}`;
                           const isRevealed = revealedKeys.has(revealKey);
                           const decodedValue = decodeBase64(value);
 
                           return (
-                            <div key={key} className="bg-gray-50 rounded p-3">
+                            <div key={key} data-testid={`secret-key-value-${key}`} className="bg-gray-50 rounded p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-mono text-sm font-semibold text-gray-700">
                                   {key}
                                 </span>
                                 <button
+                                  data-testid={isRevealed ? 'hide-button' : 'reveal-button'}
                                   onClick={() => toggleReveal(revealKey)}
                                   className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
                                   aria-label={isRevealed ? 'Hide value' : 'Reveal value'}
@@ -158,7 +160,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
                                   {isRevealed ? 'Hide' : 'Show'}
                                 </button>
                               </div>
-                              <div className="font-mono text-sm text-gray-600 break-all">
+                              <div data-testid={isRevealed ? 'secret-value-revealed' : 'secret-value-masked'} className="font-mono text-sm text-gray-600 break-all">
                                 {isRevealed ? decodedValue : '••••••••'}
                               </div>
                             </div>

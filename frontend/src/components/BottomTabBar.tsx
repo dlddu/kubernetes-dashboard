@@ -92,6 +92,7 @@ export function BottomTabBar({ activeTab, onTabChange, unhealthyPodCount }: Bott
 
   return (
     <nav
+      data-testid="bottom-tab-bar"
       role="navigation"
       aria-label="Tab navigation"
       className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg pb-safe-bottom"
@@ -104,6 +105,7 @@ export function BottomTabBar({ activeTab, onTabChange, unhealthyPodCount }: Bott
           return (
             <button
               key={tab.id}
+              data-testid={`tab-button-${tab.id}`}
               onClick={() => onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, tab.id)}
               className={`flex flex-col items-center justify-center h-full px-2 transition-colors ${
