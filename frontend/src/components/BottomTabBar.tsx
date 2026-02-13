@@ -142,7 +142,6 @@ export function BottomTabBar({ unhealthyPodCount }: BottomTabBarProps) {
             key={tab.name}
             ref={(el) => (tabRefs.current[index] = el)}
             data-testid={`tab-${tab.name}`}
-            role="link"
             onClick={() => navigate(tab.path)}
             onKeyDown={(e) => handleKeyDown(e, index, tab.path)}
             aria-label={tab.ariaLabel}
