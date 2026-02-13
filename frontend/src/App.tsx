@@ -12,8 +12,27 @@ import { BottomTabBar } from './components/BottomTabBar';
 
 type TabType = 'overview' | 'nodes' | 'workloads' | 'pods' | 'secrets';
 
+function getInitialTab(): TabType {
+  const pathname = window.location.pathname;
+
+  if (pathname === '/' || pathname === '/overview') {
+    return 'overview';
+  } else if (pathname === '/nodes') {
+    return 'nodes';
+  } else if (pathname === '/workloads') {
+    return 'workloads';
+  } else if (pathname === '/pods') {
+    return 'pods';
+  } else if (pathname === '/secrets') {
+    return 'secrets';
+  }
+
+  // Default to overview for unknown paths
+  return 'overview';
+}
+
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
   const [unhealthyPodCount, setUnhealthyPodCount] = useState<number>(0);
 
   useEffect(() => {
@@ -25,6 +44,18 @@ function App() {
     window.addEventListener('unhealthy-pod-count-update', handlePodCountUpdate as EventListener);
     return () => {
       window.removeEventListener('unhealthy-pod-count-update', handlePodCountUpdate as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Handle browser back/forward navigation
+    const handlePopState = () => {
+      setActiveTab(getInitialTab());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
