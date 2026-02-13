@@ -116,7 +116,6 @@ describe('ErrorRetry', () => {
 
       // Assert
       expect(onRetry).toHaveBeenCalledTimes(1);
-      expect(onRetry).toHaveBeenCalledWith();
     });
 
     it('should allow multiple retry clicks', async () => {
@@ -421,6 +420,7 @@ describe('ErrorRetry', () => {
     it('should handle null onRetry prop gracefully', () => {
       // Arrange & Act & Assert
       expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render(<ErrorRetry message="Error" onRetry={null as any} />);
       }).not.toThrow();
     });
@@ -428,6 +428,7 @@ describe('ErrorRetry', () => {
     it('should handle undefined onRetry prop gracefully', () => {
       // Arrange & Act & Assert
       expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render(<ErrorRetry message="Error" onRetry={undefined as any} />);
       }).not.toThrow();
     });

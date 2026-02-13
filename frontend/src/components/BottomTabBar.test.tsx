@@ -457,6 +457,7 @@ describe('BottomTabBar', () => {
 
     it('should handle invalid currentTab gracefully', () => {
       // Arrange & Act
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render(<BottomTabBar currentTab={'invalid' as any} unhealthyPodCount={0} onTabChange={vi.fn()} />);
 
       // Assert - should still render
@@ -467,6 +468,7 @@ describe('BottomTabBar', () => {
     it('should handle missing onTabChange prop', () => {
       // Arrange & Act & Assert
       expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render(<BottomTabBar currentTab="overview" unhealthyPodCount={0} onTabChange={undefined as any} />);
       }).not.toThrow();
     });

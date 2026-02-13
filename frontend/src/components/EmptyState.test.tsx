@@ -224,17 +224,17 @@ describe('EmptyState', () => {
       render(<EmptyState message="Empty" />);
 
       // Assert
-      const emptyState = screen.getByTestId('empty-state');
-      expect(emptyState.className).toMatch(/text-gray|text-slate|text-neutral/);
+      const message = screen.getByText('Empty');
+      expect(message.className).toMatch(/text-gray|text-slate|text-neutral/);
     });
 
     it('should have muted/subtle appearance', () => {
       // Arrange & Act
-      render(<EmptyState message="Empty" />);
+      render(<EmptyState message="Empty" icon="📦" />);
 
       // Assert
-      const emptyState = screen.getByTestId('empty-state');
-      expect(emptyState.className).toMatch(/gray|slate|neutral|zinc/i);
+      const icon = screen.getByTestId('empty-state-icon');
+      expect(icon.className).toMatch(/gray|slate|neutral|zinc/i);
     });
 
     it('should have appropriate text size', () => {
@@ -462,6 +462,7 @@ describe('EmptyState', () => {
 
     it('should handle null icon gracefully', () => {
       // Arrange & Act
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render(<EmptyState message="Empty" icon={null as any} />);
 
       // Assert

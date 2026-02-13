@@ -17,7 +17,7 @@ function AppContent() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [currentTab, setCurrentTab] = useState<TabType>('overview');
   const [unhealthyPodCount, setUnhealthyPodCount] = useState(0);
-  const { namespace } = useNamespace();
+  const { selectedNamespace: namespace } = useNamespace();
 
   useEffect(() => {
     const handlePopState = () => setCurrentPath(window.location.pathname);

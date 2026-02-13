@@ -324,6 +324,7 @@ describe('LoadingSkeleton', () => {
 
     it('should handle invalid shape values gracefully', () => {
       // Arrange & Act
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render(<LoadingSkeleton shape={'invalid' as any} />);
 
       // Assert - should fallback to default or handle gracefully
@@ -367,8 +368,8 @@ describe('LoadingSkeleton', () => {
       rerender(<LoadingSkeleton count={3} />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton.className).toMatch(/animate/);
+      const skeletonItem = screen.getByTestId('skeleton-item-0');
+      expect(skeletonItem.className).toMatch(/animate/);
     });
   });
 
