@@ -64,7 +64,7 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
             <div className="text-sm text-gray-600 mt-1">
               <span className="inline-block mr-4">
                 <span className="text-gray-500">Namespace: </span>
-                <span>{secret.namespace}</span>
+                <span data-testid="secret-namespace">{secret.namespace}</span>
               </span>
               <span className="inline-block mr-4">
                 <span className="text-gray-500">Type: </span>

@@ -25,17 +25,17 @@ export function SecretKeyValue({ secretKey, value }: SecretKeyValueProps) {
   };
 
   return (
-    <div data-testid="secret-key-value" className="border-b border-gray-200 last:border-b-0 py-3">
+    <div data-testid={`secret-key-value-${secretKey}`} className="border-b border-gray-200 last:border-b-0 py-3">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="font-medium text-gray-700 mb-1">{secretKey}</div>
           <div className="font-mono text-sm break-all">
             {isRevealed ? (
-              <pre data-testid="secret-value" className="whitespace-pre-wrap text-gray-900">
+              <pre data-testid="secret-value-revealed" className="whitespace-pre-wrap text-gray-900">
                 {value}
               </pre>
             ) : (
-              <div data-testid="masked-value" className="text-gray-400">
+              <div data-testid="secret-value-masked" className="text-gray-400">
                 ••••••••••••••••
               </div>
             )}
