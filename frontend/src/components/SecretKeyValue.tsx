@@ -45,6 +45,7 @@ export function SecretKeyValue({ secretKey, value }: SecretKeyValueProps) {
           <button
             onClick={handleRevealToggle}
             data-testid={isRevealed ? 'hide-button' : 'reveal-button'}
+            aria-label={isRevealed ? `Hide ${secretKey} value` : `Reveal ${secretKey} value`}
             className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
           >
             {isRevealed ? 'Hide' : 'Reveal'}
@@ -52,6 +53,7 @@ export function SecretKeyValue({ secretKey, value }: SecretKeyValueProps) {
           <button
             onClick={handleCopy}
             data-testid="copy-button"
+            aria-label={`Copy ${secretKey} value to clipboard`}
             className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
           >
             {isCopied ? 'Copied!' : 'Copy'}

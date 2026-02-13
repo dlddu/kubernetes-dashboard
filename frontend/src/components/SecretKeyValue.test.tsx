@@ -32,7 +32,7 @@ describe('SecretKeyValue Component', () => {
       // Assert: Should show asterisks or masked indicator
       const maskedValue =
         screen.queryByText(/\*\*\*/) ||
-        screen.queryByTestId('masked-value') ||
+        screen.queryByTestId('secret-value-masked') ||
         screen.queryByText(/hidden/i);
       expect(maskedValue).toBeInTheDocument();
     });
@@ -342,7 +342,7 @@ describe('SecretKeyValue Component', () => {
       await user.click(revealButton);
 
       // Assert: Should have aria-label or aria-hidden attributes
-      const valueContainer = screen.queryByTestId('secret-value');
+      const valueContainer = screen.queryByTestId('secret-value-revealed');
       if (valueContainer) {
         expect(valueContainer).toBeInTheDocument();
       }

@@ -49,6 +49,8 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
     }
   }, [isOpen, hasLoadedOnce, secret.namespace, secret.name]);
 
+  const contentId = `secret-content-${secret.name}`;
+
   return (
     <div data-testid={`secret-accordion-${secret.name}`} className="border border-gray-200 rounded-lg overflow-hidden">
       <button
@@ -57,6 +59,7 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
         className="w-full px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
         role="button"
         aria-expanded={isOpen}
+        aria-controls={contentId}
       >
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -84,6 +87,7 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
 
       {isOpen && (
         <div
+          id={contentId}
           data-testid="secret-details"
           className="px-4 py-3 bg-gray-50 border-t border-gray-200"
           style={{ display: 'block', visibility: 'visible' }}

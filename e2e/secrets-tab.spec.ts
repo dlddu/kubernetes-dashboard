@@ -32,7 +32,7 @@ test.describe('Secrets Tab - Basic Rendering', () => {
     await expect(secretsTab).toBeVisible();
 
     // Assert: Should display secret accordions
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
     const accordionCount = await secretAccordions.count();
     expect(accordionCount).toBeGreaterThanOrEqual(2); // test-secret and tls-secret
 
@@ -71,7 +71,7 @@ test.describe('Secrets Tab - Accordion Expand/Collapse', () => {
     await expect(keyListExpanded).toBeVisible();
 
     // Assert: Should display all keys from test-secret
-    const keyItems = keyListExpanded.getByTestId('secret-key-value');
+    const keyItems = keyListExpanded.locator('[data-testid^="secret-key-value-"]');
     const keyCount = await keyItems.count();
     expect(keyCount).toBe(4); // username, password, api-key, config.yaml
 
@@ -238,7 +238,7 @@ test.describe('Secrets Tab - TLS Secret Handling', () => {
     await expect(tlsSecretKeyList).toBeVisible();
 
     // Assert: Should have exactly 2 keys (tls.crt and tls.key)
-    const keyItems = tlsSecretKeyList.getByTestId('secret-key-value');
+    const keyItems = tlsSecretKeyList.locator('[data-testid^="secret-key-value-"]');
     const keyCount = await keyItems.count();
     expect(keyCount).toBe(2);
 
@@ -279,7 +279,7 @@ test.describe('Secrets Tab - Loading and Error States', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: After loading, secret accordions should be displayed
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
     const accordionCount = await secretAccordions.count();
     expect(accordionCount).toBeGreaterThanOrEqual(2);
 
@@ -305,7 +305,7 @@ test.describe('Secrets Tab - Loading and Error States', () => {
       .or(secretsTab.getByText(/error loading secrets|failed to fetch secrets/i));
 
     // Assert: Either error is shown or secrets are loaded successfully
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
     const errorVisible = await errorMessage.count() > 0 && await errorMessage.isVisible().catch(() => false);
     const secretsVisible = (await secretAccordions.count()) >= 2;
 
@@ -322,7 +322,7 @@ test.describe('Secrets Tab - Accessibility', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Get first accordion
-    const firstAccordion = page.getByTestId('secret-accordion').first();
+    const firstAccordion = page.locator('[data-testid^="secret-accordion-"]').first();
     await expect(firstAccordion).toBeVisible();
 
     // Assert: Accordion header should have button role
@@ -350,7 +350,7 @@ test.describe('Secrets Tab - Accessibility', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Focus first accordion header
-    const firstAccordionHeader = page.getByTestId('secret-accordion').first()
+    const firstAccordionHeader = page.locator('[data-testid^="secret-accordion-"]').first()
       .getByTestId('secret-accordion-header');
     await firstAccordionHeader.focus();
 
@@ -361,7 +361,7 @@ test.describe('Secrets Tab - Accessibility', () => {
     await firstAccordionHeader.press('Enter');
 
     // Assert: Key list should be visible
-    const firstAccordion = page.getByTestId('secret-accordion').first();
+    const firstAccordion = page.locator('[data-testid^="secret-accordion-"]').first();
     const keyList = firstAccordion.getByTestId('secret-key-list');
     await expect(keyList).toBeVisible();
 
@@ -381,7 +381,7 @@ test.describe('Secrets Tab - Accessibility', () => {
     await accordionHeader.click();
 
     // Act: Get first key-value component
-    const firstKeyValue = testSecretAccordion.getByTestId('secret-key-value').first();
+    const firstKeyValue = testSecretAccordion.locator('[data-testid^="secret-key-value-"]').first();
 
     // Assert: Reveal button should have accessible label
     const revealButton = firstKeyValue.getByTestId('reveal-button');
