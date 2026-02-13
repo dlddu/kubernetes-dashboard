@@ -251,7 +251,7 @@ describe('EmptyState Component', () => {
       // Assert
       const icon = screen.getByTestId('empty-state-icon');
       const svg = icon.querySelector('svg');
-      expect(svg?.className).toMatch(/w-16|h-16/);
+      expect(svg?.getAttribute('class')).toMatch(/w-16|h-16/);
     });
   });
 

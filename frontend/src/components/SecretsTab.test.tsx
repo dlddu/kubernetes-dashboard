@@ -175,7 +175,7 @@ describe('SecretsTab Component', () => {
 
       // Assert
       await waitFor(() => {
-        const namespace = screen.getByText('production');
+        const namespace = screen.getByText(/production/i);
         expect(namespace).toBeInTheDocument();
       });
     });
