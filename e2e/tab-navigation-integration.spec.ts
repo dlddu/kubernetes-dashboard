@@ -186,8 +186,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     expect(page.url()).toContain('/pods');
 
     // Assert: Pods page content should be visible
-    const podsPage = page.getByTestId('pods-page')
-      .or(page.getByRole('heading', { name: /pods/i }));
+    const podsPage = page.getByTestId('pods-page');
     await expect(podsPage).toBeVisible();
 
     // Assert: Pods tab should be highlighted as active
@@ -212,8 +211,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     expect(page.url()).toContain('/nodes');
 
     // Assert: Nodes page content should be visible
-    const nodesPage = page.getByTestId('nodes-page')
-      .or(page.getByRole('heading', { name: /nodes/i }));
+    const nodesPage = page.getByTestId('nodes-page');
     await expect(nodesPage).toBeVisible();
 
     // Assert: Nodes tab should be highlighted as active
@@ -238,8 +236,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     expect(page.url()).toContain('/workloads');
 
     // Assert: Workloads page content should be visible
-    const workloadsPage = page.getByTestId('workloads-page')
-      .or(page.getByRole('heading', { name: /workloads|deployments/i }));
+    const workloadsPage = page.getByTestId('workloads-page');
     await expect(workloadsPage).toBeVisible();
 
     // Assert: Deployments tab should be highlighted as active
@@ -264,8 +261,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
     expect(page.url()).toContain('/secrets');
 
     // Assert: Secrets page content should be visible
-    const secretsPage = page.getByTestId('secrets-page')
-      .or(page.getByRole('heading', { name: /secrets/i }));
+    const secretsPage = page.getByTestId('secrets-page');
     await expect(secretsPage).toBeVisible();
 
     // Assert: Secrets tab should be highlighted as active
