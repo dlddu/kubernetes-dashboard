@@ -44,7 +44,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
   };
 
   return (
-    <div data-testid="secrets-page" className="space-y-6">
+    <div data-testid="secrets-tab" className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Secrets</h1>
 

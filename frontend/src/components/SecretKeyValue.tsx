@@ -25,7 +25,7 @@ export function SecretKeyValue({ secretKey, value }: SecretKeyValueProps) {
   };
 
   return (
-    <div className="border-b border-gray-200 last:border-b-0 py-3">
+    <div data-testid="secret-key-value" className="border-b border-gray-200 last:border-b-0 py-3">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="font-medium text-gray-700 mb-1">{secretKey}</div>
@@ -44,7 +44,7 @@ export function SecretKeyValue({ secretKey, value }: SecretKeyValueProps) {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={handleRevealToggle}
-            data-testid={isRevealed ? undefined : 'reveal-button'}
+            data-testid={isRevealed ? 'hide-button' : 'reveal-button'}
             className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
           >
             {isRevealed ? 'Hide' : 'Reveal'}

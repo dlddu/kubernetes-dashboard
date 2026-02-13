@@ -50,9 +50,10 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
   }, [isOpen, hasLoadedOnce, secret.namespace, secret.name]);
 
   return (
-    <div data-testid="secret-item" className="border border-gray-200 rounded-lg overflow-hidden">
+    <div data-testid={`secret-accordion-${secret.name}`} className="border border-gray-200 rounded-lg overflow-hidden">
       <button
         onClick={handleToggle}
+        data-testid="secret-accordion-header"
         className="w-full px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
         role="button"
         aria-expanded={isOpen}
@@ -67,7 +68,7 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
               </span>
               <span className="inline-block mr-4">
                 <span className="text-gray-500">Type: </span>
-                <span>{secret.type}</span>
+                <span data-testid="secret-type">{secret.type}</span>
               </span>
               <span className="inline-block">
                 <span>{secret.keys.length}</span>
@@ -100,7 +101,7 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
           )}
 
           {!isLoading && !error && secretDetail && (
-            <div className="space-y-2">
+            <div data-testid="secret-key-list" className="space-y-2">
               {Object.entries(secretDetail.data).map(([key, value]) => (
                 <SecretKeyValue key={key} secretKey={key} value={value} />
               ))}
