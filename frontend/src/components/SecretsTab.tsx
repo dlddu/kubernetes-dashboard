@@ -62,7 +62,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
   const decodeBase64 = (value: string): string => {
     try {
       return atob(value);
-    } catch (e) {
+    } catch {
       return `Error: Invalid Base64 - ${value}`;
     }
   };

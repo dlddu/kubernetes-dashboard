@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -38,7 +37,7 @@ describe('LoadingSkeleton Component', () => {
 
       // Assert
       const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveAttribute('aria-label', /loading/i);
+      expect(skeleton).toHaveAttribute('aria-label', 'Loading');
     });
   });
 
@@ -48,8 +47,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton variant="card" />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveClass(/rounded|border/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/rounded|border/);
     });
 
     it('should render text variant with correct styling', () => {
@@ -57,8 +56,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton variant="text" />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveClass(/h-4|h-3|rounded/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/h-4|h-3|rounded/);
     });
 
     it('should render circular variant with correct styling', () => {
@@ -66,8 +65,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton variant="circular" />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveClass(/rounded-full/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/rounded-full/);
     });
 
     it('should default to card variant when no variant specified', () => {
@@ -75,8 +74,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveClass(/rounded/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/rounded/);
     });
   });
 
@@ -124,8 +123,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveClass(/animate-pulse|animate-shimmer/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/animate-pulse|animate-shimmer/);
     });
 
     it('should have background gradient for shimmer effect', () => {
@@ -133,8 +132,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveClass(/bg-gray|bg-slate|bg-gradient/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/bg-gray|bg-slate|bg-gradient/);
     });
 
     it('should animate continuously without user interaction', () => {
@@ -142,8 +141,8 @@ describe('LoadingSkeleton Component', () => {
       render(<LoadingSkeleton />);
 
       // Assert
-      const skeleton = screen.getByTestId('loading-skeleton');
-      expect(skeleton).toHaveClass(/animate-/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/animate-/);
     });
   });
 
@@ -202,7 +201,8 @@ describe('LoadingSkeleton Component', () => {
       // Assert
       const skeleton = screen.getByTestId('loading-skeleton');
       expect(skeleton).toHaveClass('mt-4');
-      expect(skeleton).toHaveClass(/animate-/);
+      const skeletonLine = screen.getByTestId('skeleton-line-0');
+      expect(skeletonLine).toHaveClass(/animate-/);
     });
   });
 
@@ -233,7 +233,7 @@ describe('LoadingSkeleton Component', () => {
   describe('Accessibility', () => {
     it('should be hidden from screen readers when aria-hidden is true', () => {
       // Arrange & Act
-      render(<LoadingSkeleton aria-hidden="true" />);
+      render(<LoadingSkeleton aria-hidden={true} />);
 
       // Assert
       const skeleton = screen.getByTestId('loading-skeleton');

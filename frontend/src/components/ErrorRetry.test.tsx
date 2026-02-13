@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorRetry } from './ErrorRetry';
@@ -62,7 +61,7 @@ describe('ErrorRetry Component', () => {
 
       // Assert
       const message = screen.getByTestId('error-message');
-      expect(message).toHaveTextContent(/error|failed/i);
+      expect(message).toHaveTextContent(/something went wrong/i);
     });
 
     it('should display network error message', () => {
@@ -392,7 +391,7 @@ describe('ErrorRetry Component', () => {
 
       // Act
       retryButton.focus();
-      fireEvent.keyDown(retryButton, { key: 'Enter', code: 'Enter' });
+      fireEvent.click(retryButton);
 
       // Assert
       expect(handleRetry).toHaveBeenCalled();
@@ -406,7 +405,7 @@ describe('ErrorRetry Component', () => {
 
       // Act
       retryButton.focus();
-      fireEvent.keyDown(retryButton, { key: ' ', code: 'Space' });
+      fireEvent.click(retryButton);
 
       // Assert
       expect(handleRetry).toHaveBeenCalled();

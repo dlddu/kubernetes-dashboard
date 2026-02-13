@@ -5,7 +5,7 @@ interface LoadingSkeletonProps {
   height?: string;
   className?: string;
   showHeader?: boolean;
-  'aria-hidden'?: string;
+  'aria-hidden'?: boolean;
 }
 
 export function LoadingSkeleton({
