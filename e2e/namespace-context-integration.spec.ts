@@ -39,7 +39,7 @@ test.describe('Namespace Context Integration', () => {
         await expect(namespaceSelectorOnServicesTab).toContainText(/^default$/i);
 
     // Act: Navigate to Deployments tab
-    const deploymentsTab = page.getByRole('tab', { name: /deployments/i })
+    const deploymentsTab = page.getByRole('tab', { name: /workloads/i })
       .or(page.getByTestId('tab-deployments'));
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
@@ -397,7 +397,7 @@ test.describe('Namespace Context Integration - Multi-Resource', () => {
     expect(await serviceNamespaceCells.count()).toBeGreaterThan(0);
 
     // Act: Navigate to Deployments tab
-    const deploymentsTab = page.getByRole('tab', { name: /deployments/i })
+    const deploymentsTab = page.getByRole('tab', { name: /workloads/i })
       .or(page.getByTestId('tab-deployments'));
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');

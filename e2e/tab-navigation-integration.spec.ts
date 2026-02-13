@@ -95,7 +95,7 @@ test.describe('Bottom Tab Navigation - Basic Rendering', () => {
 
     // Assert: Deployments tab should be visible
     const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('tab', { name: /deployments/i }));
+      .or(page.getByRole('tab', { name: /workloads/i }));
     await expect(deploymentsTab).toBeVisible();
 
     // Assert: Secrets tab should be visible
@@ -230,7 +230,7 @@ test.describe('Bottom Tab Navigation - Tab Switching', () => {
 
     // Act: Click Deployments tab
     const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('tab', { name: /deployments/i }));
+      .or(page.getByRole('tab', { name: /workloads/i }));
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -509,7 +509,7 @@ test.describe('Bottom Tab Navigation - Mobile Viewport Rendering', () => {
     await expect(nodesTab).toContainText(/nodes/i);
 
     const deploymentsTab = page.getByTestId('tab-deployments');
-    await expect(deploymentsTab).toContainText(/deployments/i);
+    await expect(deploymentsTab).toContainText(/workloads/i);
 
     const secretsTab = page.getByTestId('tab-secrets');
     await expect(secretsTab).toContainText(/secrets/i);
@@ -610,7 +610,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
 
     // Act: Navigate to Deployments tab using bottom tab bar
     const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('tab', { name: /deployments/i }));
+      .or(page.getByRole('tab', { name: /workloads/i }));
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -689,7 +689,7 @@ test.describe('Bottom Tab Navigation - Namespace Filtering Integration', () => {
 
     // Act: Navigate to Deployments using bottom tab bar
     const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('tab', { name: /deployments/i }));
+      .or(page.getByRole('tab', { name: /workloads/i }));
     await deploymentsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -842,7 +842,7 @@ test.describe('Bottom Tab Navigation - Active Tab Highlighting', () => {
 
     // Act: Locate the Deployments tab
     const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('tab', { name: /deployments/i }));
+      .or(page.getByRole('tab', { name: /workloads/i }));
 
     // Assert: Deployments tab should have aria-current="page"
     await expect(deploymentsTab).toHaveAttribute('aria-current', 'page');
