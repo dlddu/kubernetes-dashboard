@@ -451,20 +451,14 @@ describe('SecretsTab Component', () => {
         expect(screen.queryByTestId('secrets-loading')).not.toBeInTheDocument();
       });
 
-      // Change namespace filter (if namespace selector is interactive)
-      const namespaceSelector = screen.queryByTestId('namespace-selector');
-      if (namespaceSelector) {
-        await user.click(namespaceSelector);
-        const defaultOption = screen.queryByText('default');
-        if (defaultOption) {
-          await user.click(defaultOption);
+      // Change namespace filter using selectOptions
+      const namespaceSelector = screen.getByTestId('namespace-selector') as HTMLSelectElement;
+      await user.selectOptions(namespaceSelector, 'default');
 
-          // Assert: Should fetch secrets for selected namespace
-          await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith('/api/secrets?ns=default');
-          });
-        }
-      }
+      // Assert: Should fetch secrets for selected namespace
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith('/api/secrets?ns=default');
+      });
     });
   });
 
@@ -541,12 +535,15 @@ describe('SecretsTab Component', () => {
 
       // Assert: Secrets should be displayed
       await waitFor(() => {
-        const secretsContainer = screen.getByTestId('secrets-page');
-        expect(secretsContainer).toBeInTheDocument();
-
         expect(screen.getByText('secret-1')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
         expect(screen.getByText('secret-2')).toBeInTheDocument();
       });
+
+      const secretsContainer = screen.getByTestId('secrets-page');
+      expect(secretsContainer).toBeInTheDocument();
     });
 
     it('should be accessible with proper ARIA attributes', async () => {
@@ -591,8 +588,17 @@ describe('SecretsTab Component', () => {
       // Assert: Data should be preserved
       await waitFor(() => {
         expect(screen.getByText('test-secret')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
         expect(screen.getByText('production')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
         expect(screen.getByText('Opaque')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
         expect(screen.getByText(/3/)).toBeInTheDocument();
       });
     });
