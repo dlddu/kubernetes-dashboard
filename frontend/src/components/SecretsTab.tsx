@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchSecrets, SecretInfo } from '../api/secrets';
 import { SecretAccordion } from './SecretAccordion';
 
@@ -13,7 +13,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
   const [selectedNamespace, setSelectedNamespace] = useState(namespace || '');
   const [openAccordionIndex, setOpenAccordionIndex] = useState<number | null>(null);
 
-  const loadSecrets = async () => {
+  const loadSecrets = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -24,12 +24,11 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedNamespace]);
 
   useEffect(() => {
     loadSecrets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNamespace]);
+  }, [loadSecrets]);
 
   const handleRetry = () => {
     loadSecrets();
