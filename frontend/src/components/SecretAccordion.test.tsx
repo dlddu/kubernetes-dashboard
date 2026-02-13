@@ -43,7 +43,7 @@ describe('SecretAccordion Component', () => {
 
       // Assert: Details should not be visible initially
       const detailsContent = screen.queryByTestId('secret-details');
-      expect(detailsContent).not.toBeVisible();
+      expect(detailsContent).toBeNull();
     });
 
     it('should display secret metadata in header', () => {
@@ -176,7 +176,7 @@ describe('SecretAccordion Component', () => {
       // Assert: Details should be hidden again
       await waitFor(() => {
         const detailsContent = screen.queryByTestId('secret-details');
-        expect(detailsContent).not.toBeVisible();
+        expect(detailsContent).toBeNull();
       });
     });
   });

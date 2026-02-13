@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchSecretDetail, SecretInfo, SecretDetail } from '../api/secrets';
 import { SecretKeyValue } from './SecretKeyValue';
 
@@ -8,34 +8,46 @@ interface SecretAccordionProps {
   onToggle?: () => void;
 }
 
-export function SecretAccordion({ secret, isOpen = false, onToggle }: SecretAccordionProps) {
+export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: SecretAccordionProps) {
+  // Internal state for uncontrolled mode
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  const handleToggle = async () => {
-    const willBeOpen = !isOpen;
+  // Use prop if provided (controlled), otherwise use internal state (uncontrolled)
+  const isOpen = isOpenProp !== undefined ? isOpenProp : internalIsOpen;
 
+  const handleToggle = async () => {
+    // If controlled component, notify parent
     if (onToggle) {
       onToggle();
-    }
-
-    // Fetch detail data when opening (only if not already loaded)
-    if (willBeOpen && !hasLoadedOnce) {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const detail = await fetchSecretDetail(secret.namespace, secret.name);
-        setSecretDetail(detail);
-        setHasLoadedOnce(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch secret detail');
-      } finally {
-        setIsLoading(false);
-      }
+    } else {
+      // If uncontrolled, manage state internally
+      setInternalIsOpen(!internalIsOpen);
     }
   };
+
+  // Fetch detail data when opening (only if not already loaded)
+  useEffect(() => {
+    if (isOpen && !hasLoadedOnce) {
+      const loadDetail = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+          const detail = await fetchSecretDetail(secret.namespace, secret.name);
+          setSecretDetail(detail);
+          setHasLoadedOnce(true);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch secret detail');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadDetail();
+    }
+  }, [isOpen, hasLoadedOnce, secret.namespace, secret.name]);
 
   return (
     <div data-testid="secret-item" className="border border-gray-200 rounded-lg overflow-hidden">
@@ -49,9 +61,18 @@ export function SecretAccordion({ secret, isOpen = false, onToggle }: SecretAcco
           <div className="flex-1">
             <div className="font-semibold text-gray-900">{secret.name}</div>
             <div className="text-sm text-gray-600 mt-1">
-              <span className="inline-block mr-4">Namespace: {secret.namespace}</span>
-              <span className="inline-block mr-4">Type: {secret.type}</span>
-              <span className="inline-block">{secret.keys.length} keys</span>
+              <span className="inline-block mr-4">
+                <span className="text-gray-500">Namespace: </span>
+                <span>{secret.namespace}</span>
+              </span>
+              <span className="inline-block mr-4">
+                <span className="text-gray-500">Type: </span>
+                <span>{secret.type}</span>
+              </span>
+              <span className="inline-block">
+                <span>{secret.keys.length}</span>
+                <span className="text-gray-500"> keys</span>
+              </span>
             </div>
           </div>
           <div className="text-gray-400">

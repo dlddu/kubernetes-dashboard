@@ -28,6 +28,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
 
   useEffect(() => {
     loadSecrets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNamespace]);
 
   const handleRetry = () => {
