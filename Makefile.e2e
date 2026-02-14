@@ -36,8 +36,7 @@ e2e-deploy: ## Load image into kind and deploy dashboard
 
 e2e-undeploy: ## Remove dashboard deployment from kind
 	@echo "Removing dashboard deployment..."
-	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl delete -f e2e/k8s/deployment.yaml --ignore-not-found=true || true
-	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl delete -f e2e/k8s/service-nodeport.yaml --ignore-not-found=true || true
+	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl delete -k e2e/k8s/ --ignore-not-found=true || true
 
 e2e-playwright-install: ## Install Playwright
 	@echo "Installing Playwright..."

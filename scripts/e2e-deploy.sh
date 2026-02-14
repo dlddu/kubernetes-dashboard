@@ -19,12 +19,8 @@ log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
 log_info "Loading image '$IMAGE_NAME' into kind cluster '$CLUSTER_NAME'"
 "$SCRIPT_DIR/kind-cluster.sh" load-image "$IMAGE_NAME"
 
-log_info "Applying RBAC manifests"
-kubectl apply -f "$PROJECT_ROOT/k8s/rbac.yaml"
-
-log_info "Applying e2e deployment and service"
-kubectl apply -f "$PROJECT_ROOT/e2e/k8s/deployment.yaml"
-kubectl apply -f "$PROJECT_ROOT/e2e/k8s/service-nodeport.yaml"
+log_info "Applying e2e kustomize overlay (rbac + deployment + service)"
+kubectl apply -k "$PROJECT_ROOT/e2e/k8s/"
 
 log_info "Waiting for deployment to be available..."
 kubectl wait --for=condition=Available deployment/kubernetes-dashboard --timeout=120s
