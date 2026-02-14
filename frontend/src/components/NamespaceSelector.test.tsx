@@ -88,6 +88,11 @@ describe('NamespaceSelector', () => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
       });
 
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
       // Open dropdown
       const selector = screen.getByRole('combobox');
       fireEvent.click(selector);
@@ -238,6 +243,11 @@ describe('NamespaceSelector', () => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
       });
 
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
       // Act
       const selector = screen.getByRole('combobox');
       fireEvent.click(selector);
@@ -258,6 +268,11 @@ describe('NamespaceSelector', () => {
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
+      });
+
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
       });
 
       // Open dropdown
@@ -285,6 +300,11 @@ describe('NamespaceSelector', () => {
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
+      });
+
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
       });
 
       const selector = screen.getByRole('combobox');
@@ -318,6 +338,11 @@ describe('NamespaceSelector', () => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
       });
 
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
       // Open dropdown
       const selector = screen.getByRole('combobox');
       fireEvent.click(selector);
@@ -345,6 +370,11 @@ describe('NamespaceSelector', () => {
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
+      });
+
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
       });
 
       // Open dropdown
@@ -377,6 +407,11 @@ describe('NamespaceSelector', () => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
       });
 
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
       const selector = screen.getByRole('combobox');
       fireEvent.click(selector);
 
@@ -401,6 +436,11 @@ describe('NamespaceSelector', () => {
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
+      });
+
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
       });
 
       // First select a specific namespace
@@ -472,6 +512,11 @@ describe('NamespaceSelector', () => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
       });
 
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
       const selector = screen.getByRole('combobox');
       fireEvent.click(selector);
 
@@ -492,6 +537,11 @@ describe('NamespaceSelector', () => {
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
+      });
+
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
       });
 
       const selector = screen.getByRole('combobox');
@@ -530,6 +580,11 @@ describe('NamespaceSelector', () => {
 
       await waitFor(() => {
         expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
+      });
+
+      // Wait for loading to complete before opening dropdown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
       });
 
       // Act - Use keyboard to open dropdown

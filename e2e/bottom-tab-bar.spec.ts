@@ -136,9 +136,7 @@ test.describe('BottomTabBar - Tab Navigation', () => {
     expect(page.url()).toContain('/pods');
 
     // Assert: Pods page content should be visible
-    const podsPage = page.getByTestId('pods-page')
-      .or(page.getByTestId('pod-card').first());
-    await expect(podsPage).toBeVisible();
+    await expect(page.getByTestId('pods-page')).toBeVisible();
 
     // Assert: Pods tab should have active state
     await expect(podsTab).toHaveAttribute('aria-current', 'page');
