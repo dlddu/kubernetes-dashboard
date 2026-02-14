@@ -11,7 +11,6 @@ type HealthResponse struct {
 	Message string `json:"message"`
 }
 
-// cache-test: verifying Docker build cache behavior
 // HealthHandler handles the /api/health endpoint
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	// Only allow GET method
