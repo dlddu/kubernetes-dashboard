@@ -12,6 +12,10 @@ export function StatusBadge({ status, testId = 'status-badge' }: StatusBadgeProp
     if (
       statusLower === 'crashloopbackoff' ||
       statusLower === 'imagepullbackoff' ||
+      statusLower === 'errimagepull' ||
+      statusLower === 'invalidimagename' ||
+      statusLower === 'runcontainererror' ||
+      statusLower === 'oomkilled' ||
       statusLower === 'failed' ||
       statusLower === 'error' ||
       statusLower === 'notready'

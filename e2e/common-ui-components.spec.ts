@@ -43,27 +43,32 @@ test.describe('LoadingSkeleton Component - Overview Tab', () => {
   test('should show loading skeleton with proper accessibility attributes', async ({ page }) => {
     // Tests that LoadingSkeleton has appropriate ARIA attributes
 
-    // Arrange: Navigate to the Overview page
+    // Arrange: Delay API responses so loading skeleton stays visible long enough to test
+    await page.route('**/api/**', async (route) => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await route.continue();
+    });
+
+    // Act: Navigate to the Overview page
     await page.goto('/');
 
-    // Act: Check for loading state
+    // Assert: Loading indicator should appear while API is delayed
     const loadingIndicator = page.locator('[aria-busy="true"]')
       .or(page.getByTestId('loading-skeleton'));
 
-    const loadingCount = await loadingIndicator.count();
+    await expect(loadingIndicator.first()).toBeVisible({ timeout: 5000 });
 
-    if (loadingCount > 0) {
-      // Assert: Should have aria-busy="true" during loading
-      const ariaBusy = await loadingIndicator.first().getAttribute('aria-busy');
-      expect(ariaBusy).toBe('true');
+    // Assert: Should have aria-busy="true" during loading
+    const ariaBusy = await loadingIndicator.first().getAttribute('aria-busy');
+    expect(ariaBusy).toBe('true');
 
-      // Assert: Should have aria-label or role for screen readers
-      const hasAriaLabel = await loadingIndicator.first().getAttribute('aria-label');
-      const hasRole = await loadingIndicator.first().getAttribute('role');
-      expect(hasAriaLabel || hasRole).toBeTruthy();
-    }
+    // Assert: Should have aria-label or role for screen readers
+    const hasAriaLabel = await loadingIndicator.first().getAttribute('aria-label');
+    const hasRole = await loadingIndicator.first().getAttribute('role');
+    expect(hasAriaLabel || hasRole).toBeTruthy();
 
-    // Wait for loading to complete
+    // Cleanup: Remove route interception and wait for loading to complete
+    await page.unroute('**/api/**');
     await page.waitForLoadState('networkidle');
   });
 

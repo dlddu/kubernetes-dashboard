@@ -53,6 +53,16 @@ describe('StatusBadge', () => {
       expect(badge.className).toMatch(/red|error|danger/i);
     });
 
+    it('should display ErrImagePull with error styling', () => {
+      // Arrange & Act
+      render(<StatusBadge status="ErrImagePull" />);
+
+      // Assert
+      const badge = screen.getByTestId('status-badge');
+      expect(badge).toHaveTextContent('ErrImagePull');
+      expect(badge.className).toMatch(/red|error|danger/i);
+    });
+
     it('should display Failed with error styling', () => {
       // Arrange & Act
       render(<StatusBadge status="Failed" />);
@@ -219,7 +229,7 @@ describe('StatusBadge', () => {
   describe('status mapping logic', () => {
     it('should correctly identify error statuses', () => {
       // Arrange & Act
-      const errorStatuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'Failed', 'Error'];
+      const errorStatuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'ErrImagePull', 'InvalidImageName', 'RunContainerError', 'OOMKilled', 'Failed', 'Error'];
 
       errorStatuses.forEach((status) => {
         const { container } = render(<StatusBadge status={status} />);
