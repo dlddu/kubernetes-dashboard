@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { DebugProvider } from './contexts/DebugContext';
 import { NamespaceProvider, useNamespace } from './contexts/NamespaceContext';
 import { TopBar } from './components/TopBar';
 import { BottomTabBar } from './components/BottomTabBar';
@@ -69,9 +70,11 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <NamespaceProvider>
-        <AppContent />
-      </NamespaceProvider>
+      <DebugProvider>
+        <NamespaceProvider>
+          <AppContent />
+        </NamespaceProvider>
+      </DebugProvider>
     </BrowserRouter>
   );
 }
