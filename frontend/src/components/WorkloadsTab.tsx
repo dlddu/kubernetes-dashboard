@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { fetchDeployments, restartDeployment, DeploymentInfo } from '../api/deployments';
 import { DeploymentCard } from './DeploymentCard';
 import { RestartConfirmDialog } from './RestartConfirmDialog';
+import { LoadingSkeleton } from './LoadingSkeleton';
+import { ErrorRetry } from './ErrorRetry';
+import { EmptyState } from './EmptyState';
 
 interface WorkloadsTabProps {
   namespace?: string;
@@ -77,36 +80,27 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
       <h1 className="text-2xl font-bold text-gray-900">Workloads</h1>
 
       {isLoading && (
-        <div
-          data-testid="loading-indicator"
-          aria-busy="true"
-          className="flex items-center justify-center py-12"
-        >
-          <div className="text-gray-500">Loading deployments...</div>
-        </div>
+        <LoadingSkeleton
+          variant="card"
+          count={3}
+          testId="loading-indicator"
+        />
       )}
 
       {error && (
-        <div
-          data-testid="error-message"
-          role="alert"
-          className="bg-red-50 border border-red-200 rounded-lg p-6"
-        >
-          <div className="text-red-800 font-medium mb-2">Error loading deployments</div>
-          <div className="text-red-600 mb-4">{error}</div>
-          <button
-            onClick={handleRetry}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorRetry
+          error={error}
+          onRetry={handleRetry}
+          title="Error loading deployments"
+          testId="error-message"
+        />
       )}
 
       {!isLoading && !error && deployments.length === 0 && (
-        <div data-testid="empty-state" className="bg-white rounded-lg shadow p-12 text-center">
-          <div className="text-gray-500 text-lg">No deployments found</div>
-        </div>
+        <EmptyState
+          message="No deployments found"
+          testId="empty-state"
+        />
       )}
 
       {!isLoading && !error && deployments.length > 0 && (
