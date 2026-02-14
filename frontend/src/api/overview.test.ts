@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchOverview } from './overview';
 
-// Mock fetch globally with proper typing
-const mockFetch = vi.fn();
-globalThis.fetch = mockFetch;
+// Mock debugFetch module
+vi.mock('./debugFetch', () => ({
+  debugFetch: vi.fn()
+}));
+
+import { debugFetch } from './debugFetch';
+const mockDebugFetch = vi.mocked(debugFetch);
 
 describe('Overview API', () => {
   beforeEach(() => {
@@ -20,7 +24,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 62.3,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -29,7 +33,7 @@ describe('Overview API', () => {
       const result = await fetchOverview();
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview');
+      expect(mockDebugFetch).toHaveBeenCalledWith('/api/overview');
       expect(result).toEqual(mockOverview);
     });
 
@@ -42,7 +46,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 55.8,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -68,7 +72,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 0,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -93,7 +97,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 88.3,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -119,7 +123,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 62.3,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -128,7 +132,7 @@ describe('Overview API', () => {
       const result = await fetchOverview('default');
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=default');
+      expect(mockDebugFetch).toHaveBeenCalledWith('/api/overview?namespace=default');
       expect(result).toEqual(mockOverview);
     });
 
@@ -141,7 +145,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 40.0,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -150,7 +154,7 @@ describe('Overview API', () => {
       const result = await fetchOverview('kube-system');
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=kube-system');
+      expect(mockDebugFetch).toHaveBeenCalledWith('/api/overview?namespace=kube-system');
       expect(result).toEqual(mockOverview);
     });
 
@@ -163,7 +167,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 62.3,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -172,7 +176,7 @@ describe('Overview API', () => {
       const result = await fetchOverview();
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview');
+      expect(mockDebugFetch).toHaveBeenCalledWith('/api/overview');
       expect(result).toEqual(mockOverview);
     });
 
@@ -185,7 +189,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 62.3,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -195,7 +199,7 @@ describe('Overview API', () => {
 
       // Assert
       // Empty namespace should fetch all namespaces (no query param)
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview');
+      expect(mockDebugFetch).toHaveBeenCalledWith('/api/overview');
       expect(result).toEqual(mockOverview);
     });
   });
@@ -203,7 +207,7 @@ describe('Overview API', () => {
   describe('fetchOverview - error cases', () => {
     it('should handle network errors gracefully', async () => {
       // Arrange
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      mockDebugFetch.mockRejectedValueOnce(new Error('Network error'));
 
       // Act & Assert
       await expect(fetchOverview()).rejects.toThrow('Network error');
@@ -211,7 +215,7 @@ describe('Overview API', () => {
 
     it('should handle non-200 responses', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -223,7 +227,7 @@ describe('Overview API', () => {
 
     it('should handle 404 not found', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -235,7 +239,7 @@ describe('Overview API', () => {
 
     it('should handle 403 forbidden', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: false,
         status: 403,
         statusText: 'Forbidden',
@@ -247,7 +251,7 @@ describe('Overview API', () => {
 
     it('should handle invalid JSON response', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => {
           throw new Error('Invalid JSON');
@@ -260,7 +264,7 @@ describe('Overview API', () => {
 
     it('should handle timeout scenarios', async () => {
       // Arrange
-      mockFetch.mockImplementation(() => {
+      mockDebugFetch.mockImplementation(() => {
         return new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Request timeout')), 100);
         });
@@ -281,7 +285,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 62.345,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -303,7 +307,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 50.0,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -324,7 +328,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 40.0,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -345,7 +349,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 70.0,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });
@@ -368,7 +372,7 @@ describe('Overview API', () => {
         avgMemoryPercent: 62.3,
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockOverview,
       });

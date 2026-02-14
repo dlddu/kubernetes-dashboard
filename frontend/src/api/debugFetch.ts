@@ -22,7 +22,7 @@ export async function debugFetch(url: string, options?: RequestInit): Promise<Re
     // Clone response to read body without consuming the original
     const clonedResponse = response.clone();
 
-    let responseBody: any;
+    let responseBody: unknown;
     let responseSize: number;
 
     try {

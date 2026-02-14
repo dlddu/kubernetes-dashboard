@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchHealth } from './health';
 
-// Mock fetch globally with proper typing
-const mockFetch = vi.fn();
-globalThis.fetch = mockFetch;
+// Mock debugFetch module
+vi.mock('./debugFetch', () => ({
+  debugFetch: vi.fn()
+}));
+
+import { debugFetch } from './debugFetch';
+const mockDebugFetch = vi.mocked(debugFetch);
 
 describe('Health API', () => {
   beforeEach(() => {
@@ -17,7 +21,7 @@ describe('Health API', () => {
       message: 'Backend is healthy',
     };
 
-    mockFetch.mockResolvedValueOnce({
+    mockDebugFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -26,14 +30,14 @@ describe('Health API', () => {
     const result = await fetchHealth();
 
     // Assert
-    expect(mockFetch).toHaveBeenCalledWith('/api/health');
+    expect(mockDebugFetch).toHaveBeenCalledWith('/api/health');
     expect(result.status).toBe('ok');
     expect(result.message).toBeDefined();
   });
 
   it('should handle network errors gracefully', async () => {
     // Arrange
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+    mockDebugFetch.mockRejectedValueOnce(new Error('Network error'));
 
     // Act & Assert
     await expect(fetchHealth()).rejects.toThrow('Network error');
@@ -41,7 +45,7 @@ describe('Health API', () => {
 
   it('should handle non-200 responses', async () => {
     // Arrange
-    mockFetch.mockResolvedValueOnce({
+    mockDebugFetch.mockResolvedValueOnce({
       ok: false,
       status: 500,
       statusText: 'Internal Server Error',

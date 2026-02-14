@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchNamespaces } from './namespaces';
 
-// Mock fetch globally with proper typing
-const mockFetch = vi.fn();
-globalThis.fetch = mockFetch;
+// Mock debugFetch module
+vi.mock('./debugFetch', () => ({
+  debugFetch: vi.fn()
+}));
+
+import { debugFetch } from './debugFetch';
+const mockDebugFetch = vi.mocked(debugFetch);
 
 describe('Namespaces API', () => {
   beforeEach(() => {
@@ -15,7 +19,7 @@ describe('Namespaces API', () => {
       // Arrange
       const mockNamespaces = ['default', 'kube-system', 'kube-public'];
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockNamespaces,
       });
@@ -24,7 +28,7 @@ describe('Namespaces API', () => {
       const result = await fetchNamespaces();
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/namespaces');
+      expect(mockDebugFetch).toHaveBeenCalledWith('/api/namespaces');
       expect(result).toEqual(mockNamespaces);
       expect(Array.isArray(result)).toBe(true);
     });
@@ -33,7 +37,7 @@ describe('Namespaces API', () => {
       // Arrange
       const mockNamespaces = ['default', 'production', 'staging'];
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockNamespaces,
       });
@@ -50,7 +54,7 @@ describe('Namespaces API', () => {
 
     it('should handle empty namespace list', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [],
       });
@@ -68,7 +72,7 @@ describe('Namespaces API', () => {
   describe('fetchNamespaces - error cases', () => {
     it('should handle network errors gracefully', async () => {
       // Arrange
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      mockDebugFetch.mockRejectedValueOnce(new Error('Network error'));
 
       // Act & Assert
       await expect(fetchNamespaces()).rejects.toThrow('Network error');
@@ -76,7 +80,7 @@ describe('Namespaces API', () => {
 
     it('should handle non-200 responses', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -88,7 +92,7 @@ describe('Namespaces API', () => {
 
     it('should handle 404 not found', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -100,7 +104,7 @@ describe('Namespaces API', () => {
 
     it('should handle 403 forbidden', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: false,
         status: 403,
         statusText: 'Forbidden',
@@ -112,7 +116,7 @@ describe('Namespaces API', () => {
 
     it('should handle invalid JSON response', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => {
           throw new Error('Invalid JSON');
@@ -129,7 +133,7 @@ describe('Namespaces API', () => {
       // Arrange
       const mockNamespaces = Array.from({ length: 100 }, (_, i) => `namespace-${i}`);
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockNamespaces,
       });
@@ -147,7 +151,7 @@ describe('Namespaces API', () => {
       // Arrange
       const mockNamespaces = ['my-app-prod', 'test_env', 'dev.local'];
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockNamespaces,
       });
@@ -164,7 +168,7 @@ describe('Namespaces API', () => {
 
     it('should handle timeout scenarios', async () => {
       // Arrange
-      mockFetch.mockImplementation(() => {
+      mockDebugFetch.mockImplementation(() => {
         return new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Request timeout')), 100);
         });
@@ -180,7 +184,7 @@ describe('Namespaces API', () => {
       // Arrange
       const mockNamespaces = ['default', 'kube-system'];
 
-      mockFetch.mockResolvedValueOnce({
+      mockDebugFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockNamespaces,
       });

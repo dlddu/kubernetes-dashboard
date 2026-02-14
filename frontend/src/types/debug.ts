@@ -24,7 +24,7 @@ export interface ApiLog {
   duration: number;
 
   /** Parsed response body (JSON) */
-  responseBody: any;
+  responseBody: unknown;
 
   /** Response size in bytes */
   responseSize: number;
