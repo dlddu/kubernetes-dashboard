@@ -58,6 +58,9 @@ test.describe('PollingIndicator Component', () => {
   test('should update last refresh time automatically after polling interval', async ({ page }) => {
     // Tests that auto-polling updates the last refresh timestamp
 
+    // Arrange: Install fake clock before navigation to control JS timers
+    await page.clock.install();
+
     // Arrange: Navigate to the home page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -70,9 +73,8 @@ test.describe('PollingIndicator Component', () => {
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
     const initialTimeText = await lastUpdateTime.innerText();
 
-    // Act: Wait for polling interval (default 30 seconds)
-    // For testing, the polling interval might be shorter (e.g., 5 seconds)
-    await page.waitForTimeout(6000); // Wait 6 seconds to observe update
+    // Act: Fast-forward 6 seconds (fires the 1-second relative-time interval 6 times)
+    await page.clock.fastForward(6000);
 
     // Assert: Last update time should have changed
     const updatedTimeText = await lastUpdateTime.innerText();
@@ -122,6 +124,9 @@ test.describe('PollingIndicator Component - Manual Refresh', () => {
   test('should trigger immediate data refresh when refresh button is clicked', async ({ page }) => {
     // Tests manual refresh functionality
 
+    // Arrange: Install fake clock before navigation to control JS timers
+    await page.clock.install();
+
     // Arrange: Navigate to the home page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -134,8 +139,8 @@ test.describe('PollingIndicator Component - Manual Refresh', () => {
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
     const initialTimeText = await lastUpdateTime.innerText();
 
-    // Act: Wait a moment to ensure time difference is observable
-    await page.waitForTimeout(2000);
+    // Act: Fast-forward 2 seconds so time display diverges from initial
+    await page.clock.fastForward(2000);
 
     // Act: Click the refresh button
     const refreshButton = pollingIndicator.getByRole('button', { name: /refresh|reload/i })
@@ -231,6 +236,9 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     // Tests that polling stops when page is not visible
     // Note: Testing Page Visibility API in E2E is challenging due to browser limitations
 
+    // Arrange: Install fake clock before navigation to control JS timers
+    await page.clock.install();
+
     // Arrange: Navigate to the home page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -258,8 +266,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Act: Wait longer than the polling interval
-    await page.waitForTimeout(15000); // Wait 15 seconds (longer than 10s polling interval)
+    // Act: Fast-forward longer than the polling interval
+    await page.clock.fastForward(15000); // Fast-forward 15 seconds (longer than 10s polling interval)
 
     // Assert: Last update time should NOT have changed (polling paused)
     const timeAfterHidden = await lastUpdateTime.innerText();
@@ -279,8 +287,11 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Act: Wait for polling to resume and trigger
-    await page.waitForTimeout(6000); // Wait 6 seconds for next poll
+    // Act: Wait for the immediate fetch triggered by visibility restore
+    await page.waitForLoadState('networkidle');
+
+    // Act: Let the relative-time interval fire to pick up new lastUpdate
+    await page.clock.fastForward(1000);
 
     // Assert: Polling should have resumed and updated the time
     const timeAfterVisible = await lastUpdateTime.innerText();
@@ -289,6 +300,9 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
 
   test('should resume polling when tab becomes active again', async ({ page }) => {
     // Tests that polling resumes when page becomes visible
+
+    // Arrange: Install fake clock before navigation to control JS timers
+    await page.clock.install();
 
     // Arrange: Navigate to the home page
     await page.goto('/');
@@ -311,8 +325,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Act: Wait while tab is hidden
-    await page.waitForTimeout(10000); // 10 seconds hidden
+    // Act: Fast-forward while tab is hidden
+    await page.clock.fastForward(10000); // 10 seconds hidden
 
     // Act: Simulate tab becoming visible
     await page.evaluate(() => {
@@ -328,8 +342,11 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     });
 
     // Assert: Should trigger immediate refresh on visibility restore
-    // Wait a moment for the refresh to occur
-    await page.waitForTimeout(2000);
+    // Wait for the immediate fetch triggered by visibility restore
+    await page.waitForLoadState('networkidle');
+
+    // Let the relative-time interval fire to pick up new lastUpdate
+    await page.clock.fastForward(1000);
 
     // Assert: Last update time should show recent update
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
@@ -339,8 +356,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     // Assert: Polling should continue normally after resume
     const initialTime = await lastUpdateTime.innerText();
 
-    // Wait for next polling cycle
-    await page.waitForTimeout(6000); // Wait 6 seconds
+    // Fast-forward past next polling cycle
+    await page.clock.fastForward(6000); // Fast-forward 6 seconds
 
     const updatedTime = await lastUpdateTime.innerText();
     // Time display should have updated or show elapsed time
@@ -349,6 +366,9 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
 
   test('should display polling status indicator (active/paused)', async ({ page }) => {
     // Tests that PollingIndicator shows active vs paused state
+
+    // Arrange: Install fake clock before navigation to control JS timers
+    await page.clock.install();
 
     // Arrange: Navigate to the home page
     await page.goto('/');
@@ -385,8 +405,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Wait for state change to propagate
-    await page.waitForTimeout(1000);
+    // Fast-forward for state change to propagate
+    await page.clock.fastForward(1000);
 
     // Assert: Status should indicate paused state
     const pausedStatus = pollingIndicator.getByTestId('polling-status')
@@ -431,6 +451,9 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
   test('should update relative time display as time passes', async ({ page }) => {
     // Tests that "X seconds ago" increments over time
 
+    // Arrange: Install fake clock before navigation to control JS timers
+    await page.clock.install();
+
     // Arrange: Navigate to the home page and trigger refresh
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -449,8 +472,8 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
     const initialText = await lastUpdateTime.innerText();
     expect(initialText).toMatch(/just now|0 seconds ago|seconds? ago/i);
 
-    // Act: Wait for time to pass (e.g., 5 seconds)
-    await page.waitForTimeout(5000);
+    // Act: Fast-forward 5 seconds to observe elapsed time
+    await page.clock.fastForward(5000);
 
     // Assert: Time display should now show elapsed seconds
     const updatedText = await lastUpdateTime.innerText();

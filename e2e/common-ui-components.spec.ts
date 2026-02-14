@@ -716,13 +716,12 @@ test.describe('Common UI Components - Consistency Across Tabs', () => {
     ];
 
     for (const tab of tabs) {
-      // Arrange: Navigate to tab
+      // Arrange: Navigate to tab (domcontentloaded is sufficient for load check)
       await page.goto(tab.url);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Assert: Tab should load successfully (either with data or empty state)
-      const body = await page.locator('body').innerHTML();
-      expect(body.length).toBeGreaterThan(0);
+      await expect(page.locator('body')).toBeVisible();
     }
   });
 

@@ -144,7 +144,8 @@ test.describe('Overview Tab - Summary Cards Layout', () => {
     // Arrange: Set mobile viewport (iPhone SE dimensions)
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    // Wait for all 4 summary cards to render instead of full networkidle
+    await page.getByRole('article').nth(3).waitFor({ state: 'visible' });
 
     // Act: Locate the summary cards container
     const cardsContainer = page.getByTestId('summary-cards-container')

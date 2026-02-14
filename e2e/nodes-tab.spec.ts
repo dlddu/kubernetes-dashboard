@@ -164,10 +164,11 @@ test.describe('Nodes Tab - NodeCard Components', () => {
 });
 
 test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
-  test('should have proper accessibility attributes for CPU usage bar', async ({ page }) => {
-    // Tests ARIA attributes for CPU usage progressbar
+  test('should have proper accessibility attributes for CPU and Memory usage bars', async ({ page }) => {
+    // Tests ARIA attributes for both CPU and Memory usage progressbars
+    // Merged into single test to eliminate redundant navigation (3 navigations → 1)
 
-    // Arrange: Navigate to the Nodes page
+    // Arrange: Navigate to the Nodes page (single navigation for all checks)
     await page.goto('/nodes');
     await page.waitForLoadState('networkidle');
 
@@ -175,61 +176,22 @@ test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
     const firstNodeCard = page.getByTestId('node-card').first();
     await expect(firstNodeCard).toBeVisible();
 
-    // Act: Get CPU usage progressbar
+    // --- CPU usage progressbar ---
     const cpuProgressBar = firstNodeCard.getByRole('progressbar').first();
     await expect(cpuProgressBar).toBeVisible();
 
-    // Assert: Should have required ARIA attributes
+    // Assert: CPU should have required ARIA attributes
     await expect(cpuProgressBar).toHaveAttribute('aria-valuenow');
     await expect(cpuProgressBar).toHaveAttribute('aria-valuemin', '0');
     await expect(cpuProgressBar).toHaveAttribute('aria-valuemax', '100');
 
-    // Assert: aria-valuenow should be a valid percentage (0-100)
-    const ariaValueNow = await cpuProgressBar.getAttribute('aria-valuenow');
-    const cpuPercentage = parseFloat(ariaValueNow!);
+    // Assert: CPU aria-valuenow should be a valid percentage (0-100)
+    const cpuAriaValueNow = await cpuProgressBar.getAttribute('aria-valuenow');
+    const cpuPercentage = parseFloat(cpuAriaValueNow!);
     expect(cpuPercentage).toBeGreaterThanOrEqual(0);
     expect(cpuPercentage).toBeLessThanOrEqual(100);
-  });
 
-  test('should have proper accessibility attributes for Memory usage bar', async ({ page }) => {
-    // Tests ARIA attributes for Memory usage progressbar
-
-    // Arrange: Navigate to the Nodes page
-    await page.goto('/nodes');
-    await page.waitForLoadState('networkidle');
-
-    // Act: Get the first node card
-    const firstNodeCard = page.getByTestId('node-card').first();
-    await expect(firstNodeCard).toBeVisible();
-
-    // Act: Get Memory usage progressbar (second progressbar in the card)
-    const memoryProgressBar = firstNodeCard.getByRole('progressbar').nth(1);
-    await expect(memoryProgressBar).toBeVisible();
-
-    // Assert: Should have required ARIA attributes
-    await expect(memoryProgressBar).toHaveAttribute('aria-valuenow');
-    await expect(memoryProgressBar).toHaveAttribute('aria-valuemin', '0');
-    await expect(memoryProgressBar).toHaveAttribute('aria-valuemax', '100');
-
-    // Assert: aria-valuenow should be a valid percentage (0-100)
-    const ariaValueNow = await memoryProgressBar.getAttribute('aria-valuenow');
-    const memoryPercentage = parseFloat(ariaValueNow!);
-    expect(memoryPercentage).toBeGreaterThanOrEqual(0);
-    expect(memoryPercentage).toBeLessThanOrEqual(100);
-  });
-
-  test('should have aria-label for CPU usage bar describing the metric', async ({ page }) => {
-    // Tests that CPU usage bar has descriptive aria-label
-
-    // Arrange: Navigate to the Nodes page
-    await page.goto('/nodes');
-    await page.waitForLoadState('networkidle');
-
-    // Act: Get the first node card and CPU progressbar
-    const firstNodeCard = page.getByTestId('node-card').first();
-    const cpuProgressBar = firstNodeCard.getByRole('progressbar').first();
-
-    // Assert: Should have aria-label or aria-labelledby
+    // Assert: CPU should have aria-label or aria-labelledby
     const hasAriaLabel = await cpuProgressBar.getAttribute('aria-label');
     const hasAriaLabelledby = await cpuProgressBar.getAttribute('aria-labelledby');
     expect(hasAriaLabel || hasAriaLabelledby).toBeTruthy();
@@ -238,6 +200,21 @@ test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
     if (hasAriaLabel) {
       expect(hasAriaLabel.toLowerCase()).toContain('cpu');
     }
+
+    // --- Memory usage progressbar ---
+    const memoryProgressBar = firstNodeCard.getByRole('progressbar').nth(1);
+    await expect(memoryProgressBar).toBeVisible();
+
+    // Assert: Memory should have required ARIA attributes
+    await expect(memoryProgressBar).toHaveAttribute('aria-valuenow');
+    await expect(memoryProgressBar).toHaveAttribute('aria-valuemin', '0');
+    await expect(memoryProgressBar).toHaveAttribute('aria-valuemax', '100');
+
+    // Assert: Memory aria-valuenow should be a valid percentage (0-100)
+    const memAriaValueNow = await memoryProgressBar.getAttribute('aria-valuenow');
+    const memoryPercentage = parseFloat(memAriaValueNow!);
+    expect(memoryPercentage).toBeGreaterThanOrEqual(0);
+    expect(memoryPercentage).toBeLessThanOrEqual(100);
   });
 });
 
