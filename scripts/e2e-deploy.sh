@@ -20,7 +20,7 @@ log_info "Loading image '$IMAGE_NAME' into kind cluster '$CLUSTER_NAME'"
 "$SCRIPT_DIR/kind-cluster.sh" load-image "$IMAGE_NAME"
 
 log_info "Applying e2e kustomize overlay (rbac + deployment + service)"
-kubectl apply -k "$PROJECT_ROOT/e2e/k8s/"
+kubectl kustomize "$PROJECT_ROOT/e2e/k8s/" --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
 
 log_info "Waiting for deployment to be available..."
 kubectl wait --for=condition=Available deployment/kubernetes-dashboard --timeout=120s
