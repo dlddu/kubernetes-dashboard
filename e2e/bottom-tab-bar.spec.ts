@@ -3,15 +3,13 @@ import { test, expect } from '@playwright/test';
 /**
  * E2E Tests for BottomTabBar Component
  *
- * TDD Red Phase: Component not yet implemented - all tests skipped.
  * Tests verify mobile-first tab navigation behavior with 5 tabs:
- * Overview, Nodes, Deployments, Pods, Secrets
+ * Overview, Nodes, Workloads, Pods, Secrets
  *
- * Related Issue: DLD-390 - Tab Navigation Integration E2E Testing
- * TODO: Activate when DLD-390 is implemented
+ * Related Issue: DLD-391 - 13-2: Tab Navigation Integration
  */
 
-test.describe.skip('BottomTabBar - Tab Navigation', () => {
+test.describe('BottomTabBar - Tab Navigation', () => {
   test('should display all 5 tabs in bottom tab bar', async ({ page }) => {
     // Tests that all navigation tabs are visible
 
@@ -26,19 +24,19 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
 
     // Assert: All 5 tabs should be visible
     const overviewTab = page.getByTestId('tab-overview')
-      .or(page.getByRole('link', { name: /overview/i }));
+      .or(page.getByRole('button', { name: /overview/i }));
     const nodesTab = page.getByTestId('tab-nodes')
-      .or(page.getByRole('link', { name: /nodes/i }));
-    const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('link', { name: /deployments/i }));
+      .or(page.getByRole('button', { name: /nodes/i }));
+    const workloadsTab = page.getByTestId('tab-workloads')
+      .or(page.getByRole('button', { name: /workloads/i }));
     const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+      .or(page.getByRole('button', { name: /pods/i }));
     const secretsTab = page.getByTestId('tab-secrets')
-      .or(page.getByRole('link', { name: /secrets/i }));
+      .or(page.getByRole('button', { name: /secrets/i }));
 
     await expect(overviewTab).toBeVisible();
     await expect(nodesTab).toBeVisible();
-    await expect(deploymentsTab).toBeVisible();
+    await expect(workloadsTab).toBeVisible();
     await expect(podsTab).toBeVisible();
     await expect(secretsTab).toBeVisible();
   });
@@ -53,7 +51,7 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
 
     // Act: Click Overview tab
     const overviewTab = page.getByTestId('tab-overview')
-      .or(page.getByRole('link', { name: /overview/i }));
+      .or(page.getByRole('button', { name: /overview/i }));
     await overviewTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -79,7 +77,7 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
 
     // Act: Click Nodes tab
     const nodesTab = page.getByTestId('tab-nodes')
-      .or(page.getByRole('link', { name: /nodes/i }));
+      .or(page.getByRole('button', { name: /nodes/i }));
     await nodesTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -94,30 +92,30 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
     await expect(nodesTab).toHaveAttribute('aria-current', 'page');
   });
 
-  test('should navigate to Deployments page when Deployments tab is clicked', async ({ page }) => {
-    // Tests navigation to Deployments tab
+  test('should navigate to Workloads page when Workloads tab is clicked', async ({ page }) => {
+    // Tests navigation to Workloads tab
 
     // Arrange: Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Act: Click Deployments tab
-    const deploymentsTab = page.getByTestId('tab-deployments')
-      .or(page.getByRole('link', { name: /deployments/i }));
-    await deploymentsTab.click();
+    // Act: Click Workloads tab
+    const workloadsTab = page.getByTestId('tab-workloads')
+      .or(page.getByRole('button', { name: /workloads/i }));
+    await workloadsTab.click();
     await page.waitForLoadState('networkidle');
 
     // Assert: Should navigate to /workloads route (deployments view)
     expect(page.url()).toMatch(/\/workloads|\/deployments/);
 
-    // Assert: Deployments page content should be visible
-    const deploymentsPage = page.getByTestId('workloads-page')
+    // Assert: Workloads page content should be visible
+    const workloadsPage = page.getByTestId('workloads-page')
       .or(page.getByTestId('deployments-page'));
-    await expect(deploymentsPage).toBeVisible();
+    await expect(workloadsPage).toBeVisible();
 
-    // Assert: Deployments tab should have active state
-    await expect(deploymentsTab).toHaveAttribute('aria-current', 'page');
+    // Assert: Workloads tab should have active state
+    await expect(workloadsTab).toHaveAttribute('aria-current', 'page');
   });
 
   test('should navigate to Pods page when Pods tab is clicked', async ({ page }) => {
@@ -130,7 +128,7 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
 
     // Act: Click Pods tab
     const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('link', { name: /pods/i }));
+      .or(page.getByRole('button', { name: /pods/i }));
     await podsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -138,9 +136,7 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
     expect(page.url()).toContain('/pods');
 
     // Assert: Pods page content should be visible
-    const podsPage = page.getByTestId('pods-page')
-      .or(page.getByTestId('pod-card').first());
-    await expect(podsPage).toBeVisible();
+    await expect(page.getByTestId('pods-page')).toBeVisible();
 
     // Assert: Pods tab should have active state
     await expect(podsTab).toHaveAttribute('aria-current', 'page');
@@ -156,7 +152,7 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
 
     // Act: Click Secrets tab
     const secretsTab = page.getByTestId('tab-secrets')
-      .or(page.getByRole('link', { name: /secrets/i }));
+      .or(page.getByRole('button', { name: /secrets/i }));
     await secretsTab.click();
     await page.waitForLoadState('networkidle');
 
@@ -173,7 +169,7 @@ test.describe.skip('BottomTabBar - Tab Navigation', () => {
   });
 });
 
-test.describe.skip('BottomTabBar - Pods Tab Badge', () => {
+test.describe('BottomTabBar - Pods Tab Badge', () => {
   test('should display badge on Pods tab when unhealthy pods exist', async ({ page }) => {
     // Tests that Pods tab shows notification badge for unhealthy pods
 
@@ -302,7 +298,7 @@ test.describe.skip('BottomTabBar - Pods Tab Badge', () => {
   });
 });
 
-test.describe.skip('BottomTabBar - Mobile Layout', () => {
+test.describe('BottomTabBar - Mobile Layout', () => {
   test('should render without layout issues on mobile viewport (375px)', async ({ page }) => {
     // Tests responsive layout on mobile
 
@@ -350,7 +346,7 @@ test.describe.skip('BottomTabBar - Mobile Layout', () => {
     const tabs = [
       { testId: 'tab-overview', iconTestId: 'overview-icon' },
       { testId: 'tab-nodes', iconTestId: 'nodes-icon' },
-      { testId: 'tab-deployments', iconTestId: 'deployments-icon' },
+      { testId: 'tab-workloads', iconTestId: 'workloads-icon' },
       { testId: 'tab-pods', iconTestId: 'pods-icon' },
       { testId: 'tab-secrets', iconTestId: 'secrets-icon' }
     ];
@@ -383,9 +379,9 @@ test.describe.skip('BottomTabBar - Mobile Layout', () => {
     const nodesText = await nodesTab.innerText();
     expect(nodesText.toLowerCase()).toContain('nodes');
 
-    const deploymentsTab = page.getByTestId('tab-deployments');
-    const deploymentsText = await deploymentsTab.innerText();
-    expect(deploymentsText.toLowerCase()).toMatch(/deployments|deploy/);
+    const workloadsTab = page.getByTestId('tab-workloads');
+    const workloadsText = await workloadsTab.innerText();
+    expect(workloadsText.toLowerCase()).toMatch(/workloads|deploy/);
 
     const podsTab = page.getByTestId('tab-pods');
     const podsText = await podsTab.innerText();
@@ -405,7 +401,7 @@ test.describe.skip('BottomTabBar - Mobile Layout', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Each tab should have minimum 44px touch target
-    const tabs = ['tab-overview', 'tab-nodes', 'tab-deployments', 'tab-pods', 'tab-secrets'];
+    const tabs = ['tab-overview', 'tab-nodes', 'tab-workloads', 'tab-pods', 'tab-secrets'];
 
     for (const tabTestId of tabs) {
       const tab = page.getByTestId(tabTestId);
@@ -440,7 +436,7 @@ test.describe.skip('BottomTabBar - Mobile Layout', () => {
   });
 });
 
-test.describe.skip('BottomTabBar - Namespace Context Integration', () => {
+test.describe('BottomTabBar - Namespace Context Integration', () => {
   test('should filter current tab data when namespace is changed', async ({ page }) => {
     // Tests that namespace selection affects active tab's data
 
@@ -504,14 +500,14 @@ test.describe.skip('BottomTabBar - Namespace Context Integration', () => {
     const namespaceSelectorOnNodes = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await expect(namespaceSelectorOnNodes).toContainText(/^kube-system$/i);
 
-    // Act: Navigate to Deployments tab
-    const deploymentsTab = page.getByTestId('tab-deployments');
-    await deploymentsTab.click();
+    // Act: Navigate to Workloads tab
+    const workloadsTab = page.getByTestId('tab-workloads');
+    await workloadsTab.click();
     await page.waitForLoadState('networkidle');
 
     // Assert: Namespace selection should still persist
-    const namespaceSelectorOnDeployments = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
-    await expect(namespaceSelectorOnDeployments).toContainText(/^kube-system$/i);
+    const namespaceSelectorOnWorkloads = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await expect(namespaceSelectorOnWorkloads).toContainText(/^kube-system$/i);
 
     // Act: Navigate to Pods tab
     const podsTab = page.getByTestId('tab-pods');
@@ -584,7 +580,7 @@ test.describe.skip('BottomTabBar - Namespace Context Integration', () => {
   });
 });
 
-test.describe.skip('BottomTabBar - Accessibility', () => {
+test.describe('BottomTabBar - Accessibility', () => {
   test('should have proper ARIA attributes for navigation', async ({ page }) => {
     // Tests accessibility of tab navigation
 
@@ -674,7 +670,7 @@ test.describe.skip('BottomTabBar - Accessibility', () => {
     const tabs = [
       { testId: 'tab-overview', expectedLabel: /overview/i },
       { testId: 'tab-nodes', expectedLabel: /nodes/i },
-      { testId: 'tab-deployments', expectedLabel: /deployments/i },
+      { testId: 'tab-workloads', expectedLabel: /workloads/i },
       { testId: 'tab-pods', expectedLabel: /pods/i },
       { testId: 'tab-secrets', expectedLabel: /secrets/i }
     ];
