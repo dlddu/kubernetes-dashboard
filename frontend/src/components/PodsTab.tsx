@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { fetchUnhealthyPods, UnhealthyPodDetails } from '../api/pods';
 import { UnhealthyPodCard } from './UnhealthyPodCard';
+import { LoadingSkeleton } from './LoadingSkeleton';
+import { ErrorRetry } from './ErrorRetry';
+import { EmptyState } from './EmptyState';
 
 interface PodsTabProps {
   namespace?: string;
@@ -42,43 +45,28 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
         </h2>
 
         {isLoading && (
-          <div
-            data-testid="pods-loading"
-            aria-busy="true"
-            aria-label="loading"
-            className="flex items-center justify-center py-12"
-          >
-            <div className="text-gray-500">Loading...</div>
-          </div>
+          <LoadingSkeleton
+            variant="card"
+            count={3}
+            testId="pods-loading"
+          />
         )}
 
         {error && (
-          <div
-            data-testid="pods-error"
-            role="alert"
-            className="bg-red-50 border border-red-200 rounded-lg p-6"
-          >
-            <div className="text-red-800 font-medium mb-2">Error loading pods</div>
-            <div className="text-red-600 mb-4">{error}</div>
-            <button
-              data-testid="retry-button"
-              onClick={handleRetry}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
+          <ErrorRetry
+            error={error}
+            onRetry={handleRetry}
+            title="Error loading pods"
+            testId="pods-error"
+          />
         )}
 
         {!isLoading && !error && pods.length === 0 && (
-          <div
-            data-testid="no-unhealthy-pods-message"
-            className="bg-green-50 border border-green-200 rounded-lg p-12 text-center"
-          >
-            <div className="text-green-800 text-lg">
-              모든 Pod가 정상 Running 상태입니다 ✅
-            </div>
-          </div>
+          <EmptyState
+            message="모든 Pod가 정상 Running 상태입니다 ✅"
+            variant="success"
+            testId="no-unhealthy-pods-message"
+          />
         )}
 
         {!isLoading && !error && pods.length > 0 && (

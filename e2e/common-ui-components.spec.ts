@@ -3,18 +3,14 @@ import { test, expect } from '@playwright/test';
 /**
  * E2E Tests for Common UI Components (LoadingSkeleton, ErrorRetry, EmptyState)
  *
- * TDD Red Phase: Tests written - components not yet implemented.
- * These tests define the expected behavior of common UI components that are
+ * TDD Green Phase: Components implemented - tests activated.
+ * These tests verify the behavior of common UI components that are
  * used across multiple tabs (Overview, Nodes, Workloads, Pods, Secrets).
  *
- * Related Issue: DLD-388 - Common UI Components E2E Testing
- *
- * NOTE: All tests are skipped (test.skip) until the components are implemented.
- * Once components are implemented, remove .skip to activate these tests.
+ * Related Issue: DLD-389 - Common UI Components E2E Testing
  */
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('LoadingSkeleton Component - Overview Tab', () => {
+test.describe('LoadingSkeleton Component - Overview Tab', () => {
   test('should display loading skeleton on initial page load', async ({ page }) => {
     // Tests that LoadingSkeleton appears during data fetch on Overview tab
 
@@ -97,8 +93,7 @@ test.describe.skip('LoadingSkeleton Component - Overview Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('LoadingSkeleton Component - Nodes Tab', () => {
+test.describe('LoadingSkeleton Component - Nodes Tab', () => {
   test('should display loading skeleton while fetching node data', async ({ page }) => {
     // Tests that LoadingSkeleton appears during node data fetch
 
@@ -153,8 +148,7 @@ test.describe.skip('LoadingSkeleton Component - Nodes Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('LoadingSkeleton Component - Workloads Tab', () => {
+test.describe('LoadingSkeleton Component - Workloads Tab', () => {
   test('should display loading skeleton while fetching workload data', async ({ page }) => {
     // Tests that LoadingSkeleton appears during workload data fetch
 
@@ -169,8 +163,8 @@ test.describe.skip('LoadingSkeleton Component - Workloads Tab', () => {
     // Wait for data to load
     await page.waitForLoadState('networkidle');
 
-    // Assert: Workload cards should be displayed after loading
-    const workloadCards = page.getByTestId('workload-card');
+    // Assert: Deployment cards should be displayed after loading
+    const workloadCards = page.getByTestId('deployment-card');
     const cardCount = await workloadCards.count();
 
     // Either cards are displayed or empty state is shown
@@ -187,8 +181,7 @@ test.describe.skip('LoadingSkeleton Component - Workloads Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('LoadingSkeleton Component - Pods Tab', () => {
+test.describe('LoadingSkeleton Component - Pods Tab', () => {
   test('should display loading skeleton while fetching pod data', async ({ page }) => {
     // Tests that LoadingSkeleton appears during pod data fetch
 
@@ -204,7 +197,7 @@ test.describe.skip('LoadingSkeleton Component - Pods Tab', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Pod table or empty state should be displayed after loading
-    const podRows = page.getByTestId('pod-row');
+    const podRows = page.getByTestId('pod-card');
     const emptyMessage = page.getByTestId('no-unhealthy-pods-message');
 
     const hasRows = (await podRows.count()) > 0;
@@ -218,8 +211,7 @@ test.describe.skip('LoadingSkeleton Component - Pods Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('LoadingSkeleton Component - Secrets Tab', () => {
+test.describe('LoadingSkeleton Component - Secrets Tab', () => {
   test('should display loading skeleton while fetching secret data', async ({ page }) => {
     // Tests that LoadingSkeleton appears during secret data fetch
 
@@ -235,12 +227,12 @@ test.describe.skip('LoadingSkeleton Component - Secrets Tab', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Secret accordions or empty state should be displayed after loading
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
     const cardCount = await secretAccordions.count();
 
     if (cardCount === 0) {
       // May show empty state if no secrets
-      const emptyState = page.getByTestId('empty-state')
+      const emptyState = page.getByTestId('no-secrets-message')
         .or(page.getByText(/no secrets found/i));
       const hasEmptyState = (await emptyState.count()) > 0;
       // Either empty state or secrets should be present
@@ -255,8 +247,7 @@ test.describe.skip('LoadingSkeleton Component - Secrets Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('ErrorRetry Component - Overview Tab', () => {
+test.describe('ErrorRetry Component - Overview Tab', () => {
   test('should display error message when summary cards fail to load', async ({ page }) => {
     // Tests that ErrorRetry component appears when API fails
 
@@ -343,8 +334,7 @@ test.describe.skip('ErrorRetry Component - Overview Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('ErrorRetry Component - Nodes Tab', () => {
+test.describe('ErrorRetry Component - Nodes Tab', () => {
   test('should display error message when node data fails to load', async ({ page }) => {
     // Tests that ErrorRetry appears when node API fails
 
@@ -404,8 +394,7 @@ test.describe.skip('ErrorRetry Component - Nodes Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('ErrorRetry Component - Workloads Tab', () => {
+test.describe('ErrorRetry Component - Workloads Tab', () => {
   test('should display error message when workload data fails to load', async ({ page }) => {
     // Tests that ErrorRetry appears when workload API fails
 
@@ -415,7 +404,7 @@ test.describe.skip('ErrorRetry Component - Workloads Tab', () => {
 
     // Act: Check for error state or successful load
     const errorContainer = page.getByTestId('error-message');
-    const workloadCards = page.getByTestId('workload-card');
+    const workloadCards = page.getByTestId('deployment-card');
     const emptyState = page.getByTestId('empty-state');
 
     // Assert: Either error, empty state, or workloads are displayed
@@ -460,7 +449,7 @@ test.describe.skip('ErrorRetry Component - Workloads Tab', () => {
         await page.waitForLoadState('networkidle');
 
         // Assert: Should show result after retry
-        const workloadCards = page.getByTestId('workload-card');
+        const workloadCards = page.getByTestId('deployment-card');
         const emptyState = page.getByTestId('empty-state');
         const errorStillVisible = await errorContainer.isVisible().catch(() => false);
 
@@ -473,8 +462,7 @@ test.describe.skip('ErrorRetry Component - Workloads Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('ErrorRetry Component - Pods Tab', () => {
+test.describe('ErrorRetry Component - Pods Tab', () => {
   test('should display error message when pod data fails to load', async ({ page }) => {
     // Tests that ErrorRetry appears when pod API fails
 
@@ -484,7 +472,7 @@ test.describe.skip('ErrorRetry Component - Pods Tab', () => {
 
     // Act: Check for error state or successful load
     const errorContainer = page.getByTestId('pods-error');
-    const podRows = page.getByTestId('pod-row');
+    const podRows = page.getByTestId('pod-card');
     const emptyMessage = page.getByTestId('no-unhealthy-pods-message');
 
     // Assert: Either error, empty message, or pods are displayed
@@ -496,8 +484,7 @@ test.describe.skip('ErrorRetry Component - Pods Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('ErrorRetry Component - Secrets Tab', () => {
+test.describe('ErrorRetry Component - Secrets Tab', () => {
   test('should display error message when secret data fails to load', async ({ page }) => {
     // Tests that ErrorRetry appears when secret API fails
 
@@ -507,7 +494,7 @@ test.describe.skip('ErrorRetry Component - Secrets Tab', () => {
 
     // Act: Check for error state or successful load
     const errorContainer = page.getByTestId('secrets-error');
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
 
     // Assert: Either error or secrets are displayed
     const hasError = await errorContainer.isVisible().catch(() => false);
@@ -528,8 +515,7 @@ test.describe.skip('ErrorRetry Component - Secrets Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('EmptyState Component - Nodes Tab', () => {
+test.describe('EmptyState Component - Nodes Tab', () => {
   test('should display empty state when no nodes are available', async ({ page }) => {
     // Tests that EmptyState appears when cluster has no nodes
     // Note: In practice, a cluster always has at least one node
@@ -583,8 +569,7 @@ test.describe.skip('EmptyState Component - Nodes Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('EmptyState Component - Workloads Tab', () => {
+test.describe('EmptyState Component - Workloads Tab', () => {
   test('should display empty state when no workloads are available', async ({ page }) => {
     // Tests that EmptyState appears when namespace has no workloads
 
@@ -594,7 +579,7 @@ test.describe.skip('EmptyState Component - Workloads Tab', () => {
 
     // Act: Check for empty state or workload cards
     const emptyState = page.getByTestId('empty-state');
-    const workloadCards = page.getByTestId('workload-card');
+    const workloadCards = page.getByTestId('deployment-card');
 
     // Assert: Either empty state or workloads should be displayed
     const isEmpty = await emptyState.isVisible().catch(() => false);
@@ -633,8 +618,7 @@ test.describe.skip('EmptyState Component - Workloads Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('EmptyState Component - Pods Tab', () => {
+test.describe('EmptyState Component - Pods Tab', () => {
   test('should display empty state when no unhealthy pods are found', async ({ page }) => {
     // Tests that EmptyState appears when all pods are healthy
 
@@ -644,7 +628,7 @@ test.describe.skip('EmptyState Component - Pods Tab', () => {
 
     // Act: Check for empty state or pod rows
     const emptyMessage = page.getByTestId('no-unhealthy-pods-message');
-    const podRows = page.getByTestId('pod-row');
+    const podRows = page.getByTestId('pod-card');
 
     // Assert: Either empty message or pods should be displayed
     const isEmpty = await emptyMessage.isVisible().catch(() => false);
@@ -686,8 +670,7 @@ test.describe.skip('EmptyState Component - Pods Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('EmptyState Component - Secrets Tab', () => {
+test.describe('EmptyState Component - Secrets Tab', () => {
   test('should display empty state when no secrets are available', async ({ page }) => {
     // Tests that EmptyState appears when namespace has no secrets
 
@@ -696,9 +679,9 @@ test.describe.skip('EmptyState Component - Secrets Tab', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Check for empty state or secret accordions
-    const emptyState = page.getByTestId('empty-state')
+    const emptyState = page.getByTestId('no-secrets-message')
       .or(page.getByText(/no secrets found/i));
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
 
     // Assert: Either empty state or secrets should be displayed
     const isEmpty = (await emptyState.count()) > 0 && await emptyState.first().isVisible().catch(() => false);
@@ -715,8 +698,7 @@ test.describe.skip('EmptyState Component - Secrets Tab', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('Common UI Components - Consistency Across Tabs', () => {
+test.describe('Common UI Components - Consistency Across Tabs', () => {
   test('should use consistent LoadingSkeleton design across all tabs', async ({ page }) => {
     // Tests that loading skeletons have consistent visual design
 
@@ -782,7 +764,7 @@ test.describe.skip('Common UI Components - Consistency Across Tabs', () => {
       { url: '/nodes', emptyTestId: 'nodes-empty' },
       { url: '/workloads', emptyTestId: 'empty-state' },
       { url: '/pods', emptyTestId: 'no-unhealthy-pods-message' },
-      { url: '/secrets', emptyTestId: 'empty-state' }
+      { url: '/secrets', emptyTestId: 'no-secrets-message' }
     ];
 
     for (const tab of tabs) {
@@ -803,8 +785,7 @@ test.describe.skip('Common UI Components - Consistency Across Tabs', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('Common UI Components - Accessibility', () => {
+test.describe('Common UI Components - Accessibility', () => {
   test('should have proper ARIA attributes for loading states', async ({ page }) => {
     // Tests accessibility of loading skeletons
 
@@ -880,8 +861,7 @@ test.describe.skip('Common UI Components - Accessibility', () => {
   });
 });
 
-// TODO: Activate when DLD-388 is implemented
-test.describe.skip('Common UI Components - Responsive Design', () => {
+test.describe('Common UI Components - Responsive Design', () => {
   test('should display loading skeleton correctly on mobile', async ({ page }) => {
     // Tests that loading skeletons are responsive
 
