@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchSecrets, SecretInfo } from '../api/secrets';
 import { SecretAccordion } from './SecretAccordion';
+import { LoadingSkeleton } from './LoadingSkeleton';
+import { ErrorRetry } from './ErrorRetry';
+import { EmptyState } from './EmptyState';
 
 interface SecretsTabProps {
   namespace?: string;
@@ -69,44 +72,27 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
       </div>
 
       {isLoading && (
-        <div
-          data-testid="secrets-loading"
-          aria-busy="true"
-          aria-label="loading"
-          className="flex items-center justify-center py-12"
-        >
-          <div className="text-gray-500">Loading...</div>
-        </div>
+        <LoadingSkeleton
+          variant="list"
+          count={5}
+          testId="secrets-loading"
+        />
       )}
 
       {error && (
-        <div
-          data-testid="secrets-error"
-          role="alert"
-          className="bg-red-50 border border-red-200 rounded-lg p-6"
-        >
-          <div className="text-red-800 font-medium mb-2">Error loading secrets</div>
-          <div className="text-red-600 mb-4">{error}</div>
-          <button
-            data-testid="retry-button"
-            onClick={handleRetry}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorRetry
+          error={error}
+          onRetry={handleRetry}
+          title="Error loading secrets"
+          testId="secrets-error"
+        />
       )}
 
       {!isLoading && !error && secrets.length === 0 && (
-        <div
-          data-testid="no-secrets-message"
-          className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center"
-        >
-          <div className="text-gray-600 text-lg">
-            No secrets found
-            {selectedNamespace && ` in namespace "${selectedNamespace}"`}
-          </div>
-        </div>
+        <EmptyState
+          message={`No secrets found${selectedNamespace ? ` in namespace "${selectedNamespace}"` : ''}`}
+          testId="no-secrets-message"
+        />
       )}
 
       {!isLoading && !error && secrets.length > 0 && (

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { fetchNodes, NodeInfo } from '../api/nodes';
 import { NodeCard } from './NodeCard';
+import { LoadingSkeleton } from './LoadingSkeleton';
+import { ErrorRetry } from './ErrorRetry';
+import { EmptyState } from './EmptyState';
 
 export function NodesTab() {
   const [nodes, setNodes] = useState<NodeInfo[]>([]);
@@ -33,29 +36,27 @@ export function NodesTab() {
       <h1 className="text-2xl font-bold text-gray-900">Nodes</h1>
 
       {isLoading && (
-        <div data-testid="nodes-loading" className="flex items-center justify-center py-12">
-          <div className="text-gray-500">Loading nodes...</div>
-        </div>
+        <LoadingSkeleton
+          variant="card"
+          count={3}
+          testId="nodes-loading"
+        />
       )}
 
       {error && (
-        <div data-testid="nodes-error" className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="text-red-800 font-medium mb-2">Error loading nodes</div>
-          <div className="text-red-600 mb-4">{error}</div>
-          <button
-            data-testid="retry-button"
-            onClick={handleRetry}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
+        <ErrorRetry
+          error={error}
+          onRetry={handleRetry}
+          title="Error loading nodes"
+          testId="nodes-error"
+        />
       )}
 
       {!isLoading && !error && nodes.length === 0 && (
-        <div data-testid="nodes-empty" className="bg-white rounded-lg shadow p-12 text-center">
-          <div className="text-gray-500 text-lg">No nodes found</div>
-        </div>
+        <EmptyState
+          message="No nodes found"
+          testId="nodes-empty"
+        />
       )}
 
       {!isLoading && !error && nodes.length > 0 && (
