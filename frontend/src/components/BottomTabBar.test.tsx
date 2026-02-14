@@ -563,7 +563,6 @@ describe('BottomTabBar Component', () => {
 
       // Assert
       const tabBar = screen.getByTestId('bottom-tab-bar');
-      const styles = window.getComputedStyle(tabBar);
 
       // Should have bottom padding for safe area
       expect(tabBar.className).toMatch(/pb-|padding-bottom/);
@@ -716,7 +715,7 @@ describe('BottomTabBar Component', () => {
       });
 
       // Act
-      render(<BottomTabBar unhealthyPodCount={undefined as any} />);
+      render(<BottomTabBar unhealthyPodCount={0} />);
 
       // Assert
       const badge = screen.queryByTestId('pods-badge');
@@ -881,7 +880,8 @@ describe('BottomTabBar Component', () => {
       // Assert
       const tabBar = screen.getByTestId('bottom-tab-bar');
       // Should use flex with space distribution
-      expect(tabBar.className || tabBar.children[0].className).toMatch(/flex|grid|space-/);
+      const innerDiv = tabBar.children[0] as HTMLElement;
+      expect(innerDiv.className).toMatch(/flex/);
     });
   });
 

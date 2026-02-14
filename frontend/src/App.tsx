@@ -12,7 +12,7 @@ import { PodsTab } from './components/PodsTab';
 import { SecretsTab } from './components/SecretsTab';
 
 function App() {
-  const [unhealthyPodCount, setUnhealthyPodCount] = useState(0);
+  const [unhealthyPodCount, _setUnhealthyPodCount] = useState(0);
 
   // Listen to dashboard refresh events to update pod count
   // This will be populated by the actual pod monitoring logic
