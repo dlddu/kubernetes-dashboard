@@ -163,8 +163,8 @@ test.describe('LoadingSkeleton Component - Workloads Tab', () => {
     // Wait for data to load
     await page.waitForLoadState('networkidle');
 
-    // Assert: Workload cards should be displayed after loading
-    const workloadCards = page.getByTestId('workload-card');
+    // Assert: Deployment cards should be displayed after loading
+    const workloadCards = page.getByTestId('deployment-card');
     const cardCount = await workloadCards.count();
 
     // Either cards are displayed or empty state is shown
@@ -197,7 +197,7 @@ test.describe('LoadingSkeleton Component - Pods Tab', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Pod table or empty state should be displayed after loading
-    const podRows = page.getByTestId('pod-row');
+    const podRows = page.getByTestId('pod-card');
     const emptyMessage = page.getByTestId('no-unhealthy-pods-message');
 
     const hasRows = (await podRows.count()) > 0;
@@ -227,12 +227,12 @@ test.describe('LoadingSkeleton Component - Secrets Tab', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Secret accordions or empty state should be displayed after loading
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
     const cardCount = await secretAccordions.count();
 
     if (cardCount === 0) {
       // May show empty state if no secrets
-      const emptyState = page.getByTestId('empty-state')
+      const emptyState = page.getByTestId('no-secrets-message')
         .or(page.getByText(/no secrets found/i));
       const hasEmptyState = (await emptyState.count()) > 0;
       // Either empty state or secrets should be present
@@ -404,7 +404,7 @@ test.describe('ErrorRetry Component - Workloads Tab', () => {
 
     // Act: Check for error state or successful load
     const errorContainer = page.getByTestId('error-message');
-    const workloadCards = page.getByTestId('workload-card');
+    const workloadCards = page.getByTestId('deployment-card');
     const emptyState = page.getByTestId('empty-state');
 
     // Assert: Either error, empty state, or workloads are displayed
@@ -449,7 +449,7 @@ test.describe('ErrorRetry Component - Workloads Tab', () => {
         await page.waitForLoadState('networkidle');
 
         // Assert: Should show result after retry
-        const workloadCards = page.getByTestId('workload-card');
+        const workloadCards = page.getByTestId('deployment-card');
         const emptyState = page.getByTestId('empty-state');
         const errorStillVisible = await errorContainer.isVisible().catch(() => false);
 
@@ -472,7 +472,7 @@ test.describe('ErrorRetry Component - Pods Tab', () => {
 
     // Act: Check for error state or successful load
     const errorContainer = page.getByTestId('pods-error');
-    const podRows = page.getByTestId('pod-row');
+    const podRows = page.getByTestId('pod-card');
     const emptyMessage = page.getByTestId('no-unhealthy-pods-message');
 
     // Assert: Either error, empty message, or pods are displayed
@@ -494,7 +494,7 @@ test.describe('ErrorRetry Component - Secrets Tab', () => {
 
     // Act: Check for error state or successful load
     const errorContainer = page.getByTestId('secrets-error');
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
 
     // Assert: Either error or secrets are displayed
     const hasError = await errorContainer.isVisible().catch(() => false);
@@ -579,7 +579,7 @@ test.describe('EmptyState Component - Workloads Tab', () => {
 
     // Act: Check for empty state or workload cards
     const emptyState = page.getByTestId('empty-state');
-    const workloadCards = page.getByTestId('workload-card');
+    const workloadCards = page.getByTestId('deployment-card');
 
     // Assert: Either empty state or workloads should be displayed
     const isEmpty = await emptyState.isVisible().catch(() => false);
@@ -628,7 +628,7 @@ test.describe('EmptyState Component - Pods Tab', () => {
 
     // Act: Check for empty state or pod rows
     const emptyMessage = page.getByTestId('no-unhealthy-pods-message');
-    const podRows = page.getByTestId('pod-row');
+    const podRows = page.getByTestId('pod-card');
 
     // Assert: Either empty message or pods should be displayed
     const isEmpty = await emptyMessage.isVisible().catch(() => false);
@@ -679,9 +679,9 @@ test.describe('EmptyState Component - Secrets Tab', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Check for empty state or secret accordions
-    const emptyState = page.getByTestId('empty-state')
+    const emptyState = page.getByTestId('no-secrets-message')
       .or(page.getByText(/no secrets found/i));
-    const secretAccordions = page.getByTestId('secret-accordion');
+    const secretAccordions = page.locator('[data-testid^="secret-accordion-"]');
 
     // Assert: Either empty state or secrets should be displayed
     const isEmpty = (await emptyState.count()) > 0 && await emptyState.first().isVisible().catch(() => false);
@@ -764,7 +764,7 @@ test.describe('Common UI Components - Consistency Across Tabs', () => {
       { url: '/nodes', emptyTestId: 'nodes-empty' },
       { url: '/workloads', emptyTestId: 'empty-state' },
       { url: '/pods', emptyTestId: 'no-unhealthy-pods-message' },
-      { url: '/secrets', emptyTestId: 'empty-state' }
+      { url: '/secrets', emptyTestId: 'no-secrets-message' }
     ];
 
     for (const tab of tabs) {
