@@ -15,7 +15,7 @@ import { test, expect } from '@playwright/test';
  * TODO: Activate when DLD-343 implementation is complete
  */
 
-test.describe.skip('Debug Context - Debug Mode Toggle', () => {
+test.describe('Debug Context - Debug Mode Toggle', () => {
   test('should toggle debug mode ON when debug toggle button is clicked', async ({ page }) => {
     // Tests that clicking the debug toggle activates debug mode in DebugContext
 
@@ -129,7 +129,7 @@ test.describe.skip('Debug Context - Debug Mode Toggle', () => {
   });
 });
 
-test.describe.skip('Debug Context - API Logging with Debug Mode ON', () => {
+test.describe('Debug Context - API Logging with Debug Mode ON', () => {
   test('should log API calls to DebugContext when debug mode is ON', async ({ page }) => {
     // Tests that API interceptor captures calls when isDebugMode = true
 
@@ -232,7 +232,7 @@ test.describe.skip('Debug Context - API Logging with Debug Mode ON', () => {
   });
 });
 
-test.describe.skip('Debug Context - API Log Metadata', () => {
+test.describe('Debug Context - API Log Metadata', () => {
   test('should include status code in API log entry', async ({ page }) => {
     // Tests that DebugContext captures HTTP status code metadata
 
@@ -378,7 +378,7 @@ test.describe.skip('Debug Context - API Log Metadata', () => {
   });
 });
 
-test.describe.skip('Debug Context - No Logging when Debug Mode OFF', () => {
+test.describe('Debug Context - No Logging when Debug Mode OFF', () => {
   test('should not log API calls when debug mode is OFF', async ({ page }) => {
     // Tests that API interceptor does not capture calls when isDebugMode = false
 
@@ -512,7 +512,7 @@ test.describe.skip('Debug Context - No Logging when Debug Mode OFF', () => {
   });
 });
 
-test.describe.skip('Debug Context - Integration with Debug Page', () => {
+test.describe('Debug Context - Integration with Debug Page', () => {
   test('should synchronize DebugContext state with /debug page display', async ({ page }) => {
     // Tests that /debug page reflects current DebugContext state
 
