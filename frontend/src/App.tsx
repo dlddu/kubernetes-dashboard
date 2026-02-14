@@ -16,6 +16,8 @@ function AppContent() {
   const { selectedNamespace } = useNamespace();
   const [unhealthyPodCount, setUnhealthyPodCount] = useState(0);
 
+  const namespaceParam = selectedNamespace === 'all' ? undefined : selectedNamespace;
+
   useEffect(() => {
     const loadUnhealthyPodCount = async () => {
       try {
@@ -53,10 +55,10 @@ function AppContent() {
             }
           />
           <Route path="/nodes" element={<NodesTab />} />
-          <Route path="/workloads" element={<WorkloadsTab />} />
-          <Route path="/pods" element={<PodsTab />} />
-          <Route path="/pods/*" element={<PodsTab />} />
-          <Route path="/secrets" element={<SecretsTab />} />
+          <Route path="/workloads" element={<WorkloadsTab namespace={namespaceParam} />} />
+          <Route path="/pods" element={<PodsTab namespace={namespaceParam} />} />
+          <Route path="/pods/*" element={<PodsTab namespace={namespaceParam} />} />
+          <Route path="/secrets" element={<SecretsTab namespace={namespaceParam} />} />
         </Routes>
       </main>
       <BottomTabBar unhealthyPodCount={unhealthyPodCount} />
