@@ -34,6 +34,7 @@ jobs:
           push: false
           tags: ${{ env.E2E_IMAGE }}
           cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # ---- Step 2: Kind cluster creation ----
       - name: Install kind
