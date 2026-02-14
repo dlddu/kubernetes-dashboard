@@ -45,7 +45,7 @@ test.describe('LoadingSkeleton Component - Overview Tab', () => {
 
     // Arrange: Delay API responses so loading skeleton stays visible long enough to test
     await page.route('**/api/**', async (route) => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       await route.continue();
     });
 
@@ -58,14 +58,19 @@ test.describe('LoadingSkeleton Component - Overview Tab', () => {
 
     await expect(loadingIndicator.first()).toBeVisible({ timeout: 5000 });
 
+    // Assert: Capture all attributes at once to avoid race condition
+    // where the element disappears between sequential getAttribute calls
+    const attrs = await loadingIndicator.first().evaluate((el) => ({
+      ariaBusy: el.getAttribute('aria-busy'),
+      ariaLabel: el.getAttribute('aria-label'),
+      role: el.getAttribute('role'),
+    }));
+
     // Assert: Should have aria-busy="true" during loading
-    const ariaBusy = await loadingIndicator.first().getAttribute('aria-busy');
-    expect(ariaBusy).toBe('true');
+    expect(attrs.ariaBusy).toBe('true');
 
     // Assert: Should have aria-label or role for screen readers
-    const hasAriaLabel = await loadingIndicator.first().getAttribute('aria-label');
-    const hasRole = await loadingIndicator.first().getAttribute('role');
-    expect(hasAriaLabel || hasRole).toBeTruthy();
+    expect(attrs.ariaLabel || attrs.role).toBeTruthy();
 
     // Cleanup: Remove route interception and wait for loading to complete
     await page.unroute('**/api/**');

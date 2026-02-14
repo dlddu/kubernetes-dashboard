@@ -70,15 +70,19 @@ test.describe('PollingIndicator Component', () => {
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
     const initialTimeText = await lastUpdateTime.innerText();
 
-    // Act: Wait for polling interval (default 30 seconds)
-    // For testing, the polling interval might be shorter (e.g., 5 seconds)
-    await page.waitForTimeout(6000); // Wait 6 seconds to observe update
-
-    // Assert: Last update time should have changed
-    const updatedTimeText = await lastUpdateTime.innerText();
-    expect(updatedTimeText).not.toBe(initialTimeText);
+    // Assert: Use expect.poll() to reliably wait for the time text to change,
+    // avoiding flakiness from fixed timeouts that may not align with the
+    // 10-second polling interval or "just now" → "N seconds ago" transition.
+    await expect.poll(async () => {
+      return await lastUpdateTime.innerText();
+    }, {
+      message: 'Expected last update time to change from initial value',
+      timeout: 15000,
+      intervals: [1000],
+    }).not.toBe(initialTimeText);
 
     // Assert: New time should indicate a recent update
+    const updatedTimeText = await lastUpdateTime.innerText();
     expect(updatedTimeText).toMatch(/just now|seconds? ago|few seconds ago|\d{1,2}:\d{2}:\d{2}/i);
   });
 
