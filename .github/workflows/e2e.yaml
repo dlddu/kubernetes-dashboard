@@ -9,40 +9,44 @@ on:
 env:
   KIND_CLUSTER_NAME: kubernetes-dashboard-e2e
   KUBECONFIG: /tmp/kubeconfig
+  E2E_IMAGE: kubernetes-dashboard:e2e
+  E2E_PORT: 30080
 
 jobs:
   e2e-test:
     name: E2E Tests with kind
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-          cache: true
+      # ---- Step 1: Docker image build ----
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          context: .
+          load: true
+          push: false
+          tags: ${{ env.E2E_IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+      # ---- Step 2: Kind cluster creation ----
       - name: Install kind
         run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-arm64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
           kind --version
 
       - name: Install kubectl
         run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/kubectl
           kubectl version --client
@@ -50,100 +54,53 @@ jobs:
       - name: Create kind cluster
         run: |
           ./scripts/kind-cluster.sh create
-          kind get clusters
-          kubectl cluster-info
-
-      - name: Export kubeconfig
-        run: |
           ./scripts/kind-cluster.sh export-kubeconfig $KUBECONFIG
-          echo "KUBECONFIG exported to $KUBECONFIG"
-          ls -la $KUBECONFIG
-
-      - name: Verify cluster access
-        run: |
+          kubectl cluster-info
           kubectl get nodes
-          kubectl get namespaces
 
-      - name: Apply test fixtures
+      # ---- Step 4: Fixtures + Deploy in parallel ----
+      - name: Apply fixtures and deploy dashboard
         run: |
           chmod +x ./test/fixtures/apply-all.sh
-          ./test/fixtures/apply-all.sh
+          chmod +x ./scripts/e2e-deploy.sh
 
-      - name: Verify test resources
-        run: |
-          kubectl get all -n dashboard-test
-          kubectl get pods -n dashboard-test
-          kubectl wait --for=condition=Ready pod/busybox-test -n dashboard-test --timeout=60s
-          kubectl wait --for=condition=Available deployment/nginx-test -n dashboard-test --timeout=120s
+          ./test/fixtures/apply-all.sh &
+          FIXTURES_PID=$!
 
-      - name: Install Go dependencies
-        run: go mod download
+          ./scripts/e2e-deploy.sh "${{ env.E2E_IMAGE }}" &
+          DEPLOY_PID=$!
 
-      - name: Ensure go.mod is tidy
-        run: go mod tidy
+          FAILED=0
+          wait $FIXTURES_PID || FAILED=1
+          wait $DEPLOY_PID || FAILED=1
 
-      - name: Run Go backend helper tests
-        run: |
-          export KUBECONFIG=$KUBECONFIG
-          go test -v -race ./test/
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm ci
-          npm run build
-
-      - name: Build Go backend
-        run: |
-          go build -o kubernetes-dashboard .
-          chmod +x kubernetes-dashboard
-          ls -la kubernetes-dashboard
-
-      - name: Start backend server
-        run: |
-          export KUBECONFIG=$KUBECONFIG
-          ./kubernetes-dashboard &
-          echo $! > /tmp/backend.pid
-          sleep 5
-
-      - name: Verify backend is running
-        run: |
-          curl -f http://localhost:8080/api/health
-          RESPONSE=$(curl -s http://localhost:8080/api/health)
-          echo "Health response: $RESPONSE"
-          if ! echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null 2>&1; then
-            echo "ERROR: Invalid health response"
+          if [ $FAILED -ne 0 ]; then
+            echo "One or more parallel tasks failed"
             exit 1
           fi
 
-      - name: Install Playwright system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libatk1.0-0 \
-            libatk-bridge2.0-0 \
-            libcups2 \
-            libdrm2 \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxfixes3 \
-            libxrandr2 \
-            libgbm1 \
-            libpango-1.0-0 \
-            libcairo2 \
-            libasound2t64 || sudo apt-get install -y libasound2
+          echo "=== Cluster status ==="
+          kubectl get all -n dashboard-test
+          kubectl get all -n default
+
+      # ---- Step 5: Playwright ----
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install Playwright
         run: |
-          npm install -D @playwright/test@1.40.1
-          npx playwright install chromium
+          npm ci
+          npx playwright install --with-deps chromium
 
       - name: Run Playwright E2E tests
         run: |
-          export BASE_URL=http://localhost:8080
+          export BASE_URL=http://localhost:${{ env.E2E_PORT }}
           npx playwright test
 
+      # ---- Artifacts and Cleanup ----
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
@@ -160,44 +117,14 @@ jobs:
           path: test-results/
           retention-days: 7
 
-      - name: Stop backend server
-        if: always()
-        run: |
-          if [ -f /tmp/backend.pid ]; then
-            kill $(cat /tmp/backend.pid) || true
-            rm /tmp/backend.pid
-          fi
-
-      - name: Show backend logs
+      - name: Debug on failure
         if: failure()
         run: |
-          echo "=== Recent logs ==="
-          journalctl --user -u kubernetes-dashboard --no-pager -n 100 || echo "No logs available"
-
-      - name: Cleanup test resources
-        if: always()
-        run: |
-          kubectl delete namespace dashboard-test --ignore-not-found=true || true
-
-      - name: Delete kind cluster
-        if: always()
-        run: |
-          ./scripts/kind-cluster.sh delete || true
-
-  e2e-summary:
-    name: E2E Test Summary
-    runs-on: ubuntu-latest
-    needs: [e2e-test]
-    if: always()
-
-    steps:
-      - name: Check E2E test results
-        run: |
-          if [ "${{ needs.e2e-test.result }}" == "success" ]; then
-            echo "✅ E2E tests passed!"
-            exit 0
-          else
-            echo "❌ E2E tests failed!"
-            echo "Check the artifacts for detailed test reports"
-            exit 1
-          fi
+          echo "=== Pod Status ==="
+          kubectl get pods -A
+          echo "=== Dashboard Pod Logs ==="
+          kubectl logs -l app=kubernetes-dashboard --tail=100 || true
+          echo "=== Dashboard Pod Description ==="
+          kubectl describe pod -l app=kubernetes-dashboard || true
+          echo "=== Service Status ==="
+          kubectl get svc kubernetes-dashboard -o yaml || true

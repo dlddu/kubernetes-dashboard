@@ -1,12 +1,13 @@
 # Makefile for E2E testing
 # This file contains targets for running E2E tests with kind cluster
 
-.PHONY: e2e-setup e2e-teardown e2e-test e2e-cluster-create e2e-cluster-delete e2e-fixtures e2e-run e2e-all
+.PHONY: e2e-setup e2e-teardown e2e-test e2e-cluster-create e2e-cluster-delete e2e-fixtures e2e-deploy e2e-undeploy e2e-run e2e-all
 
 # E2E test configuration
 KIND_CLUSTER_NAME ?= kubernetes-dashboard-e2e
 KUBECONFIG_PATH ?= $(PWD)/kubeconfig
-BACKEND_PORT ?= 8080
+E2E_IMAGE_NAME ?= kubernetes-dashboard:e2e
+E2E_PORT ?= 30080
 
 e2e-cluster-create: ## Create kind cluster for E2E tests
 	@echo "Creating kind cluster..."
@@ -25,86 +26,67 @@ e2e-fixtures: ## Apply test fixtures to cluster
 	@export KUBECONFIG=$(KUBECONFIG_PATH) && ./test/fixtures/apply-all.sh
 	@echo "Test fixtures applied"
 
-e2e-backend-build: ## Build backend for E2E tests
-	@echo "Building frontend..."
-	@cd frontend && npm ci && npm run build
-	@echo "Building Go backend..."
-	@go build -o kubernetes-dashboard .
-	@chmod +x kubernetes-dashboard
+e2e-docker-build: ## Build Docker image for E2E tests
+	@echo "Building Docker image $(E2E_IMAGE_NAME)..."
+	@docker build -t $(E2E_IMAGE_NAME) .
 
-e2e-backend-start: ## Start backend server
-	@echo "Starting backend server on port $(BACKEND_PORT)..."
-	@export KUBECONFIG=$(KUBECONFIG_PATH) && ./kubernetes-dashboard &
-	@echo $$! > /tmp/backend-e2e.pid
-	@sleep 3
-	@echo "Backend server started (PID: $$(cat /tmp/backend-e2e.pid))"
-	@curl -f http://localhost:$(BACKEND_PORT)/api/health || (echo "Failed to start backend"; exit 1)
+e2e-deploy: ## Load image into kind and deploy dashboard
+	@echo "Deploying dashboard into kind cluster..."
+	@export KUBECONFIG=$(KUBECONFIG_PATH) && ./scripts/e2e-deploy.sh $(E2E_IMAGE_NAME)
 
-e2e-backend-stop: ## Stop backend server
-	@if [ -f /tmp/backend-e2e.pid ]; then \
-		echo "Stopping backend server..."; \
-		kill $$(cat /tmp/backend-e2e.pid) 2>/dev/null || true; \
-		rm /tmp/backend-e2e.pid; \
-		echo "Backend server stopped"; \
-	else \
-		echo "No backend server running"; \
-	fi
+e2e-undeploy: ## Remove dashboard deployment from kind
+	@echo "Removing dashboard deployment..."
+	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl delete -k e2e/k8s/ --ignore-not-found=true || true
 
 e2e-playwright-install: ## Install Playwright
 	@echo "Installing Playwright..."
-	@npm install
+	@npm ci
 	@npx playwright install --with-deps chromium
 	@echo "Playwright installed"
 
-e2e-test: ## Run E2E tests (assumes backend is running)
+e2e-test: ## Run E2E tests (assumes dashboard is deployed)
 	@echo "Running E2E tests..."
-	@export BASE_URL=http://localhost:$(BACKEND_PORT) && npm run test:e2e
+	@export BASE_URL=http://localhost:$(E2E_PORT) && npm run test:e2e
 
 e2e-test-ui: ## Run E2E tests in UI mode
 	@echo "Running E2E tests in UI mode..."
-	@export BASE_URL=http://localhost:$(BACKEND_PORT) && npm run test:e2e:ui
+	@export BASE_URL=http://localhost:$(E2E_PORT) && npm run test:e2e:ui
 
-e2e-setup: e2e-cluster-create e2e-fixtures e2e-backend-build e2e-playwright-install ## Complete E2E setup
+e2e-setup: e2e-docker-build e2e-cluster-create e2e-fixtures e2e-deploy e2e-playwright-install ## Complete E2E setup
 	@echo ""
-	@echo "✅ E2E environment setup complete!"
+	@echo "E2E environment setup complete!"
 	@echo ""
 	@echo "Next steps:"
-	@echo "  1. Start backend: make e2e-backend-start"
-	@echo "  2. Run tests: make e2e-test"
-	@echo "  3. Cleanup: make e2e-teardown"
+	@echo "  1. Run tests: make e2e-test"
+	@echo "  2. Cleanup: make e2e-teardown"
 	@echo ""
 
-e2e-run: e2e-backend-start e2e-test e2e-backend-stop ## Run E2E tests with backend (requires setup)
+e2e-run: e2e-test ## Run E2E tests (requires setup)
 
-e2e-teardown: e2e-backend-stop e2e-cluster-delete ## Complete E2E teardown
+e2e-teardown: e2e-undeploy e2e-cluster-delete ## Complete E2E teardown
 	@echo ""
-	@echo "✅ E2E environment cleaned up!"
+	@echo "E2E environment cleaned up!"
 	@echo ""
 
-e2e-all: e2e-setup e2e-run e2e-teardown ## Full E2E test cycle (setup, run, teardown)
+e2e-all: e2e-setup e2e-run e2e-teardown ## Full E2E test cycle
 	@echo ""
-	@echo "✅ Complete E2E test cycle finished!"
+	@echo "Complete E2E test cycle finished!"
 	@echo ""
 
 e2e-status: ## Show E2E environment status
 	@echo "=== E2E Environment Status ==="
 	@echo ""
 	@echo "Kind cluster:"
-	@./scripts/kind-cluster.sh status || echo "  ❌ Cluster not running"
+	@./scripts/kind-cluster.sh status || echo "  Cluster not running"
 	@echo ""
-	@echo "Backend server:"
-	@if [ -f /tmp/backend-e2e.pid ]; then \
-		if ps -p $$(cat /tmp/backend-e2e.pid) > /dev/null 2>&1; then \
-			echo "  ✅ Running (PID: $$(cat /tmp/backend-e2e.pid))"; \
-		else \
-			echo "  ❌ Not running (stale PID file)"; \
-		fi \
-	else \
-		echo "  ❌ Not running"; \
-	fi
+	@echo "Dashboard deployment:"
+	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl get deployment kubernetes-dashboard 2>/dev/null || echo "  Not deployed"
+	@echo ""
+	@echo "Dashboard service:"
+	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl get svc kubernetes-dashboard 2>/dev/null || echo "  Not deployed"
 	@echo ""
 	@echo "Test fixtures:"
-	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl get ns dashboard-test 2>/dev/null && echo "  ✅ Applied" || echo "  ❌ Not applied"
+	@export KUBECONFIG=$(KUBECONFIG_PATH) && kubectl get ns dashboard-test 2>/dev/null && echo "  Applied" || echo "  Not applied"
 	@echo ""
 
 help-e2e: ## Show E2E testing help
