@@ -23,7 +23,7 @@ test.describe('Health Check', () => {
     await page.goto('/');
 
     // Assert: Page should load successfully
-    expect(page.url()).toBe('http://localhost:8080/');
+    expect(new URL(page.url()).pathname).toBe('/');
 
     // Assert: Page should have a title
     await expect(page).toHaveTitle(/Kubernetes Dashboard/i);
