@@ -78,7 +78,7 @@ export function DebugPage({ clipboard = navigator.clipboard }: DebugPageProps = 
         data-testid="debug-left-panel"
         className="w-1/3 border border-gray-200 rounded-lg overflow-y-auto bg-white"
       >
-        <div data-testid="api-logs-list" role="list">
+        <div data-testid="endpoint-list" role="list">
           {logs.map((log, index) => (
             <div
               key={index}
@@ -124,7 +124,7 @@ export function DebugPage({ clipboard = navigator.clipboard }: DebugPageProps = 
         className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col"
       >
         {selectedLog ? (
-          <>
+          <div data-testid="endpoint-detail-view" className="flex flex-col h-full">
             {/* Tabs */}
             <div className="flex border-b border-gray-200" role="tablist">
               <button
@@ -240,7 +240,7 @@ export function DebugPage({ clipboard = navigator.clipboard }: DebugPageProps = 
                 </div>
               )}
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400">
             <p>Select an endpoint to view details</p>
