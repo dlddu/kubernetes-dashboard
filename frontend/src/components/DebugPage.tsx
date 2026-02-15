@@ -117,7 +117,7 @@ export function DebugPage() {
       </div>
 
       {/* Right panel - detail view */}
-      <div className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
+      <div data-testid="debug-right-panel" className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
         {selectedLog ? (
           <>
             {/* Tabs */}
