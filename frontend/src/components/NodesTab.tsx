@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchNodes, NodeInfo } from '../api/nodes';
 import { NodeCard } from './NodeCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
+import { usePolling } from '../hooks/usePolling';
 
 export function NodesTab() {
   const [nodes, setNodes] = useState<NodeInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadNodes = async () => {
+  const loadNodes = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -21,15 +22,14 @@ export function NodesTab() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
+  const { refresh } = usePolling(loadNodes);
+
+  // Initial load
   useEffect(() => {
     loadNodes();
   }, []);
-
-  const handleRetry = () => {
-    loadNodes();
-  };
 
   return (
     <div data-testid="nodes-page" className="space-y-6">
@@ -46,7 +46,7 @@ export function NodesTab() {
       {error && (
         <ErrorRetry
           error={error}
-          onRetry={handleRetry}
+          onRetry={refresh}
           title="Error loading nodes"
           testId="nodes-error"
         />

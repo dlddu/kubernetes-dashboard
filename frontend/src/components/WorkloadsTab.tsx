@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchDeployments, restartDeployment, DeploymentInfo } from '../api/deployments';
 import { DeploymentCard } from './DeploymentCard';
 import { RestartConfirmDialog } from './RestartConfirmDialog';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
+import { usePolling } from '../hooks/usePolling';
 
 interface WorkloadsTabProps {
   namespace?: string;
@@ -22,7 +23,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
   const [isRestarting, setIsRestarting] = useState(false);
   const [restartError, setRestartError] = useState<string | null>(null);
 
-  const loadDeployments = async () => {
+  const loadDeployments = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -33,8 +34,11 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [namespace]);
 
+  const { refresh } = usePolling(loadDeployments);
+
+  // Re-fetch immediately when namespace changes
   useEffect(() => {
     loadDeployments();
   }, [namespace]);
@@ -71,10 +75,6 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
     }
   };
 
-  const handleRetry = () => {
-    loadDeployments();
-  };
-
   return (
     <div data-testid="workloads-page" className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Workloads</h1>
@@ -90,7 +90,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
       {error && (
         <ErrorRetry
           error={error}
-          onRetry={handleRetry}
+          onRetry={refresh}
           title="Error loading deployments"
           testId="error-message"
         />

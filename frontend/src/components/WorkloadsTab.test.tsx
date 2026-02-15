@@ -3,6 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { WorkloadsTab } from './WorkloadsTab';
 
+// Mock usePolling to avoid timer side effects in tests
+vi.mock('../hooks/usePolling', () => ({
+  usePolling: vi.fn(() => ({
+    refresh: vi.fn(),
+    lastUpdate: new Date(),
+    isLoading: false,
+  })),
+}));
+
 // Mock fetch globally
 global.fetch = vi.fn();
 

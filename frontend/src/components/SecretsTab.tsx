@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchSecrets, SecretInfo } from '../api/secrets';
 import { SecretAccordion } from './SecretAccordion';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
+import { usePolling } from '../hooks/usePolling';
 
 interface SecretsTabProps {
   namespace?: string;
@@ -15,7 +16,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
   const [error, setError] = useState<string | null>(null);
   const [openAccordionIndex, setOpenAccordionIndex] = useState<number | null>(null);
 
-  const loadSecrets = async () => {
+  const loadSecrets = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -26,16 +27,15 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [namespace]);
 
+  const { refresh } = usePolling(loadSecrets);
+
+  // Re-fetch immediately when namespace changes and reset accordion
   useEffect(() => {
     setOpenAccordionIndex(null);
     loadSecrets();
   }, [namespace]);
-
-  const handleRetry = () => {
-    loadSecrets();
-  };
 
   const handleAccordionToggle = (index: number) => {
     setOpenAccordionIndex(openAccordionIndex === index ? null : index);
@@ -56,7 +56,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
       {error && (
         <ErrorRetry
           error={error}
-          onRetry={handleRetry}
+          onRetry={refresh}
           title="Error loading secrets"
           testId="secrets-error"
         />
