@@ -3,6 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { WorkloadsTab } from './WorkloadsTab';
 
+// Mock usePolling to avoid timer side effects in tests
+vi.mock('../hooks/usePolling', () => ({
+  usePolling: vi.fn(() => ({
+    refresh: vi.fn(),
+    lastUpdate: new Date(),
+    isLoading: false,
+  })),
+}));
+
 // Mock fetch globally
 global.fetch = vi.fn();
 
@@ -329,6 +338,25 @@ describe('WorkloadsTab Component', () => {
       await waitFor(() => {
         const errorMessage = screen.getByTestId('error-message');
         expect(errorMessage).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Polling Integration', () => {
+    it('should render polling indicator', async () => {
+      // Arrange
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      // Act
+      render(<WorkloadsTab />);
+
+      // Assert
+      await waitFor(() => {
+        const pollingIndicator = screen.getByTestId('polling-indicator');
+        expect(pollingIndicator).toBeInTheDocument();
       });
     });
   });

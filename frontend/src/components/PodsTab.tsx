@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchAllPods, PodDetails } from '../api/pods';
 import { UnhealthyPodCard } from './UnhealthyPodCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
+import { usePolling } from '../hooks/usePolling';
+import { PollingIndicator } from './PollingIndicator';
 
 interface PodsTabProps {
   namespace?: string;
@@ -14,7 +16,7 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPods = async () => {
+  const loadPods = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -25,19 +27,21 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [namespace]);
 
+  const { refresh, lastUpdate, isLoading: isPolling } = usePolling(loadPods);
+
+  // Re-fetch immediately when namespace changes
   useEffect(() => {
     loadPods();
   }, [namespace]);
 
-  const handleRetry = () => {
-    loadPods();
-  };
-
   return (
     <div data-testid="pods-page" className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Pods</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Pods</h1>
+        <PollingIndicator lastUpdate={lastUpdate} onRefresh={refresh} isLoading={isPolling} />
+      </div>
 
       <div>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -55,7 +59,7 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
         {error && (
           <ErrorRetry
             error={error}
-            onRetry={handleRetry}
+            onRetry={refresh}
             title="Error loading pods"
             testId="pods-error"
           />

@@ -3,6 +3,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { SecretsTab } from './SecretsTab';
 
+// Mock usePolling to avoid timer side effects in tests
+vi.mock('../hooks/usePolling', () => ({
+  usePolling: vi.fn(() => ({
+    refresh: vi.fn(),
+    lastUpdate: new Date(),
+    isLoading: false,
+  })),
+}));
+
 // Mock fetch API
 global.fetch = vi.fn();
 
@@ -557,6 +566,25 @@ describe('SecretsTab Component', () => {
 
       const heading = screen.getByRole('heading', { name: 'Secrets', level: 1 });
       expect(heading).toBeInTheDocument();
+    });
+  });
+
+  describe('Polling Integration', () => {
+    it('should render polling indicator', async () => {
+      // Arrange
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      // Act
+      render(<SecretsTab />);
+
+      // Assert
+      await waitFor(() => {
+        const pollingIndicator = screen.getByTestId('polling-indicator');
+        expect(pollingIndicator).toBeInTheDocument();
+      });
     });
   });
 
