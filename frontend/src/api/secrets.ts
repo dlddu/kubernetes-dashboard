@@ -1,3 +1,5 @@
+import { debugFetch } from './debugFetch';
+
 export interface SecretInfo {
   name: string;
   namespace: string;
@@ -20,7 +22,7 @@ export async function fetchSecrets(namespace?: string): Promise<SecretInfo[]> {
     url += `?ns=${namespace}`;
   }
 
-  const response = await fetch(url);
+  const response = await debugFetch(url);
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -33,7 +35,7 @@ export async function fetchSecrets(namespace?: string): Promise<SecretInfo[]> {
 export async function fetchSecretDetail(namespace: string, name: string): Promise<SecretDetail> {
   const url = `/api/secrets/${namespace}/${name}`;
 
-  const response = await fetch(url);
+  const response = await debugFetch(url);
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

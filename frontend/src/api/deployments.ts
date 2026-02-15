@@ -1,3 +1,5 @@
+import { debugFetch } from './debugFetch';
+
 export interface DeploymentInfo {
   name: string;
   namespace: string;
@@ -14,7 +16,7 @@ export async function fetchDeployments(namespace?: string): Promise<DeploymentIn
     url += `?ns=${namespace}`;
   }
 
-  const response = await fetch(url);
+  const response = await debugFetch(url);
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -27,7 +29,7 @@ export async function fetchDeployments(namespace?: string): Promise<DeploymentIn
 export async function restartDeployment(namespace: string, name: string): Promise<void> {
   const url = `/api/deployments/${namespace}/${name}/restart`;
 
-  const response = await fetch(url, {
+  const response = await debugFetch(url, {
     method: 'POST',
   });
 

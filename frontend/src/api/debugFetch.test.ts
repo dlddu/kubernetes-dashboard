@@ -41,7 +41,7 @@ describe('debugFetch', () => {
       const result = await debugFetch('/api/test');
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/test', undefined);
+      expect(mockFetch).toHaveBeenCalledWith('/api/test');
       expect(mockAddLog).not.toHaveBeenCalled();
       expect(result).toBe(mockResponse);
     });

@@ -8,14 +8,14 @@ export async function debugFetch(
 
   // Debug mode OFF or no store available - pass through to native fetch
   if (!debugStore || !debugStore.isDebugMode) {
-    return fetch(url, options);
+    return options ? fetch(url, options) : fetch(url);
   }
 
   const { addLog } = debugStore;
 
   // Debug mode ON - log the request
   const startTime = performance.now();
-  const response = await fetch(url, options);
+  const response = await (options ? fetch(url, options) : fetch(url));
 
   // Clone the response to avoid consuming it
   const clonedResponse = response.clone();
