@@ -40,6 +40,7 @@ function TestComponent() {
 describe('DebugContext', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    localStorage.clear();
   });
 
   describe('DebugProvider - initialization', () => {

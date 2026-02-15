@@ -11,6 +11,7 @@ import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
 import { SecretsTab } from './components/SecretsTab';
+import { DebugPage } from './components/DebugPage';
 import { fetchUnhealthyPods } from './api/pods';
 
 function AppContent() {
@@ -60,6 +61,7 @@ function AppContent() {
           <Route path="/pods" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/pods/*" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/secrets" element={<SecretsTab namespace={namespaceParam} />} />
+          <Route path="/debug" element={<DebugPage />} />
         </Routes>
       </main>
       <BottomTabBar unhealthyPodCount={unhealthyPodCount} />

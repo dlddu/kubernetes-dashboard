@@ -1,3 +1,5 @@
+import { debugFetch } from './debugFetch';
+
 export interface NodeInfo {
   name: string;
   status: 'Ready' | 'NotReady';
@@ -7,7 +9,7 @@ export interface NodeInfo {
 }
 
 export async function fetchNodes(): Promise<NodeInfo[]> {
-  const response = await fetch('/api/nodes');
+  const response = await debugFetch('/api/nodes');
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

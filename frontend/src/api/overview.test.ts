@@ -29,7 +29,7 @@ describe('Overview API', () => {
       const result = await fetchOverview();
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview', undefined);
+      expect(mockFetch).toHaveBeenCalledWith('/api/overview');
       expect(result).toEqual(mockOverview);
     });
 
@@ -128,7 +128,7 @@ describe('Overview API', () => {
       const result = await fetchOverview('default');
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=default', undefined);
+      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=default');
       expect(result).toEqual(mockOverview);
     });
 
@@ -150,7 +150,7 @@ describe('Overview API', () => {
       const result = await fetchOverview('kube-system');
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=kube-system', undefined);
+      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=kube-system');
       expect(result).toEqual(mockOverview);
     });
 
@@ -172,7 +172,7 @@ describe('Overview API', () => {
       const result = await fetchOverview();
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview', undefined);
+      expect(mockFetch).toHaveBeenCalledWith('/api/overview');
       expect(result).toEqual(mockOverview);
     });
 
@@ -195,7 +195,7 @@ describe('Overview API', () => {
 
       // Assert
       // Empty namespace should fetch all namespaces (no query param)
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview', undefined);
+      expect(mockFetch).toHaveBeenCalledWith('/api/overview');
       expect(result).toEqual(mockOverview);
     });
   });
