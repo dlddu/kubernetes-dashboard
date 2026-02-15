@@ -54,8 +54,7 @@ test.describe('Debug Page - Page Rendering', () => {
 
     // Assert: Left panel (endpoint list area) should be visible
     const leftPanel = page.getByTestId('debug-left-panel')
-      .or(page.getByTestId('endpoint-list-panel'))
-      .or(page.getByTestId('endpoint-list').locator('..'));
+      .or(page.getByTestId('endpoint-list'));
     await expect(leftPanel).toBeVisible();
 
     // Assert: Endpoint list should exist within left panel
@@ -85,8 +84,7 @@ test.describe('Debug Page - Page Rendering', () => {
 
     // Assert: Right panel (detail view area) should be visible
     const rightPanel = page.getByTestId('debug-right-panel')
-      .or(page.getByTestId('detail-view-panel'))
-      .or(page.getByTestId('endpoint-detail-view').locator('..'));
+      .or(page.getByTestId('endpoint-detail-view'));
     await expect(rightPanel).toBeVisible();
   });
 });
