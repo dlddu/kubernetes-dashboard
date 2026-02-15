@@ -72,14 +72,16 @@ export function DebugProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(DEBUG_LOGS_KEY);
   }, []);
 
-  // Set up global debug store for use in non-React contexts
-  useEffect(() => {
-    setDebugStore({ isDebugMode, addLog });
+  // Set up global debug store synchronously during render so it is
+  // available before any child useEffect fires (children's effects run
+  // before the parent's effect, so a useEffect here would be too late).
+  setDebugStore({ isDebugMode, addLog });
 
+  useEffect(() => {
     return () => {
       setDebugStore(null);
     };
-  }, [isDebugMode, addLog]);
+  }, []);
 
   return (
     <DebugContext.Provider
