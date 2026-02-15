@@ -568,7 +568,7 @@ describe('DebugToggle', () => {
       // Assert
       const toggle = screen.getByTestId('debug-toggle');
       const icon = toggle.querySelector('svg');
-      expect(icon?.className).toMatch(/[wh]-\d+/);
+      expect(icon?.getAttribute('class')).toMatch(/[wh]-\d+/);
     });
   });
 
