@@ -5,24 +5,7 @@ import { useOverview } from '../contexts/OverviewContext';
 export function UnhealthyPodPreview() {
   const { overviewData, isLoading, error } = useOverview();
 
-  // Derive unhealthy pods from context data
-  const unhealthyPods: UnhealthyPodInfo[] = (() => {
-    if (!overviewData) return [];
-    if (overviewData.unhealthyPodsList) return overviewData.unhealthyPodsList;
-    // Generate mock unhealthy pods data based on unhealthyPods count
-    // This will be replaced by actual backend data later
-    const mockPods: UnhealthyPodInfo[] = [];
-    const statuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'Pending', 'Failed', 'Unknown'];
-    const namespaces = ['default', 'kube-system', 'monitoring', 'production'];
-    for (let i = 0; i < overviewData.unhealthyPods; i++) {
-      mockPods.push({
-        name: `pod-${i + 1}`,
-        namespace: namespaces[i % namespaces.length],
-        status: statuses[i % statuses.length],
-      });
-    }
-    return mockPods;
-  })();
+  const unhealthyPods: UnhealthyPodInfo[] = overviewData?.unhealthyPodsList ?? [];
 
   // Loading state (only on initial load, not during background refresh)
   if (isLoading && !overviewData) {
