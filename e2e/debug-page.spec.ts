@@ -36,7 +36,19 @@ test.describe('Debug Page - Page Rendering', () => {
   test('should display endpoint list area on the left side', async ({ page }) => {
     // Tests that the left panel with endpoint list exists
 
-    // Arrange & Act: Navigate to /debug route
+    // Arrange: Enable debug mode and generate API logs
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    const debugToggle = page.getByTestId('debug-toggle');
+    await debugToggle.click();
+
+    // Navigate to home page to trigger API calls
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Act: Navigate to /debug route
     await page.goto('/debug');
     await page.waitForLoadState('networkidle');
 
@@ -55,7 +67,19 @@ test.describe('Debug Page - Page Rendering', () => {
   test('should display detail view area on the right side', async ({ page }) => {
     // Tests that the right panel with detail view exists
 
-    // Arrange & Act: Navigate to /debug route
+    // Arrange: Enable debug mode and generate API logs
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    const debugToggle = page.getByTestId('debug-toggle');
+    await debugToggle.click();
+
+    // Navigate to home page to trigger API calls
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Act: Navigate to /debug route
     await page.goto('/debug');
     await page.waitForLoadState('networkidle');
 
