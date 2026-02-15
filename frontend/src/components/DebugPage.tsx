@@ -4,7 +4,15 @@ import { Copy, Check } from 'lucide-react';
 
 type TabName = 'response' | 'request' | 'metadata';
 
-export function DebugPage() {
+interface ClipboardAPI {
+  writeText: (text: string) => Promise<void>;
+}
+
+interface DebugPageProps {
+  clipboard?: ClipboardAPI;
+}
+
+export function DebugPage({ clipboard = navigator.clipboard }: DebugPageProps = {}) {
   const { logs, isDebugMode } = useDebugContext();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabName>('response');
@@ -35,7 +43,7 @@ export function DebugPage() {
           break;
       }
 
-      await navigator.clipboard.writeText(contentToCopy);
+      await clipboard.writeText(contentToCopy);
       setIsCopied(true);
       setTimeout(() => {
         setIsCopied(false);
