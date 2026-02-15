@@ -79,7 +79,7 @@ describe('DebugPage', () => {
 
     it('should render endpoint list with logs', () => {
       renderDebugPage(mockLogs);
-      expect(screen.getByTestId('endpoint-list')).toBeInTheDocument();
+      expect(screen.getByTestId('debug-left-panel')).toBeInTheDocument();
       expect(screen.getAllByTestId('endpoint-item')).toHaveLength(2);
     });
 
