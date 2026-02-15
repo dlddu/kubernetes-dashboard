@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { ApiLog } from '@/types/debug';
 
 interface DebugContextType {
@@ -10,6 +10,13 @@ interface DebugContextType {
 }
 
 const DebugContext = createContext<DebugContextType | undefined>(undefined);
+
+// Global debug state for non-React code (like debugFetch)
+let globalDebugState: DebugContextType | null = null;
+
+export function getDebugState(): DebugContextType | null {
+  return globalDebugState;
+}
 
 export function DebugProvider({ children }: { children: ReactNode }) {
   const [isDebugMode, setIsDebugMode] = useState<boolean>(false);
@@ -27,16 +34,24 @@ export function DebugProvider({ children }: { children: ReactNode }) {
     setLogs([]);
   }, []);
 
+  const value = {
+    isDebugMode,
+    logs,
+    toggleDebugMode,
+    addLog,
+    clearLogs,
+  };
+
+  // Update global state for non-React code
+  useEffect(() => {
+    globalDebugState = value;
+    return () => {
+      globalDebugState = null;
+    };
+  }, [value]);
+
   return (
-    <DebugContext.Provider
-      value={{
-        isDebugMode,
-        logs,
-        toggleDebugMode,
-        addLog,
-        clearLogs,
-      }}
-    >
+    <DebugContext.Provider value={value}>
       {children}
     </DebugContext.Provider>
   );

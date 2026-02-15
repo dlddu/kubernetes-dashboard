@@ -1,14 +1,16 @@
-import { useDebug } from '@/contexts/DebugContext';
+import { getDebugState } from '@/contexts/DebugContext';
 import { ApiLog } from '@/types/debug';
 
 export async function debugFetch(url: string, options?: RequestInit): Promise<Response> {
   // Get debug context - this will be mocked in tests
-  const { isDebugMode, addLog } = useDebug();
+  const debugState = getDebugState();
 
-  // If debug mode is OFF, use regular fetch
-  if (!isDebugMode) {
+  // If debug provider is not available or debug mode is OFF, use regular fetch
+  if (!debugState || !debugState.isDebugMode) {
     return fetch(url, options);
   }
+
+  const { addLog } = debugState;
 
   const startTime = performance.now();
   const method = options?.method || 'GET';

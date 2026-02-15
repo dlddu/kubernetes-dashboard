@@ -12,7 +12,7 @@ const mockDebugContext = {
 };
 
 vi.mock('../contexts/DebugContext', () => ({
-  useDebug: () => mockDebugContext,
+  getDebugState: () => mockDebugContext,
 }));
 
 // Mock global fetch
