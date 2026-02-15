@@ -75,7 +75,7 @@ export function DebugPage({ clipboard = navigator.clipboard }: DebugPageProps = 
     <div className="flex gap-4 h-[calc(100vh-200px)]">
       {/* Left panel - endpoint list */}
       <div
-        data-testid="endpoint-list"
+        data-testid="debug-left-panel"
         className="w-1/3 border border-gray-200 rounded-lg overflow-y-auto bg-white"
       >
         <div data-testid="api-logs-list" role="list">
@@ -119,7 +119,10 @@ export function DebugPage({ clipboard = navigator.clipboard }: DebugPageProps = 
       </div>
 
       {/* Right panel - detail view */}
-      <div className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
+      <div
+        data-testid="debug-right-panel"
+        className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col"
+      >
         {selectedLog ? (
           <>
             {/* Tabs */}
