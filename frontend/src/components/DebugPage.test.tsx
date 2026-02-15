@@ -5,10 +5,12 @@ import { DebugPage } from './DebugPage';
 import { DebugProvider, ApiLog } from '../contexts/DebugContext';
 
 // Mock clipboard API
-Object.assign(navigator, {
-  clipboard: {
+Object.defineProperty(navigator, 'clipboard', {
+  value: {
     writeText: vi.fn(() => Promise.resolve()),
   },
+  writable: true,
+  configurable: true,
 });
 
 // Helper to render component with context
@@ -172,12 +174,9 @@ describe('DebugPage', () => {
 
     beforeEach(() => {
       vi.clearAllMocks();
-      // Reset clipboard mock to allow mockRejectedValueOnce
-      Object.assign(navigator, {
-        clipboard: {
-          writeText: vi.fn(() => Promise.resolve()),
-        },
-      });
+      // Just clear mock calls instead of reassigning navigator.clipboard
+      const writeTextMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
+      writeTextMock.mockClear();
     });
 
     it('should render copy button', async () => {
@@ -299,15 +298,8 @@ describe('DebugPage', () => {
     });
 
     it('should handle clipboard API failure gracefully', async () => {
-      // Mock clipboard to fail
-      const writeTextMock = vi.fn().mockRejectedValueOnce(
-        new Error('Clipboard access denied')
-      );
-      Object.assign(navigator, {
-        clipboard: {
-          writeText: writeTextMock,
-        },
-      });
+      const writeTextMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
+      writeTextMock.mockRejectedValueOnce(new Error('Clipboard access denied'));
 
       const user = userEvent.setup();
       renderDebugPage(mockLog);
@@ -315,10 +307,8 @@ describe('DebugPage', () => {
       await user.click(screen.getByTestId('endpoint-item'));
       const copyButton = screen.getByTestId('copy-response-button');
 
-      // Should not throw error
       await user.click(copyButton);
 
-      // Button should still be clickable (no crash)
       expect(copyButton).toBeInTheDocument();
     });
   });
