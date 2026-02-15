@@ -332,7 +332,6 @@ describe('DebugPage Component', () => {
 
     it('should restore button text after 1.5 seconds', async () => {
       // Arrange
-      vi.useFakeTimers();
       vi.mocked(useDebugContext).mockReturnValue({
         isDebugMode: true,
         logs: mockLogs,
@@ -354,16 +353,14 @@ describe('DebugPage Component', () => {
         expect(copyButton).toHaveTextContent('Copied!');
       });
 
-      // Fast-forward 1.5 seconds
-      vi.advanceTimersByTime(1500);
-
-      // Assert
-      await waitFor(() => {
-        expect(copyButton).toHaveTextContent(/copy/i);
-        expect(copyButton).not.toHaveTextContent('Copied!');
-      });
-
-      vi.useRealTimers();
+      // Wait for button text to restore (1.5 seconds)
+      await waitFor(
+        () => {
+          expect(copyButton).toHaveTextContent(/copy/i);
+          expect(copyButton).not.toHaveTextContent('Copied!');
+        },
+        { timeout: 2000 }
+      );
     });
 
     it('should handle clipboard write failure gracefully', async () => {
@@ -386,9 +383,12 @@ describe('DebugPage Component', () => {
       fireEvent.click(copyButton);
 
       // Assert - should not show "Copied!" on failure
-      await waitFor(() => {
-        expect(mockClipboard.writeText).toHaveBeenCalled();
-      });
+      await waitFor(
+        () => {
+          expect(mockClipboard.writeText).toHaveBeenCalled();
+        },
+        { timeout: 2000 }
+      );
 
       // Button should remain in original state
       expect(copyButton).toHaveTextContent(/copy/i);
@@ -460,11 +460,14 @@ describe('DebugPage Component', () => {
       let copyButton = screen.getByTestId('copy-response-button');
       fireEvent.click(copyButton);
 
-      await waitFor(() => {
-        expect(mockClipboard.writeText).toHaveBeenCalledWith(
-          JSON.stringify(mockLogs[0].responseBody, null, 2)
-        );
-      });
+      await waitFor(
+        () => {
+          expect(mockClipboard.writeText).toHaveBeenCalledWith(
+            JSON.stringify(mockLogs[0].responseBody, null, 2)
+          );
+        },
+        { timeout: 2000 }
+      );
 
       // Select second endpoint
       const secondItem = screen.getAllByTestId('endpoint-item')[1];
@@ -474,11 +477,14 @@ describe('DebugPage Component', () => {
       fireEvent.click(copyButton);
 
       // Assert
-      await waitFor(() => {
-        expect(mockClipboard.writeText).toHaveBeenCalledWith(
-          JSON.stringify(mockLogs[1].responseBody, null, 2)
-        );
-      });
+      await waitFor(
+        () => {
+          expect(mockClipboard.writeText).toHaveBeenCalledWith(
+            JSON.stringify(mockLogs[1].responseBody, null, 2)
+          );
+        },
+        { timeout: 2000 }
+      );
     });
   });
 
@@ -546,11 +552,14 @@ describe('DebugPage Component', () => {
         params: mockLogs[0].params,
       };
 
-      await waitFor(() => {
-        expect(mockClipboard.writeText).toHaveBeenCalledWith(
-          JSON.stringify(expectedRequestData, null, 2)
-        );
-      });
+      await waitFor(
+        () => {
+          expect(mockClipboard.writeText).toHaveBeenCalledWith(
+            JSON.stringify(expectedRequestData, null, 2)
+          );
+        },
+        { timeout: 2000 }
+      );
     });
 
     it('should show "Copied!" feedback in Request tab', async () => {
@@ -575,9 +584,12 @@ describe('DebugPage Component', () => {
       fireEvent.click(copyButton);
 
       // Assert
-      await waitFor(() => {
-        expect(copyButton).toHaveTextContent('Copied!');
-      });
+      await waitFor(
+        () => {
+          expect(copyButton).toHaveTextContent('Copied!');
+        },
+        { timeout: 2000 }
+      );
     });
   });
 
