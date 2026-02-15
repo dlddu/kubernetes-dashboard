@@ -3,6 +3,7 @@ import { NamespaceSelector } from './NamespaceSelector';
 import { ClusterStatus } from './ClusterStatus';
 import { PollingIndicator } from './PollingIndicator';
 import { usePolling } from '../hooks/usePolling';
+import { useDebugContext } from '../contexts/DebugContext';
 
 export function TopBar() {
   // Callback for polling (dashboard-wide refresh)
@@ -13,6 +14,9 @@ export function TopBar() {
 
   // Use polling hook for the dashboard
   const { refresh, lastUpdate, isLoading } = usePolling(refreshDashboard);
+
+  // Debug context for debug mode toggle
+  const { isDebugMode, toggleDebugMode } = useDebugContext();
 
   return (
     <header
@@ -33,6 +37,19 @@ export function TopBar() {
               onRefresh={refresh}
               isLoading={isLoading}
             />
+            <button
+              data-testid="debug-toggle"
+              onClick={toggleDebugMode}
+              aria-pressed={isDebugMode ? 'true' : 'false'}
+              aria-label={`Debug mode ${isDebugMode ? 'enabled' : 'disabled'}`}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isDebugMode
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                  : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+              }`}
+            >
+              Debug: {isDebugMode ? 'ON' : 'OFF'}
+            </button>
             <NamespaceSelector />
             <ClusterStatus />
           </div>
