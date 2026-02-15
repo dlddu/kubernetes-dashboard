@@ -25,8 +25,7 @@ test.describe('Debug Page - Page Rendering', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Debug page container should be visible
-    const debugPage = page.getByTestId('debug-page')
-      .or(page.locator('[data-testid*="debug"]').first());
+    const debugPage = page.getByTestId('debug-page');
     await expect(debugPage).toBeVisible();
 
     // Assert: URL should be /debug
@@ -41,14 +40,11 @@ test.describe('Debug Page - Page Rendering', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Left panel (endpoint list area) should be visible
-    const leftPanel = page.getByTestId('debug-left-panel')
-      .or(page.getByTestId('endpoint-list-panel'))
-      .or(page.getByTestId('endpoint-list').locator('..'));
+    const leftPanel = page.getByTestId('debug-left-panel');
     await expect(leftPanel).toBeVisible();
 
     // Assert: Endpoint list should exist within left panel
-    const endpointList = page.getByTestId('endpoint-list')
-      .or(leftPanel.locator('[role="list"]'));
+    const endpointList = page.getByTestId('endpoint-list');
     await expect(endpointList).toBeVisible();
   });
 
@@ -60,9 +56,7 @@ test.describe('Debug Page - Page Rendering', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Right panel (detail view area) should be visible
-    const rightPanel = page.getByTestId('debug-right-panel')
-      .or(page.getByTestId('detail-view-panel'))
-      .or(page.getByTestId('endpoint-detail-view').locator('..'));
+    const rightPanel = page.getByTestId('debug-right-panel');
     await expect(rightPanel).toBeVisible();
   });
 });
@@ -75,8 +69,7 @@ test.describe('Debug Page - API Log Display', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const debugToggle = page.getByTestId('debug-toggle')
-      .or(page.getByRole('button', { name: /debug/i }));
+    const debugToggle = page.getByTestId('debug-toggle');
     await debugToggle.click();
     await expect(debugToggle).toHaveAttribute('aria-pressed', 'true');
 
@@ -156,9 +149,7 @@ test.describe('Debug Page - Detail View Interaction', () => {
     await firstEndpoint.click();
 
     // Assert: Detail view should be visible
-    const detailView = page.getByTestId('endpoint-detail-view')
-      .or(page.getByTestId('debug-detail-view'))
-      .or(page.getByRole('tabpanel'));
+    const detailView = page.getByTestId('endpoint-detail-view');
     await expect(detailView).toBeVisible();
   });
 
@@ -183,14 +174,11 @@ test.describe('Debug Page - Detail View Interaction', () => {
     await firstEndpoint.click();
 
     // Act: Click Response tab (might be selected by default)
-    const responseTab = page.getByRole('tab', { name: /response/i })
-      .or(page.getByTestId('response-tab'));
+    const responseTab = page.getByRole('tab', { name: /response/i });
     await responseTab.click();
 
     // Assert: Response content should be visible
-    const responseContent = page.getByTestId('response-content')
-      .or(page.getByTestId('json-viewer'))
-      .or(page.getByRole('tabpanel'));
+    const responseContent = page.getByTestId('response-content');
     await expect(responseContent).toBeVisible();
 
     // Assert: Content should contain JSON structure (braces, brackets)
@@ -219,23 +207,19 @@ test.describe('Debug Page - Detail View Interaction', () => {
     await firstEndpoint.click();
 
     // Act: Click Request tab
-    const requestTab = page.getByRole('tab', { name: /request/i })
-      .or(page.getByTestId('request-tab'));
+    const requestTab = page.getByRole('tab', { name: /request/i });
     await requestTab.click();
 
     // Assert: Request content should be visible
-    const requestContent = page.getByTestId('request-content')
-      .or(page.getByRole('tabpanel'));
+    const requestContent = page.getByTestId('request-content');
     await expect(requestContent).toBeVisible();
 
     // Assert: Should display HTTP method (GET, POST, etc.)
-    const methodElement = requestContent.getByTestId('http-method')
-      .or(requestContent.getByText(/GET|POST|PUT|DELETE|PATCH/));
+    const methodElement = requestContent.getByTestId('http-method');
     await expect(methodElement).toBeVisible();
 
     // Assert: Should display request URL
-    const urlElement = requestContent.getByTestId('request-url')
-      .or(requestContent.locator('text=/\\/api\\//'));
+    const urlElement = requestContent.getByTestId('request-url');
     await expect(urlElement).toBeVisible();
   });
 
@@ -260,28 +244,23 @@ test.describe('Debug Page - Detail View Interaction', () => {
     await firstEndpoint.click();
 
     // Act: Click Metadata tab
-    const metadataTab = page.getByRole('tab', { name: /metadata/i })
-      .or(page.getByTestId('metadata-tab'));
+    const metadataTab = page.getByRole('tab', { name: /metadata/i });
     await metadataTab.click();
 
     // Assert: Metadata content should be visible
-    const metadataContent = page.getByTestId('metadata-content')
-      .or(page.getByRole('tabpanel'));
+    const metadataContent = page.getByTestId('metadata-content');
     await expect(metadataContent).toBeVisible();
 
     // Assert: Should display timestamp
-    const timestamp = metadataContent.getByTestId('request-timestamp')
-      .or(metadataContent.getByText(/timestamp/i));
+    const timestamp = metadataContent.getByTestId('request-timestamp');
     await expect(timestamp).toBeVisible();
 
     // Assert: Should display duration
-    const duration = metadataContent.getByTestId('request-duration')
-      .or(metadataContent.getByText(/duration/i));
+    const duration = metadataContent.getByTestId('request-duration');
     await expect(duration).toBeVisible();
 
     // Assert: Should display status code
-    const statusCode = metadataContent.getByTestId('status-code')
-      .or(metadataContent.getByText(/status|200|404|500/i));
+    const statusCode = metadataContent.getByTestId('status-code');
     await expect(statusCode).toBeVisible();
 
     // Assert: Should display content-type (optional, but common)
@@ -324,8 +303,7 @@ test.describe('Debug Page - Clipboard Copy Functionality', () => {
     await responseTab.click();
 
     // Act: Click Copy button
-    const copyButton = page.getByTestId('copy-response-button')
-      .or(page.getByRole('button', { name: /copy/i }));
+    const copyButton = page.getByTestId('copy-response-button');
     await copyButton.click();
 
     // Assert: Clipboard should contain JSON data
@@ -365,14 +343,11 @@ test.describe('Debug Page - Clipboard Copy Functionality', () => {
     await responseTab.click();
 
     // Act: Click Copy button
-    const copyButton = page.getByTestId('copy-response-button')
-      .or(page.getByRole('button', { name: /copy/i }));
+    const copyButton = page.getByTestId('copy-response-button');
     await copyButton.click();
 
     // Assert: Should show success feedback message or icon change
-    const successMessage = page.getByText(/copied|success/i)
-      .or(copyButton.locator('[data-testid="copy-success-icon"]'))
-      .or(copyButton.getByText(/copied/i));
+    const successMessage = page.getByText(/copied|success/i);
 
     await expect(successMessage).toBeVisible({ timeout: 2000 });
   });
@@ -387,16 +362,11 @@ test.describe('Debug Page - Empty State', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Should show empty state message or placeholder
-    const emptyState = page.getByTestId('debug-empty-state')
-      .or(page.getByText(/no api calls/i))
-      .or(page.getByText(/no logs/i))
-      .or(page.getByText(/enable debug mode/i))
-      .or(page.getByText(/start debugging/i));
+    const emptyState = page.getByTestId('debug-empty-state');
 
     // Check if empty state is visible OR if there are no log entries
     const emptyStateVisible = await emptyState.isVisible().catch(() => false);
-    const logEntries = page.getByTestId('api-log-entry')
-      .or(page.getByTestId('endpoint-item'));
+    const logEntries = page.getByTestId('endpoint-item');
     const logCount = await logEntries.count();
 
     // Assert: Either empty state is visible OR log count is 0
