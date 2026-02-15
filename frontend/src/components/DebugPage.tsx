@@ -73,10 +73,10 @@ export function DebugPage() {
     <div data-testid="debug-page" className="flex gap-4 h-[calc(100vh-200px)]">
       {/* Left panel - endpoint list */}
       <div
-        data-testid="endpoint-list"
+        data-testid="debug-left-panel"
         className="w-1/3 border border-gray-200 rounded-lg overflow-y-auto bg-white"
       >
-        <div data-testid="api-logs-list" role="list">
+        <div data-testid="endpoint-list" role="list">
           {logs.map((log, index) => (
             <div
               key={index}
