@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { NamespaceProvider, useNamespace } from './contexts/NamespaceContext';
 import { DebugProvider } from './contexts/DebugContext';
+import { PollingProvider } from './contexts/PollingContext';
 import { OverviewProvider, useOverview } from './contexts/OverviewContext';
 import { TopBar } from './components/TopBar';
 import { BottomTabBar } from './components/BottomTabBar';
@@ -58,9 +59,11 @@ function App() {
     <BrowserRouter>
       <DebugProvider>
         <NamespaceProvider>
-          <OverviewProvider>
-            <AppContent />
-          </OverviewProvider>
+          <PollingProvider>
+            <OverviewProvider>
+              <AppContent />
+            </OverviewProvider>
+          </PollingProvider>
         </NamespaceProvider>
       </DebugProvider>
     </BrowserRouter>
