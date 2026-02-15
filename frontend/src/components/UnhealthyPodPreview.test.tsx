@@ -22,6 +22,17 @@ vi.mock('./StatusBadge', () => ({
 
 import { useOverview } from '../contexts/OverviewContext';
 
+// Helper to generate mock unhealthy pods list
+function mockPodsList(count: number) {
+  const statuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'Pending', 'Failed', 'Unknown'];
+  const namespaces = ['default', 'kube-system', 'monitoring', 'production'];
+  return Array.from({ length: count }, (_, i) => ({
+    name: `test-pod-${i + 1}`,
+    namespace: namespaces[i % namespaces.length],
+    status: statuses[i % statuses.length],
+  }));
+}
+
 describe('UnhealthyPodPreview', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -34,6 +45,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -59,6 +71,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -84,6 +97,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -167,6 +181,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5, // More than 3, but should only show 3
+          unhealthyPodsList: mockPodsList(5),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -192,6 +207,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -217,6 +233,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 2,
+          unhealthyPodsList: mockPodsList(2),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -242,6 +259,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 10,
+          unhealthyPodsList: mockPodsList(10),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -269,6 +287,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -295,6 +314,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -321,6 +341,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -346,6 +367,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 3,
+          unhealthyPodsList: mockPodsList(3),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -383,6 +405,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: [{ name: 'crash-pod', namespace: 'default', status: 'CrashLoopBackOff' }],
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -410,6 +433,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: [{ name: 'image-pod', namespace: 'default', status: 'ImagePullBackOff' }],
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -435,6 +459,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -462,6 +487,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
+          unhealthyPodsList: [],
           avgCpuPercent: 30.0,
           avgMemoryPercent: 40.0,
         },
@@ -487,6 +513,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
+          unhealthyPodsList: [],
           avgCpuPercent: 30.0,
           avgMemoryPercent: 40.0,
         },
@@ -512,6 +539,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
+          unhealthyPodsList: [],
           avgCpuPercent: 30.0,
           avgMemoryPercent: 40.0,
         },
@@ -537,6 +565,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -564,6 +593,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -589,6 +619,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -614,6 +645,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -641,6 +673,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -666,6 +699,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 10,
+          unhealthyPodsList: mockPodsList(10),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -802,6 +836,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -827,6 +862,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -852,6 +888,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 2,
+          unhealthyPodsList: mockPodsList(2),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -877,6 +914,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 2,
+          unhealthyPodsList: mockPodsList(2),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -902,6 +940,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -929,6 +968,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -954,6 +994,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: mockPodsList(1),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -979,6 +1020,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 3,
+          unhealthyPodsList: mockPodsList(3),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -1010,6 +1052,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 3,
+          unhealthyPodsList: mockPodsList(3),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -1035,6 +1078,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 999,
+          unhealthyPodsList: mockPodsList(999),
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -1061,6 +1105,7 @@ describe('UnhealthyPodPreview', () => {
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: [{ name: '', namespace: 'default', status: 'Pending' }],
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
@@ -1082,10 +1127,12 @@ describe('UnhealthyPodPreview', () => {
 
     it('should handle very long pod names', async () => {
       // Arrange
+      const longName = 'a'.repeat(200);
       vi.mocked(useOverview).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
+          unhealthyPodsList: [{ name: longName, namespace: 'default', status: 'Failed' }],
           avgCpuPercent: 45.5,
           avgMemoryPercent: 62.3,
         },
