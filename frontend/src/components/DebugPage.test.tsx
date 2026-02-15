@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DebugPage } from './DebugPage';
-import { DebugProvider } from '../contexts/DebugContext';
+import { DebugProvider, ApiLog } from '../contexts/DebugContext';
 
 // Mock clipboard API
 Object.assign(navigator, {
@@ -12,14 +12,7 @@ Object.assign(navigator, {
 });
 
 // Helper to render component with context
-function renderDebugPage(logs: Array<any> = [], isDebugMode = true) {
-  const mockContext = {
-    logs,
-    isDebugMode,
-    toggleDebugMode: vi.fn(),
-    addLog: vi.fn(),
-    clearLogs: vi.fn(),
-  };
+function renderDebugPage(logs: Array<ApiLog> = [], isDebugMode = true) {
 
   // We need to mock the DebugContext to provide test data
   // Since we can't easily mock the context, we'll use localStorage to set up initial state
@@ -179,6 +172,12 @@ describe('DebugPage', () => {
 
     beforeEach(() => {
       vi.clearAllMocks();
+      // Reset clipboard mock to allow mockRejectedValueOnce
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: vi.fn(() => Promise.resolve()),
+        },
+      });
     });
 
     it('should render copy button', async () => {
@@ -266,12 +265,11 @@ describe('DebugPage', () => {
       const copyButton = screen.getByTestId('copy-response-button');
       await user.click(copyButton);
 
-      // Should copy request data
+      // Should copy request data in the format: "Method: GET\nURL: /api/v1/namespaces"
       await waitFor(() => {
-        expect(navigator.clipboard.writeText).toHaveBeenCalled();
-        const copiedContent = (navigator.clipboard.writeText as any).mock.calls[0][0];
-        expect(copiedContent).toContain(mockLog[0].method);
-        expect(copiedContent).toContain(mockLog[0].url);
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+          `Method: ${mockLog[0].method}\nURL: ${mockLog[0].url}`
+        );
       });
     });
 
@@ -289,20 +287,27 @@ describe('DebugPage', () => {
       const copyButton = screen.getByTestId('copy-response-button');
       await user.click(copyButton);
 
-      // Should copy metadata
+      // Should copy metadata in the format: "Status: 200\nTimestamp: ...\nDuration: 100 ms\nResponse Size: 512 bytes"
       await waitFor(() => {
         expect(navigator.clipboard.writeText).toHaveBeenCalled();
-        const copiedContent = (navigator.clipboard.writeText as any).mock.calls[0][0];
-        expect(copiedContent).toContain('Status');
-        expect(copiedContent).toContain('200');
+        const writeTextMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
+        const copiedContent = writeTextMock.mock.calls[0][0] as string;
+        expect(copiedContent).toContain('Status: 200');
+        expect(copiedContent).toContain('Duration: 100 ms');
+        expect(copiedContent).toContain('Response Size: 512 bytes');
       });
     });
 
     it('should handle clipboard API failure gracefully', async () => {
       // Mock clipboard to fail
-      (navigator.clipboard.writeText as any).mockRejectedValueOnce(
+      const writeTextMock = vi.fn().mockRejectedValueOnce(
         new Error('Clipboard access denied')
       );
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
 
       const user = userEvent.setup();
       renderDebugPage(mockLog);
