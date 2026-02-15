@@ -9,6 +9,7 @@ export interface UnhealthyPodInfo {
 export interface NodeInfo {
   name: string;
   status: string;
+  role: string;
   cpuPercent: number;
   memoryPercent: number;
 }

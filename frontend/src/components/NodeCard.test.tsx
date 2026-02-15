@@ -9,6 +9,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -27,6 +28,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'my-node-1',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -46,6 +48,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -65,6 +68,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 15,
@@ -87,6 +91,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'ready-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 45.5,
         memoryPercent: 60.2,
         podCount: 10,
@@ -108,6 +113,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'ready-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 45.5,
         memoryPercent: 60.2,
         podCount: 10,
@@ -129,6 +135,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 45.5,
         memoryPercent: 78.3,
         podCount: 10,
@@ -159,6 +166,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'ready-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 45,
         memoryPercent: 60,
         podCount: 10,
@@ -179,6 +187,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'unhealthy-node',
         status: 'NotReady',
+        role: '',
         cpuPercent: 0,
         memoryPercent: 0,
         podCount: 5,
@@ -200,6 +209,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'unhealthy-node',
         status: 'NotReady',
+        role: '',
         cpuPercent: 0,
         memoryPercent: 0,
         podCount: 5,
@@ -226,6 +236,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'unhealthy-node',
         status: 'NotReady',
+        role: '',
         cpuPercent: 0,
         memoryPercent: 0,
         podCount: 5,
@@ -244,6 +255,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'unhealthy-node',
         status: 'NotReady',
+        role: '',
         cpuPercent: 0,
         memoryPercent: 0,
         podCount: 5,
@@ -263,6 +275,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'unhealthy-node',
         status: 'NotReady',
+        role: '',
         cpuPercent: 0,
         memoryPercent: 0,
         podCount: 5,
@@ -284,6 +297,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 30,
         memoryPercent: 50,
         podCount: 10,
@@ -303,6 +317,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 85,
         memoryPercent: 50,
         podCount: 10,
@@ -322,6 +337,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 0,
         memoryPercent: 50,
         podCount: 10,
@@ -341,6 +357,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 100,
         podCount: 10,
@@ -362,6 +379,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'empty-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 10,
         memoryPercent: 20,
         podCount: 0,
@@ -380,6 +398,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 1,
@@ -398,6 +417,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 25,
@@ -419,6 +439,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 45.5,
         memoryPercent: 78.3,
         podCount: 10,
@@ -443,6 +464,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 45.5,
         memoryPercent: 78.3,
         podCount: 10,
@@ -470,6 +492,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -488,6 +511,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -508,6 +532,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: '',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -526,6 +551,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'very-long-node-name-that-might-break-layout-if-not-handled-properly',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -544,6 +570,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: -5,
         memoryPercent: -10,
         podCount: 10,
@@ -562,6 +589,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 150,
         memoryPercent: 200,
         podCount: 10,
@@ -580,6 +608,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10.5, // Should not happen in real data, but test robustness
@@ -594,12 +623,64 @@ describe('NodeCard Component', () => {
     });
   });
 
+  describe('Role Display', () => {
+    it('should display role badge when role is provided', () => {
+      const node = {
+        name: 'test-node',
+        status: 'Ready',
+        role: 'control-plane',
+        cpuPercent: 50,
+        memoryPercent: 60,
+        podCount: 10,
+      };
+
+      render(<NodeCard {...node} />);
+
+      const roleBadge = screen.getByTestId('node-role');
+      expect(roleBadge).toBeInTheDocument();
+      expect(roleBadge).toHaveTextContent('control-plane');
+    });
+
+    it('should not display role badge when role is empty', () => {
+      const node = {
+        name: 'test-node',
+        status: 'Ready',
+        role: '',
+        cpuPercent: 50,
+        memoryPercent: 60,
+        podCount: 10,
+      };
+
+      render(<NodeCard {...node} />);
+
+      const roleBadge = screen.queryByTestId('node-role');
+      expect(roleBadge).not.toBeInTheDocument();
+    });
+
+    it('should display worker role', () => {
+      const node = {
+        name: 'test-node',
+        status: 'Ready',
+        role: 'worker',
+        cpuPercent: 50,
+        memoryPercent: 60,
+        podCount: 10,
+      };
+
+      render(<NodeCard {...node} />);
+
+      const roleBadge = screen.getByTestId('node-role');
+      expect(roleBadge).toHaveTextContent('worker');
+    });
+  });
+
   describe('Visual Layout', () => {
     it('should render with proper card styling', () => {
       // Arrange
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,
@@ -619,6 +700,7 @@ describe('NodeCard Component', () => {
       const node = {
         name: 'test-node',
         status: 'Ready',
+        role: '',
         cpuPercent: 50,
         memoryPercent: 60,
         podCount: 10,

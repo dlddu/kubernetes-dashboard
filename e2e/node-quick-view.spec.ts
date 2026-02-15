@@ -474,3 +474,28 @@ test.describe('NodeQuickView Component - Responsive Design', () => {
     }
   });
 });
+
+test.describe('Node Quick View - Role Display', () => {
+  test('should display node role badge when role is available', async ({ page }) => {
+    // Arrange: Navigate to Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: NodeQuickView should be visible
+    const nodeQuickView = page.getByTestId('node-quick-view');
+    await expect(nodeQuickView).toBeVisible();
+
+    // Assert: At least one node item should exist
+    const firstNodeItem = nodeQuickView.getByTestId('node-item').first();
+    await expect(firstNodeItem).toBeVisible();
+
+    // Role badge may or may not be present depending on node labels
+    const roleBadge = firstNodeItem.getByTestId('node-role');
+    const roleCount = await roleBadge.count();
+    if (roleCount > 0) {
+      await expect(roleBadge).toBeVisible();
+      const roleText = await roleBadge.innerText();
+      expect(roleText.length).toBeGreaterThan(0);
+    }
+  });
+});

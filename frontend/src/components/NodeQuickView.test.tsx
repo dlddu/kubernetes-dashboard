@@ -56,6 +56,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -83,6 +84,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -110,6 +112,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -198,6 +201,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 10 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -224,6 +228,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -248,9 +253,9 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', cpuPercent: 50.0, memoryPercent: 60.0 },
+          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
         ],
       });
 
@@ -274,6 +279,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 10 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -302,6 +308,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-master-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -330,6 +337,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -358,6 +366,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -385,6 +394,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -410,9 +420,9 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', cpuPercent: 50.0, memoryPercent: 60.0 },
+          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
         ],
       });
 
@@ -446,9 +456,9 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'ready-node-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'not-ready-node', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'ready-node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'ready-node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'not-ready-node', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'ready-node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
         ],
       });
 
@@ -471,8 +481,8 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
         ],
       });
 
@@ -494,7 +504,7 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
         ],
       });
 
@@ -517,7 +527,7 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 0,
         avgMemoryPercent: 0,
         nodesList: [
-          { name: 'node-1', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
         ],
       });
 
@@ -539,9 +549,9 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 0,
         avgMemoryPercent: 0,
         nodesList: [
-          { name: 'node-1', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'node-2', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'node-3', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'node-2', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'node-3', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
         ],
       });
 
@@ -612,6 +622,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 10 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -637,6 +648,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 10 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -662,6 +674,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 10 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -689,6 +702,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 10 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -712,9 +726,9 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', cpuPercent: 50.0, memoryPercent: 60.0 },
+          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
         ],
       });
 
@@ -786,6 +800,7 @@ describe('NodeQuickView', () => {
             {
               name: 'node-1',
               status: 'Ready',
+              role: '',
               cpuPercent: 45.5,
               memoryPercent: 62.3,
             },
@@ -874,6 +889,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -901,6 +917,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -925,8 +942,8 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
         ],
       });
 
@@ -948,8 +965,8 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
         ],
       });
 
@@ -973,6 +990,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 10 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -999,6 +1017,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -1032,6 +1051,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -1059,6 +1079,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -1083,9 +1104,9 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'node-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', cpuPercent: 50.0, memoryPercent: 60.0 },
+          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
         ],
       });
 
@@ -1115,6 +1136,7 @@ describe('NodeQuickView', () => {
         nodesList: Array.from({ length: 5 }, (_, i) => ({
           name: `node-${i + 1}`,
           status: 'Ready',
+          role: '',
           cpuPercent: 40.0 + i,
           memoryPercent: 50.0 + i,
         })),
@@ -1141,6 +1163,7 @@ describe('NodeQuickView', () => {
           {
             name: 'very-long-node-name-that-should-be-truncated-or-handled-gracefully',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -1170,6 +1193,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 0,
             memoryPercent: 0,
           },
@@ -1198,6 +1222,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 100,
             memoryPercent: 100,
           },
@@ -1223,10 +1248,10 @@ describe('NodeQuickView', () => {
         avgCpuPercent: 45.5,
         avgMemoryPercent: 62.3,
         nodesList: [
-          { name: 'ready-1', status: 'Ready', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'not-ready-1', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'ready-2', status: 'Ready', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'not-ready-2', status: 'NotReady', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'ready-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+          { name: 'not-ready-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          { name: 'ready-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          { name: 'not-ready-2', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
         ],
       });
 
@@ -1259,6 +1284,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },
@@ -1285,6 +1311,7 @@ describe('NodeQuickView', () => {
           {
             name: 'node-1',
             status: 'Ready',
+            role: '',
             cpuPercent: 45.5,
             memoryPercent: 62.3,
           },

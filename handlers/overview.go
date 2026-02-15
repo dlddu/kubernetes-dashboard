@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +30,7 @@ type UnhealthyPodInfo struct {
 type NodeInfo struct {
 	Name          string  `json:"name"`
 	Status        string  `json:"status"`
+	Role          string  `json:"role"`
 	CpuPercent    float64 `json:"cpuPercent"`
 	MemoryPercent float64 `json:"memoryPercent"`
 }
@@ -159,6 +161,28 @@ func isNodeReady(node corev1.Node) bool {
 		}
 	}
 	return false
+}
+
+// getNodeRole extracts the role of a node from its labels.
+// It checks two label formats:
+//  1. "node.kubernetes.io/role" — the value is the role name
+//  2. "node-role.kubernetes.io/<role>" — the key suffix is the role name
+func getNodeRole(node corev1.Node) string {
+	if role, exists := node.Labels["node.kubernetes.io/role"]; exists && role != "" {
+		return role
+	}
+
+	const prefix = "node-role.kubernetes.io/"
+	for key := range node.Labels {
+		if strings.HasPrefix(key, prefix) {
+			role := strings.TrimPrefix(key, prefix)
+			if role != "" {
+				return role
+			}
+		}
+	}
+
+	return ""
 }
 
 // isPodHealthy checks if a pod is healthy
@@ -324,9 +348,13 @@ func buildNodesList(nodes []corev1.Node, metricsMap map[string]nodeMetricsUsage)
 		// Calculate CPU and memory percentages for this node
 		cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
 
+		// Extract node role from labels
+		role := getNodeRole(node)
+
 		nodesList = append(nodesList, NodeInfo{
 			Name:          node.Name,
 			Status:        status,
+			Role:          role,
 			CpuPercent:    cpuPercent,
 			MemoryPercent: memoryPercent,
 		})

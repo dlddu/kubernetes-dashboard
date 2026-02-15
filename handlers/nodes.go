@@ -14,6 +14,7 @@ import (
 type NodeDetailInfo struct {
 	Name          string  `json:"name"`
 	Status        string  `json:"status"`
+	Role          string  `json:"role"`
 	CPUPercent    float64 `json:"cpuPercent"`
 	MemoryPercent float64 `json:"memoryPercent"`
 	PodCount      int     `json:"podCount"`
@@ -99,9 +100,13 @@ func getNodesData(clientset *kubernetes.Clientset, metricsClient *metricsv.Clien
 		// Get pod count for this node
 		podCount := nodePodCount[node.Name]
 
+		// Extract node role from labels
+		role := getNodeRole(node)
+
 		nodesData = append(nodesData, NodeDetailInfo{
 			Name:          node.Name,
 			Status:        status,
+			Role:          role,
 			CPUPercent:    cpuPercent,
 			MemoryPercent: memoryPercent,
 			PodCount:      podCount,
