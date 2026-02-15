@@ -154,7 +154,7 @@ test.describe('Debug Context - API Logging with Debug Mode ON', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: API logs list should be visible
-    const apiLogsList = page.getByTestId('endpoint-list');
+    const apiLogsList = page.getByTestId('debug-left-panel');
     await expect(apiLogsList).toBeVisible();
 
     // Assert: Should have at least one logged API entry
@@ -521,7 +521,7 @@ test.describe('Debug Context - Integration with Debug Page', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Debug page should display logs from DebugContext
-    const apiLogsList = page.getByTestId('endpoint-list');
+    const apiLogsList = page.getByTestId('debug-left-panel');
     await expect(apiLogsList).toBeVisible();
 
     const logEntries = page.getByTestId('endpoint-item');
