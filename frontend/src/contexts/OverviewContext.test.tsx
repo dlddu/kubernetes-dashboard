@@ -1,4 +1,4 @@
-import { render, screen, renderHook, act, waitFor } from '@testing-library/react';
+import { render, screen, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OverviewProvider, useOverview } from './OverviewContext';
 import { NamespaceProvider } from './NamespaceContext';
@@ -10,11 +10,9 @@ vi.mock('../api/overview', () => ({
 }));
 
 // Mock the usePolling hook - do NOT call callback during render to avoid infinite loops
-let capturedCallback: (() => void) | null = null;
 const mockRefresh = vi.fn();
 vi.mock('../hooks/usePolling', () => ({
-  usePolling: vi.fn((callback: () => void) => {
-    capturedCallback = callback;
+  usePolling: vi.fn((_callback: () => void) => {
     return {
       refresh: mockRefresh,
       lastUpdate: new Date(),
@@ -36,10 +34,8 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 describe('OverviewContext', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    capturedCallback = null;
     // Re-setup usePolling mock after reset
-    vi.mocked(usePolling).mockImplementation((callback: () => void) => {
-      capturedCallback = callback;
+    vi.mocked(usePolling).mockImplementation((_callback: () => void) => {
       return {
         refresh: mockRefresh,
         lastUpdate: new Date(),
