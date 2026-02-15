@@ -1,12 +1,12 @@
 import { SummaryCard } from './SummaryCard';
 import { UsageBar } from './UsageBar';
-import { useOverview } from '../contexts/OverviewContext';
+import { useDashboard } from '../contexts/DashboardContext';
 
 export function SummaryCards() {
-  const { overviewData: data, isLoading, error, refresh } = useOverview();
+  const { overviewData: data, isLoading, error, loadDashboard } = useDashboard();
 
   const handleRetry = () => {
-    refresh();
+    loadDashboard();
   };
 
   // Loading state - show skeleton cards

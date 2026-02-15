@@ -1,11 +1,11 @@
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SummaryCards } from './SummaryCards';
-import { useOverview } from '../contexts/OverviewContext';
+import { useDashboard } from '../contexts/DashboardContext';
 
 // Mock the OverviewContext
-vi.mock('../contexts/OverviewContext', () => ({
-  useOverview: vi.fn(),
+vi.mock('../contexts/DashboardContext', () => ({
+  useDashboard: vi.fn(),
 }));
 
 describe('SummaryCards', () => {
@@ -16,7 +16,7 @@ describe('SummaryCards', () => {
   describe('rendering - happy path', () => {
     it('should render without crashing', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -25,8 +25,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -39,7 +38,7 @@ describe('SummaryCards', () => {
 
     it('should display four summary cards', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -48,8 +47,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -64,7 +62,7 @@ describe('SummaryCards', () => {
 
     it('should display Nodes card with correct data', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -73,8 +71,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -91,7 +88,7 @@ describe('SummaryCards', () => {
 
     it('should display Unhealthy Pods card with correct data', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -100,8 +97,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -118,7 +114,7 @@ describe('SummaryCards', () => {
 
     it('should display Avg CPU card with percentage and UsageBar', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -127,8 +123,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -148,7 +143,7 @@ describe('SummaryCards', () => {
 
     it('should display Avg Memory card with percentage and UsageBar', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -157,8 +152,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -180,12 +174,11 @@ describe('SummaryCards', () => {
   describe('loading state', () => {
     it('should show skeleton cards while loading', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -198,12 +191,11 @@ describe('SummaryCards', () => {
 
     it('should show loading indicator with proper accessibility', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -216,7 +208,7 @@ describe('SummaryCards', () => {
 
     it('should hide skeleton cards after data loads', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -225,8 +217,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -243,12 +234,11 @@ describe('SummaryCards', () => {
   describe('error state', () => {
     it('should display error message when fetch fails', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Failed to fetch overview data'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -263,12 +253,11 @@ describe('SummaryCards', () => {
 
     it('should show retry button on error', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -284,13 +273,12 @@ describe('SummaryCards', () => {
 
     it('should retry fetching when retry button is clicked', async () => {
       // Arrange
-      const mockRefresh = vi.fn();
-      vi.mocked(useOverview).mockReturnValue({
+      const mockLoadDashboard = vi.fn();
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: mockRefresh,
-        lastUpdate: new Date(),
+        loadDashboard: mockLoadDashboard,
       });
 
       // Act
@@ -304,17 +292,16 @@ describe('SummaryCards', () => {
       fireEvent.click(retryButton);
 
       // Assert
-      expect(mockRefresh).toHaveBeenCalled();
+      expect(mockLoadDashboard).toHaveBeenCalled();
     });
 
     it('should display user-friendly error message', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Failed to fetch'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -336,7 +323,7 @@ describe('SummaryCards', () => {
   describe('layout', () => {
     it('should use grid layout', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -345,8 +332,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -361,7 +347,7 @@ describe('SummaryCards', () => {
 
     it('should use 2-column grid on mobile', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -370,8 +356,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -389,7 +374,7 @@ describe('SummaryCards', () => {
   describe('edge cases', () => {
     it('should handle zero values correctly', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 0, total: 0 },
           unhealthyPods: 0,
@@ -398,8 +383,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -415,7 +399,7 @@ describe('SummaryCards', () => {
 
     it('should handle high values correctly', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 100, total: 100 },
           unhealthyPods: 999,
@@ -424,8 +408,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -441,7 +424,7 @@ describe('SummaryCards', () => {
 
     it('should handle all nodes ready', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 10, total: 10 },
           unhealthyPods: 0,
@@ -450,8 +433,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -465,7 +447,7 @@ describe('SummaryCards', () => {
 
     it('should handle some nodes not ready', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 5, total: 10 },
           unhealthyPods: 3,
@@ -474,8 +456,7 @@ describe('SummaryCards', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act

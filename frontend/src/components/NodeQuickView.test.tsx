@@ -8,8 +8,8 @@ interface ErrorWithStatus extends Error {
 }
 
 // Mock the OverviewContext
-vi.mock('../contexts/OverviewContext', () => ({
-  useOverview: vi.fn(),
+vi.mock('../contexts/DashboardContext', () => ({
+  useDashboard: vi.fn(),
 }));
 
 // Mock the UsageBar component
@@ -28,7 +28,7 @@ vi.mock('./UsageBar', () => ({
   ),
 }));
 
-import { useOverview } from '../contexts/OverviewContext';
+import { useDashboard } from '../contexts/DashboardContext';
 
 describe('NodeQuickView', () => {
   beforeEach(() => {
@@ -38,7 +38,7 @@ describe('NodeQuickView', () => {
   describe('rendering - happy path', () => {
     it('should render without crashing', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 0,
@@ -56,8 +56,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -72,7 +71,7 @@ describe('NodeQuickView', () => {
 
     it('should be accessible as section', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 0,
@@ -90,8 +89,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -106,7 +104,7 @@ describe('NodeQuickView', () => {
 
     it('should display component title', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 0,
@@ -124,8 +122,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -142,12 +139,11 @@ describe('NodeQuickView', () => {
   describe('loading state', () => {
     it('should display loading indicator while fetching', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -160,12 +156,11 @@ describe('NodeQuickView', () => {
 
     it('should show loading text', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -178,12 +173,11 @@ describe('NodeQuickView', () => {
 
     it('should be accessible during loading', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -196,12 +190,11 @@ describe('NodeQuickView', () => {
 
     it('should display skeleton UI during loading', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -218,7 +211,7 @@ describe('NodeQuickView', () => {
   describe('displaying nodes - maximum 5 items', () => {
     it('should display up to 5 nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 8, total: 10 },
           unhealthyPods: 0,
@@ -234,8 +227,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -250,7 +242,7 @@ describe('NodeQuickView', () => {
 
     it('should display 1 node when only 1 exists', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -268,8 +260,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -284,7 +275,7 @@ describe('NodeQuickView', () => {
 
     it('should display 3 nodes when 3 exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
@@ -298,8 +289,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -314,7 +304,7 @@ describe('NodeQuickView', () => {
 
     it('should limit to 5 nodes even when more exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 10, total: 10 },
           unhealthyPods: 0,
@@ -330,8 +320,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -348,7 +337,7 @@ describe('NodeQuickView', () => {
   describe('node item structure', () => {
     it('should display node name for each item', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -366,8 +355,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -383,7 +371,7 @@ describe('NodeQuickView', () => {
 
     it('should display node status for each item', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -401,8 +389,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -418,7 +405,7 @@ describe('NodeQuickView', () => {
 
     it('should display CPU usage bar for Ready nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -436,8 +423,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -452,7 +438,7 @@ describe('NodeQuickView', () => {
 
     it('should display Memory usage bar for Ready nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -470,8 +456,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -487,7 +472,7 @@ describe('NodeQuickView', () => {
 
     it('should display all required fields for multiple nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
@@ -501,8 +486,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -529,7 +513,7 @@ describe('NodeQuickView', () => {
   describe('NotReady nodes - priority display', () => {
     it('should display NotReady nodes before Ready nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 0,
@@ -543,8 +527,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -560,7 +543,7 @@ describe('NodeQuickView', () => {
 
     it('should display warning indicator for NotReady nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 2 },
           unhealthyPods: 0,
@@ -573,8 +556,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -589,7 +571,7 @@ describe('NodeQuickView', () => {
 
     it('should display warning message instead of usage bars for NotReady nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 2 },
           unhealthyPods: 0,
@@ -601,8 +583,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -618,7 +599,7 @@ describe('NodeQuickView', () => {
 
     it('should not display usage bars for NotReady nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 0, total: 1 },
           unhealthyPods: 0,
@@ -630,8 +611,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -646,7 +626,7 @@ describe('NodeQuickView', () => {
 
     it('should display multiple NotReady nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 0, total: 3 },
           unhealthyPods: 0,
@@ -660,8 +640,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -681,7 +660,7 @@ describe('NodeQuickView', () => {
   describe('empty state', () => {
     it('should handle empty node list', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 0, total: 0 },
           unhealthyPods: 0,
@@ -691,8 +670,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -707,7 +685,7 @@ describe('NodeQuickView', () => {
 
     it('should display message when no nodes exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 0, total: 0 },
           unhealthyPods: 0,
@@ -717,8 +695,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -735,7 +712,7 @@ describe('NodeQuickView', () => {
   describe('view more link', () => {
     it('should display "view more" link when more than 5 nodes exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 8, total: 10 },
           unhealthyPods: 0,
@@ -751,8 +728,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -767,7 +743,7 @@ describe('NodeQuickView', () => {
 
     it('should be a clickable link', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 8, total: 10 },
           unhealthyPods: 0,
@@ -783,8 +759,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -799,7 +774,7 @@ describe('NodeQuickView', () => {
 
     it('should navigate to nodes page', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 8, total: 10 },
           unhealthyPods: 0,
@@ -815,8 +790,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -833,7 +807,7 @@ describe('NodeQuickView', () => {
 
     it('should have accessible link text', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 8, total: 10 },
           unhealthyPods: 0,
@@ -849,8 +823,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -865,7 +838,7 @@ describe('NodeQuickView', () => {
 
     it('should not display link when 5 or fewer nodes exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
@@ -879,8 +852,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -897,12 +869,11 @@ describe('NodeQuickView', () => {
   describe('error handling', () => {
     it('should handle API fetch errors gracefully', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -917,12 +888,11 @@ describe('NodeQuickView', () => {
 
     it('should display error message text', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Failed to fetch'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -937,12 +907,11 @@ describe('NodeQuickView', () => {
 
     it('should display retry button on error', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -958,13 +927,12 @@ describe('NodeQuickView', () => {
     it('should retry fetching when retry button is clicked', async () => {
       // Arrange
       const user = userEvent.setup();
-      const mockRefresh = vi.fn();
-      vi.mocked(useOverview).mockReturnValue({
+      const mockLoadDashboard = vi.fn();
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: mockRefresh,
-        lastUpdate: new Date(),
+        loadDashboard: mockLoadDashboard,
       });
 
       // Act
@@ -980,17 +948,16 @@ describe('NodeQuickView', () => {
       await user.click(retryButton);
 
       // Assert - refresh was called
-      expect(mockRefresh).toHaveBeenCalled();
+      expect(mockLoadDashboard).toHaveBeenCalled();
     });
 
     it('should not show loading indicator after error', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1010,12 +977,11 @@ describe('NodeQuickView', () => {
       // Arrange
       const error = new Error('Not found') as ErrorWithStatus;
       error.status = 404;
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: error,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1032,12 +998,11 @@ describe('NodeQuickView', () => {
       // Arrange
       const error = new Error('Internal server error') as ErrorWithStatus;
       error.status = 500;
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: error,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1054,7 +1019,7 @@ describe('NodeQuickView', () => {
   describe('accessibility', () => {
     it('should have semantic HTML structure', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1072,8 +1037,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1088,7 +1052,7 @@ describe('NodeQuickView', () => {
 
     it('should have accessible heading', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1106,8 +1070,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1122,7 +1085,7 @@ describe('NodeQuickView', () => {
 
     it('should have accessible list for node items', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 2 },
           unhealthyPods: 0,
@@ -1135,8 +1098,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1151,7 +1113,7 @@ describe('NodeQuickView', () => {
 
     it('should have list items for each node', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 2 },
           unhealthyPods: 0,
@@ -1164,8 +1126,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1180,7 +1141,7 @@ describe('NodeQuickView', () => {
 
     it('should have accessible link to nodes page', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 8, total: 10 },
           unhealthyPods: 0,
@@ -1196,8 +1157,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1212,7 +1172,7 @@ describe('NodeQuickView', () => {
 
     it('should have proper ARIA attributes for progress bars', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1230,8 +1190,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1252,7 +1211,7 @@ describe('NodeQuickView', () => {
   describe('styling and layout', () => {
     it('should have proper CSS classes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1270,8 +1229,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1286,7 +1244,7 @@ describe('NodeQuickView', () => {
 
     it('should be styled as a card/section component', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1304,8 +1262,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1320,7 +1277,7 @@ describe('NodeQuickView', () => {
 
     it('should have proper spacing between node items', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
@@ -1334,8 +1291,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1356,7 +1312,7 @@ describe('NodeQuickView', () => {
   describe('edge cases', () => {
     it('should handle exactly 5 nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 5, total: 5 },
           unhealthyPods: 0,
@@ -1372,8 +1328,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1388,7 +1343,7 @@ describe('NodeQuickView', () => {
 
     it('should handle very long node names', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1406,8 +1361,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1424,7 +1378,7 @@ describe('NodeQuickView', () => {
 
     it('should handle 0% CPU usage', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1442,8 +1396,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1459,7 +1412,7 @@ describe('NodeQuickView', () => {
 
     it('should handle 100% CPU usage', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 1, total: 1 },
           unhealthyPods: 0,
@@ -1477,8 +1430,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1494,7 +1446,7 @@ describe('NodeQuickView', () => {
 
     it('should handle mixed Ready and NotReady nodes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 4 },
           unhealthyPods: 0,
@@ -1509,8 +1461,7 @@ describe('NodeQuickView', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act

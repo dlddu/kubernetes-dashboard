@@ -2,12 +2,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { NamespaceProvider, useNamespace } from './contexts/NamespaceContext';
 import { DebugProvider } from './contexts/DebugContext';
 import { PollingProvider } from './contexts/PollingContext';
-import { OverviewProvider, useOverview } from './contexts/OverviewContext';
+import { DashboardProvider, useDashboard } from './contexts/DashboardContext';
 import { TopBar } from './components/TopBar';
 import { BottomTabBar } from './components/BottomTabBar';
-import { SummaryCards } from './components/SummaryCards';
-import { UnhealthyPodPreview } from './components/UnhealthyPodPreview';
-import { NodeQuickView } from './components/NodeQuickView';
+import { OverviewTab } from './components/OverviewTab';
 import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
@@ -16,7 +14,7 @@ import { DebugPage } from './components/DebugPage';
 
 function AppContent() {
   const { selectedNamespace } = useNamespace();
-  const { overviewData } = useOverview();
+  const { overviewData } = useDashboard();
 
   const namespaceParam = selectedNamespace === 'all' ? undefined : selectedNamespace;
   const unhealthyPodCount = overviewData?.unhealthyPods ?? 0;
@@ -26,21 +24,7 @@ function AppContent() {
       <TopBar />
       <main className="container mx-auto px-4 py-8">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <div data-testid="overview-tab" className="space-y-6">
-                <SummaryCards />
-                <UnhealthyPodPreview />
-                <NodeQuickView />
-                <div className="bg-white rounded-lg shadow p-6">
-                  <p className="text-gray-600">
-                    Welcome to the Kubernetes Dashboard. This is a modern web interface for managing Kubernetes clusters.
-                  </p>
-                </div>
-              </div>
-            }
-          />
+          <Route path="/" element={<OverviewTab />} />
           <Route path="/nodes" element={<NodesTab />} />
           <Route path="/workloads" element={<WorkloadsTab namespace={namespaceParam} />} />
           <Route path="/pods" element={<PodsTab namespace={namespaceParam} />} />
@@ -60,9 +44,9 @@ function App() {
       <DebugProvider>
         <NamespaceProvider>
           <PollingProvider>
-            <OverviewProvider>
+            <DashboardProvider>
               <AppContent />
-            </OverviewProvider>
+            </DashboardProvider>
           </PollingProvider>
         </NamespaceProvider>
       </DebugProvider>

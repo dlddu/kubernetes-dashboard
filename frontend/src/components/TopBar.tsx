@@ -4,11 +4,11 @@ import { ClusterStatus } from './ClusterStatus';
 import { PollingIndicator } from './PollingIndicator';
 import { DebugToggle } from './DebugToggle';
 import { useDebugContext } from '../contexts/DebugContext';
-import { useOverview } from '../contexts/OverviewContext';
+import { usePollingContext } from '../contexts/PollingContext';
 
 export function TopBar() {
   const { isDebugMode } = useDebugContext();
-  const { refresh, lastUpdate, isLoading } = useOverview();
+  const { refresh, lastUpdate, isLoading } = usePollingContext();
 
   return (
     <header
