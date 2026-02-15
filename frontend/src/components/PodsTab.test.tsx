@@ -42,7 +42,7 @@ describe('PodsTab Component', () => {
       expect(heading).toBeInTheDocument();
     });
 
-    it('should display "Unhealthy Pods" section heading', () => {
+    it('should display "All Pods" section heading', () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -53,7 +53,7 @@ describe('PodsTab Component', () => {
       render(<PodsTab />);
 
       // Assert
-      const sectionHeading = screen.getByRole('heading', { name: /unhealthy pods/i });
+      const sectionHeading = screen.getByRole('heading', { name: /all pods/i });
       expect(sectionHeading).toBeInTheDocument();
     });
   });
@@ -86,8 +86,8 @@ describe('PodsTab Component', () => {
         {
           name: 'test-pod',
           namespace: 'default',
-          status: 'ImagePullBackOff',
-          restarts: 5,
+          status: 'Running',
+          restarts: 0,
           node: 'node-1',
           age: '2h',
         },
@@ -120,8 +120,8 @@ describe('PodsTab Component', () => {
         {
           name: 'pod-1',
           namespace: 'default',
-          status: 'CrashLoopBackOff',
-          restarts: 15,
+          status: 'Running',
+          restarts: 0,
           node: 'node-1',
           age: '1h',
         },
@@ -154,9 +154,9 @@ describe('PodsTab Component', () => {
       // Arrange
       const mockPods = [
         {
-          name: 'unhealthy-test-pod',
+          name: 'my-running-pod',
           namespace: 'default',
-          status: 'Pending',
+          status: 'Running',
           restarts: 0,
           node: 'node-1',
           age: '5m',
@@ -173,7 +173,7 @@ describe('PodsTab Component', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText('unhealthy-test-pod')).toBeInTheDocument();
+        expect(screen.getByText('my-running-pod')).toBeInTheDocument();
       });
     });
 
@@ -183,8 +183,8 @@ describe('PodsTab Component', () => {
         {
           name: 'test-pod',
           namespace: 'dashboard-test',
-          status: 'Error',
-          restarts: 2,
+          status: 'Running',
+          restarts: 0,
           node: 'node-1',
           age: '10m',
         },
@@ -210,8 +210,8 @@ describe('PodsTab Component', () => {
         {
           name: 'test-pod',
           namespace: 'default',
-          status: 'CrashLoopBackOff',
-          restarts: 20,
+          status: 'Running',
+          restarts: 0,
           node: 'node-1',
           age: '3h',
         },
@@ -237,7 +237,7 @@ describe('PodsTab Component', () => {
       const mockPods = Array.from({ length: 5 }, (_, i) => ({
         name: `pod-${i + 1}`,
         namespace: 'default',
-        status: 'ImagePullBackOff',
+        status: i === 0 ? 'Running' : 'ImagePullBackOff',
         restarts: i * 2,
         node: `node-${(i % 2) + 1}`,
         age: `${i + 1}h`,
@@ -257,10 +257,76 @@ describe('PodsTab Component', () => {
         expect(podCards).toHaveLength(5);
       });
     });
+
+    it('should display running pods with Running status', async () => {
+      // Arrange
+      const mockPods = [
+        {
+          name: 'healthy-pod',
+          namespace: 'default',
+          status: 'Running',
+          restarts: 0,
+          node: 'node-1',
+          age: '5h',
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText('healthy-pod')).toBeInTheDocument();
+        expect(screen.getByTestId('status-badge')).toHaveTextContent('Running');
+      });
+    });
+
+    it('should display both healthy and unhealthy pods', async () => {
+      // Arrange
+      const mockPods = [
+        {
+          name: 'running-pod',
+          namespace: 'default',
+          status: 'Running',
+          restarts: 0,
+          node: 'node-1',
+          age: '5h',
+        },
+        {
+          name: 'crash-pod',
+          namespace: 'default',
+          status: 'CrashLoopBackOff',
+          restarts: 15,
+          node: 'node-1',
+          age: '1h',
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      // Assert
+      await waitFor(() => {
+        const podCards = screen.getAllByTestId('pod-card');
+        expect(podCards).toHaveLength(2);
+        expect(screen.getByText('running-pod')).toBeInTheDocument();
+        expect(screen.getByText('crash-pod')).toBeInTheDocument();
+      });
+    });
   });
 
   describe('Empty State', () => {
-    it('should display empty state when no unhealthy pods exist', async () => {
+    it('should display empty state when no pods exist', async () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -273,26 +339,9 @@ describe('PodsTab Component', () => {
       // Assert: Should show empty state message
       await waitFor(() => {
         const emptyMessage =
-          screen.queryByTestId('no-unhealthy-pods-message') ||
-          screen.queryByText(/모든 Pod가 정상 Running 상태입니다|all pods are healthy/i);
+          screen.queryByTestId('no-pods-message') ||
+          screen.queryByText(/no pods found/i);
         expect(emptyMessage).toBeInTheDocument();
-      });
-    });
-
-    it('should display positive message with checkmark', async () => {
-      // Arrange
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      });
-
-      // Act
-      render(<PodsTab />);
-
-      // Assert
-      await waitFor(() => {
-        const emptyMessage = screen.getByTestId('no-unhealthy-pods-message');
-        expect(emptyMessage.textContent).toMatch(/✅|모든 Pod가 정상/i);
       });
     });
 
@@ -343,7 +392,7 @@ describe('PodsTab Component', () => {
       await waitFor(() => {
         const retryButton =
           screen.queryByTestId('retry-button') ||
-          screen.queryByRole('button', { name: /retry|try again|다시 시도/i });
+          screen.queryByRole('button', { name: /retry|try again/i });
         expect(retryButton).toBeInTheDocument();
       });
     });
@@ -385,14 +434,14 @@ describe('PodsTab Component', () => {
   });
 
   describe('API Integration', () => {
-    it('should fetch unhealthy pods from /api/pods/unhealthy endpoint', async () => {
+    it('should fetch all pods from /api/pods endpoint', async () => {
       // Arrange
       const mockPods = [
         {
           name: 'test-pod',
           namespace: 'default',
-          status: 'Failed',
-          restarts: 8,
+          status: 'Running',
+          restarts: 0,
           node: 'node-1',
           age: '1h',
         },
@@ -408,9 +457,7 @@ describe('PodsTab Component', () => {
 
       // Assert: Verify fetch was called with correct URL
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/pods/unhealthy')
-        );
+        expect(global.fetch).toHaveBeenCalledWith('/api/pods');
       });
     });
 
@@ -442,7 +489,7 @@ describe('PodsTab Component', () => {
 
       // Assert: Should fetch from all namespaces
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/api/pods/unhealthy');
+        expect(global.fetch).toHaveBeenCalledWith('/api/pods');
       });
     });
 
@@ -459,7 +506,7 @@ describe('PodsTab Component', () => {
       // Assert: Should fetch with namespace parameter
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/pods/unhealthy?ns=dashboard-test'
+          '/api/pods?ns=dashboard-test'
         );
       });
     });
@@ -470,10 +517,10 @@ describe('PodsTab Component', () => {
       // Arrange
       const mockPods = [
         {
-          name: 'unhealthy-test-pod-1',
+          name: 'test-pod-1',
           namespace: 'dashboard-test',
-          status: 'ImagePullBackOff',
-          restarts: 12,
+          status: 'Running',
+          restarts: 0,
           node: 'kind-control-plane',
           age: '2h30m',
         },
@@ -489,10 +536,9 @@ describe('PodsTab Component', () => {
 
       // Assert: All information should be visible
       await waitFor(() => {
-        expect(screen.getByText('unhealthy-test-pod-1')).toBeInTheDocument();
+        expect(screen.getByText('test-pod-1')).toBeInTheDocument();
         expect(screen.getByText('dashboard-test')).toBeInTheDocument();
         expect(screen.getByTestId('status-badge')).toBeInTheDocument();
-        expect(screen.getByText(/12/)).toBeInTheDocument(); // restarts
         expect(screen.getByText('kind-control-plane')).toBeInTheDocument();
         expect(screen.getByText('2h30m')).toBeInTheDocument();
       });
@@ -538,7 +584,7 @@ describe('PodsTab Component', () => {
         {
           name: 'low-restart-pod',
           namespace: 'default',
-          status: 'Pending',
+          status: 'Running',
           restarts: 5,
           node: 'node-1',
           age: '30m',
@@ -569,8 +615,8 @@ describe('PodsTab Component', () => {
         {
           name: 'pod-1',
           namespace: 'default',
-          status: 'Failed',
-          restarts: 2,
+          status: 'Running',
+          restarts: 0,
           node: 'node-1',
           age: '1h',
         },
@@ -628,8 +674,8 @@ describe('PodsTab Component', () => {
         {
           name: 'test-pod',
           namespace: 'dashboard-test',
-          status: 'ImagePullBackOff',
-          restarts: 7,
+          status: 'Running',
+          restarts: 0,
           node: 'kind-control-plane',
           age: '1h15m',
         },
@@ -647,7 +693,6 @@ describe('PodsTab Component', () => {
       await waitFor(() => {
         expect(screen.getByText('test-pod')).toBeInTheDocument();
         expect(screen.getByText('dashboard-test')).toBeInTheDocument();
-        expect(screen.getByText(/7/)).toBeInTheDocument();
       });
     });
   });

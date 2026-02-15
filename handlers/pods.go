@@ -12,14 +12,76 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// UnhealthyPodDetails represents detailed information about an unhealthy pod
-type UnhealthyPodDetails struct {
+// PodDetails represents detailed information about a pod
+type PodDetails struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
 	Status    string `json:"status"`
 	Restarts  int32  `json:"restarts"`
 	Node      string `json:"node"`
 	Age       string `json:"age"`
+}
+
+// AllPodsHandler handles the GET /api/pods endpoint
+func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	namespace := r.URL.Query().Get("ns")
+
+	clientset, err := getKubernetesClient()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create Kubernetes client"})
+		return
+	}
+
+	pods, err := getAllPodsData(clientset, namespace)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch pods data"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(pods)
+}
+
+// getAllPodsData fetches all pods data from Kubernetes
+func getAllPodsData(clientset *kubernetes.Clientset, namespace string) ([]PodDetails, error) {
+	ctx := context.Background()
+
+	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	pods := make([]PodDetails, 0, len(podList.Items))
+
+	for _, pod := range podList.Items {
+		status := getPodStatusDetailed(pod)
+		restarts := getPodRestartCount(pod)
+		nodeName := pod.Spec.NodeName
+		if nodeName == "" {
+			nodeName = "Pending"
+		}
+		age := formatPodAge(pod.CreationTimestamp.Time)
+
+		pods = append(pods, PodDetails{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+			Status:    status,
+			Restarts:  restarts,
+			Node:      nodeName,
+			Age:       age,
+		})
+	}
+
+	return pods, nil
 }
 
 // UnhealthyPodsHandler handles the GET /api/pods/unhealthy endpoint
@@ -63,7 +125,7 @@ func UnhealthyPodsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getUnhealthyPodsData fetches unhealthy pods data from Kubernetes
-func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
+func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]PodDetails, error) {
 	ctx := context.Background()
 
 	// Fetch pods
@@ -73,7 +135,7 @@ func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]
 	}
 
 	// Build unhealthy pods list with detailed information
-	unhealthyPods := make([]UnhealthyPodDetails, 0)
+	unhealthyPods := make([]PodDetails, 0)
 
 	for _, pod := range podList.Items {
 		if !isPodHealthyDetailed(pod) {
@@ -92,7 +154,7 @@ func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]
 			// Get pod age
 			age := formatPodAge(pod.CreationTimestamp.Time)
 
-			unhealthyPods = append(unhealthyPods, UnhealthyPodDetails{
+			unhealthyPods = append(unhealthyPods, PodDetails{
 				Name:      pod.Name,
 				Namespace: pod.Namespace,
 				Status:    status,

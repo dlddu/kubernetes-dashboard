@@ -1,4 +1,4 @@
-export interface UnhealthyPodDetails {
+export interface PodDetails {
   name: string;
   namespace: string;
   status: string;
@@ -7,10 +7,29 @@ export interface UnhealthyPodDetails {
   age: string;
 }
 
-export async function fetchUnhealthyPods(namespace?: string): Promise<UnhealthyPodDetails[]> {
+/** @deprecated Use PodDetails instead */
+export type UnhealthyPodDetails = PodDetails;
+
+export async function fetchAllPods(namespace?: string): Promise<PodDetails[]> {
+  let url = '/api/pods';
+
+  if (namespace && namespace !== '') {
+    url += `?ns=${namespace}`;
+  }
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+export async function fetchUnhealthyPods(namespace?: string): Promise<PodDetails[]> {
   let url = '/api/pods/unhealthy';
 
-  // Add namespace query parameter if provided and not empty
   if (namespace && namespace !== '') {
     url += `?ns=${namespace}`;
   }

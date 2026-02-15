@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { fetchUnhealthyPods, UnhealthyPodDetails } from '../api/pods';
-import { UnhealthyPodCard } from './UnhealthyPodCard';
+import { fetchAllPods, PodDetails } from '../api/pods';
+import { PodCard } from './PodCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
@@ -10,7 +10,7 @@ interface PodsTabProps {
 }
 
 export function PodsTab({ namespace }: PodsTabProps = {}) {
-  const [pods, setPods] = useState<UnhealthyPodDetails[]>([]);
+  const [pods, setPods] = useState<PodDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,10 +18,10 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await fetchUnhealthyPods(namespace);
+      const data = await fetchAllPods(namespace);
       setPods(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch unhealthy pods');
+      setError(err instanceof Error ? err.message : 'Failed to fetch pods');
     } finally {
       setIsLoading(false);
     }
@@ -41,7 +41,7 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
 
       <div>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Unhealthy Pods {!isLoading && !error && `(${pods.length})`}
+          All Pods {!isLoading && !error && `(${pods.length})`}
         </h2>
 
         {isLoading && (
@@ -63,16 +63,16 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
 
         {!isLoading && !error && pods.length === 0 && (
           <EmptyState
-            message="모든 Pod가 정상 Running 상태입니다 ✅"
-            variant="success"
-            testId="no-unhealthy-pods-message"
+            message="No pods found in the selected namespace."
+            variant="default"
+            testId="no-pods-message"
           />
         )}
 
         {!isLoading && !error && pods.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pods.map((pod) => (
-              <UnhealthyPodCard key={`${pod.namespace}-${pod.name}`} pod={pod} />
+              <PodCard key={`${pod.namespace}-${pod.name}`} pod={pod} />
             ))}
           </div>
         )}
