@@ -10,13 +10,13 @@ import { test, expect } from '@playwright/test';
  * - Click again toggles back to Debug OFF
  * - Debug ON state shows "debug" tab/link in TopBar navigation
  *
- * Related Issue: DLD-345 - Task 3-1: E2E Test - Debug Toggle Button (skipped)
+ * Related Issue: DLD-346 - Task 3-2: Implementation - Debug Toggle Button + E2E Activation
  * Parent Issue: DLD-341 - Debug Page API Response Feature
  *
- * TODO: Activate when DLD-345 implementation is complete
+ * Status: ACTIVATED - Implementation complete
  */
 
-test.describe.skip('Debug Toggle Button - Existence and Initial State', () => {
+test.describe('Debug Toggle Button - Existence and Initial State', () => {
   test('should display debug toggle button in TopBar on page load', async ({ page }) => {
     // Tests that debug toggle button is visible in the TopBar component
 
@@ -60,7 +60,7 @@ test.describe.skip('Debug Toggle Button - Existence and Initial State', () => {
   });
 });
 
-test.describe.skip('Debug Toggle Button - ON/OFF Toggle Behavior', () => {
+test.describe('Debug Toggle Button - ON/OFF Toggle Behavior', () => {
   test('should toggle debug mode ON when clicked', async ({ page }) => {
     // Tests that clicking the toggle activates debug mode with cyan highlight
 
@@ -129,7 +129,7 @@ test.describe.skip('Debug Toggle Button - ON/OFF Toggle Behavior', () => {
   });
 });
 
-test.describe.skip('Debug Toggle Button - Visual Style Verification', () => {
+test.describe('Debug Toggle Button - Visual Style Verification', () => {
   test('should display inactive style when debug mode is OFF', async ({ page }) => {
     // Tests the visual styling of the button in OFF state
 
@@ -198,7 +198,7 @@ test.describe.skip('Debug Toggle Button - Visual Style Verification', () => {
   });
 });
 
-test.describe.skip('Debug Toggle Button - Debug Navigation Tab Visibility', () => {
+test.describe('Debug Toggle Button - Debug Navigation Tab Visibility', () => {
   test('should show debug tab in TopBar navigation when debug mode is ON', async ({ page }) => {
     // Tests that enabling debug mode reveals a debug navigation tab/link
 
@@ -302,7 +302,7 @@ test.describe.skip('Debug Toggle Button - Debug Navigation Tab Visibility', () =
   });
 });
 
-test.describe.skip('Debug Toggle Button - Accessibility', () => {
+test.describe('Debug Toggle Button - Accessibility', () => {
   test('should have proper ARIA attributes for screen readers', async ({ page }) => {
     // Tests accessibility compliance
 
