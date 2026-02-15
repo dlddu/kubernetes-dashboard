@@ -1,24 +1,18 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * E2E Tests for Unhealthy Pods Full Page View
+ * E2E Tests for Pods Full Page View
  *
- * TDD Red Phase: Tests written (skipped) - PodsTab component not yet implemented.
- * These tests define the expected behavior of the Unhealthy Pods page,
- * which displays all unhealthy pods from the cluster with detailed information
+ * These tests define the expected behavior of the Pods page,
+ * which displays all pods from the cluster with detailed information
  * including status, restarts, node, and age.
  *
  * Test Fixtures:
  * - unhealthy-pod.yaml: 4 unhealthy pods in dashboard-test namespace (ImagePullBackOff)
- * - These pods should appear in the unhealthy pods list
- * - Running pods should NOT appear in this list
- *
- * Note: All tests are skipped as the PodsTab component and /pods route
- * have not been implemented yet. These tests will be activated once the
- * component is ready for testing.
+ * - These pods should appear in the pods list along with all other pods
  */
 
-test.describe('Unhealthy Pods Page - Basic Rendering', () => {
+test.describe('Pods Page - Basic Rendering', () => {
   test('should display pods page when navigating to /pods', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests that Pods page is accessible and renders correctly
@@ -36,9 +30,8 @@ test.describe('Unhealthy Pods Page - Basic Rendering', () => {
     await expect(pageHeading).toBeVisible();
   });
 
-  test('should display "Unhealthy Pods" header with pod count', async ({ page }) => {
-    // Skip reason: PodsTab component not implemented yet
-    // Tests that the Unhealthy Pods section displays a header with count
+  test('should display "All Pods" header with pod count', async ({ page }) => {
+    // Tests that the All Pods section displays a header with count
 
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
@@ -48,12 +41,12 @@ test.describe('Unhealthy Pods Page - Basic Rendering', () => {
     const podsPage = page.getByTestId('pods-page');
     await expect(podsPage).toBeVisible();
 
-    // Assert: "Unhealthy Pods" header should be visible
-    const unhealthyPodsHeader = podsPage.getByRole('heading', { name: /unhealthy pods/i });
-    await expect(unhealthyPodsHeader).toBeVisible();
+    // Assert: "All Pods" header should be visible
+    const allPodsHeader = podsPage.getByRole('heading', { name: /all pods/i });
+    await expect(allPodsHeader).toBeVisible();
 
-    // Assert: Header should display count of unhealthy pods
-    const headerText = await unhealthyPodsHeader.innerText();
+    // Assert: Header should display count of pods
+    const headerText = await allPodsHeader.innerText();
     expect(headerText).toMatch(/\d+/); // Contains at least one digit for count
   });
 
@@ -79,7 +72,7 @@ test.describe('Unhealthy Pods Page - Basic Rendering', () => {
   });
 });
 
-test.describe('Unhealthy Pods Page - Pod Status Filtering', () => {
+test.describe('Pods Page - Pod Status Filtering', () => {
   test('should display ImagePullBackOff pods from test fixture', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests that unhealthy pods with ImagePullBackOff status are displayed
@@ -147,9 +140,8 @@ test.describe('Unhealthy Pods Page - Pod Status Filtering', () => {
     // It only validates behavior when such pods are present
   });
 
-  test('should NOT display Running pods in the unhealthy list', async ({ page }) => {
-    // Skip reason: PodsTab component not implemented yet
-    // Tests that Running status pods are excluded from unhealthy pods list
+  test('should display Running pods in the pods list', async ({ page }) => {
+    // Tests that Running status pods are included in the all pods list
 
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
@@ -159,15 +151,22 @@ test.describe('Unhealthy Pods Page - Pod Status Filtering', () => {
     const podCards = page.getByTestId('pod-card');
     const cardCount = await podCards.count();
 
-    // Act: Check all pod status badges
+    // Act: Check if any Running pods exist
+    let foundRunningPod = false;
     for (let i = 0; i < cardCount; i++) {
       const podCard = podCards.nth(i);
       const statusBadge = podCard.getByTestId('status-badge');
       const statusText = await statusBadge.innerText();
 
-      // Assert: No pod should have "Running" status
-      expect(statusText.toLowerCase()).not.toBe('running');
+      if (statusText.toLowerCase() === 'running') {
+        foundRunningPod = true;
+        await expect(podCard).toBeVisible();
+        break;
+      }
     }
+
+    // Note: This test doesn't fail if no Running pods exist
+    // It only validates that Running pods are allowed in the list
   });
 
   test('should display test fixture pods from dashboard-test namespace', async ({ page }) => {
@@ -210,7 +209,7 @@ test.describe('Unhealthy Pods Page - Pod Status Filtering', () => {
   });
 });
 
-test.describe('Unhealthy Pods Page - PodCard Information Display', () => {
+test.describe('Pods Page - PodCard Information Display', () => {
   test('should display pod name in each PodCard', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests that each PodCard displays the pod's name
@@ -272,26 +271,9 @@ test.describe('Unhealthy Pods Page - PodCard Information Display', () => {
     const statusBadge = firstPodCard.getByTestId('status-badge');
     await expect(statusBadge).toBeVisible();
 
-    // Assert: Status should indicate unhealthy state
+    // Assert: Status should be a valid pod status string
     const statusText = await statusBadge.innerText();
     expect(statusText.length).toBeGreaterThan(0);
-    expect(statusText.toLowerCase()).not.toBe('running');
-
-    // Assert: Status badge should have non-default styling for unhealthy pods
-    // StatusBadge uses gray for unrecognized statuses; unhealthy pods should
-    // have red/yellow styling, but K8s pod status can briefly be in a
-    // transitional state that falls to default. Verify the status text itself
-    // indicates an unhealthy state instead of relying on CSS class names.
-    const knownUnhealthyStatuses = [
-      'crashloopbackoff', 'imagepullbackoff', 'errimagepull',
-      'invalidimagename', 'runcontainererror', 'oomkilled',
-      'failed', 'error', 'notready', 'pending', 'unknown',
-      'containercreating', 'terminated', 'waiting',
-    ];
-    expect(
-      knownUnhealthyStatuses.some(s => statusText.toLowerCase().includes(s))
-      || statusText.toLowerCase() !== 'running'
-    ).toBe(true);
   });
 
   test('should display restart count in each PodCard', async ({ page }) => {
@@ -405,7 +387,7 @@ test.describe('Unhealthy Pods Page - PodCard Information Display', () => {
   });
 });
 
-test.describe('Unhealthy Pods Page - Status Badge Styling', () => {
+test.describe('Pods Page - Status Badge Styling', () => {
   test('should display error-style badge for ImagePullBackOff status', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests that ImagePullBackOff pods show error-style status badge
@@ -472,7 +454,7 @@ test.describe('Unhealthy Pods Page - Status Badge Styling', () => {
   });
 });
 
-test.describe('Unhealthy Pods Page - Loading and Error States', () => {
+test.describe('Pods Page - Loading and Error States', () => {
   test('should display loading state while fetching pod data', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests loading skeleton or spinner during data fetch
@@ -527,12 +509,11 @@ test.describe('Unhealthy Pods Page - Loading and Error States', () => {
     expect(errorVisible || podsVisible).toBeTruthy();
   });
 
-  test('should display empty state message when no unhealthy pods exist', async ({ page }) => {
-    // Skip reason: PodsTab component not implemented yet
-    // Tests empty state when all pods are healthy
+  test('should display empty state message when no pods exist', async ({ page }) => {
+    // Tests empty state when no pods are found
 
-    // Note: This test requires a cluster with all healthy pods
-    // or mocking the API response to return no unhealthy pods
+    // Note: This test requires a cluster with no pods
+    // or mocking the API response to return no pods
 
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
@@ -542,20 +523,16 @@ test.describe('Unhealthy Pods Page - Loading and Error States', () => {
     const podCards = page.getByTestId('pod-card');
     const cardCount = await podCards.count();
 
-    // Assert: When no unhealthy pods exist, should show empty state message
+    // Assert: When no pods exist, should show empty state message
     if (cardCount === 0) {
-      const emptyStateMessage = page.getByTestId('no-unhealthy-pods-message')
-        .or(page.getByText(/no unhealthy pods|all pods are healthy/i));
+      const emptyStateMessage = page.getByTestId('no-pods-message')
+        .or(page.getByText(/no pods found/i));
       await expect(emptyStateMessage).toBeVisible();
-
-      // Assert: Message should contain positive/healthy language
-      const messageText = await emptyStateMessage.innerText();
-      expect(messageText.toLowerCase()).toMatch(/no|healthy|running|all pods/);
     }
   });
 });
 
-test.describe('Unhealthy Pods Page - Navigation and Integration', () => {
+test.describe('Pods Page - Navigation and Integration', () => {
   test('should be accessible from UnhealthyPodPreview view more link', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests navigation from Overview page UnhealthyPodPreview to Pods page
@@ -653,7 +630,7 @@ test.describe('Unhealthy Pods Page - Navigation and Integration', () => {
   });
 });
 
-test.describe('Unhealthy Pods Page - Responsive Design', () => {
+test.describe('Pods Page - Responsive Design', () => {
   test('should display correctly on mobile viewport', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests mobile viewport rendering with stacked pod cards
@@ -746,7 +723,7 @@ test.describe('Unhealthy Pods Page - Responsive Design', () => {
   });
 });
 
-test.describe('Unhealthy Pods Page - Accessibility', () => {
+test.describe('Pods Page - Accessibility', () => {
   test('should have proper heading hierarchy', async ({ page }) => {
     // Skip reason: PodsTab component not implemented yet
     // Tests that page uses proper heading structure
@@ -759,8 +736,8 @@ test.describe('Unhealthy Pods Page - Accessibility', () => {
     const mainHeading = page.getByRole('heading', { level: 1, name: 'Pods', exact: true });
     await expect(mainHeading).toBeVisible();
 
-    // Assert: "Unhealthy Pods" section should have appropriate heading level
-    const sectionHeading = page.getByRole('heading', { name: /unhealthy pods/i });
+    // Assert: "All Pods" section should have appropriate heading level
+    const sectionHeading = page.getByRole('heading', { name: /all pods/i });
     await expect(sectionHeading).toBeVisible();
 
     // Assert: Heading should be h2 or h3 (not h1)

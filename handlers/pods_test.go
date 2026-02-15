@@ -114,6 +114,149 @@ func TestUnhealthyPodsHandler(t *testing.T) {
 	})
 }
 
+// TestAllPodsHandler tests the GET /api/pods/all endpoint
+func TestAllPodsHandler(t *testing.T) {
+	t.Run("should return 200 OK with all pods list", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		AllPodsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		}
+
+		if res.StatusCode == http.StatusOK {
+			var pods []map[string]interface{}
+			if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
+				t.Fatalf("failed to decode response: %v", err)
+			}
+			if pods == nil {
+				t.Error("expected pods array, got nil")
+			}
+		}
+	})
+
+	t.Run("should set correct content-type header", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		AllPodsHandler(w, req)
+
+		// Assert
+		contentType := w.Header().Get("Content-Type")
+		if contentType != "application/json" {
+			t.Errorf("expected Content-Type 'application/json', got '%s'", contentType)
+		}
+	})
+
+	t.Run("should reject non-GET methods", func(t *testing.T) {
+		// Arrange
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				req := httptest.NewRequest(method, "/api/pods/all", nil)
+				w := httptest.NewRecorder()
+
+				// Act
+				AllPodsHandler(w, req)
+
+				// Assert
+				res := w.Result()
+				defer res.Body.Close()
+
+				if res.StatusCode != http.StatusMethodNotAllowed {
+					t.Errorf("expected status 405 for %s, got %d", method, res.StatusCode)
+				}
+			})
+		}
+	})
+
+	t.Run("should accept namespace query parameter", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all?ns=default", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		AllPodsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return valid JSON even on error", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		AllPodsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		var result interface{}
+		if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+			t.Errorf("response should be valid JSON, got error: %v", err)
+		}
+	})
+
+	t.Run("should return pods including healthy ones", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		AllPodsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var allPods []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&allPods); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		// Compare with unhealthy pods - all pods should be >= unhealthy pods
+		reqUnhealthy := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
+		wUnhealthy := httptest.NewRecorder()
+		UnhealthyPodsHandler(wUnhealthy, reqUnhealthy)
+		resUnhealthy := wUnhealthy.Result()
+		defer resUnhealthy.Body.Close()
+
+		if resUnhealthy.StatusCode == http.StatusOK {
+			var unhealthyPods []map[string]interface{}
+			json.NewDecoder(resUnhealthy.Body).Decode(&unhealthyPods)
+
+			if len(allPods) < len(unhealthyPods) {
+				t.Errorf("all pods (%d) should be >= unhealthy pods (%d)", len(allPods), len(unhealthyPods))
+			}
+		}
+	})
+}
+
 // TestUnhealthyPodsHandlerResponseStructure tests the exact response structure
 func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 	t.Run("should return array of unhealthy pods with required fields", func(t *testing.T) {

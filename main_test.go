@@ -94,6 +94,25 @@ func TestAPIRouting(t *testing.T) {
 		}
 	})
 
+	t.Run("should route /api/pods/all to AllPodsHandler", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Should get 200 or 500 (not 404)
+		if res.StatusCode == http.StatusNotFound {
+			t.Error("expected /api/pods/all to be routed, got 404")
+		}
+	})
+
 	t.Run("should not serve static files for API routes", func(t *testing.T) {
 		// Arrange
 		router := setupRouter()

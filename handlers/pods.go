@@ -106,6 +106,78 @@ func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]
 	return unhealthyPods, nil
 }
 
+// AllPodsHandler handles the GET /api/pods/all endpoint
+func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow GET method
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Set content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// Get namespace from query parameter
+	namespace := r.URL.Query().Get("ns")
+
+	// Get Kubernetes client
+	clientset, err := getKubernetesClient()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create Kubernetes client"})
+		return
+	}
+
+	// Fetch all pods data
+	allPods, err := getAllPodsData(clientset, namespace)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch pods data"})
+		return
+	}
+
+	// Send response
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(allPods)
+}
+
+// getAllPodsData fetches all pods data from Kubernetes
+func getAllPodsData(clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
+	ctx := context.Background()
+
+	// Fetch pods
+	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Build all pods list with detailed information
+	allPods := make([]UnhealthyPodDetails, 0)
+
+	for _, pod := range podList.Items {
+		status := getPodStatusDetailed(pod)
+		restarts := getPodRestartCount(pod)
+
+		nodeName := pod.Spec.NodeName
+		if nodeName == "" {
+			nodeName = "Pending"
+		}
+
+		age := formatPodAge(pod.CreationTimestamp.Time)
+
+		allPods = append(allPods, UnhealthyPodDetails{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+			Status:    status,
+			Restarts:  restarts,
+			Node:      nodeName,
+			Age:       age,
+		})
+	}
+
+	return allPods, nil
+}
+
 // isPodHealthyDetailed checks if a pod is healthy
 // A pod is considered unhealthy if:
 // - It's not in Running phase (except Succeeded), OR
