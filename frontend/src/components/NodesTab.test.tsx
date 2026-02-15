@@ -433,25 +433,6 @@ describe('NodesTab Component', () => {
     });
   });
 
-  describe('Polling Integration', () => {
-    it('should render polling indicator', async () => {
-      // Arrange
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      });
-
-      // Act
-      render(<NodesTab />);
-
-      // Assert
-      await waitFor(() => {
-        const pollingIndicator = screen.getByTestId('polling-indicator');
-        expect(pollingIndicator).toBeInTheDocument();
-      });
-    });
-  });
-
   describe('Data Consistency', () => {
     it('should maintain node data integrity', async () => {
       // Arrange

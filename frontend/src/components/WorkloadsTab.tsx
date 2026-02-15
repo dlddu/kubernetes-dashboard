@@ -6,7 +6,6 @@ import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
 import { usePolling } from '../hooks/usePolling';
-import { PollingIndicator } from './PollingIndicator';
 
 interface WorkloadsTabProps {
   namespace?: string;
@@ -37,7 +36,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
     }
   }, [namespace]);
 
-  const { refresh, lastUpdate, isLoading: isPolling } = usePolling(loadDeployments);
+  const { refresh } = usePolling(loadDeployments);
 
   // Re-fetch immediately when namespace changes
   useEffect(() => {
@@ -78,10 +77,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
 
   return (
     <div data-testid="workloads-page" className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Workloads</h1>
-        <PollingIndicator lastUpdate={lastUpdate} onRefresh={refresh} isLoading={isPolling} />
-      </div>
+      <h1 className="text-2xl font-bold text-gray-900">Workloads</h1>
 
       {isLoading && (
         <LoadingSkeleton

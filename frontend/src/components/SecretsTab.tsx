@@ -5,7 +5,6 @@ import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
 import { usePolling } from '../hooks/usePolling';
-import { PollingIndicator } from './PollingIndicator';
 
 interface SecretsTabProps {
   namespace?: string;
@@ -30,7 +29,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
     }
   }, [namespace]);
 
-  const { refresh, lastUpdate, isLoading: isPolling } = usePolling(loadSecrets);
+  const { refresh } = usePolling(loadSecrets);
 
   // Re-fetch immediately when namespace changes and reset accordion
   useEffect(() => {
@@ -44,10 +43,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
 
   return (
     <div data-testid="secrets-tab" className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Secrets</h1>
-        <PollingIndicator lastUpdate={lastUpdate} onRefresh={refresh} isLoading={isPolling} />
-      </div>
+      <h1 className="text-2xl font-bold text-gray-900">Secrets</h1>
 
       {isLoading && (
         <LoadingSkeleton

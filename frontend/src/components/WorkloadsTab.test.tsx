@@ -342,25 +342,6 @@ describe('WorkloadsTab Component', () => {
     });
   });
 
-  describe('Polling Integration', () => {
-    it('should render polling indicator', async () => {
-      // Arrange
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      });
-
-      // Act
-      render(<WorkloadsTab />);
-
-      // Assert
-      await waitFor(() => {
-        const pollingIndicator = screen.getByTestId('polling-indicator');
-        expect(pollingIndicator).toBeInTheDocument();
-      });
-    });
-  });
-
   describe('Accessibility', () => {
     it('should have proper heading hierarchy', async () => {
       // Arrange

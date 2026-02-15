@@ -5,7 +5,6 @@ import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
 import { usePolling } from '../hooks/usePolling';
-import { PollingIndicator } from './PollingIndicator';
 
 export function NodesTab() {
   const [nodes, setNodes] = useState<NodeInfo[]>([]);
@@ -25,7 +24,7 @@ export function NodesTab() {
     }
   }, []);
 
-  const { refresh, lastUpdate, isLoading: isPolling } = usePolling(loadNodes);
+  const { refresh } = usePolling(loadNodes);
 
   // Initial load
   useEffect(() => {
@@ -34,10 +33,7 @@ export function NodesTab() {
 
   return (
     <div data-testid="nodes-page" className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Nodes</h1>
-        <PollingIndicator lastUpdate={lastUpdate} onRefresh={refresh} isLoading={isPolling} />
-      </div>
+      <h1 className="text-2xl font-bold text-gray-900">Nodes</h1>
 
       {isLoading && (
         <LoadingSkeleton
