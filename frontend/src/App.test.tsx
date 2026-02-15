@@ -1,6 +1,16 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import App from './App';
+
+// Mock the overview API to prevent actual fetch calls from OverviewProvider
+vi.mock('./api/overview', () => ({
+  fetchOverview: vi.fn().mockResolvedValue({
+    nodes: { ready: 2, total: 3 },
+    unhealthyPods: 0,
+    avgCpuPercent: 0,
+    avgMemoryPercent: 0,
+  }),
+}));
 
 describe('App', () => {
   it('should render without crashing', () => {
