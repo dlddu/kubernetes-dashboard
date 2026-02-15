@@ -7,6 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 // NodeDetailInfo represents detailed information about a node including pod count
@@ -38,8 +39,11 @@ func NodesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Attempt to create metrics client (nil on failure — graceful fallback)
+	metricsClient, _ := getMetricsClient()
+
 	// Fetch nodes data
-	nodes, err := getNodesData(clientset)
+	nodes, err := getNodesData(clientset, metricsClient)
 	if err != nil {
 		// If fetching fails, return 500
 		w.WriteHeader(http.StatusInternalServerError)
@@ -53,7 +57,7 @@ func NodesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getNodesData fetches nodes data from Kubernetes
-func getNodesData(clientset *kubernetes.Clientset) ([]NodeDetailInfo, error) {
+func getNodesData(clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset) ([]NodeDetailInfo, error) {
 	ctx := context.Background()
 
 	// Fetch nodes
@@ -76,6 +80,9 @@ func getNodesData(clientset *kubernetes.Clientset) ([]NodeDetailInfo, error) {
 		}
 	}
 
+	// Fetch real metrics from metrics-server (nil if unavailable)
+	metricsMap := fetchNodeMetrics(metricsClient)
+
 	// Build nodes list with detailed information
 	nodesData := make([]NodeDetailInfo, 0, len(nodeList.Items))
 
@@ -87,7 +94,7 @@ func getNodesData(clientset *kubernetes.Clientset) ([]NodeDetailInfo, error) {
 		}
 
 		// Calculate CPU and memory percentages for this node
-		cpuPercent, memoryPercent := calculateNodeResourceUsage(node)
+		cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
 
 		// Get pod count for this node
 		podCount := nodePodCount[node.Name]

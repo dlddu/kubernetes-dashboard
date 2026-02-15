@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 // NamespacesHandler handles the /api/namespaces endpoint
@@ -60,9 +61,9 @@ func NamespacesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(namespaces)
 }
 
-// getKubernetesClient creates and returns a Kubernetes client.
-// It tries KUBECONFIG env var, then ~/.kube/config, then in-cluster config.
-func getKubernetesClient() (*kubernetes.Clientset, error) {
+// getRESTConfig resolves the Kubernetes REST configuration.
+// Tries in-cluster config first, then KUBECONFIG env var, then ~/.kube/config.
+func getRESTConfig() (*rest.Config, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		kubeconfig := os.Getenv("KUBECONFIG")
@@ -76,11 +77,23 @@ func getKubernetesClient() (*kubernetes.Clientset, error) {
 			return nil, err
 		}
 	}
+	return config, nil
+}
 
-	clientset, err := kubernetes.NewForConfig(config)
+// getKubernetesClient creates and returns a Kubernetes client.
+func getKubernetesClient() (*kubernetes.Clientset, error) {
+	config, err := getRESTConfig()
 	if err != nil {
 		return nil, err
 	}
+	return kubernetes.NewForConfig(config)
+}
 
-	return clientset, nil
+// getMetricsClient creates and returns a Kubernetes metrics client.
+func getMetricsClient() (*metricsv.Clientset, error) {
+	config, err := getRESTConfig()
+	if err != nil {
+		return nil, err
+	}
+	return metricsv.NewForConfig(config)
 }
