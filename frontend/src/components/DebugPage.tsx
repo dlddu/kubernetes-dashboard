@@ -55,24 +55,28 @@ export function DebugPage({ clipboard = navigator.clipboard }: DebugPageProps = 
 
   if (!isDebugMode && logs.length === 0) {
     return (
-      <div data-testid="debug-empty-state" className="text-center py-16 text-gray-500">
-        <p className="text-lg font-medium">No API calls logged</p>
-        <p className="mt-2">Enable debug mode to start capturing API calls.</p>
+      <div data-testid="debug-page" className="text-center py-16 text-gray-500">
+        <div data-testid="debug-empty-state">
+          <p className="text-lg font-medium">No API calls logged</p>
+          <p className="mt-2">Enable debug mode to start capturing API calls.</p>
+        </div>
       </div>
     );
   }
 
   if (logs.length === 0) {
     return (
-      <div data-testid="debug-empty-state" className="text-center py-16 text-gray-500">
-        <p className="text-lg font-medium">No logs yet</p>
-        <p className="mt-2">Navigate to other pages to generate API calls.</p>
+      <div data-testid="debug-page" className="text-center py-16 text-gray-500">
+        <div data-testid="debug-empty-state">
+          <p className="text-lg font-medium">No logs yet</p>
+          <p className="mt-2">Navigate to other pages to generate API calls.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-200px)]">
+    <div data-testid="debug-page" className="flex gap-4 h-[calc(100vh-200px)]">
       {/* Left panel - endpoint list */}
       <div
         data-testid="debug-left-panel"
