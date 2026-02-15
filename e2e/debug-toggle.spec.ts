@@ -175,28 +175,11 @@ test.describe('Debug Toggle Button - Visual Style Verification', () => {
     // Assert: Debug mode is ON
     await expect(debugToggle).toHaveAttribute('aria-pressed', 'true');
 
-    // Assert: Button should have cyan color highlight
+    // Assert: Button should have cyan color highlight via Tailwind classes
     const buttonClasses = await debugToggle.getAttribute('class');
-    if (buttonClasses) {
-      // In ON state, should use cyan highlighting
-      expect(buttonClasses).toMatch(/cyan|active/i);
-    }
-
-    // Assert: Check for cyan color in computed styles
-    const backgroundColor = await debugToggle.evaluate((el) => {
-      return window.getComputedStyle(el).backgroundColor;
-    });
-
-    const color = await debugToggle.evaluate((el) => {
-      return window.getComputedStyle(el).color;
-    });
-
-    // Cyan color should be present in either background or text color
-    // Tailwind cyan-500 has G value of 182: rgb(6, 182, 212)
-    // Check for the distinctive G value (182) which uniquely identifies cyan
-    const rgbPattern = /182/;
-    const hasCyan = rgbPattern.test(backgroundColor) || rgbPattern.test(color);
-    expect(hasCyan).toBeTruthy();
+    expect(buttonClasses).toBeTruthy();
+    // In ON state, should use cyan background highlighting (bg-cyan-500)
+    expect(buttonClasses).toMatch(/bg-cyan/i);
   });
 });
 
