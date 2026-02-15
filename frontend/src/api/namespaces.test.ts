@@ -24,7 +24,7 @@ describe('Namespaces API', () => {
       const result = await fetchNamespaces();
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/namespaces');
+      expect(mockFetch).toHaveBeenCalledWith('/api/namespaces', undefined);
       expect(result).toEqual(mockNamespaces);
       expect(Array.isArray(result)).toBe(true);
     });

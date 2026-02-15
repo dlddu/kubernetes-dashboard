@@ -241,7 +241,7 @@ describe('debugFetch', () => {
         }
       };
 
-      let resolveFetch: (value: any) => void;
+      let resolveFetch: (value: Response) => void;
       mockFetch.mockReturnValueOnce(
         new Promise((resolve) => {
           resolveFetch = resolve;
@@ -918,7 +918,7 @@ describe('debugFetch', () => {
       const result = await debugFetch('/api/test');
 
       // Assert - TypeScript compile-time check
-      const response: Response = result as any;
+      const response: Response = result;
       expect(response.ok).toBe(true);
       expect(response.status).toBe(200);
     });

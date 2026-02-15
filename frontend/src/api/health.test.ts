@@ -26,7 +26,7 @@ describe('Health API', () => {
     const result = await fetchHealth();
 
     // Assert
-    expect(mockFetch).toHaveBeenCalledWith('/api/health');
+    expect(mockFetch).toHaveBeenCalledWith('/api/health', undefined);
     expect(result.status).toBe('ok');
     expect(result.message).toBeDefined();
   });
