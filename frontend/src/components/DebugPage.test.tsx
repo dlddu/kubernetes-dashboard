@@ -4,10 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { DebugPage } from './DebugPage';
 import { DebugProvider, ApiLog } from '../contexts/DebugContext';
 
-// Mock clipboard API
+// Mock clipboard API - declare writeTextMock separately
+const writeTextMock = vi.fn(() => Promise.resolve());
+
 Object.defineProperty(navigator, 'clipboard', {
   value: {
-    writeText: vi.fn(() => Promise.resolve()),
+    writeText: writeTextMock,
   },
   writable: true,
   configurable: true,
@@ -36,6 +38,9 @@ describe('DebugPage', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
+    // Reset writeTextMock to default behavior
+    writeTextMock.mockClear();
+    writeTextMock.mockResolvedValue(undefined);
   });
 
   describe('Empty states', () => {
@@ -172,13 +177,6 @@ describe('DebugPage', () => {
       },
     ];
 
-    beforeEach(() => {
-      vi.clearAllMocks();
-      // Just clear mock calls instead of reassigning navigator.clipboard
-      const writeTextMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
-      writeTextMock.mockClear();
-    });
-
     it('should render copy button', async () => {
       const user = userEvent.setup();
       renderDebugPage(mockLog);
@@ -204,7 +202,7 @@ describe('DebugPage', () => {
 
       // Verify clipboard API was called with correct content
       await waitFor(() => {
-        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        expect(writeTextMock).toHaveBeenCalledWith(
           JSON.stringify(mockLog[0].responseBody, null, 2)
         );
       });
@@ -266,7 +264,7 @@ describe('DebugPage', () => {
 
       // Should copy request data in the format: "Method: GET\nURL: /api/v1/namespaces"
       await waitFor(() => {
-        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        expect(writeTextMock).toHaveBeenCalledWith(
           `Method: ${mockLog[0].method}\nURL: ${mockLog[0].url}`
         );
       });
@@ -288,8 +286,7 @@ describe('DebugPage', () => {
 
       // Should copy metadata in the format: "Status: 200\nTimestamp: ...\nDuration: 100 ms\nResponse Size: 512 bytes"
       await waitFor(() => {
-        expect(navigator.clipboard.writeText).toHaveBeenCalled();
-        const writeTextMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
+        expect(writeTextMock).toHaveBeenCalled();
         const copiedContent = writeTextMock.mock.calls[0][0] as string;
         expect(copiedContent).toContain('Status: 200');
         expect(copiedContent).toContain('Duration: 100 ms');
@@ -298,7 +295,6 @@ describe('DebugPage', () => {
     });
 
     it('should handle clipboard API failure gracefully', async () => {
-      const writeTextMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
       writeTextMock.mockRejectedValueOnce(new Error('Clipboard access denied'));
 
       const user = userEvent.setup();
