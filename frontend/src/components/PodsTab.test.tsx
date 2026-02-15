@@ -42,7 +42,7 @@ describe('PodsTab Component', () => {
       expect(heading).toBeInTheDocument();
     });
 
-    it('should display "Unhealthy Pods" section heading', () => {
+    it('should display "All Pods" section heading', () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -53,7 +53,7 @@ describe('PodsTab Component', () => {
       render(<PodsTab />);
 
       // Assert
-      const sectionHeading = screen.getByRole('heading', { name: /unhealthy pods/i });
+      const sectionHeading = screen.getByRole('heading', { name: /all pods/i });
       expect(sectionHeading).toBeInTheDocument();
     });
   });
@@ -260,7 +260,7 @@ describe('PodsTab Component', () => {
   });
 
   describe('Empty State', () => {
-    it('should display empty state when no unhealthy pods exist', async () => {
+    it('should display empty state when no pods exist', async () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -273,13 +273,13 @@ describe('PodsTab Component', () => {
       // Assert: Should show empty state message
       await waitFor(() => {
         const emptyMessage =
-          screen.queryByTestId('no-unhealthy-pods-message') ||
-          screen.queryByText(/모든 Pod가 정상 Running 상태입니다|all pods are healthy/i);
+          screen.queryByTestId('no-pods-message') ||
+          screen.queryByText(/no pods found/i);
         expect(emptyMessage).toBeInTheDocument();
       });
     });
 
-    it('should display positive message with checkmark', async () => {
+    it('should display "No pods found" message', async () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -291,8 +291,8 @@ describe('PodsTab Component', () => {
 
       // Assert
       await waitFor(() => {
-        const emptyMessage = screen.getByTestId('no-unhealthy-pods-message');
-        expect(emptyMessage.textContent).toMatch(/✅|모든 Pod가 정상/i);
+        const emptyMessage = screen.getByTestId('no-pods-message');
+        expect(emptyMessage.textContent).toMatch(/no pods found/i);
       });
     });
 
@@ -385,7 +385,7 @@ describe('PodsTab Component', () => {
   });
 
   describe('API Integration', () => {
-    it('should fetch unhealthy pods from /api/pods/unhealthy endpoint', async () => {
+    it('should fetch all pods from /api/pods/all endpoint', async () => {
       // Arrange
       const mockPods = [
         {
@@ -409,7 +409,7 @@ describe('PodsTab Component', () => {
       // Assert: Verify fetch was called with correct URL
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/pods/unhealthy')
+          expect.stringContaining('/api/pods/all')
         );
       });
     });
@@ -442,7 +442,7 @@ describe('PodsTab Component', () => {
 
       // Assert: Should fetch from all namespaces
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/api/pods/unhealthy');
+        expect(global.fetch).toHaveBeenCalledWith('/api/pods/all');
       });
     });
 
@@ -459,7 +459,7 @@ describe('PodsTab Component', () => {
       // Assert: Should fetch with namespace parameter
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/pods/unhealthy?ns=dashboard-test'
+          '/api/pods/all?ns=dashboard-test'
         );
       });
     });
