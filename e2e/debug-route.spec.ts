@@ -170,7 +170,7 @@ test.describe('Debug Route - DebugContext Data Display', () => {
 
     // Assert: Left panel with endpoint list should exist
     const leftPanel = page.getByTestId('debug-left-panel')
-      .or(page.getByTestId('endpoint-list-panel'));
+      .or(page.getByTestId('debug-left-panel'));
     await expect(leftPanel).toBeVisible();
 
     // Assert: Endpoint list should be in left panel
@@ -207,7 +207,7 @@ test.describe('Debug Route - DebugContext Data Display', () => {
     await firstEndpoint.click();
 
     // Assert: Detail view should show endpoint information
-    const detailView = page.getByTestId('endpoint-detail-view')
+    const detailView = page.getByTestId('debug-right-panel')
       .or(page.getByTestId('debug-detail-view'));
     await expect(detailView).toBeVisible();
 
@@ -638,7 +638,7 @@ test.describe('Debug Route - Accessibility', () => {
     await page.keyboard.press('Enter');
 
     // Assert: Detail view should show
-    const detailView = page.getByTestId('endpoint-detail-view');
+    const detailView = page.getByTestId('debug-right-panel');
     await expect(detailView).toBeVisible();
   });
 
