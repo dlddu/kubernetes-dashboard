@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { SecretsTab } from './SecretsTab';
 
 // Mock fetch API
@@ -43,7 +42,7 @@ describe('SecretsTab Component', () => {
       expect(heading).toBeInTheDocument();
     });
 
-    it('should display namespace selector', () => {
+    it('should not display its own namespace selector', () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -53,11 +52,9 @@ describe('SecretsTab Component', () => {
       // Act
       render(<SecretsTab />);
 
-      // Assert
-      const namespaceSelector =
-        screen.queryByTestId('namespace-selector') ||
-        screen.queryByLabelText(/namespace/i);
-      expect(namespaceSelector).toBeInTheDocument();
+      // Assert: No local namespace selector should exist
+      const namespaceSelector = screen.queryByTestId('namespace-selector');
+      expect(namespaceSelector).not.toBeInTheDocument();
     });
   });
 
@@ -421,9 +418,8 @@ describe('SecretsTab Component', () => {
       });
     });
 
-    it('should filter secrets by selected namespace', async () => {
+    it('should refetch secrets when namespace prop changes', async () => {
       // Arrange
-      const user = userEvent.setup();
       const mockSecrets = [
         {
           name: 'secret-1',
@@ -444,18 +440,17 @@ describe('SecretsTab Component', () => {
         });
 
       // Act
-      render(<SecretsTab />);
+      const { rerender } = render(<SecretsTab />);
 
       // Wait for initial load
       await waitFor(() => {
-        expect(screen.queryByTestId('secrets-loading')).not.toBeInTheDocument();
+        expect(global.fetch).toHaveBeenCalledWith('/api/secrets');
       });
 
-      // Change namespace filter using selectOptions
-      const namespaceSelector = screen.getByTestId('namespace-selector') as HTMLSelectElement;
-      await user.selectOptions(namespaceSelector, 'default');
+      // Change namespace via prop
+      rerender(<SecretsTab namespace="default" />);
 
-      // Assert: Should fetch secrets for selected namespace
+      // Assert: Should fetch secrets for the new namespace
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith('/api/secrets?ns=default');
       });
