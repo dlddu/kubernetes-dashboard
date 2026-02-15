@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { NamespaceProvider, useNamespace } from './contexts/NamespaceContext';
+import { DebugProvider } from './contexts/DebugContext';
 import { TopBar } from './components/TopBar';
 import { BottomTabBar } from './components/BottomTabBar';
 import { SummaryCards } from './components/SummaryCards';
@@ -10,6 +11,7 @@ import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
 import { SecretsTab } from './components/SecretsTab';
+import { DebugPage } from './components/DebugPage';
 import { fetchUnhealthyPods } from './api/pods';
 
 function AppContent() {
@@ -59,6 +61,7 @@ function AppContent() {
           <Route path="/pods" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/pods/*" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/secrets" element={<SecretsTab namespace={namespaceParam} />} />
+          <Route path="/debug" element={<DebugPage />} />
         </Routes>
       </main>
       <BottomTabBar unhealthyPodCount={unhealthyPodCount} />
@@ -69,9 +72,11 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <NamespaceProvider>
-        <AppContent />
-      </NamespaceProvider>
+      <DebugProvider>
+        <NamespaceProvider>
+          <AppContent />
+        </NamespaceProvider>
+      </DebugProvider>
     </BrowserRouter>
   );
 }

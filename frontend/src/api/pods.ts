@@ -1,3 +1,5 @@
+import { debugFetch } from './debugFetch';
+
 export interface UnhealthyPodDetails {
   name: string;
   namespace: string;
@@ -15,7 +17,7 @@ export async function fetchUnhealthyPods(namespace?: string): Promise<UnhealthyP
     url += `?ns=${namespace}`;
   }
 
-  const response = await fetch(url);
+  const response = await debugFetch(url);
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

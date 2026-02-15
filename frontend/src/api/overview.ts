@@ -1,3 +1,5 @@
+import { debugFetch } from './debugFetch';
+
 export interface UnhealthyPodInfo {
   name: string;
   namespace: string;
@@ -31,7 +33,7 @@ export async function fetchOverview(namespace?: string): Promise<OverviewData> {
     url += `?namespace=${namespace}`;
   }
 
-  const response = await fetch(url);
+  const response = await debugFetch(url);
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

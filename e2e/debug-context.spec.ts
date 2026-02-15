@@ -11,11 +11,10 @@ import { test, expect } from '@playwright/test';
  *
  * Related Issue: DLD-343 - Debug Context and API Interceptor E2E Tests
  * Parent Issue: DLD-341 - Debug Page API Response Feature
- *
- * TODO: Activate when DLD-343 implementation is complete
+ * Activated for: DLD-344 - Debug Context and API Interceptor Implementation
  */
 
-test.describe.skip('Debug Context - Debug Mode Toggle', () => {
+test.describe('Debug Context - Debug Mode Toggle', () => {
   test('should toggle debug mode ON when debug toggle button is clicked', async ({ page }) => {
     // Tests that clicking the debug toggle activates debug mode in DebugContext
 
@@ -129,7 +128,7 @@ test.describe.skip('Debug Context - Debug Mode Toggle', () => {
   });
 });
 
-test.describe.skip('Debug Context - API Logging with Debug Mode ON', () => {
+test.describe('Debug Context - API Logging with Debug Mode ON', () => {
   test('should log API calls to DebugContext when debug mode is ON', async ({ page }) => {
     // Tests that API interceptor captures calls when isDebugMode = true
 
@@ -155,8 +154,7 @@ test.describe.skip('Debug Context - API Logging with Debug Mode ON', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: API logs list should be visible
-    const apiLogsList = page.getByTestId('api-logs-list')
-      .or(page.getByTestId('endpoint-list'));
+    const apiLogsList = page.getByTestId('endpoint-list');
     await expect(apiLogsList).toBeVisible();
 
     // Assert: Should have at least one logged API entry
@@ -187,8 +185,7 @@ test.describe.skip('Debug Context - API Logging with Debug Mode ON', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Should see /api/overview in the endpoint list
-    const overviewEndpoint = page.getByText(/\/api\/overview/i)
-      .or(page.getByTestId('endpoint-item').filter({ hasText: '/api/overview' }));
+    const overviewEndpoint = page.getByTestId('endpoint-item').filter({ hasText: '/api/overview' }).first();
     await expect(overviewEndpoint).toBeVisible();
   });
 
@@ -232,7 +229,7 @@ test.describe.skip('Debug Context - API Logging with Debug Mode ON', () => {
   });
 });
 
-test.describe.skip('Debug Context - API Log Metadata', () => {
+test.describe('Debug Context - API Log Metadata', () => {
   test('should include status code in API log entry', async ({ page }) => {
     // Tests that DebugContext captures HTTP status code metadata
 
@@ -256,9 +253,7 @@ test.describe.skip('Debug Context - API Log Metadata', () => {
     await firstLogEntry.click();
 
     // Assert: Status code should be displayed
-    const statusCode = page.getByTestId('status-code')
-      .or(page.getByText(/status|200|404|500/i))
-      .or(page.getByText(/^200$/));
+    const statusCode = page.getByTestId('status-code').first();
     await expect(statusCode).toBeVisible();
 
     // Assert: Status code should be 200 for successful requests
@@ -294,9 +289,7 @@ test.describe.skip('Debug Context - API Log Metadata', () => {
     await metadataTab.click();
 
     // Assert: Timestamp should be displayed
-    const timestamp = page.getByTestId('request-timestamp')
-      .or(page.getByText(/timestamp/i))
-      .or(page.locator('text=/\\d{4}-\\d{2}-\\d{2}/'));
+    const timestamp = page.getByTestId('request-timestamp');
     await expect(timestamp).toBeVisible();
   });
 
@@ -328,9 +321,7 @@ test.describe.skip('Debug Context - API Log Metadata', () => {
     await metadataTab.click();
 
     // Assert: Duration should be displayed
-    const duration = page.getByTestId('request-duration')
-      .or(page.getByText(/duration|time/i))
-      .or(page.locator('text=/\\d+\\s*ms/'));
+    const duration = page.getByTestId('request-duration');
     await expect(duration).toBeVisible();
 
     // Assert: Duration should be a positive number
@@ -367,18 +358,15 @@ test.describe.skip('Debug Context - API Log Metadata', () => {
       .or(page.getByRole('tabpanel'));
 
     // Assert: All three metadata fields should be visible
-    await expect(metadataContent.getByTestId('status-code')
-      .or(metadataContent.getByText(/status/i))).toBeVisible();
+    await expect(metadataContent.getByTestId('status-code')).toBeVisible();
 
-    await expect(metadataContent.getByTestId('request-timestamp')
-      .or(metadataContent.getByText(/timestamp/i))).toBeVisible();
+    await expect(metadataContent.getByTestId('request-timestamp')).toBeVisible();
 
-    await expect(metadataContent.getByTestId('request-duration')
-      .or(metadataContent.getByText(/duration/i))).toBeVisible();
+    await expect(metadataContent.getByTestId('request-duration')).toBeVisible();
   });
 });
 
-test.describe.skip('Debug Context - No Logging when Debug Mode OFF', () => {
+test.describe('Debug Context - No Logging when Debug Mode OFF', () => {
   test('should not log API calls when debug mode is OFF', async ({ page }) => {
     // Tests that API interceptor does not capture calls when isDebugMode = false
 
@@ -512,7 +500,7 @@ test.describe.skip('Debug Context - No Logging when Debug Mode OFF', () => {
   });
 });
 
-test.describe.skip('Debug Context - Integration with Debug Page', () => {
+test.describe('Debug Context - Integration with Debug Page', () => {
   test('should synchronize DebugContext state with /debug page display', async ({ page }) => {
     // Tests that /debug page reflects current DebugContext state
 
@@ -533,8 +521,7 @@ test.describe.skip('Debug Context - Integration with Debug Page', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Debug page should display logs from DebugContext
-    const apiLogsList = page.getByTestId('api-logs-list')
-      .or(page.getByTestId('endpoint-list'));
+    const apiLogsList = page.getByTestId('endpoint-list');
     await expect(apiLogsList).toBeVisible();
 
     const logEntries = page.getByTestId('endpoint-item');
