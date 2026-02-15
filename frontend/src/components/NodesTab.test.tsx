@@ -71,6 +71,7 @@ describe('NodesTab Component', () => {
         {
           name: 'test-node',
           status: 'Ready',
+          role: '',
           cpuPercent: 45.5,
           memoryPercent: 60.2,
           podCount: 10,
@@ -125,6 +126,7 @@ describe('NodesTab Component', () => {
         {
           name: 'node-1',
           status: 'Ready',
+          role: '',
           cpuPercent: 50,
           memoryPercent: 60,
           podCount: 15,
@@ -132,6 +134,7 @@ describe('NodesTab Component', () => {
         {
           name: 'node-2',
           status: 'Ready',
+          role: '',
           cpuPercent: 30,
           memoryPercent: 40,
           podCount: 8,
@@ -159,6 +162,7 @@ describe('NodesTab Component', () => {
         {
           name: 'test-node',
           status: 'Ready',
+          role: '',
           cpuPercent: 45.5,
           memoryPercent: 60.2,
           podCount: 10,
@@ -185,6 +189,7 @@ describe('NodesTab Component', () => {
       const mockNodes = Array.from({ length: 5 }, (_, i) => ({
         name: `node-${i + 1}`,
         status: 'Ready',
+        role: '',
         cpuPercent: 40 + i * 5,
         memoryPercent: 50 + i * 5,
         podCount: 10 + i,
@@ -322,6 +327,7 @@ describe('NodesTab Component', () => {
         {
           name: 'test-node',
           status: 'Ready',
+          role: '',
           cpuPercent: 45,
           memoryPercent: 60,
           podCount: 10,
@@ -366,6 +372,7 @@ describe('NodesTab Component', () => {
         {
           name: 'node-1',
           status: 'Ready',
+          role: '',
           cpuPercent: 50,
           memoryPercent: 60,
           podCount: 10,
@@ -373,6 +380,7 @@ describe('NodesTab Component', () => {
         {
           name: 'node-2',
           status: 'Ready',
+          role: '',
           cpuPercent: 40,
           memoryPercent: 50,
           podCount: 8,
@@ -423,6 +431,7 @@ describe('NodesTab Component', () => {
         {
           name: 'test-node',
           status: 'Ready',
+          role: '',
           cpuPercent: 45.5,
           memoryPercent: 60.2,
           podCount: 10,
@@ -450,6 +459,7 @@ describe('NodesTab Component', () => {
         {
           name: 'node-1',
           status: 'Ready',
+          role: '',
           cpuPercent: 50,
           memoryPercent: 60,
           podCount: 10,

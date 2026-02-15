@@ -659,3 +659,24 @@ test.describe('Nodes Tab - Navigation and Integration', () => {
     expect(foundMatchingNode).toBe(true);
   });
 });
+
+test.describe('Nodes Tab - Role Display', () => {
+  test('should display node role when available', async ({ page }) => {
+    // Arrange: Navigate to the Nodes page
+    await page.goto('/nodes');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Node cards should be visible
+    const firstNodeCard = page.getByTestId('node-card').first();
+    await expect(firstNodeCard).toBeVisible();
+
+    // Role badge may or may not be present depending on node labels
+    const roleBadge = firstNodeCard.getByTestId('node-role');
+    const roleCount = await roleBadge.count();
+    if (roleCount > 0) {
+      await expect(roleBadge).toBeVisible();
+      const roleText = await roleBadge.innerText();
+      expect(roleText.length).toBeGreaterThan(0);
+    }
+  });
+});

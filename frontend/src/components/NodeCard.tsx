@@ -2,7 +2,7 @@ import { NodeInfo } from '../api/nodes';
 import { StatusBadge } from './StatusBadge';
 import { UsageBar } from './UsageBar';
 
-export function NodeCard({ name, status, cpuPercent, memoryPercent, podCount }: NodeInfo) {
+export function NodeCard({ name, status, role, cpuPercent, memoryPercent, podCount }: NodeInfo) {
   const isReady = status === 'Ready';
 
   // Clamp percentages between 0 and 100
@@ -18,6 +18,15 @@ export function NodeCard({ name, status, cpuPercent, memoryPercent, podCount }: 
         </h3>
         <StatusBadge status={status} testId="status-badge" />
       </div>
+
+      {/* Node Role */}
+      {role && (
+        <div data-testid="node-role" className="text-xs">
+          <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+            {role}
+          </span>
+        </div>
+      )}
 
       {/* Ready Node - Show Usage Bars */}
       {isReady && (

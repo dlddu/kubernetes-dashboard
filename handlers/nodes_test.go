@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // TestNodesHandler tests the /api/nodes endpoint
@@ -110,7 +112,7 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 
 		// Verify first node has required fields
 		firstNode := nodes[0]
-		requiredFields := []string{"name", "status", "cpuPercent", "memoryPercent", "podCount"}
+		requiredFields := []string{"name", "status", "role", "cpuPercent", "memoryPercent", "podCount"}
 		for _, field := range requiredFields {
 			if _, exists := firstNode[field]; !exists {
 				t.Errorf("expected field '%s' in node object, but not found", field)
@@ -443,6 +445,62 @@ func TestNodesHandlerPodCountAccuracy(t *testing.T) {
 		// At least some pods should exist in the cluster (e.g., kube-system)
 		if totalPods == 0 {
 			t.Log("Warning: No pods found across all nodes (unexpected in most clusters)")
+		}
+	})
+}
+
+// TestGetNodeRole tests the getNodeRole helper function
+func TestGetNodeRole(t *testing.T) {
+	t.Run("should extract role from node.kubernetes.io/role label", func(t *testing.T) {
+		node := corev1.Node{}
+		node.Labels = map[string]string{
+			"node.kubernetes.io/role": "worker",
+		}
+		role := getNodeRole(node)
+		if role != "worker" {
+			t.Errorf("expected 'worker', got '%s'", role)
+		}
+	})
+
+	t.Run("should extract role from node-role.kubernetes.io prefix", func(t *testing.T) {
+		node := corev1.Node{}
+		node.Labels = map[string]string{
+			"node-role.kubernetes.io/control-plane": "true",
+		}
+		role := getNodeRole(node)
+		if role != "control-plane" {
+			t.Errorf("expected 'control-plane', got '%s'", role)
+		}
+	})
+
+	t.Run("should prefer node.kubernetes.io/role over prefix format", func(t *testing.T) {
+		node := corev1.Node{}
+		node.Labels = map[string]string{
+			"node.kubernetes.io/role":               "worker",
+			"node-role.kubernetes.io/control-plane": "true",
+		}
+		role := getNodeRole(node)
+		if role != "worker" {
+			t.Errorf("expected 'worker', got '%s'", role)
+		}
+	})
+
+	t.Run("should return empty string when no role labels exist", func(t *testing.T) {
+		node := corev1.Node{}
+		node.Labels = map[string]string{
+			"kubernetes.io/hostname": "node-1",
+		}
+		role := getNodeRole(node)
+		if role != "" {
+			t.Errorf("expected empty string, got '%s'", role)
+		}
+	})
+
+	t.Run("should return empty string for nil labels", func(t *testing.T) {
+		node := corev1.Node{}
+		role := getNodeRole(node)
+		if role != "" {
+			t.Errorf("expected empty string, got '%s'", role)
 		}
 	})
 }
