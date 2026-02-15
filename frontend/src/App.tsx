@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { NamespaceProvider, useNamespace } from './contexts/NamespaceContext';
 import { DebugProvider } from './contexts/DebugContext';
+import { OverviewProvider, useOverview } from './contexts/OverviewContext';
 import { TopBar } from './components/TopBar';
 import { BottomTabBar } from './components/BottomTabBar';
 import { SummaryCards } from './components/SummaryCards';
@@ -12,29 +12,13 @@ import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
 import { SecretsTab } from './components/SecretsTab';
 import { DebugPage } from './components/DebugPage';
-import { fetchUnhealthyPods } from './api/pods';
 
 function AppContent() {
   const { selectedNamespace } = useNamespace();
-  const [unhealthyPodCount, setUnhealthyPodCount] = useState(0);
+  const { overviewData } = useOverview();
 
   const namespaceParam = selectedNamespace === 'all' ? undefined : selectedNamespace;
-
-  useEffect(() => {
-    const loadUnhealthyPodCount = async () => {
-      try {
-        const ns = selectedNamespace === 'all' ? '' : selectedNamespace;
-        const pods = await fetchUnhealthyPods(ns);
-        setUnhealthyPodCount(pods.length);
-      } catch (error) {
-        console.error('Failed to fetch unhealthy pods:', error);
-      }
-    };
-
-    loadUnhealthyPodCount();
-    const interval = setInterval(loadUnhealthyPodCount, 30000);
-    return () => clearInterval(interval);
-  }, [selectedNamespace]);
+  const unhealthyPodCount = overviewData?.unhealthyPods ?? 0;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
@@ -74,7 +58,9 @@ function App() {
     <BrowserRouter>
       <DebugProvider>
         <NamespaceProvider>
-          <AppContent />
+          <OverviewProvider>
+            <AppContent />
+          </OverviewProvider>
         </NamespaceProvider>
       </DebugProvider>
     </BrowserRouter>

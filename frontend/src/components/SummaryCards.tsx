@@ -1,43 +1,12 @@
-import { useState, useEffect } from 'react';
-import { fetchOverview, OverviewData } from '../api/overview';
-import { useNamespace } from '../contexts/NamespaceContext';
 import { SummaryCard } from './SummaryCard';
 import { UsageBar } from './UsageBar';
-import { usePolling } from '../hooks/usePolling';
+import { useOverview } from '../contexts/OverviewContext';
 
 export function SummaryCards() {
-  const { selectedNamespace } = useNamespace();
-  const [data, setData] = useState<OverviewData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const loadOverview = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Pass namespace to API (if not 'all')
-      const namespace = selectedNamespace === 'all' ? undefined : selectedNamespace;
-      const overview = await fetchOverview(namespace);
-
-      setData(overview);
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Use polling hook for automatic refresh
-  usePolling(loadOverview);
-
-  // Re-load when namespace changes
-  useEffect(() => {
-    loadOverview();
-  }, [selectedNamespace]);
+  const { overviewData: data, isLoading, error, refresh } = useOverview();
 
   const handleRetry = () => {
-    loadOverview();
+    refresh();
   };
 
   // Loading state - show skeleton cards

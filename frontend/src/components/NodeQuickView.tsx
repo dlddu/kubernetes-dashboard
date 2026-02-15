@@ -1,44 +1,17 @@
-import { useState, useEffect } from 'react';
-import { fetchOverview, NodeInfo } from '@/api/overview';
 import { UsageBar } from './UsageBar';
-import { usePolling } from '../hooks/usePolling';
+import { useOverview } from '../contexts/OverviewContext';
 
-interface NodeQuickViewProps {
-  namespace?: string;
-}
+export function NodeQuickView() {
+  const { overviewData, isLoading, error, refresh } = useOverview();
 
-export function NodeQuickView({ namespace }: NodeQuickViewProps = {}) {
-  const [nodes, setNodes] = useState<NodeInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await fetchOverview(namespace);
-      setNodes(data.nodesList || []);
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Use polling hook for automatic refresh
-  usePolling(loadData);
-
-  // Re-load when namespace changes
-  useEffect(() => {
-    loadData();
-  }, [namespace]);
+  const nodes = overviewData?.nodesList || [];
 
   const handleRetry = () => {
-    loadData();
+    refresh();
   };
 
-  // Loading state
-  if (isLoading) {
+  // Loading state (only on initial load, not during background refresh)
+  if (isLoading && !overviewData) {
     return (
       <section
         data-testid="node-quick-view"

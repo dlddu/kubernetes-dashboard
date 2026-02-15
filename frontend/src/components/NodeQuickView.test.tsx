@@ -7,18 +7,9 @@ interface ErrorWithStatus extends Error {
   status?: number;
 }
 
-// Mock the overview API
-vi.mock('@/api/overview', () => ({
-  fetchOverview: vi.fn(),
-}));
-
-// Mock the usePolling hook
-vi.mock('@/hooks/usePolling', () => ({
-  usePolling: vi.fn(() => ({
-    refresh: vi.fn(),
-    lastUpdate: new Date(),
-    isLoading: false,
-  })),
+// Mock the OverviewContext
+vi.mock('../contexts/OverviewContext', () => ({
+  useOverview: vi.fn(),
 }));
 
 // Mock the UsageBar component
@@ -37,7 +28,7 @@ vi.mock('./UsageBar', () => ({
   ),
 }));
 
-import { fetchOverview } from '@/api/overview';
+import { useOverview } from '../contexts/OverviewContext';
 
 describe('NodeQuickView', () => {
   beforeEach(() => {
@@ -47,20 +38,26 @@ describe('NodeQuickView', () => {
   describe('rendering - happy path', () => {
     it('should render without crashing', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 2, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -75,20 +72,26 @@ describe('NodeQuickView', () => {
 
     it('should be accessible as section', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 2, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -103,20 +106,26 @@ describe('NodeQuickView', () => {
 
     it('should display component title', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 2, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -133,9 +142,13 @@ describe('NodeQuickView', () => {
   describe('loading state', () => {
     it('should display loading indicator while fetching', () => {
       // Arrange
-      vi.mocked(fetchOverview).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
-      );
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: true,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -147,9 +160,13 @@ describe('NodeQuickView', () => {
 
     it('should show loading text', () => {
       // Arrange
-      vi.mocked(fetchOverview).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
-      );
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: true,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -161,9 +178,13 @@ describe('NodeQuickView', () => {
 
     it('should be accessible during loading', () => {
       // Arrange
-      vi.mocked(fetchOverview).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
-      );
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: true,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -175,9 +196,13 @@ describe('NodeQuickView', () => {
 
     it('should display skeleton UI during loading', () => {
       // Arrange
-      vi.mocked(fetchOverview).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
-      );
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: true,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -193,18 +218,24 @@ describe('NodeQuickView', () => {
   describe('displaying nodes - maximum 5 items', () => {
     it('should display up to 5 nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 8, total: 10 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 10 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 8, total: 10 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 10 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -219,20 +250,26 @@ describe('NodeQuickView', () => {
 
     it('should display 1 node when only 1 exists', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -247,16 +284,22 @@ describe('NodeQuickView', () => {
 
     it('should display 3 nodes when 3 exist', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 3, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 3, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+            { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -271,18 +314,24 @@ describe('NodeQuickView', () => {
 
     it('should limit to 5 nodes even when more exist', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 10, total: 10 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 10 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 10, total: 10 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 10 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -299,20 +348,26 @@ describe('NodeQuickView', () => {
   describe('node item structure', () => {
     it('should display node name for each item', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-master-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-master-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -328,20 +383,26 @@ describe('NodeQuickView', () => {
 
     it('should display node status for each item', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -357,20 +418,26 @@ describe('NodeQuickView', () => {
 
     it('should display CPU usage bar for Ready nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -385,20 +452,26 @@ describe('NodeQuickView', () => {
 
     it('should display Memory usage bar for Ready nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -414,16 +487,22 @@ describe('NodeQuickView', () => {
 
     it('should display all required fields for multiple nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 3, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 3, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+            { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -450,16 +529,22 @@ describe('NodeQuickView', () => {
   describe('NotReady nodes - priority display', () => {
     it('should display NotReady nodes before Ready nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 2, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'ready-node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'not-ready-node', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'ready-node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'ready-node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'not-ready-node', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+            { name: 'ready-node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -475,15 +560,21 @@ describe('NodeQuickView', () => {
 
     it('should display warning indicator for NotReady nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 2 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 2 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+            { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -498,14 +589,20 @@ describe('NodeQuickView', () => {
 
     it('should display warning message instead of usage bars for NotReady nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 2 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 2 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -521,14 +618,20 @@ describe('NodeQuickView', () => {
 
     it('should not display usage bars for NotReady nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 0, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-        nodesList: [
-          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 0, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 0,
+          avgMemoryPercent: 0,
+          nodesList: [
+            { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -543,16 +646,22 @@ describe('NodeQuickView', () => {
 
     it('should display multiple NotReady nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 0, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-        nodesList: [
-          { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'node-2', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'node-3', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 0, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 0,
+          avgMemoryPercent: 0,
+          nodesList: [
+            { name: 'node-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+            { name: 'node-2', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+            { name: 'node-3', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -572,12 +681,18 @@ describe('NodeQuickView', () => {
   describe('empty state', () => {
     it('should handle empty node list', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 0, total: 0 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-        nodesList: [],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 0, total: 0 },
+          unhealthyPods: 0,
+          avgCpuPercent: 0,
+          avgMemoryPercent: 0,
+          nodesList: [],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -592,12 +707,18 @@ describe('NodeQuickView', () => {
 
     it('should display message when no nodes exist', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 0, total: 0 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-        nodesList: [],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 0, total: 0 },
+          unhealthyPods: 0,
+          avgCpuPercent: 0,
+          avgMemoryPercent: 0,
+          nodesList: [],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -614,18 +735,24 @@ describe('NodeQuickView', () => {
   describe('view more link', () => {
     it('should display "view more" link when more than 5 nodes exist', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 8, total: 10 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 10 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 8, total: 10 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 10 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -640,18 +767,24 @@ describe('NodeQuickView', () => {
 
     it('should be a clickable link', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 8, total: 10 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 10 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 8, total: 10 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 10 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -666,18 +799,24 @@ describe('NodeQuickView', () => {
 
     it('should navigate to nodes page', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 8, total: 10 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 10 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 8, total: 10 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 10 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -694,18 +833,24 @@ describe('NodeQuickView', () => {
 
     it('should have accessible link text', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 8, total: 10 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 10 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 8, total: 10 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 10 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -720,16 +865,22 @@ describe('NodeQuickView', () => {
 
     it('should not display link when 5 or fewer nodes exist', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 3, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 3, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+            { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -746,7 +897,13 @@ describe('NodeQuickView', () => {
   describe('error handling', () => {
     it('should handle API fetch errors gracefully', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockRejectedValueOnce(new Error('Network error'));
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: false,
+        error: new Error('Network error'),
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -760,7 +917,13 @@ describe('NodeQuickView', () => {
 
     it('should display error message text', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockRejectedValueOnce(new Error('Failed to fetch'));
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: false,
+        error: new Error('Failed to fetch'),
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -774,7 +937,13 @@ describe('NodeQuickView', () => {
 
     it('should display retry button on error', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockRejectedValueOnce(new Error('Network error'));
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: false,
+        error: new Error('Network error'),
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -789,47 +958,40 @@ describe('NodeQuickView', () => {
     it('should retry fetching when retry button is clicked', async () => {
       // Arrange
       const user = userEvent.setup();
-      vi.mocked(fetchOverview)
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce({
-          nodes: { ready: 1, total: 1 },
-          unhealthyPods: 0,
-          avgCpuPercent: 45.5,
-          avgMemoryPercent: 62.3,
-          nodesList: [
-            {
-              name: 'node-1',
-              status: 'Ready',
-              role: '',
-              cpuPercent: 45.5,
-              memoryPercent: 62.3,
-            },
-          ],
-        });
+      const mockRefresh = vi.fn();
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: false,
+        error: new Error('Network error'),
+        refresh: mockRefresh,
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
 
       // Assert - Initial error state
       await waitFor(() => {
-        const errorMessage = screen.getByTestId('error-message');
-        expect(errorMessage).toBeInTheDocument();
+        expect(screen.getByTestId('error-message')).toBeInTheDocument();
       });
 
       // Act - Click retry
       const retryButton = screen.getByRole('button', { name: /retry|try again/i });
       await user.click(retryButton);
 
-      // Assert - Success state after retry
-      await waitFor(() => {
-        const nodeItems = screen.getAllByTestId('node-item');
-        expect(nodeItems.length).toBe(1);
-      });
+      // Assert - refresh was called
+      expect(mockRefresh).toHaveBeenCalled();
     });
 
     it('should not show loading indicator after error', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockRejectedValueOnce(new Error('Network error'));
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: false,
+        error: new Error('Network error'),
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -848,7 +1010,13 @@ describe('NodeQuickView', () => {
       // Arrange
       const error = new Error('Not found') as ErrorWithStatus;
       error.status = 404;
-      vi.mocked(fetchOverview).mockRejectedValueOnce(error);
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: false,
+        error: error,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -864,7 +1032,13 @@ describe('NodeQuickView', () => {
       // Arrange
       const error = new Error('Internal server error') as ErrorWithStatus;
       error.status = 500;
-      vi.mocked(fetchOverview).mockRejectedValueOnce(error);
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: null,
+        isLoading: false,
+        error: error,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
+      });
 
       // Act
       render(<NodeQuickView />);
@@ -880,20 +1054,26 @@ describe('NodeQuickView', () => {
   describe('accessibility', () => {
     it('should have semantic HTML structure', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -908,20 +1088,26 @@ describe('NodeQuickView', () => {
 
     it('should have accessible heading', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -936,15 +1122,21 @@ describe('NodeQuickView', () => {
 
     it('should have accessible list for node items', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 2, total: 2 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 2 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -959,15 +1151,21 @@ describe('NodeQuickView', () => {
 
     it('should have list items for each node', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 2, total: 2 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 2 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -982,18 +1180,24 @@ describe('NodeQuickView', () => {
 
     it('should have accessible link to nodes page', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 8, total: 10 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 10 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 8, total: 10 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 10 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1008,20 +1212,26 @@ describe('NodeQuickView', () => {
 
     it('should have proper ARIA attributes for progress bars', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1042,20 +1252,26 @@ describe('NodeQuickView', () => {
   describe('styling and layout', () => {
     it('should have proper CSS classes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1070,20 +1286,26 @@ describe('NodeQuickView', () => {
 
     it('should be styled as a card/section component', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1098,16 +1320,22 @@ describe('NodeQuickView', () => {
 
     it('should have proper spacing between node items', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 3, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 3, total: 3 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'node-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'node-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+            { name: 'node-3', status: 'Ready', role: '', cpuPercent: 50.0, memoryPercent: 60.0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1128,18 +1356,24 @@ describe('NodeQuickView', () => {
   describe('edge cases', () => {
     it('should handle exactly 5 nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 5, total: 5 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: Array.from({ length: 5 }, (_, i) => ({
-          name: `node-${i + 1}`,
-          status: 'Ready',
-          role: '',
-          cpuPercent: 40.0 + i,
-          memoryPercent: 50.0 + i,
-        })),
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 5, total: 5 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: Array.from({ length: 5 }, (_, i) => ({
+            name: `node-${i + 1}`,
+            status: 'Ready',
+            role: '',
+            cpuPercent: 40.0 + i,
+            memoryPercent: 50.0 + i,
+          })),
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1154,20 +1388,26 @@ describe('NodeQuickView', () => {
 
     it('should handle very long node names', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'very-long-node-name-that-should-be-truncated-or-handled-gracefully',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            {
+              name: 'very-long-node-name-that-should-be-truncated-or-handled-gracefully',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 45.5,
+              memoryPercent: 62.3,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1184,20 +1424,26 @@ describe('NodeQuickView', () => {
 
     it('should handle 0% CPU usage', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 0,
-            memoryPercent: 0,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 0,
+          avgMemoryPercent: 0,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 0,
+              memoryPercent: 0,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1213,20 +1459,26 @@ describe('NodeQuickView', () => {
 
     it('should handle 100% CPU usage', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 100,
-        avgMemoryPercent: 100,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 100,
-            memoryPercent: 100,
-          },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 1, total: 1 },
+          unhealthyPods: 0,
+          avgCpuPercent: 100,
+          avgMemoryPercent: 100,
+          nodesList: [
+            {
+              name: 'node-1',
+              status: 'Ready',
+              role: '',
+              cpuPercent: 100,
+              memoryPercent: 100,
+            },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1242,17 +1494,23 @@ describe('NodeQuickView', () => {
 
     it('should handle mixed Ready and NotReady nodes', async () => {
       // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 2, total: 4 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          { name: 'ready-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
-          { name: 'not-ready-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-          { name: 'ready-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
-          { name: 'not-ready-2', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
-        ],
+      vi.mocked(useOverview).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 4 },
+          unhealthyPods: 0,
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+          nodesList: [
+            { name: 'ready-1', status: 'Ready', role: '', cpuPercent: 40.0, memoryPercent: 50.0 },
+            { name: 'not-ready-1', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+            { name: 'ready-2', status: 'Ready', role: '', cpuPercent: 45.0, memoryPercent: 55.0 },
+            { name: 'not-ready-2', status: 'NotReady', role: '', cpuPercent: 0, memoryPercent: 0 },
+          ],
+        },
+        isLoading: false,
+        error: null,
+        refresh: vi.fn(),
+        lastUpdate: new Date(),
       });
 
       // Act
@@ -1268,62 +1526,6 @@ describe('NodeQuickView', () => {
         const secondNodeName = nodeItems[1].querySelector('[data-testid="node-name"]');
         expect(firstNodeName?.textContent).toMatch(/not-ready/);
         expect(secondNodeName?.textContent).toMatch(/not-ready/);
-      });
-    });
-  });
-
-  describe('namespace filtering', () => {
-    it('should support optional namespace prop', async () => {
-      // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
-      });
-
-      // Act
-      render(<NodeQuickView namespace="default" />);
-
-      // Assert
-      await waitFor(() => {
-        expect(fetchOverview).toHaveBeenCalledWith('default');
-      });
-    });
-
-    it('should call API without namespace when prop not provided', async () => {
-      // Arrange
-      vi.mocked(fetchOverview).mockResolvedValueOnce({
-        nodes: { ready: 1, total: 1 },
-        unhealthyPods: 0,
-        avgCpuPercent: 45.5,
-        avgMemoryPercent: 62.3,
-        nodesList: [
-          {
-            name: 'node-1',
-            status: 'Ready',
-            role: '',
-            cpuPercent: 45.5,
-            memoryPercent: 62.3,
-          },
-        ],
-      });
-
-      // Act
-      render(<NodeQuickView />);
-
-      // Assert
-      await waitFor(() => {
-        expect(fetchOverview).toHaveBeenCalledWith(undefined);
       });
     });
   });

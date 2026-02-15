@@ -1,55 +1,31 @@
-import { useState, useEffect } from 'react';
-import { fetchOverview, UnhealthyPodInfo } from '../api/overview';
+import type { UnhealthyPodInfo } from '../api/overview';
 import { StatusBadge } from './StatusBadge';
-import { usePolling } from '../hooks/usePolling';
+import { useOverview } from '../contexts/OverviewContext';
 
-interface UnhealthyPodPreviewProps {
-  namespace?: string;
-}
+export function UnhealthyPodPreview() {
+  const { overviewData, isLoading, error } = useOverview();
 
-export function UnhealthyPodPreview({ namespace }: UnhealthyPodPreviewProps) {
-  const [unhealthyPods, setUnhealthyPods] = useState<UnhealthyPodInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await fetchOverview(namespace);
-
-      // Generate mock unhealthy pods data based on unhealthyPods count
-      // This will be replaced by actual backend data later
-      const mockPods: UnhealthyPodInfo[] = [];
-      const statuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'Pending', 'Failed', 'Unknown'];
-      const namespaces = ['default', 'kube-system', 'monitoring', 'production'];
-
-      for (let i = 0; i < data.unhealthyPods; i++) {
-        mockPods.push({
-          name: `pod-${i + 1}`,
-          namespace: namespaces[i % namespaces.length],
-          status: statuses[i % statuses.length],
-        });
-      }
-
-      setUnhealthyPods(data.unhealthyPodsList || mockPods);
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
+  // Derive unhealthy pods from context data
+  const unhealthyPods: UnhealthyPodInfo[] = (() => {
+    if (!overviewData) return [];
+    if (overviewData.unhealthyPodsList) return overviewData.unhealthyPodsList;
+    // Generate mock unhealthy pods data based on unhealthyPods count
+    // This will be replaced by actual backend data later
+    const mockPods: UnhealthyPodInfo[] = [];
+    const statuses = ['CrashLoopBackOff', 'ImagePullBackOff', 'Pending', 'Failed', 'Unknown'];
+    const namespaces = ['default', 'kube-system', 'monitoring', 'production'];
+    for (let i = 0; i < overviewData.unhealthyPods; i++) {
+      mockPods.push({
+        name: `pod-${i + 1}`,
+        namespace: namespaces[i % namespaces.length],
+        status: statuses[i % statuses.length],
+      });
     }
-  };
+    return mockPods;
+  })();
 
-  // Use polling hook for automatic refresh
-  usePolling(loadData);
-
-  // Re-load when namespace changes
-  useEffect(() => {
-    loadData();
-  }, [namespace]);
-
-  // Loading state
-  if (isLoading) {
+  // Loading state (only on initial load, not during background refresh)
+  if (isLoading && !overviewData) {
     return (
       <section
         data-testid="unhealthy-pod-preview"
