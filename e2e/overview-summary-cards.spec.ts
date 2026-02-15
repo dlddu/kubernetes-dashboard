@@ -443,7 +443,7 @@ test.describe('Overview Tab - Data Accuracy', () => {
 
     // Assert: Percentage should be between 0-100
     const cpuPercentage = parseFloat(cpuText.replace('%', ''));
-    expect(cpuPercentage).toBeGreaterThanOrEqual(0);
+    expect(cpuPercentage).toBeGreaterThan(0);
     expect(cpuPercentage).toBeLessThanOrEqual(100);
 
     // Assert: UsageBar aria-valuenow should match displayed percentage
@@ -469,7 +469,7 @@ test.describe('Overview Tab - Data Accuracy', () => {
 
     // Assert: Percentage should be between 0-100
     const memoryPercentage = parseFloat(memoryText.replace('%', ''));
-    expect(memoryPercentage).toBeGreaterThanOrEqual(0);
+    expect(memoryPercentage).toBeGreaterThan(0);
     expect(memoryPercentage).toBeLessThanOrEqual(100);
 
     // Assert: UsageBar aria-valuenow should match displayed percentage

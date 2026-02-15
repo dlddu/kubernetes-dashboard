@@ -75,7 +75,7 @@ test.describe('NodeQuickView Component', () => {
     // Assert: CPU usage percentage should be between 0-100
     const cpuAriaValue = await cpuUsageBar.getAttribute('aria-valuenow');
     const cpuPercentage = parseFloat(cpuAriaValue!);
-    expect(cpuPercentage).toBeGreaterThanOrEqual(0);
+    expect(cpuPercentage).toBeGreaterThan(0);
     expect(cpuPercentage).toBeLessThanOrEqual(100);
 
     // Assert: Memory usage bar should have progressbar role
@@ -90,7 +90,7 @@ test.describe('NodeQuickView Component', () => {
     // Assert: Memory usage percentage should be between 0-100
     const memoryAriaValue = await memoryUsageBar.getAttribute('aria-valuenow');
     const memoryPercentage = parseFloat(memoryAriaValue!);
-    expect(memoryPercentage).toBeGreaterThanOrEqual(0);
+    expect(memoryPercentage).toBeGreaterThan(0);
     expect(memoryPercentage).toBeLessThanOrEqual(100);
   });
 

@@ -58,6 +58,19 @@ jobs:
           kubectl cluster-info
           kubectl get nodes
 
+      - name: Wait for metrics-server
+        run: |
+          echo "Waiting for metrics-server to serve node metrics..."
+          for i in $(seq 1 60); do
+            if kubectl top nodes 2>/dev/null; then
+              echo "Metrics are available!"
+              exit 0
+            fi
+            echo "Attempt $i/60 - waiting for metrics..."
+            sleep 5
+          done
+          echo "WARNING: metrics-server may not be ready, dashboard will use fallback"
+
       # ---- Step 4: Fixtures + Deploy in parallel ----
       - name: Apply fixtures and deploy dashboard
         run: |

@@ -187,7 +187,7 @@ test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
     // Assert: aria-valuenow should be a valid percentage (0-100)
     const ariaValueNow = await cpuProgressBar.getAttribute('aria-valuenow');
     const cpuPercentage = parseFloat(ariaValueNow!);
-    expect(cpuPercentage).toBeGreaterThanOrEqual(0);
+    expect(cpuPercentage).toBeGreaterThan(0);
     expect(cpuPercentage).toBeLessThanOrEqual(100);
   });
 
@@ -214,7 +214,7 @@ test.describe('Nodes Tab - CPU/Memory UsageBar Accessibility', () => {
     // Assert: aria-valuenow should be a valid percentage (0-100)
     const ariaValueNow = await memoryProgressBar.getAttribute('aria-valuenow');
     const memoryPercentage = parseFloat(ariaValueNow!);
-    expect(memoryPercentage).toBeGreaterThanOrEqual(0);
+    expect(memoryPercentage).toBeGreaterThan(0);
     expect(memoryPercentage).toBeLessThanOrEqual(100);
   });
 

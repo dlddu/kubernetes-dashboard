@@ -84,6 +84,36 @@ create_cluster() {
     kubectl get nodes
 
     log_info "Cluster created successfully"
+
+    # Install metrics-server
+    install_metrics_server
+}
+
+# Install metrics-server for real CPU/Memory metrics
+install_metrics_server() {
+    log_info "Installing metrics-server..."
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+    # Patch metrics-server for kind (needs --kubelet-insecure-tls)
+    kubectl patch deployment metrics-server -n kube-system --type='json' -p='[
+      {"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"},
+      {"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-preferred-address-types=InternalIP"}
+    ]'
+
+    log_info "Waiting for metrics-server to be ready..."
+    kubectl wait --for=condition=Available deployment/metrics-server -n kube-system --timeout=120s
+
+    # Wait for metrics data to be available (metrics-server needs ~60s to collect first metrics)
+    log_info "Waiting for metrics data to be available..."
+    for i in $(seq 1 30); do
+        if kubectl top nodes > /dev/null 2>&1; then
+            log_info "metrics-server is ready and serving metrics"
+            return 0
+        fi
+        log_warn "Waiting for metrics data... (attempt $i/30)"
+        sleep 5
+    done
+    log_warn "metrics-server deployed but metrics data may not be available yet"
 }
 
 # Delete kind cluster
