@@ -160,10 +160,10 @@ describe('DebugToggle', () => {
       await user.click(toggle);
 
       // Assert
-      expect(toggle.className).toMatch(/bg-cyan-50/);
+      expect(toggle.className).toMatch(/bg-cyan-500/);
     });
 
-    it('should have cyan text when ON', async () => {
+    it('should have white text when ON', async () => {
       // Arrange
       const user = userEvent.setup({ delay: null });
       renderWithProvider(<DebugToggle />);
@@ -174,7 +174,7 @@ describe('DebugToggle', () => {
       await user.click(toggle);
 
       // Assert
-      expect(toggle.className).toMatch(/text-cyan-700/);
+      expect(toggle.className).toMatch(/text-white/);
     });
 
     it('should have cyan border when ON', async () => {
@@ -188,7 +188,7 @@ describe('DebugToggle', () => {
       await user.click(toggle);
 
       // Assert
-      expect(toggle.className).toMatch(/border-cyan-300/);
+      expect(toggle.className).toMatch(/border-cyan-600/);
     });
 
     it('should have all ON state classes together', async () => {
@@ -202,9 +202,9 @@ describe('DebugToggle', () => {
       await user.click(toggle);
 
       // Assert
-      expect(toggle.className).toMatch(/bg-cyan-50/);
-      expect(toggle.className).toMatch(/text-cyan-700/);
-      expect(toggle.className).toMatch(/border-cyan-300/);
+      expect(toggle.className).toMatch(/bg-cyan-500/);
+      expect(toggle.className).toMatch(/text-white/);
+      expect(toggle.className).toMatch(/border-cyan-600/);
     });
 
     it('should not have OFF state classes when ON', async () => {
@@ -239,7 +239,7 @@ describe('DebugToggle', () => {
       await user.click(toggle);
 
       // Assert - Classes changed to ON state
-      expect(toggle.className).toMatch(/bg-cyan-50/);
+      expect(toggle.className).toMatch(/bg-cyan-500/);
       expect(toggle.className).not.toMatch(/bg-gray-100/);
     });
 
@@ -252,14 +252,14 @@ describe('DebugToggle', () => {
 
       // Turn ON first
       await user.click(toggle);
-      expect(toggle.className).toMatch(/bg-cyan-50/);
+      expect(toggle.className).toMatch(/bg-cyan-500/);
 
       // Act - Turn OFF
       await user.click(toggle);
 
       // Assert - Classes changed back to OFF state
       expect(toggle.className).toMatch(/bg-gray-100/);
-      expect(toggle.className).not.toMatch(/bg-cyan-50/);
+      expect(toggle.className).not.toMatch(/bg-cyan-500/);
     });
   });
 
