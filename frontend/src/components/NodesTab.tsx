@@ -35,7 +35,7 @@ export function NodesTab() {
     <div data-testid="nodes-page" className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Nodes</h1>
 
-      {isLoading && (
+      {isLoading && nodes.length === 0 && (
         <LoadingSkeleton
           variant="card"
           count={3}
@@ -43,7 +43,7 @@ export function NodesTab() {
         />
       )}
 
-      {error && (
+      {error && nodes.length === 0 && (
         <ErrorRetry
           error={error}
           onRetry={refresh}
@@ -59,7 +59,7 @@ export function NodesTab() {
         />
       )}
 
-      {!isLoading && !error && nodes.length > 0 && (
+      {nodes.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {nodes.map((node) => (
             <NodeCard key={node.name} {...node} />

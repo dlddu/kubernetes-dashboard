@@ -79,7 +79,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
     <div data-testid="workloads-page" className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Workloads</h1>
 
-      {isLoading && (
+      {isLoading && deployments.length === 0 && (
         <LoadingSkeleton
           variant="card"
           count={3}
@@ -87,7 +87,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
         />
       )}
 
-      {error && (
+      {error && deployments.length === 0 && (
         <ErrorRetry
           error={error}
           onRetry={refresh}
@@ -103,7 +103,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
         />
       )}
 
-      {!isLoading && !error && deployments.length > 0 && (
+      {deployments.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {deployments.map((deployment) => (
             <DeploymentCard

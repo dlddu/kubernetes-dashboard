@@ -1,5 +1,6 @@
 import { render, screen, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { OverviewProvider, useOverview } from './OverviewContext';
 import { NamespaceProvider } from './NamespaceContext';
 import { ReactNode } from 'react';
@@ -9,39 +10,44 @@ vi.mock('../api/overview', () => ({
   fetchOverview: vi.fn(),
 }));
 
-// Mock the usePolling hook - do NOT call callback during render to avoid infinite loops
+// Mock the PollingContext - OverviewProvider now uses usePollingContext directly
 const mockRefresh = vi.fn();
-vi.mock('../hooks/usePolling', () => ({
-  usePolling: vi.fn((_callback: () => void) => {
-    return {
-      refresh: mockRefresh,
-      lastUpdate: new Date(),
-      isLoading: false,
-    };
-  }),
+const mockRegister = vi.fn();
+const mockUnregister = vi.fn();
+vi.mock('./PollingContext', () => ({
+  usePollingContext: vi.fn(() => ({
+    register: mockRegister,
+    unregister: mockUnregister,
+    refresh: mockRefresh,
+    lastUpdate: new Date(),
+    isLoading: false,
+  })),
+  PollingProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
 import { fetchOverview } from '../api/overview';
-import { usePolling } from '../hooks/usePolling';
+import { usePollingContext } from './PollingContext';
 
-// OverviewProvider requires NamespaceProvider
+// OverviewProvider requires NamespaceProvider and Router
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <NamespaceProvider>
-    <OverviewProvider>{children}</OverviewProvider>
-  </NamespaceProvider>
+  <MemoryRouter initialEntries={['/']}>
+    <NamespaceProvider>
+      <OverviewProvider>{children}</OverviewProvider>
+    </NamespaceProvider>
+  </MemoryRouter>
 );
 
 describe('OverviewContext', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Re-setup usePolling mock after reset
-    vi.mocked(usePolling).mockImplementation((_callback: () => void) => {
-      return {
-        refresh: mockRefresh,
-        lastUpdate: new Date(),
-        isLoading: false,
-      };
-    });
+    // Re-setup PollingContext mock after reset
+    vi.mocked(usePollingContext).mockImplementation(() => ({
+      register: mockRegister,
+      unregister: mockUnregister,
+      refresh: mockRefresh,
+      lastUpdate: new Date(),
+      isLoading: false,
+    }));
   });
 
   describe('OverviewProvider - initialization', () => {
@@ -56,11 +62,13 @@ describe('OverviewContext', () => {
 
       // Act
       render(
-        <NamespaceProvider>
-          <OverviewProvider>
-            <div data-testid="test-child">Test</div>
-          </OverviewProvider>
-        </NamespaceProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <NamespaceProvider>
+            <OverviewProvider>
+              <div data-testid="test-child">Test</div>
+            </OverviewProvider>
+          </NamespaceProvider>
+        </MemoryRouter>
       );
 
       // Assert
@@ -84,7 +92,7 @@ describe('OverviewContext', () => {
       expect(fetchOverview).toHaveBeenCalled();
     });
 
-    it('should pass usePolling a callback', () => {
+    it('should register polling callback when on overview tab', () => {
       // Arrange
       vi.mocked(fetchOverview).mockResolvedValue({
         nodes: { ready: 2, total: 3 },
@@ -97,7 +105,7 @@ describe('OverviewContext', () => {
       renderHook(() => useOverview(), { wrapper });
 
       // Assert
-      expect(usePolling).toHaveBeenCalledWith(expect.any(Function));
+      expect(mockRegister).toHaveBeenCalledWith('overview', expect.any(Function));
     });
   });
 

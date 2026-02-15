@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { fetchOverview, OverviewData } from '../api/overview';
 import { useNamespace } from './NamespaceContext';
-import { usePolling } from '../hooks/usePolling';
+import { usePollingContext } from './PollingContext';
 
 interface OverviewContextType {
   overviewData: OverviewData | null;
@@ -15,9 +16,11 @@ const OverviewContext = createContext<OverviewContextType | undefined>(undefined
 
 export function OverviewProvider({ children }: { children: ReactNode }) {
   const { selectedNamespace } = useNamespace();
+  const location = useLocation();
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { register, unregister, refresh, lastUpdate } = usePollingContext();
 
   const loadOverview = useCallback(async () => {
     try {
@@ -33,7 +36,21 @@ export function OverviewProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedNamespace]);
 
-  const { refresh, lastUpdate } = usePolling(loadOverview);
+  // Keep callback ref up to date to prevent stale closures
+  const callbackRef = useRef(loadOverview);
+  useEffect(() => {
+    callbackRef.current = loadOverview;
+  }, [loadOverview]);
+
+  // Only register for polling when on the overview tab
+  const isOverviewTab = location.pathname === '/';
+  useEffect(() => {
+    if (isOverviewTab) {
+      const wrappedCallback = async () => { await callbackRef.current(); };
+      register('overview', wrappedCallback);
+      return () => unregister('overview');
+    }
+  }, [isOverviewTab, register, unregister]);
 
   // Re-fetch when namespace changes
   useEffect(() => {
