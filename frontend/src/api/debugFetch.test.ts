@@ -1,13 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { debugFetch } from './debugFetch';
+import { setDebugStore } from '../utils/debugStore';
 
-// Mock DebugContext
+// Mock addLog function
 const mockAddLog = vi.fn();
-const mockUseDebugContext = vi.fn();
-
-vi.mock('../contexts/DebugContext', () => ({
-  useDebugContext: () => mockUseDebugContext()
-}));
 
 // Mock global fetch
 const mockFetch = vi.fn();
@@ -25,7 +21,7 @@ describe('debugFetch', () => {
 
   describe('debugFetch - debug mode OFF (pass-through)', () => {
     beforeEach(() => {
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: false,
         addLog: mockAddLog
       });
@@ -121,7 +117,7 @@ describe('debugFetch', () => {
 
   describe('debugFetch - debug mode ON (logging)', () => {
     beforeEach(() => {
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: true,
         addLog: mockAddLog
       });
@@ -347,7 +343,7 @@ describe('debugFetch', () => {
 
   describe('debugFetch - different HTTP methods', () => {
     beforeEach(() => {
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: true,
         addLog: mockAddLog
       });
@@ -478,7 +474,7 @@ describe('debugFetch', () => {
 
   describe('debugFetch - different response statuses', () => {
     beforeEach(() => {
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: true,
         addLog: mockAddLog
       });
@@ -592,7 +588,7 @@ describe('debugFetch', () => {
 
   describe('debugFetch - request params parsing', () => {
     beforeEach(() => {
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: true,
         addLog: mockAddLog
       });
@@ -713,7 +709,7 @@ describe('debugFetch', () => {
 
   describe('debugFetch - error handling', () => {
     beforeEach(() => {
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: true,
         addLog: mockAddLog
       });
@@ -767,7 +763,7 @@ describe('debugFetch', () => {
 
   describe('debugFetch - edge cases', () => {
     beforeEach(() => {
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: true,
         addLog: mockAddLog
       });
@@ -905,7 +901,7 @@ describe('debugFetch', () => {
   describe('debugFetch - type safety', () => {
     it('should return Response type', async () => {
       // Arrange
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: false,
         addLog: mockAddLog
       });
@@ -929,7 +925,7 @@ describe('debugFetch', () => {
 
     it('should accept RequestInit as second parameter', async () => {
       // Arrange
-      mockUseDebugContext.mockReturnValue({
+      setDebugStore({
         isDebugMode: false,
         addLog: mockAddLog
       });

@@ -1,13 +1,14 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { setDebugStore } from '../utils/debugStore';
 
 export interface ApiLog {
   method: string;
   url: string;
-  params?: any;
+  params?: unknown;
   status: number;
   timestamp: number;
   duration: number;
-  responseBody: any;
+  responseBody: unknown;
   responseSize: number;
 }
 
@@ -36,6 +37,15 @@ export function DebugProvider({ children }: { children: ReactNode }) {
   const clearLogs = () => {
     setLogs([]);
   };
+
+  // Set up global debug store for use in non-React contexts
+  useEffect(() => {
+    setDebugStore({ isDebugMode, addLog });
+
+    return () => {
+      setDebugStore(null);
+    };
+  }, [isDebugMode]);
 
   return (
     <DebugContext.Provider
