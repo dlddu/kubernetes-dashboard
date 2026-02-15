@@ -193,7 +193,10 @@ test.describe('Debug Toggle Button - Visual Style Verification', () => {
 
     // Cyan color should be present in either background or text color
     // Cyan RGB values are around rgb(6, 182, 212) for Tailwind cyan-500
-    const hasCyan = backgroundColor.includes('182') || color.includes('182');
+    // Support both comma-separated "rgb(6, 182, 212)" and space-separated "rgb(6 182 212)" formats
+    // Also support rgba format: "rgba(6, 182, 212, 1)" or "rgba(6 182 212 / 1)"
+    const cyanPattern = /6[,\s]+182[,\s]+212/i;
+    const hasCyan = cyanPattern.test(backgroundColor) || cyanPattern.test(color);
     expect(hasCyan).toBeTruthy();
   });
 });
