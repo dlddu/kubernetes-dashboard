@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDebugContext, ApiLog } from '../contexts/DebugContext';
+import { Copy, Check } from 'lucide-react';
 
 type TabName = 'response' | 'request' | 'metadata';
 
@@ -7,11 +8,42 @@ export function DebugPage() {
   const { logs, isDebugMode } = useDebugContext();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabName>('response');
+  const [isCopied, setIsCopied] = useState(false);
 
   const selectedLog: ApiLog | null =
     selectedIndex !== null && selectedIndex < logs.length
       ? logs[selectedIndex]
       : null;
+
+  const handleCopy = async () => {
+    if (!selectedLog) return;
+
+    let contentToCopy = '';
+
+    try {
+      switch (activeTab) {
+        case 'response':
+          contentToCopy = JSON.stringify(selectedLog.responseBody, null, 2);
+          break;
+        case 'request':
+          contentToCopy = `Method: ${selectedLog.method}\nURL: ${selectedLog.url}${
+            selectedLog.params ? `\n\nParams:\n${JSON.stringify(selectedLog.params, null, 2)}` : ''
+          }`;
+          break;
+        case 'metadata':
+          contentToCopy = `Status: ${selectedLog.status}\nTimestamp: ${new Date(selectedLog.timestamp).toISOString()}\nDuration: ${Math.round(selectedLog.duration)} ms\nResponse Size: ${selectedLog.responseSize} bytes`;
+          break;
+      }
+
+      await navigator.clipboard.writeText(contentToCopy);
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
 
   if (!isDebugMode && logs.length === 0) {
     return (
@@ -120,6 +152,24 @@ export function DebugPage() {
                 }`}
               >
                 Metadata
+              </button>
+              <div className="flex-1"></div>
+              <button
+                data-testid="copy-response-button"
+                onClick={handleCopy}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2"
+              >
+                {isCopied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copy</span>
+                  </>
+                )}
               </button>
             </div>
 
