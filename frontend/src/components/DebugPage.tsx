@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Copy } from 'lucide-react';
 import { useDebugContext, ApiLog } from '../contexts/DebugContext';
 
 type TabName = 'response' | 'request' | 'metadata';
@@ -7,11 +8,48 @@ export function DebugPage() {
   const { logs, isDebugMode } = useDebugContext();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabName>('response');
+  const [copiedResponse, setCopiedResponse] = useState(false);
+  const [copiedRequest, setCopiedRequest] = useState(false);
 
   const selectedLog: ApiLog | null =
     selectedIndex !== null && selectedIndex < logs.length
       ? logs[selectedIndex]
       : null;
+
+  const handleCopyResponse = async () => {
+    if (!selectedLog) return;
+
+    try {
+      await navigator.clipboard.writeText(
+        JSON.stringify(selectedLog.responseBody, null, 2)
+      );
+      setCopiedResponse(true);
+      setTimeout(() => setCopiedResponse(false), 1500);
+    } catch (error) {
+      // Handle clipboard write failure silently
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
+  const handleCopyRequest = async () => {
+    if (!selectedLog) return;
+
+    try {
+      const requestData = {
+        method: selectedLog.method,
+        url: selectedLog.url,
+        params: selectedLog.params,
+      };
+      await navigator.clipboard.writeText(
+        JSON.stringify(requestData, null, 2)
+      );
+      setCopiedRequest(true);
+      setTimeout(() => setCopiedRequest(false), 1500);
+    } catch (error) {
+      // Handle clipboard write failure silently
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
 
   if (!isDebugMode && logs.length === 0) {
     return (
@@ -32,7 +70,7 @@ export function DebugPage() {
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-200px)]">
+    <div data-testid="debug-page" className="flex gap-4 h-[calc(100vh-200px)]">
       {/* Left panel - endpoint list */}
       <div
         data-testid="endpoint-list"
@@ -126,13 +164,35 @@ export function DebugPage() {
             {/* Tab content */}
             <div role="tabpanel" className="flex-1 overflow-y-auto p-4">
               {activeTab === 'response' && (
-                <pre className="text-sm font-mono whitespace-pre-wrap break-all bg-gray-50 p-4 rounded">
-                  {JSON.stringify(selectedLog.responseBody, null, 2)}
-                </pre>
+                <div className="space-y-4">
+                  <div className="flex justify-end">
+                    <button
+                      data-testid="copy-response-button"
+                      onClick={handleCopyResponse}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                    >
+                      <Copy size={16} />
+                      {copiedResponse ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <pre className="text-sm font-mono whitespace-pre-wrap break-all bg-gray-50 p-4 rounded">
+                    {JSON.stringify(selectedLog.responseBody, null, 2)}
+                  </pre>
+                </div>
               )}
 
               {activeTab === 'request' && (
                 <div className="space-y-4">
+                  <div className="flex justify-end">
+                    <button
+                      data-testid="copy-request-button"
+                      onClick={handleCopyRequest}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                    >
+                      <Copy size={16} />
+                      {copiedRequest ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Method</h3>
                     <p className="text-sm font-mono">{selectedLog.method}</p>

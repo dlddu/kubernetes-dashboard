@@ -16,7 +16,7 @@ import { test, expect } from '@playwright/test';
  * TODO: Activate when DLD-341 implementation is complete
  */
 
-test.describe.skip('Debug Page - Page Rendering', () => {
+test.describe('Debug Page - Page Rendering', () => {
   test('should render DebugPage component when accessing /debug route', async ({ page }) => {
     // Tests that navigating to /debug renders the Debug Page component
 
@@ -67,7 +67,7 @@ test.describe.skip('Debug Page - Page Rendering', () => {
   });
 });
 
-test.describe.skip('Debug Page - API Log Display', () => {
+test.describe('Debug Page - API Log Display', () => {
   test('should display /api/overview log entry after visiting Overview page', async ({ page }) => {
     // Tests that API calls are logged and displayed in the endpoint list
 
@@ -133,7 +133,7 @@ test.describe.skip('Debug Page - API Log Display', () => {
   });
 });
 
-test.describe.skip('Debug Page - Detail View Interaction', () => {
+test.describe('Debug Page - Detail View Interaction', () => {
   test('should display detail view on the right when an endpoint is clicked', async ({ page }) => {
     // Tests that clicking an endpoint shows its details
 
@@ -295,7 +295,7 @@ test.describe.skip('Debug Page - Detail View Interaction', () => {
   });
 });
 
-test.describe.skip('Debug Page - Clipboard Copy Functionality', () => {
+test.describe('Debug Page - Clipboard Copy Functionality', () => {
   test('should copy JSON to clipboard when Copy button is clicked', async ({ page }) => {
     // Tests clipboard copy functionality for response JSON
 
@@ -378,7 +378,7 @@ test.describe.skip('Debug Page - Clipboard Copy Functionality', () => {
   });
 });
 
-test.describe.skip('Debug Page - Empty State', () => {
+test.describe('Debug Page - Empty State', () => {
   test('should display empty state message when no API calls have been logged', async ({ page }) => {
     // Tests that debug page shows empty state when DebugContext has no logs
 
