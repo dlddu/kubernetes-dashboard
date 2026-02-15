@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "which gh > /dev/null 2>&1 || (curl -sL https://api.github.com/repos/cli/cli/releases/latest | grep -o '\"tag_name\": *\"[^\"]*\"' | head -1 | sed 's/\"tag_name\": *\"//;s/\"//' | xargs -I {} sh -c 'cd /tmp && curl -sLO \"https://github.com/cli/cli/releases/download/{}/gh_$(echo {} | sed s/v//)_linux_amd64.tar.gz\" && tar -xzf gh_*_linux_amd64.tar.gz && sudo cp gh_*_linux_amd64/bin/gh /usr/local/bin/gh && sudo chmod +x /usr/local/bin/gh && rm -rf gh_*_linux_amd64*')"
+          }
+        ]
+      }
+    ]
+  }
+}
