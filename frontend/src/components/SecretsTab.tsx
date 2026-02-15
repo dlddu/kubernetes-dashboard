@@ -45,7 +45,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
     <div data-testid="secrets-tab" className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Secrets</h1>
 
-      {isLoading && (
+      {isLoading && secrets.length === 0 && (
         <LoadingSkeleton
           variant="list"
           count={5}
@@ -53,7 +53,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
         />
       )}
 
-      {error && (
+      {error && secrets.length === 0 && (
         <ErrorRetry
           error={error}
           onRetry={refresh}
@@ -69,7 +69,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
         />
       )}
 
-      {!isLoading && !error && secrets.length > 0 && (
+      {secrets.length > 0 && (
         <div className="space-y-3">
           {secrets.map((secret, index) => (
             <SecretAccordion

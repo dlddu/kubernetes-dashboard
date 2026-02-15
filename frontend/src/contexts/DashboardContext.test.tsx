@@ -1,6 +1,6 @@
 import { render, screen, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { OverviewProvider, useOverview } from './OverviewContext';
+import { DashboardProvider, useDashboard } from './DashboardContext';
 import { NamespaceProvider } from './NamespaceContext';
 import { ReactNode } from 'react';
 
@@ -9,42 +9,21 @@ vi.mock('../api/overview', () => ({
   fetchOverview: vi.fn(),
 }));
 
-// Mock the usePolling hook - do NOT call callback during render to avoid infinite loops
-const mockRefresh = vi.fn();
-vi.mock('../hooks/usePolling', () => ({
-  usePolling: vi.fn((_callback: () => void) => {
-    return {
-      refresh: mockRefresh,
-      lastUpdate: new Date(),
-      isLoading: false,
-    };
-  }),
-}));
-
 import { fetchOverview } from '../api/overview';
-import { usePolling } from '../hooks/usePolling';
 
-// OverviewProvider requires NamespaceProvider
+// DashboardProvider requires NamespaceProvider
 const wrapper = ({ children }: { children: ReactNode }) => (
   <NamespaceProvider>
-    <OverviewProvider>{children}</OverviewProvider>
+    <DashboardProvider>{children}</DashboardProvider>
   </NamespaceProvider>
 );
 
-describe('OverviewContext', () => {
+describe('DashboardContext', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    // Re-setup usePolling mock after reset
-    vi.mocked(usePolling).mockImplementation((_callback: () => void) => {
-      return {
-        refresh: mockRefresh,
-        lastUpdate: new Date(),
-        isLoading: false,
-      };
-    });
   });
 
-  describe('OverviewProvider - initialization', () => {
+  describe('DashboardProvider - initialization', () => {
     it('should render without crashing', () => {
       // Arrange
       vi.mocked(fetchOverview).mockResolvedValue({
@@ -57,9 +36,9 @@ describe('OverviewContext', () => {
       // Act
       render(
         <NamespaceProvider>
-          <OverviewProvider>
+          <DashboardProvider>
             <div data-testid="test-child">Test</div>
-          </OverviewProvider>
+          </DashboardProvider>
         </NamespaceProvider>
       );
 
@@ -68,7 +47,7 @@ describe('OverviewContext', () => {
       expect(child).toBeInTheDocument();
     });
 
-    it('should call fetchOverview on mount', () => {
+    it('should expose loadDashboard function', () => {
       // Arrange
       vi.mocked(fetchOverview).mockResolvedValue({
         nodes: { ready: 2, total: 3 },
@@ -78,31 +57,15 @@ describe('OverviewContext', () => {
       });
 
       // Act
-      renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
 
       // Assert
-      expect(fetchOverview).toHaveBeenCalled();
-    });
-
-    it('should pass usePolling a callback', () => {
-      // Arrange
-      vi.mocked(fetchOverview).mockResolvedValue({
-        nodes: { ready: 2, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-      });
-
-      // Act
-      renderHook(() => useOverview(), { wrapper });
-
-      // Assert
-      expect(usePolling).toHaveBeenCalledWith(expect.any(Function));
+      expect(typeof result.current.loadDashboard).toBe('function');
     });
   });
 
   describe('data fetching', () => {
-    it('should provide overview data after successful fetch', async () => {
+    it('should provide overview data after loadDashboard is called', async () => {
       // Arrange
       const mockData = {
         nodes: { ready: 2, total: 3 },
@@ -113,7 +76,8 @@ describe('OverviewContext', () => {
       vi.mocked(fetchOverview).mockResolvedValue(mockData);
 
       // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
+      await result.current.loadDashboard();
 
       // Assert
       await waitFor(() => {
@@ -131,7 +95,8 @@ describe('OverviewContext', () => {
       });
 
       // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
+      await result.current.loadDashboard();
 
       // Assert
       await waitFor(() => {
@@ -149,7 +114,8 @@ describe('OverviewContext', () => {
       });
 
       // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
+      await result.current.loadDashboard();
 
       // Assert
       await waitFor(() => {
@@ -164,7 +130,8 @@ describe('OverviewContext', () => {
       vi.mocked(fetchOverview).mockRejectedValue(new Error('Network error'));
 
       // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
+      await result.current.loadDashboard();
 
       // Assert
       await waitFor(() => {
@@ -178,7 +145,8 @@ describe('OverviewContext', () => {
       vi.mocked(fetchOverview).mockRejectedValue(new Error('Network error'));
 
       // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
+      await result.current.loadDashboard();
 
       // Assert
       await waitFor(() => {
@@ -191,7 +159,8 @@ describe('OverviewContext', () => {
       vi.mocked(fetchOverview).mockRejectedValue(new Error('Network error'));
 
       // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
+      await result.current.loadDashboard();
 
       // Assert
       await waitFor(() => {
@@ -200,52 +169,18 @@ describe('OverviewContext', () => {
     });
   });
 
-  describe('useOverview - error handling', () => {
-    it('should throw error when used outside OverviewProvider', () => {
+  describe('useDashboard - error handling', () => {
+    it('should throw error when used outside DashboardProvider', () => {
       // Arrange
       const TestComponentWithoutProvider = () => {
-        useOverview();
+        useDashboard();
         return <div>Test</div>;
       };
 
       // Act & Assert
       expect(() => render(<TestComponentWithoutProvider />)).toThrow(
-        'useOverview must be used within an OverviewProvider'
+        'useDashboard must be used within a DashboardProvider'
       );
-    });
-  });
-
-  describe('context values', () => {
-    it('should expose refresh function', async () => {
-      // Arrange
-      vi.mocked(fetchOverview).mockResolvedValue({
-        nodes: { ready: 2, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-      });
-
-      // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
-
-      // Assert
-      expect(typeof result.current.refresh).toBe('function');
-    });
-
-    it('should expose lastUpdate as Date', async () => {
-      // Arrange
-      vi.mocked(fetchOverview).mockResolvedValue({
-        nodes: { ready: 2, total: 3 },
-        unhealthyPods: 0,
-        avgCpuPercent: 0,
-        avgMemoryPercent: 0,
-      });
-
-      // Act
-      const { result } = renderHook(() => useOverview(), { wrapper });
-
-      // Assert
-      expect(result.current.lastUpdate).toBeInstanceOf(Date);
     });
   });
 
@@ -260,7 +195,8 @@ describe('OverviewContext', () => {
       });
 
       // Act - default namespace is 'all'
-      renderHook(() => useOverview(), { wrapper });
+      const { result } = renderHook(() => useDashboard(), { wrapper });
+      await result.current.loadDashboard();
 
       // Assert
       await waitFor(() => {

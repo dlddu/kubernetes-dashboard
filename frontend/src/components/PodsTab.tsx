@@ -41,10 +41,10 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
 
       <div>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          All Pods {!isLoading && !error && `(${pods.length})`}
+          All Pods {pods.length > 0 && `(${pods.length})`}
         </h2>
 
-        {isLoading && (
+        {isLoading && pods.length === 0 && (
           <LoadingSkeleton
             variant="card"
             count={3}
@@ -52,7 +52,7 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
           />
         )}
 
-        {error && (
+        {error && pods.length === 0 && (
           <ErrorRetry
             error={error}
             onRetry={refresh}
@@ -68,7 +68,7 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
           />
         )}
 
-        {!isLoading && !error && pods.length > 0 && (
+        {pods.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pods.map((pod) => (
               <UnhealthyPodCard key={`${pod.namespace}-${pod.name}`} pod={pod} />

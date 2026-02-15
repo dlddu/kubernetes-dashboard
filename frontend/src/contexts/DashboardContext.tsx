@@ -1,25 +1,23 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { fetchOverview, OverviewData } from '../api/overview';
 import { useNamespace } from './NamespaceContext';
-import { usePolling } from '../hooks/usePolling';
 
-interface OverviewContextType {
+interface DashboardContextType {
   overviewData: OverviewData | null;
   isLoading: boolean;
   error: Error | null;
-  refresh: () => void;
-  lastUpdate: Date;
+  loadDashboard: () => Promise<void>;
 }
 
-const OverviewContext = createContext<OverviewContextType | undefined>(undefined);
+const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
-export function OverviewProvider({ children }: { children: ReactNode }) {
+export function DashboardProvider({ children }: { children: ReactNode }) {
   const { selectedNamespace } = useNamespace();
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadOverview = useCallback(async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -33,24 +31,17 @@ export function OverviewProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedNamespace]);
 
-  const { refresh, lastUpdate } = usePolling(loadOverview);
-
-  // Re-fetch when namespace changes
-  useEffect(() => {
-    loadOverview();
-  }, [selectedNamespace]);
-
   return (
-    <OverviewContext.Provider value={{ overviewData, isLoading, error, refresh, lastUpdate }}>
+    <DashboardContext.Provider value={{ overviewData, isLoading, error, loadDashboard }}>
       {children}
-    </OverviewContext.Provider>
+    </DashboardContext.Provider>
   );
 }
 
-export function useOverview() {
-  const context = useContext(OverviewContext);
+export function useDashboard() {
+  const context = useContext(DashboardContext);
   if (context === undefined) {
-    throw new Error('useOverview must be used within an OverviewProvider');
+    throw new Error('useDashboard must be used within a DashboardProvider');
   }
   return context;
 }

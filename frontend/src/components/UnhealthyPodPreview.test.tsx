@@ -7,8 +7,8 @@ interface ErrorWithStatus extends Error {
 }
 
 // Mock the OverviewContext
-vi.mock('../contexts/OverviewContext', () => ({
-  useOverview: vi.fn(),
+vi.mock('../contexts/DashboardContext', () => ({
+  useDashboard: vi.fn(),
 }));
 
 // Mock the StatusBadge component
@@ -20,7 +20,7 @@ vi.mock('./StatusBadge', () => ({
   ),
 }));
 
-import { useOverview } from '../contexts/OverviewContext';
+import { useDashboard } from '../contexts/DashboardContext';
 
 // Helper to generate mock unhealthy pods list
 function mockPodsList(count: number) {
@@ -41,7 +41,7 @@ describe('UnhealthyPodPreview', () => {
   describe('rendering - happy path', () => {
     it('should render without crashing', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -51,8 +51,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -67,7 +66,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should be accessible as section', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -77,8 +76,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -93,7 +91,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display component title', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -103,8 +101,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -121,12 +118,11 @@ describe('UnhealthyPodPreview', () => {
   describe('loading state', () => {
     it('should display loading indicator while fetching', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -139,12 +135,11 @@ describe('UnhealthyPodPreview', () => {
 
     it('should show loading text', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -157,12 +152,11 @@ describe('UnhealthyPodPreview', () => {
 
     it('should be accessible during loading', () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: true,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -177,7 +171,7 @@ describe('UnhealthyPodPreview', () => {
   describe('displaying unhealthy pods - maximum 3 items', () => {
     it('should display up to 3 unhealthy pods', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5, // More than 3, but should only show 3
@@ -187,8 +181,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -203,7 +196,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display 1 pod when only 1 is unhealthy', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -213,8 +206,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -229,7 +221,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display 2 pods when 2 are unhealthy', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 2,
@@ -239,8 +231,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -255,7 +246,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should limit to 3 pods even when more exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 10,
@@ -265,8 +256,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -283,7 +273,7 @@ describe('UnhealthyPodPreview', () => {
   describe('pod item structure', () => {
     it('should display pod name for each item', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -293,8 +283,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -310,7 +299,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display pod namespace for each item', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -320,8 +309,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -337,7 +325,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display status badge for each item', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -347,8 +335,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -363,7 +350,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display all required fields for multiple pods', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 3,
@@ -373,8 +360,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -401,7 +387,7 @@ describe('UnhealthyPodPreview', () => {
   describe('status badge integration', () => {
     it('should display CrashLoopBackOff status', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -411,8 +397,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -429,7 +414,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display ImagePullBackOff status', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -439,8 +424,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -455,7 +439,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should pass correct status to StatusBadge component', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -465,8 +449,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -483,7 +466,7 @@ describe('UnhealthyPodPreview', () => {
   describe('empty state - all pods healthy', () => {
     it('should display "all pods healthy" message when no unhealthy pods', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
@@ -493,8 +476,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -509,7 +491,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should show positive message text', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
@@ -519,8 +501,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -535,7 +516,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should not display pod items when all healthy', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 3, total: 3 },
           unhealthyPods: 0,
@@ -545,8 +526,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -561,7 +541,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should not display healthy message when unhealthy pods exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -571,8 +551,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -589,7 +568,7 @@ describe('UnhealthyPodPreview', () => {
   describe('view more link', () => {
     it('should display "view more" link', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
@@ -599,8 +578,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -615,7 +593,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should be a clickable link', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
@@ -625,8 +603,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -641,7 +618,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should navigate to pods tab/page', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
@@ -651,8 +628,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -669,7 +645,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should have accessible link text', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
@@ -679,8 +655,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -695,7 +670,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should show link when more than 3 unhealthy pods exist', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 10,
@@ -705,8 +680,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -723,12 +697,11 @@ describe('UnhealthyPodPreview', () => {
   describe('error handling', () => {
     it('should handle API fetch errors gracefully', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -743,12 +716,11 @@ describe('UnhealthyPodPreview', () => {
 
     it('should display error message text', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Failed to fetch'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -763,12 +735,11 @@ describe('UnhealthyPodPreview', () => {
 
     it('should not show loading indicator after error', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: new Error('Network error'),
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -788,12 +759,11 @@ describe('UnhealthyPodPreview', () => {
       // Arrange
       const error = new Error('Not found') as ErrorWithStatus;
       error.status = 404;
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: error,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -810,12 +780,11 @@ describe('UnhealthyPodPreview', () => {
       // Arrange
       const error = new Error('Internal server error') as ErrorWithStatus;
       error.status = 500;
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: null,
         isLoading: false,
         error: error,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -832,7 +801,7 @@ describe('UnhealthyPodPreview', () => {
   describe('accessibility', () => {
     it('should have semantic HTML structure', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -842,8 +811,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -858,7 +826,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should have accessible heading', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -868,8 +836,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -884,7 +851,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should have accessible list for pod items', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 2,
@@ -894,8 +861,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -910,7 +876,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should have list items for each pod', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 2,
@@ -920,8 +886,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -936,7 +901,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should have accessible link to pods page', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 5,
@@ -946,8 +911,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -964,7 +928,7 @@ describe('UnhealthyPodPreview', () => {
   describe('styling and layout', () => {
     it('should have proper CSS classes', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -974,8 +938,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -990,7 +953,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should be styled as a card/section component', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -1000,8 +963,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1016,7 +978,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should have proper spacing between pod items', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 3,
@@ -1026,8 +988,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1048,7 +1009,7 @@ describe('UnhealthyPodPreview', () => {
   describe('edge cases', () => {
     it('should handle exactly 3 unhealthy pods', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 3,
@@ -1058,8 +1019,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1074,7 +1034,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should handle very large unhealthy pod count', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 999,
@@ -1084,8 +1044,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1101,7 +1060,7 @@ describe('UnhealthyPodPreview', () => {
 
     it('should handle empty pod names gracefully', async () => {
       // Arrange
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -1111,8 +1070,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act
@@ -1128,7 +1086,7 @@ describe('UnhealthyPodPreview', () => {
     it('should handle very long pod names', async () => {
       // Arrange
       const longName = 'a'.repeat(200);
-      vi.mocked(useOverview).mockReturnValue({
+      vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
           nodes: { ready: 2, total: 3 },
           unhealthyPods: 1,
@@ -1138,8 +1096,7 @@ describe('UnhealthyPodPreview', () => {
         },
         isLoading: false,
         error: null,
-        refresh: vi.fn(),
-        lastUpdate: new Date(),
+        loadDashboard: vi.fn(),
       });
 
       // Act

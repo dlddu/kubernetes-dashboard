@@ -1,9 +1,9 @@
 import type { UnhealthyPodInfo } from '../api/overview';
 import { StatusBadge } from './StatusBadge';
-import { useOverview } from '../contexts/OverviewContext';
+import { useDashboard } from '../contexts/DashboardContext';
 
 export function UnhealthyPodPreview() {
-  const { overviewData, isLoading, error } = useOverview();
+  const { overviewData, isLoading, error } = useDashboard();
 
   const unhealthyPods: UnhealthyPodInfo[] = overviewData?.unhealthyPodsList ?? [];
 

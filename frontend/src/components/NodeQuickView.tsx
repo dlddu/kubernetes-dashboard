@@ -1,13 +1,13 @@
 import { UsageBar } from './UsageBar';
-import { useOverview } from '../contexts/OverviewContext';
+import { useDashboard } from '../contexts/DashboardContext';
 
 export function NodeQuickView() {
-  const { overviewData, isLoading, error, refresh } = useOverview();
+  const { overviewData, isLoading, error, loadDashboard } = useDashboard();
 
   const nodes = overviewData?.nodesList || [];
 
   const handleRetry = () => {
-    refresh();
+    loadDashboard();
   };
 
   // Loading state (only on initial load, not during background refresh)
