@@ -65,13 +65,11 @@ test.describe('Debug Route - SPA Routing Infrastructure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Debug page container should be visible
-    const debugPage = page.getByTestId('debug-page')
-      .or(page.locator('[data-testid*="debug"]').first());
+    const debugPage = page.getByTestId('debug-page');
     await expect(debugPage).toBeVisible();
 
     // Assert: Page should have a title or heading
-    const debugTitle = page.getByRole('heading', { name: /debug/i })
-      .or(page.getByTestId('debug-page-title'));
+    const debugTitle = page.getByRole('heading', { name: /debug/i });
     await expect(debugTitle).toBeVisible();
   });
 
@@ -83,8 +81,7 @@ test.describe('Debug Route - SPA Routing Infrastructure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: TopBar should be visible
-    const topBar = page.getByTestId('top-bar')
-      .or(page.getByRole('banner'));
+    const topBar = page.getByTestId('top-bar');
     await expect(topBar).toBeVisible();
 
     // Assert: Namespace selector should be visible
@@ -150,13 +147,11 @@ test.describe('Debug Route - DebugContext Data Display', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Debug page should show API call logs
-    const apiLogsList = page.getByTestId('api-logs-list')
-      .or(page.getByTestId('endpoint-list'));
+    const apiLogsList = page.getByTestId('endpoint-list');
     await expect(apiLogsList).toBeVisible();
 
     // Assert: Should have at least one API log entry
-    const logEntries = page.getByTestId('api-log-entry')
-      .or(page.locator('[data-testid*="endpoint-item"]'));
+    const logEntries = page.getByTestId('endpoint-item');
     const logCount = await logEntries.count();
     expect(logCount).toBeGreaterThan(0);
   });
@@ -169,13 +164,11 @@ test.describe('Debug Route - DebugContext Data Display', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Left panel with endpoint list should exist
-    const leftPanel = page.getByTestId('debug-left-panel')
-      .or(page.getByTestId('debug-left-panel'));
+    const leftPanel = page.getByTestId('debug-left-panel');
     await expect(leftPanel).toBeVisible();
 
     // Assert: Endpoint list should be in left panel
-    const endpointList = leftPanel.getByTestId('endpoint-list')
-      .or(leftPanel.locator('[role="list"]'));
+    const endpointList = leftPanel.getByTestId('endpoint-list');
     await expect(endpointList).toBeVisible();
   });
 
@@ -187,8 +180,7 @@ test.describe('Debug Route - DebugContext Data Display', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Right panel with detail view should exist
-    const rightPanel = page.getByTestId('debug-right-panel')
-      .or(page.getByTestId('detail-view-panel'));
+    const rightPanel = page.getByTestId('debug-right-panel');
     await expect(rightPanel).toBeVisible();
   });
 
@@ -202,18 +194,15 @@ test.describe('Debug Route - DebugContext Data Display', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click first endpoint in the list
-    const firstEndpoint = page.getByTestId('api-log-entry').first()
-      .or(page.getByTestId('endpoint-item').first());
+    const firstEndpoint = page.getByTestId('endpoint-item').first();
     await firstEndpoint.click();
 
     // Assert: Detail view should show endpoint information
-    const detailView = page.getByTestId('debug-right-panel')
-      .or(page.getByTestId('debug-detail-view'));
+    const detailView = page.getByTestId('debug-right-panel');
     await expect(detailView).toBeVisible();
 
     // Assert: Should display endpoint URL
-    const endpointUrl = detailView.getByTestId('endpoint-url')
-      .or(detailView.locator('text=/\\/api\\//'));
+    const endpointUrl = detailView.getByTestId('endpoint-url');
     await expect(endpointUrl).toBeVisible();
   });
 
@@ -226,13 +215,11 @@ test.describe('Debug Route - DebugContext Data Display', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Should show empty state message or placeholder
-    const emptyState = page.getByTestId('debug-empty-state')
-      .or(page.getByText(/no api calls/i))
-      .or(page.getByText(/no logs/i));
+    const emptyState = page.getByTestId('debug-empty-state');
 
     // Note: This assertion is conditional on whether auto-fetching happens
     const emptyStateExists = await emptyState.isVisible().catch(() => false);
-    const logEntries = page.getByTestId('api-log-entry');
+    const logEntries = page.getByTestId('endpoint-item');
     const hasLogs = await logEntries.count() > 0;
 
     // Either we have logs OR we show empty state
@@ -255,16 +242,14 @@ test.describe('Debug Route - Detail View Tabs', () => {
     await firstEndpoint.click();
 
     // Assert: Response tab should exist
-    const responseTab = page.getByRole('tab', { name: /response/i })
-      .or(page.getByTestId('response-tab'));
+    const responseTab = page.getByRole('tab', { name: /response/i });
     await expect(responseTab).toBeVisible();
 
     // Act: Click Response tab (might be selected by default)
     await responseTab.click();
 
     // Assert: Response content should be visible
-    const responseContent = page.getByTestId('response-content')
-      .or(page.getByTestId('json-viewer'));
+    const responseContent = page.getByTestId('response-content');
     await expect(responseContent).toBeVisible();
   });
 
@@ -282,8 +267,7 @@ test.describe('Debug Route - Detail View Tabs', () => {
     await firstEndpoint.click();
 
     // Assert: Request tab should exist
-    const requestTab = page.getByRole('tab', { name: /request/i })
-      .or(page.getByTestId('request-tab'));
+    const requestTab = page.getByRole('tab', { name: /request/i });
     await expect(requestTab).toBeVisible();
 
     // Act: Click Request tab
@@ -294,13 +278,11 @@ test.describe('Debug Route - Detail View Tabs', () => {
     await expect(requestContent).toBeVisible();
 
     // Assert: Should show HTTP method
-    const httpMethod = requestContent.getByTestId('http-method')
-      .or(requestContent.getByText(/GET|POST|PUT|DELETE|PATCH/));
+    const httpMethod = requestContent.getByTestId('http-method');
     await expect(httpMethod).toBeVisible();
 
     // Assert: Should show URL
-    const requestUrl = requestContent.getByTestId('request-url')
-      .or(requestContent.locator('text=/\\/api\\//'));
+    const requestUrl = requestContent.getByTestId('request-url');
     await expect(requestUrl).toBeVisible();
   });
 
@@ -318,8 +300,7 @@ test.describe('Debug Route - Detail View Tabs', () => {
     await firstEndpoint.click();
 
     // Assert: Metadata tab should exist
-    const metadataTab = page.getByRole('tab', { name: /metadata/i })
-      .or(page.getByTestId('metadata-tab'));
+    const metadataTab = page.getByRole('tab', { name: /metadata/i });
     await expect(metadataTab).toBeVisible();
 
     // Act: Click Metadata tab
@@ -330,18 +311,15 @@ test.describe('Debug Route - Detail View Tabs', () => {
     await expect(metadataContent).toBeVisible();
 
     // Assert: Should show timestamp
-    const timestamp = metadataContent.getByTestId('request-timestamp')
-      .or(metadataContent.getByText(/timestamp/i));
+    const timestamp = metadataContent.getByTestId('request-timestamp');
     await expect(timestamp).toBeVisible();
 
     // Assert: Should show duration
-    const duration = metadataContent.getByTestId('request-duration')
-      .or(metadataContent.getByText(/duration|time/i));
+    const duration = metadataContent.getByTestId('request-duration');
     await expect(duration).toBeVisible();
 
     // Assert: Should show status code
-    const statusCode = metadataContent.getByTestId('status-code')
-      .or(metadataContent.getByText(/status|200|404|500/i));
+    const statusCode = metadataContent.getByTestId('status-code');
     await expect(statusCode).toBeVisible();
   });
 
@@ -392,8 +370,7 @@ test.describe('Debug Route - TopBar Debug Toggle', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Debug toggle button should exist in TopBar
-    const debugToggle = page.getByTestId('debug-toggle')
-      .or(page.getByRole('button', { name: /debug/i }));
+    const debugToggle = page.getByTestId('debug-toggle');
     await expect(debugToggle).toBeVisible();
   });
 
@@ -405,8 +382,7 @@ test.describe('Debug Route - TopBar Debug Toggle', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click debug toggle button
-    const debugToggle = page.getByTestId('debug-toggle')
-      .or(page.getByRole('button', { name: /debug/i }));
+    const debugToggle = page.getByTestId('debug-toggle');
     await debugToggle.click();
 
     // Assert: Debug mode should be ON
@@ -514,8 +490,7 @@ test.describe('Debug Route - Copy to Clipboard Feature', () => {
     await responseTab.click();
 
     // Assert: Copy button should exist
-    const copyButton = page.getByTestId('copy-response-button')
-      .or(page.getByRole('button', { name: /copy/i }));
+    const copyButton = page.getByTestId('copy-response-button');
     await expect(copyButton).toBeVisible();
   });
 
@@ -573,8 +548,7 @@ test.describe('Debug Route - Copy to Clipboard Feature', () => {
     await copyButton.click();
 
     // Assert: Should show success message or icon change
-    const successMessage = page.getByText(/copied|success/i)
-      .or(copyButton.locator('[data-testid="copy-success-icon"]'));
+    const successMessage = page.getByText(/copied|success/i);
 
     await expect(successMessage).toBeVisible({ timeout: 2000 });
   });
@@ -596,8 +570,7 @@ test.describe('Debug Route - Copy to Clipboard Feature', () => {
     await requestTab.click();
 
     // Assert: Copy button should exist
-    const copyButton = page.getByTestId('copy-request-button')
-      .or(page.getByRole('button', { name: /copy/i }));
+    const copyButton = page.getByTestId('copy-request-button');
     await expect(copyButton).toBeVisible();
   });
 });
@@ -611,13 +584,11 @@ test.describe('Debug Route - Accessibility', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Debug page should have main landmark
-    const mainContent = page.getByRole('main')
-      .or(page.getByTestId('debug-page'));
+    const mainContent = page.getByRole('main');
     await expect(mainContent).toBeVisible();
 
     // Assert: Endpoint list should have proper role
-    const endpointList = page.getByTestId('endpoint-list')
-      .or(page.getByRole('list'));
+    const endpointList = page.getByTestId('endpoint-list');
     await expect(endpointList).toBeVisible();
   });
 
