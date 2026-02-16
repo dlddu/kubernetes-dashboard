@@ -490,7 +490,7 @@ describe('DebugDetailView', () => {
       expect(screen.getByText(/default/i)).toBeInTheDocument();
     });
 
-    it('should not display params section when params is null', async () => {
+    it('should display "No parameters" when params is null', async () => {
       // Arrange
       const user = userEvent.setup({ delay: null });
       const noParamsLog: ApiLog = {
@@ -508,7 +508,8 @@ describe('DebugDetailView', () => {
       await waitFor(() => {
         expect(screen.getByTestId('request-content')).toBeInTheDocument();
       });
-      expect(screen.queryByText('Params')).not.toBeInTheDocument();
+      expect(screen.getByText('Params')).toBeInTheDocument();
+      expect(screen.getByText('No parameters')).toBeInTheDocument();
     });
 
     it('should format params as JSON when provided', async () => {
@@ -751,6 +752,8 @@ describe('DebugDetailView', () => {
       const copiedContent = mockWriteText.mock.calls[0][0];
       expect(copiedContent).toContain('"items"');
       expect(copiedContent).toContain('"name"');
+      // Should be valid JSON without comments
+      expect(() => JSON.parse(copiedContent)).not.toThrow();
     });
   });
 

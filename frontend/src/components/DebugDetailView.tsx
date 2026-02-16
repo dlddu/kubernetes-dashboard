@@ -24,9 +24,7 @@ export function DebugDetailView({ entry }: Props) {
       let content = '';
 
       if (activeTab === 'response') {
-        const comment = `// ${entry.method} ${entry.url}\n`;
-        const json = JSON.stringify(entry.responseBody, null, 2);
-        content = comment + json;
+        content = JSON.stringify(entry.responseBody, null, 2);
       } else if (activeTab === 'request') {
         content = `Method: ${entry.method}\nURL: ${entry.url}`;
         if (entry.params) {
@@ -132,7 +130,12 @@ export function DebugDetailView({ entry }: Props) {
               {JSON.stringify(entry.params, null, 2)}
             </pre>
           </div>
-        ) : null}
+        ) : (
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Params</h3>
+            <p className="text-sm text-gray-400">No parameters</p>
+          </div>
+        )}
       </div>
     );
   };
