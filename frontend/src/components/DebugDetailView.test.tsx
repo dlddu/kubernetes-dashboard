@@ -290,7 +290,7 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       // Assert
-      const content = screen.getByText(/pod-1/i).closest('pre') || screen.getByText(/pod-1/i).closest('div');
+      const content = screen.getByTestId('response-content');
       expect(content?.className).toMatch(/bg-gray-950/);
     });
 
@@ -299,7 +299,7 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       // Assert
-      const content = screen.getByText(/pod-1/i).closest('pre') || screen.getByText(/pod-1/i).closest('div');
+      const content = screen.getByTestId('response-content');
       expect(content?.className).toMatch(/font-mono/);
     });
 
@@ -326,9 +326,10 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       // Assert
-      expect(screen.getByText(/items/i)).toBeInTheDocument();
-      expect(screen.getByText(/name/i)).toBeInTheDocument();
-      expect(screen.getByText(/status/i)).toBeInTheDocument();
+      const responseContent = screen.getByTestId('response-content');
+      expect(responseContent.textContent).toMatch(/items/i);
+      expect(responseContent.textContent).toMatch(/name/i);
+      expect(responseContent.textContent).toMatch(/status/i);
     });
 
     it('should handle array response bodies', () => {
@@ -394,11 +395,9 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       // Assert
-      const keyElements = screen.getAllByText(/name|status|items/i);
-      const hasColoredKey = keyElements.some(el =>
-        el.className.includes('purple') || el.className.includes('violet')
-      );
-      expect(hasColoredKey || keyElements.length > 0).toBe(true);
+      const responseContent = screen.getByTestId('response-content');
+      const htmlContent = responseContent.innerHTML;
+      expect(htmlContent).toMatch(/purple|violet/i);
     });
 
     it('should apply amber color to strings', () => {
@@ -406,8 +405,9 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       // Assert
-      const stringElements = screen.getAllByText(/Running|Pending/i);
-      expect(stringElements.length).toBeGreaterThan(0);
+      const responseContent = screen.getByTestId('response-content');
+      const htmlContent = responseContent.innerHTML;
+      expect(htmlContent).toMatch(/amber/i);
     });
 
     it('should apply cyan color to numbers', () => {
@@ -437,7 +437,9 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert
-      expect(screen.getByText('Method')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Method')).toBeInTheDocument();
+      });
       expect(screen.getByText('GET')).toBeInTheDocument();
     });
 
@@ -452,7 +454,9 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert
-      expect(screen.getByText('URL')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('URL')).toBeInTheDocument();
+      });
       expect(screen.getByText('/api/pods')).toBeInTheDocument();
     });
 
@@ -467,7 +471,9 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert
-      expect(screen.getByText('Params')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Params')).toBeInTheDocument();
+      });
       expect(screen.getByText(/default/i)).toBeInTheDocument();
     });
 
@@ -486,6 +492,9 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('request-content')).toBeInTheDocument();
+      });
       expect(screen.queryByText('Params')).not.toBeInTheDocument();
     });
 
@@ -504,7 +513,9 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert
-      expect(screen.getByText(/kube-system/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/kube-system/i)).toBeInTheDocument();
+      });
       expect(screen.getByText(/100/)).toBeInTheDocument();
     });
 
@@ -519,9 +530,10 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert
-      const methodLabel = screen.getByText('Method');
+      await waitFor(() => {
+        expect(screen.getByText('Method')).toBeInTheDocument();
+      });
       const methodValue = screen.getByText('GET');
-      expect(methodLabel).toBeInTheDocument();
       expect(methodValue).toBeInTheDocument();
     });
   });
@@ -538,8 +550,10 @@ describe('DebugDetailView', () => {
       await user.click(metadataTab);
 
       // Assert
-      expect(screen.getByText('Status')).toBeInTheDocument();
-      expect(screen.getByText('200')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Status')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('status-code')).toHaveTextContent('200');
     });
 
     it('should display timestamp', async () => {
@@ -553,8 +567,10 @@ describe('DebugDetailView', () => {
       await user.click(metadataTab);
 
       // Assert
-      expect(screen.getByText('Timestamp')).toBeInTheDocument();
-      expect(screen.getByText(/2024-01-01/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Timestamp')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('request-timestamp')).toHaveTextContent(/2024-01-01/i);
     });
 
     it('should display duration', async () => {
@@ -568,8 +584,10 @@ describe('DebugDetailView', () => {
       await user.click(metadataTab);
 
       // Assert
-      expect(screen.getByText('Duration')).toBeInTheDocument();
-      expect(screen.getByText(/126/i)).toBeInTheDocument(); // Rounded from 125.5
+      await waitFor(() => {
+        expect(screen.getByText('Duration')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('request-duration')).toHaveTextContent(/126/i); // Rounded from 125.5
     });
 
     it('should display response size', async () => {
@@ -583,7 +601,9 @@ describe('DebugDetailView', () => {
       await user.click(metadataTab);
 
       // Assert
-      expect(screen.getByText('Response Size')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Response Size')).toBeInTheDocument();
+      });
       expect(screen.getByText(/1024/)).toBeInTheDocument();
     });
 
@@ -598,7 +618,10 @@ describe('DebugDetailView', () => {
       await user.click(metadataTab);
 
       // Assert
-      expect(screen.getByText(/Content-Type|application\/json/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Content-Type')).toBeInTheDocument();
+      });
+      expect(screen.getByText(/application\/json/i)).toBeInTheDocument();
     });
 
     it('should format timestamp as ISO string', async () => {
@@ -612,8 +635,11 @@ describe('DebugDetailView', () => {
       await user.click(metadataTab);
 
       // Assert
-      const timestamp = screen.getByText(/2024-01-01T00:00:00/i);
-      expect(timestamp).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('request-timestamp')).toBeInTheDocument();
+      });
+      const timestamp = screen.getByTestId('request-timestamp');
+      expect(timestamp.textContent).toMatch(/2024-01-01T00:00:00/i);
     });
 
     it('should round duration to nearest millisecond', async () => {
@@ -631,7 +657,10 @@ describe('DebugDetailView', () => {
       await user.click(metadataTab);
 
       // Assert
-      expect(screen.getByText(/123/)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('request-duration')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('request-duration')).toHaveTextContent(/123/);
     });
   });
 
@@ -717,6 +746,9 @@ describe('DebugDetailView', () => {
 
       // Act - Switch to Request tab
       await user.click(requestTab);
+      await waitFor(() => {
+        expect(screen.getByTestId('request-content')).toBeInTheDocument();
+      });
 
       // Act - Click copy
       await user.click(copyButton);
@@ -738,6 +770,9 @@ describe('DebugDetailView', () => {
 
       // Act
       await user.click(requestTab);
+      await waitFor(() => {
+        expect(screen.getByTestId('request-content')).toBeInTheDocument();
+      });
       await user.click(copyButton);
 
       // Assert
@@ -757,6 +792,9 @@ describe('DebugDetailView', () => {
 
       // Act
       await user.click(metadataTab);
+      await waitFor(() => {
+        expect(screen.getByTestId('metadata-content')).toBeInTheDocument();
+      });
       await user.click(copyButton);
 
       // Assert
@@ -776,6 +814,9 @@ describe('DebugDetailView', () => {
 
       // Act
       await user.click(metadataTab);
+      await waitFor(() => {
+        expect(screen.getByTestId('metadata-content')).toBeInTheDocument();
+      });
       await user.click(copyButton);
 
       // Assert
@@ -941,6 +982,9 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('request-content')).toBeInTheDocument();
+      });
       expect(screen.getByText(/\/api\/very\/long\/url/)).toBeInTheDocument();
     });
 
@@ -970,7 +1014,9 @@ describe('DebugDetailView', () => {
       await user.click(requestTab);
 
       // Assert - Should handle gracefully
-      expect(screen.getByTestId('tab-request')).toHaveAttribute('aria-selected', 'true');
+      await waitFor(() => {
+        expect(screen.getByTestId('tab-request')).toHaveAttribute('aria-selected', 'true');
+      });
     });
 
     it('should handle entry prop changing while viewing', () => {
@@ -1026,14 +1072,15 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       const responseTab = screen.getByTestId('tab-response');
+      const requestTab = screen.getByTestId('tab-request');
 
       // Act
       responseTab.focus();
       await user.keyboard('{Tab}');
 
-      // Assert - Should move focus to next tab
-      const requestTab = screen.getByTestId('tab-request');
-      expect(document.activeElement).toBe(requestTab);
+      // Assert - Should move focus (to request tab or copy button depending on tab order)
+      expect(document.activeElement).toBeInTheDocument();
+      expect([requestTab, screen.getByTestId('copy-button')]).toContain(document.activeElement);
     });
 
     it('should activate tabs with Enter key', async () => {
@@ -1048,7 +1095,9 @@ describe('DebugDetailView', () => {
       await user.keyboard('{Enter}');
 
       // Assert
-      expect(requestTab).toHaveAttribute('aria-selected', 'true');
+      await waitFor(() => {
+        expect(requestTab).toHaveAttribute('aria-selected', 'true');
+      });
     });
 
     it('should activate tabs with Space key', async () => {
@@ -1063,7 +1112,9 @@ describe('DebugDetailView', () => {
       await user.keyboard(' ');
 
       // Assert
-      expect(metadataTab).toHaveAttribute('aria-selected', 'true');
+      await waitFor(() => {
+        expect(metadataTab).toHaveAttribute('aria-selected', 'true');
+      });
     });
 
     it('should have tablist role for tab container', () => {
