@@ -223,7 +223,7 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
     switch (currentTab) {
       case 'response':
         return (
-          <div className="bg-gray-950 rounded-lg p-4 font-mono text-sm overflow-auto">
+          <div data-testid="response-content" className="bg-gray-950 rounded-lg p-4 font-mono text-sm overflow-auto">
             <div className="text-gray-500 mb-2">// endpoint: {selectedLog.url}</div>
             <div className="text-gray-100">
               {formatJson(selectedLog.responseBody)}
@@ -253,7 +253,7 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
         );
       case 'metadata':
         return (
-          <div className="bg-gray-900 rounded-lg p-4 space-y-3">
+          <div data-testid="metadata-content" className="bg-gray-900 rounded-lg p-4 space-y-3">
             <div>
               <span className="text-gray-400 font-medium">Timestamp:</span>
               <span data-testid="request-timestamp" className="ml-2 text-gray-100">{formatTimestamp(selectedLog.timestamp)}</span>
@@ -264,17 +264,17 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
             </div>
             <div>
               <span className="text-gray-400 font-medium">Status:</span>
-              <span className="ml-2 text-gray-100">{selectedLog.status}</span>
+              <span data-testid="status-code" className="ml-2 text-gray-100">{selectedLog.status}</span>
             </div>
             {selectedLog.contentType && (
               <div>
                 <span className="text-gray-400 font-medium">Content-Type:</span>
-                <span className="ml-2 text-gray-100">{selectedLog.contentType}</span>
+                <span data-testid="content-type" className="ml-2 text-gray-100">{selectedLog.contentType}</span>
               </div>
             )}
             <div>
               <span className="text-gray-400 font-medium">Response Size:</span>
-              <span className="ml-2 text-gray-100">{formatResponseSize(selectedLog.responseSize)}</span>
+              <span data-testid="response-size" className="ml-2 text-gray-100">{formatResponseSize(selectedLog.responseSize)}</span>
             </div>
           </div>
         );
