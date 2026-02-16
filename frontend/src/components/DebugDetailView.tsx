@@ -133,7 +133,7 @@ export function DebugDetailView({ entry }: Props) {
         ) : (
           <div>
             <h3 className="text-sm font-medium text-gray-500">Params</h3>
-            <p className="text-sm text-gray-400">No parameters</p>
+            <p className="text-sm text-gray-400">None</p>
           </div>
         )}
       </div>
