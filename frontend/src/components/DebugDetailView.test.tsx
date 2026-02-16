@@ -25,18 +25,32 @@ describe('DebugDetailView', () => {
   };
 
   beforeEach(() => {
-    // Setup clipboard mock using vitest's stubGlobal
+    // Setup clipboard mock - only mock clipboard property, preserve other navigator properties
+    mockWriteText.mockClear();
     mockWriteText.mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', {
-      clipboard: {
-        writeText: mockWriteText
-      }
-    });
+
+    // Define clipboard on navigator if it doesn't exist
+    if (!Object.getOwnPropertyDescriptor(navigator, 'clipboard')) {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
+          writeText: mockWriteText,
+          readText: vi.fn()
+        },
+        writable: true,
+        configurable: true
+      });
+    } else {
+      // If it exists, replace writeText method
+      Object.defineProperty(navigator.clipboard, 'writeText', {
+        value: mockWriteText,
+        writable: true,
+        configurable: true
+      });
+    }
   });
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
