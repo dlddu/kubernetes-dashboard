@@ -287,10 +287,10 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
       className="bg-gray-800 rounded-lg p-4 flex flex-col gap-4 h-full"
     >
       <div className="flex items-center justify-between border-b border-gray-700 pb-3">
-        <div className="flex gap-2">
+        <div className="flex gap-2" role="tablist">
           <button
             data-testid="tab-response"
-            role="button"
+            role="tab"
             aria-selected={currentTab === 'response'}
             onClick={() => handleTabClick('response')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -303,7 +303,7 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
           </button>
           <button
             data-testid="tab-request"
-            role="button"
+            role="tab"
             aria-selected={currentTab === 'request'}
             onClick={() => handleTabClick('request')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -316,7 +316,7 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
           </button>
           <button
             data-testid="tab-metadata"
-            role="button"
+            role="tab"
             aria-selected={currentTab === 'metadata'}
             onClick={() => handleTabClick('metadata')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
