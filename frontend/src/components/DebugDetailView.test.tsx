@@ -25,19 +25,18 @@ describe('DebugDetailView', () => {
   };
 
   beforeEach(() => {
-    // Setup clipboard mock
-    Object.defineProperty(navigator, 'clipboard', {
-      value: {
-        writeText: mockWriteText
-      },
-      writable: true,
-      configurable: true
-    });
+    // Setup clipboard mock using vitest's stubGlobal
     mockWriteText.mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', {
+      clipboard: {
+        writeText: mockWriteText
+      }
+    });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
