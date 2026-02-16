@@ -46,47 +46,70 @@ export function DebugDetailView({ entry }: Props) {
     }
   };
 
+  const renderJsonValue = (value: unknown, indent: number = 0): React.ReactNode => {
+    if (value === null) {
+      return <span className="json-null text-gray-400">null</span>;
+    }
+    if (typeof value === 'boolean') {
+      return <span className="json-boolean text-cyan-400">{String(value)}</span>;
+    }
+    if (typeof value === 'number') {
+      return <span className="json-number text-cyan-400">{value}</span>;
+    }
+    if (typeof value === 'string') {
+      return <span className="json-string text-amber-400">&quot;{value}&quot;</span>;
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) return <span>[]</span>;
+      return (
+        <>
+          {'[\n'}
+          {value.map((item, i) => (
+            <span key={i}>
+              {'  '.repeat(indent + 1)}
+              {renderJsonValue(item, indent + 1)}
+              {i < value.length - 1 ? ',\n' : '\n'}
+            </span>
+          ))}
+          {'  '.repeat(indent)}{']'}
+        </>
+      );
+    }
+
+    if (typeof value === 'object') {
+      const entries = Object.entries(value);
+      if (entries.length === 0) return <span>{'{}'}</span>;
+      return (
+        <>
+          {'{\n'}
+          {entries.map(([key, val], i) => (
+            <span key={key}>
+              {'  '.repeat(indent + 1)}
+              <span className="json-key text-purple-400">&quot;{key}&quot;</span>
+              {': '}
+              {renderJsonValue(val, indent + 1)}
+              {i < entries.length - 1 ? ',\n' : '\n'}
+            </span>
+          ))}
+          {'  '.repeat(indent)}
+          {'}'}
+        </>
+      );
+    }
+
+    return String(value);
+  };
+
   const renderResponseTab = () => {
     const comment = `// ${entry.method} ${entry.url}`;
-    const jsonString = JSON.stringify(entry.responseBody, null, 2);
-
-    // Apply syntax highlighting
-    const highlightedJson = jsonString
-      .split('\n')
-      .map(line => {
-        // Highlight keys (text before colon in quotes)
-        let highlighted = line.replace(
-          /"([^"]+)":/g,
-          '<span class="json-key text-purple-400">"$1"</span>:'
-        );
-
-        // Highlight string values (text in quotes after colon)
-        highlighted = highlighted.replace(
-          /: "([^"]*)"/g,
-          ': <span class="json-string text-amber-400">"$1"</span>'
-        );
-
-        // Highlight numbers
-        highlighted = highlighted.replace(
-          /: (\d+\.?\d*)(,?)$/,
-          ': <span class="json-number text-cyan-400">$1</span>$2'
-        );
-        highlighted = highlighted.replace(
-          /: (\d+\.?\d*),/g,
-          ': <span class="json-number text-cyan-400">$1</span>,'
-        );
-
-        return highlighted;
-      })
-      .join('\n');
 
     return (
       <div data-testid="response-content" className="bg-gray-950 p-4 rounded font-mono text-sm overflow-auto">
         <div className="text-gray-500 mb-2">{comment}</div>
-        <pre
-          className="whitespace-pre"
-          dangerouslySetInnerHTML={{ __html: highlightedJson }}
-        />
+        <pre className="whitespace-pre text-white">
+          {renderJsonValue(entry.responseBody)}
+        </pre>
       </div>
     );
   };
@@ -96,11 +119,11 @@ export function DebugDetailView({ entry }: Props) {
       <div data-testid="request-content" className="space-y-4">
         <div>
           <h3 className="text-sm font-medium text-gray-500">Method</h3>
-          <p className="text-sm font-mono">{entry.method}</p>
+          <p data-testid="http-method" className="text-sm font-mono">{entry.method}</p>
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-500">URL</h3>
-          <p className="text-sm font-mono">{entry.url}</p>
+          <p data-testid="request-url" className="text-sm font-mono">{entry.url}</p>
         </div>
         {entry.params ? (
           <div>
