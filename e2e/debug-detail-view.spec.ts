@@ -11,13 +11,13 @@ import { test, expect } from '@playwright/test';
  * - Copy button copies active tab content to clipboard
  * - Copy feedback message appears and disappears after 1.5 seconds
  *
- * Related Issue: DLD-394 - Debug Detail View (Tabs + JSON Syntax Highlighting + Copy)
+ * Related Issue: DLD-395 - Debug Detail View Implementation & E2E Activation
  * Parent Issue: DLD-341 - Debug Page API Response Feature
  *
- * TODO: Activate when DLD-394 implementation is complete
+ * Status: ACTIVE - Implementation completed
  */
 
-test.describe.skip('Debug Page - Detail View Display', () => {
+test.describe('Debug Page - Detail View Display', () => {
   test('should display detail view when endpoint is clicked', async ({ page }) => {
     // Tests that clicking an endpoint in the list shows the detail view panel
 
@@ -74,7 +74,7 @@ test.describe.skip('Debug Page - Detail View Display', () => {
   });
 });
 
-test.describe.skip('Debug Page - Response Tab', () => {
+test.describe('Debug Page - Response Tab', () => {
   test('should display Response tab as active by default', async ({ page }) => {
     // Tests that Response tab is selected when detail view first opens
 
@@ -125,8 +125,7 @@ test.describe.skip('Debug Page - Response Tab', () => {
     await firstEndpoint.click();
 
     // Assert: Response tab content should be visible
-    const responseContent = page.getByTestId('response-content')
-      .or(page.getByRole('tabpanel'));
+    const responseContent = page.getByTestId('response-content');
     await expect(responseContent).toBeVisible();
 
     // Assert: Should contain JSON-like content (braces, quotes, colons)
@@ -155,9 +154,11 @@ test.describe.skip('Debug Page - Response Tab', () => {
     await page.goto('/debug');
     await page.waitForLoadState('networkidle');
 
-    // Act: Click first endpoint
-    const firstEndpoint = page.getByTestId('endpoint-item').first();
-    await firstEndpoint.click();
+    // Act: Click an endpoint that returns a JSON object (not an array)
+    // /api/namespaces returns a string array which has no object keys,
+    // so we select /api/overview which returns a JSON object with keys.
+    const overviewEndpoint = page.getByTestId('endpoint-item').filter({ hasText: /\/api\/overview/ }).first();
+    await overviewEndpoint.click();
 
     // Assert: JSON keys should have specific color styling
     const responseContent = page.getByTestId('response-content');
@@ -266,7 +267,7 @@ test.describe.skip('Debug Page - Response Tab', () => {
   });
 });
 
-test.describe.skip('Debug Page - Request Tab', () => {
+test.describe('Debug Page - Request Tab', () => {
   test('should switch to Request tab when clicked', async ({ page }) => {
     // Tests that clicking Request tab changes the active tab
 
@@ -328,8 +329,7 @@ test.describe.skip('Debug Page - Request Tab', () => {
     await requestTab.click();
 
     // Assert: Request content should show HTTP method
-    const requestContent = page.getByTestId('request-content')
-      .or(page.getByRole('tabpanel'));
+    const requestContent = page.getByTestId('request-content');
     await expect(requestContent).toContainText(/GET|POST|PUT|DELETE|PATCH/i);
   });
 
@@ -406,7 +406,7 @@ test.describe.skip('Debug Page - Request Tab', () => {
   });
 });
 
-test.describe.skip('Debug Page - Metadata Tab', () => {
+test.describe('Debug Page - Metadata Tab', () => {
   test('should switch to Metadata tab when clicked', async ({ page }) => {
     // Tests that clicking Metadata tab changes the active tab
 
@@ -464,8 +464,7 @@ test.describe.skip('Debug Page - Metadata Tab', () => {
     await metadataTab.click();
 
     // Assert: Timestamp should be visible
-    const metadataContent = page.getByTestId('metadata-content')
-      .or(page.getByRole('tabpanel'));
+    const metadataContent = page.getByTestId('metadata-content');
     const timestamp = metadataContent.getByTestId('request-timestamp');
     await expect(timestamp).toBeVisible();
   });
@@ -611,7 +610,7 @@ test.describe.skip('Debug Page - Metadata Tab', () => {
   });
 });
 
-test.describe.skip('Debug Page - Copy to Clipboard', () => {
+test.describe('Debug Page - Copy to Clipboard', () => {
   test('should display Copy button in detail view', async ({ page }) => {
     // Tests that Copy button is visible when detail view is open
 
