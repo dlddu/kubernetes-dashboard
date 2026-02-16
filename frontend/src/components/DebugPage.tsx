@@ -4,7 +4,7 @@ import { useDebugContext, ApiLog } from '../contexts/DebugContext';
 type TabName = 'response' | 'request' | 'metadata';
 
 export function DebugPage() {
-  const { logs, isDebugMode } = useDebugContext();
+  const { logs } = useDebugContext();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabName>('response');
 
