@@ -14,10 +14,10 @@ import { test, expect } from '@playwright/test';
  * Related Issue: DLD-394 - Debug Detail View (Tabs + JSON Syntax Highlighting + Copy)
  * Parent Issue: DLD-341 - Debug Page API Response Feature
  *
- * TODO: Activate when DLD-394 implementation is complete
+ * Status: ACTIVATED - DLD-395 (DebugDetailView component implementation complete)
  */
 
-test.describe.skip('Debug Page - Detail View Display', () => {
+test.describe('Debug Page - Detail View Display', () => {
   test('should display detail view when endpoint is clicked', async ({ page }) => {
     // Tests that clicking an endpoint in the list shows the detail view panel
 
@@ -74,7 +74,7 @@ test.describe.skip('Debug Page - Detail View Display', () => {
   });
 });
 
-test.describe.skip('Debug Page - Response Tab', () => {
+test.describe('Debug Page - Response Tab', () => {
   test('should display Response tab as active by default', async ({ page }) => {
     // Tests that Response tab is selected when detail view first opens
 
@@ -266,7 +266,7 @@ test.describe.skip('Debug Page - Response Tab', () => {
   });
 });
 
-test.describe.skip('Debug Page - Request Tab', () => {
+test.describe('Debug Page - Request Tab', () => {
   test('should switch to Request tab when clicked', async ({ page }) => {
     // Tests that clicking Request tab changes the active tab
 
@@ -406,7 +406,7 @@ test.describe.skip('Debug Page - Request Tab', () => {
   });
 });
 
-test.describe.skip('Debug Page - Metadata Tab', () => {
+test.describe('Debug Page - Metadata Tab', () => {
   test('should switch to Metadata tab when clicked', async ({ page }) => {
     // Tests that clicking Metadata tab changes the active tab
 
@@ -611,7 +611,7 @@ test.describe.skip('Debug Page - Metadata Tab', () => {
   });
 });
 
-test.describe.skip('Debug Page - Copy to Clipboard', () => {
+test.describe('Debug Page - Copy to Clipboard', () => {
   test('should display Copy button in detail view', async ({ page }) => {
     // Tests that Copy button is visible when detail view is open
 
