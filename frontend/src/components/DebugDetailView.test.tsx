@@ -26,10 +26,12 @@ describe('DebugDetailView', () => {
 
   beforeEach(() => {
     // Setup clipboard mock
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
         writeText: mockWriteText
-      }
+      },
+      writable: true,
+      configurable: true
     });
     mockWriteText.mockResolvedValue(undefined);
     vi.useFakeTimers();

@@ -41,7 +41,7 @@ export function DebugDetailView({ entry }: Props) {
       setTimeout(() => {
         setCopied(false);
       }, 1500);
-    } catch (error) {
+    } catch {
       // Handle clipboard errors gracefully
     }
   };
@@ -102,14 +102,14 @@ export function DebugDetailView({ entry }: Props) {
           <h3 className="text-sm font-medium text-gray-500">URL</h3>
           <p className="text-sm font-mono">{entry.url}</p>
         </div>
-        {entry.params && (
+        {entry.params ? (
           <div>
             <h3 className="text-sm font-medium text-gray-500">Params</h3>
             <pre className="text-sm font-mono whitespace-pre-wrap bg-gray-50 p-4 rounded">
               {JSON.stringify(entry.params, null, 2)}
             </pre>
           </div>
-        )}
+        ) : null}
       </div>
     );
   };
