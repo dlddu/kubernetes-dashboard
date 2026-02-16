@@ -13,18 +13,6 @@ export function DebugPage() {
       ? logs[selectedIndex]
       : null;
 
-  if (!isDebugMode && logs.length === 0) {
-    return (
-      <div data-testid="debug-page">
-        <h1 data-testid="debug-page-title" className="text-2xl font-bold mb-6">Debug</h1>
-        <div data-testid="debug-empty-state" className="text-center py-16 text-gray-500">
-          <p className="text-lg font-medium">No API calls recorded</p>
-          <p className="mt-2">Navigate to other pages to see API logs.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div data-testid="debug-page">
       <h1 data-testid="debug-page-title" className="text-2xl font-bold mb-6">Debug</h1>
@@ -36,7 +24,7 @@ export function DebugPage() {
       >
         <div data-testid="endpoint-list" role="list">
           {logs.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div data-testid="debug-empty-state" className="text-center py-8 text-gray-500">
               <p className="text-lg font-medium">No API calls recorded</p>
               <p className="mt-2">Navigate to other pages to see API logs.</p>
             </div>
