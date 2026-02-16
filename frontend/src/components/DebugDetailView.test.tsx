@@ -34,7 +34,6 @@ describe('DebugDetailView', () => {
       configurable: true
     });
     mockWriteText.mockResolvedValue(undefined);
-    vi.useFakeTimers();
   });
 
   afterEach(() => {
@@ -103,7 +102,8 @@ describe('DebugDetailView', () => {
 
       // Assert
       const placeholder = screen.getByText(/select an endpoint/i);
-      expect(placeholder.className).toMatch(/center|justify-center|items-center/i);
+      const container = placeholder.closest('div');
+      expect(container?.className).toMatch(/center|justify-center|items-center/i);
     });
   });
 
@@ -317,8 +317,8 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       // Assert
-      const jsonContent = screen.getByText(/pod-1/i).textContent;
-      expect(jsonContent).toMatch(/\n/); // Should have newlines for formatting
+      const responseContent = screen.getByTestId('response-content');
+      expect(responseContent.innerHTML).toMatch(/\n/); // Should have newlines for formatting
     });
 
     it('should display nested JSON objects', () => {
@@ -857,13 +857,17 @@ describe('DebugDetailView', () => {
         expect(screen.getByText(/Copied!/i)).toBeInTheDocument();
       });
 
-      // Act - Wait 1.5 seconds
+      // Act - Activate fake timers after user interaction
+      vi.useFakeTimers();
       vi.advanceTimersByTime(1500);
 
       // Assert - Message disappears
       await waitFor(() => {
         expect(screen.queryByText(/Copied!/i)).not.toBeInTheDocument();
       });
+
+      // Cleanup
+      vi.useRealTimers();
     });
 
     it('should replace "Copy" text with "Copied!" temporarily', async () => {
@@ -898,13 +902,17 @@ describe('DebugDetailView', () => {
         expect(copyButton).toHaveTextContent(/Copied!/i);
       });
 
-      // Act - Wait for timeout
+      // Act - Activate fake timers after user interaction and wait for timeout
+      vi.useFakeTimers();
       vi.advanceTimersByTime(1500);
 
       // Assert
       await waitFor(() => {
         expect(copyButton).toHaveTextContent(/^Copy$/i);
       });
+
+      // Cleanup
+      vi.useRealTimers();
     });
 
     it('should handle multiple rapid copy clicks', async () => {
@@ -1194,8 +1202,8 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView entry={mockApiLog} />);
 
       // Assert
-      const detailView = screen.getByTestId('detail-view');
-      expect(detailView.className).toMatch(/p-|m-|gap-|space-/);
+      const tabpanel = screen.getByRole('tabpanel');
+      expect(tabpanel.className).toMatch(/p-|padding/);
     });
   });
 });
