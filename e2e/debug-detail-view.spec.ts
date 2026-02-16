@@ -154,9 +154,11 @@ test.describe('Debug Page - Response Tab', () => {
     await page.goto('/debug');
     await page.waitForLoadState('networkidle');
 
-    // Act: Click first endpoint
-    const firstEndpoint = page.getByTestId('endpoint-item').first();
-    await firstEndpoint.click();
+    // Act: Click an endpoint that returns a JSON object (not an array)
+    // /api/namespaces returns a string array which has no object keys,
+    // so we select /api/overview which returns a JSON object with keys.
+    const overviewEndpoint = page.getByTestId('endpoint-item').filter({ hasText: /\/api\/overview/ }).first();
+    await overviewEndpoint.click();
 
     // Assert: JSON keys should have specific color styling
     const responseContent = page.getByTestId('response-content');
