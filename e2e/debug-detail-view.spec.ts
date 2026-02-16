@@ -125,8 +125,7 @@ test.describe('Debug Page - Response Tab', () => {
     await firstEndpoint.click();
 
     // Assert: Response tab content should be visible
-    const responseContent = page.getByTestId('response-content')
-      .or(page.getByRole('tabpanel'));
+    const responseContent = page.getByTestId('response-content');
     await expect(responseContent).toBeVisible();
 
     // Assert: Should contain JSON-like content (braces, quotes, colons)
@@ -328,8 +327,7 @@ test.describe('Debug Page - Request Tab', () => {
     await requestTab.click();
 
     // Assert: Request content should show HTTP method
-    const requestContent = page.getByTestId('request-content')
-      .or(page.getByRole('tabpanel'));
+    const requestContent = page.getByTestId('request-content');
     await expect(requestContent).toContainText(/GET|POST|PUT|DELETE|PATCH/i);
   });
 
@@ -464,8 +462,7 @@ test.describe('Debug Page - Metadata Tab', () => {
     await metadataTab.click();
 
     // Assert: Timestamp should be visible
-    const metadataContent = page.getByTestId('metadata-content')
-      .or(page.getByRole('tabpanel'));
+    const metadataContent = page.getByTestId('metadata-content');
     const timestamp = metadataContent.getByTestId('request-timestamp');
     await expect(timestamp).toBeVisible();
   });
