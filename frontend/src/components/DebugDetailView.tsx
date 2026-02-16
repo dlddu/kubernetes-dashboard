@@ -59,7 +59,7 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
 
         // Add the key with purple color
         elements.push(
-          <span key={`${index}-key-${match.index}`} className="text-purple-400">
+          <span key={`${index}-key-${match.index}`} className="text-purple-400 json-key">
             "{match[1]}"
           </span>
         );
@@ -117,9 +117,10 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
             );
           }
 
-          const className = match.type === 'string' ? 'text-amber-400' : 'text-cyan-400';
+          const baseClassName = match.type === 'string' ? 'text-amber-400' : 'text-cyan-400';
+          const typeClassName = match.type === 'string' ? 'json-string' : 'json-number';
           restParts.push(
-            <span key={`${index}-value-${idx}`} className={className}>
+            <span key={`${index}-value-${idx}`} className={`${baseClassName} ${typeClassName}`}>
               {match.value}
             </span>
           );
@@ -232,7 +233,7 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
         );
       case 'request':
         return (
-          <div className="bg-gray-900 rounded-lg p-4 space-y-3">
+          <div data-testid="request-content" className="bg-gray-900 rounded-lg p-4 space-y-3">
             <div>
               <span className="text-gray-400 font-medium">Method:</span>
               <span className="ml-2 text-gray-100">{selectedLog.method}</span>
