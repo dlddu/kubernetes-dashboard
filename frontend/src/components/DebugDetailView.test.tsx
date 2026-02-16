@@ -713,6 +713,9 @@ describe('DebugDetailView', () => {
       await user.click(copyButton);
 
       // Assert
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
       expect(mockWriteText).toHaveBeenCalledTimes(1);
       const copiedContent = mockWriteText.mock.calls[0][0];
       expect(copiedContent).toContain('pod-1');
@@ -729,6 +732,9 @@ describe('DebugDetailView', () => {
       await user.click(copyButton);
 
       // Assert
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
       const copiedContent = mockWriteText.mock.calls[0][0];
       expect(copiedContent).toContain('"items"');
       expect(copiedContent).toContain('"name"');
@@ -754,6 +760,9 @@ describe('DebugDetailView', () => {
       await user.click(copyButton);
 
       // Assert
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
       expect(mockWriteText).toHaveBeenCalledTimes(1);
       const copiedContent = mockWriteText.mock.calls[0][0];
       expect(copiedContent).toContain('GET');
@@ -776,6 +785,9 @@ describe('DebugDetailView', () => {
       await user.click(copyButton);
 
       // Assert
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
       const copiedContent = mockWriteText.mock.calls[0][0];
       expect(copiedContent).toContain('default');
     });
@@ -798,6 +810,9 @@ describe('DebugDetailView', () => {
       await user.click(copyButton);
 
       // Assert
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
       expect(mockWriteText).toHaveBeenCalledTimes(1);
       const copiedContent = mockWriteText.mock.calls[0][0];
       expect(copiedContent).toContain('200');
@@ -820,6 +835,9 @@ describe('DebugDetailView', () => {
       await user.click(copyButton);
 
       // Assert
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
       const copiedContent = mockWriteText.mock.calls[0][0];
       expect(copiedContent).toMatch(/2024-01-01/);
     });
@@ -854,20 +872,19 @@ describe('DebugDetailView', () => {
 
       // Assert - Message appears
       await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
+      await waitFor(() => {
         expect(screen.getByText(/Copied!/i)).toBeInTheDocument();
       });
 
-      // Act - Activate fake timers after user interaction
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(1500);
-
-      // Assert - Message disappears
-      await waitFor(() => {
-        expect(screen.queryByText(/Copied!/i)).not.toBeInTheDocument();
-      });
-
-      // Cleanup
-      vi.useRealTimers();
+      // Assert - Message disappears after timeout
+      await waitFor(
+        () => {
+          expect(screen.queryByText(/Copied!/i)).not.toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
     });
 
     it('should replace "Copy" text with "Copied!" temporarily', async () => {
@@ -897,22 +914,23 @@ describe('DebugDetailView', () => {
       // Act
       await user.click(copyButton);
 
+      // Assert - Wait for clipboard write
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
+
       // Wait for feedback
       await waitFor(() => {
         expect(copyButton).toHaveTextContent(/Copied!/i);
       });
 
-      // Act - Activate fake timers after user interaction and wait for timeout
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(1500);
-
-      // Assert
-      await waitFor(() => {
-        expect(copyButton).toHaveTextContent(/^Copy$/i);
-      });
-
-      // Cleanup
-      vi.useRealTimers();
+      // Assert - Text restores after timeout
+      await waitFor(
+        () => {
+          expect(copyButton).toHaveTextContent(/^Copy$/i);
+        },
+        { timeout: 2000 }
+      );
     });
 
     it('should handle multiple rapid copy clicks', async () => {
@@ -922,10 +940,21 @@ describe('DebugDetailView', () => {
 
       const copyButton = screen.getByTestId('copy-button');
 
-      // Act - Click multiple times
+      // Act - Click multiple times with waits
       await user.click(copyButton);
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalledTimes(1);
+      });
+
       await user.click(copyButton);
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalledTimes(2);
+      });
+
       await user.click(copyButton);
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalledTimes(3);
+      });
 
       // Assert - Should be called multiple times
       expect(mockWriteText).toHaveBeenCalledTimes(3);
@@ -1006,7 +1035,11 @@ describe('DebugDetailView', () => {
 
       // Act & Assert - Should not throw error
       await user.click(copyButton);
-      expect(mockWriteText).toHaveBeenCalled();
+
+      // Wait for the async operation to complete
+      await waitFor(() => {
+        expect(mockWriteText).toHaveBeenCalled();
+      });
     });
 
     it('should handle switching tabs while copy feedback is showing', async () => {
