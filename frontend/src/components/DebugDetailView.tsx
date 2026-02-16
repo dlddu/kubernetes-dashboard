@@ -256,11 +256,11 @@ export function DebugDetailView({ selectedLog, activeTab, onTabChange }: DebugDe
           <div className="bg-gray-900 rounded-lg p-4 space-y-3">
             <div>
               <span className="text-gray-400 font-medium">Timestamp:</span>
-              <span className="ml-2 text-gray-100">{formatTimestamp(selectedLog.timestamp)}</span>
+              <span data-testid="request-timestamp" className="ml-2 text-gray-100">{formatTimestamp(selectedLog.timestamp)}</span>
             </div>
             <div>
               <span className="text-gray-400 font-medium">Duration:</span>
-              <span className="ml-2 text-gray-100">{selectedLog.duration} ms</span>
+              <span data-testid="request-duration" className="ml-2 text-gray-100">{selectedLog.duration} ms</span>
             </div>
             <div>
               <span className="text-gray-400 font-medium">Status:</span>

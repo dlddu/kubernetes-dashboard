@@ -922,7 +922,7 @@ describe('DebugDetailView', () => {
       render(<DebugDetailView selectedLog={mockApiLog} />);
 
       // Assert
-      const tabs = screen.getAllByRole('button');
+      const tabs = screen.getAllByRole('tab');
       expect(tabs.length).toBeGreaterThanOrEqual(3); // At least 3 tabs
     });
 
