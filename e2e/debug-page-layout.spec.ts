@@ -25,13 +25,11 @@ test.describe('Debug Page - Layout Structure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: DebugPage component should be visible
-    const debugPage = page.getByTestId('debug-page')
-      .or(page.locator('[data-testid*="debug"]').first());
+    const debugPage = page.getByTestId('debug-page');
     await expect(debugPage).toBeVisible();
 
     // Assert: Page should have proper heading
-    const debugTitle = page.getByRole('heading', { name: /debug/i })
-      .or(page.getByTestId('debug-page-title'));
+    const debugTitle = page.getByTestId('debug-page-title');
     await expect(debugTitle).toBeVisible();
   });
 
@@ -43,15 +41,11 @@ test.describe('Debug Page - Layout Structure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Left panel should exist and be visible
-    const leftPanel = page.getByTestId('debug-left-panel')
-      .or(page.getByTestId('endpoint-list-panel'))
-      .or(page.locator('[data-testid*="left"]').first());
+    const leftPanel = page.getByTestId('debug-left-panel');
     await expect(leftPanel).toBeVisible();
 
     // Assert: Left panel should contain endpoint list component
-    const endpointList = page.getByTestId('endpoint-list')
-      .or(page.getByTestId('api-logs-list'))
-      .or(leftPanel.locator('[role="list"]'));
+    const endpointList = page.getByTestId('endpoint-list');
     await expect(endpointList).toBeVisible();
   });
 
@@ -63,10 +57,7 @@ test.describe('Debug Page - Layout Structure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Right panel should exist and be visible
-    const rightPanel = page.getByTestId('debug-right-panel')
-      .or(page.getByTestId('detail-view-panel'))
-      .or(page.getByTestId('endpoint-detail-view'))
-      .or(page.locator('[data-testid*="right"]').first());
+    const rightPanel = page.getByTestId('debug-right-panel');
     await expect(rightPanel).toBeVisible();
   });
 });
@@ -79,8 +70,7 @@ test.describe('Debug Page - API Log Display', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const debugToggle = page.getByTestId('debug-toggle')
-      .or(page.getByRole('button', { name: /debug/i }));
+    const debugToggle = page.getByTestId('debug-toggle');
     await debugToggle.click();
 
     // Act: Navigate to Overview page to trigger /api/overview call
@@ -118,8 +108,7 @@ test.describe('Debug Page - API Log Display', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: First log entry should display HTTP method (GET)
-    const firstLogEntry = page.getByTestId('endpoint-item').first()
-      .or(page.getByTestId('api-log-entry').first());
+    const firstLogEntry = page.getByTestId('endpoint-item').first();
     await expect(firstLogEntry).toContainText(/GET/i);
   });
 
@@ -244,8 +233,7 @@ test.describe('Debug Page - Empty State', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Should display empty state message
-    const emptyState = page.getByTestId('debug-empty-state')
-      .or(page.getByText(/no api calls recorded/i));
+    const emptyState = page.getByTestId('debug-empty-state');
     await expect(emptyState).toBeVisible();
 
     // Assert: Empty state should contain guidance text
