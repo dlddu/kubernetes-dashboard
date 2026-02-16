@@ -10,13 +10,13 @@ import { test, expect } from '@playwright/test';
  * - Endpoint selection highlights the selected item
  * - Empty state displays when no API calls are logged
  *
- * Related Issue: DLD-392 - Debug Page Layout + Endpoint List (skipped)
+ * Related Issue: DLD-393 - Activated from DLD-392
  * Parent Issue: DLD-341 - Debug Page API Response Feature
  *
- * TODO: Activate when DLD-392 implementation is complete
+ * Activated for DLD-393 implementation
  */
 
-test.describe.skip('Debug Page - Layout Structure', () => {
+test.describe('Debug Page - Layout Structure', () => {
   test('should render DebugPage component when accessing /debug route', async ({ page }) => {
     // Tests that /debug route correctly renders the DebugPage component
 
@@ -25,13 +25,11 @@ test.describe.skip('Debug Page - Layout Structure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: DebugPage component should be visible
-    const debugPage = page.getByTestId('debug-page')
-      .or(page.locator('[data-testid*="debug"]').first());
+    const debugPage = page.getByTestId('debug-page');
     await expect(debugPage).toBeVisible();
 
     // Assert: Page should have proper heading
-    const debugTitle = page.getByRole('heading', { name: /debug/i })
-      .or(page.getByTestId('debug-page-title'));
+    const debugTitle = page.getByTestId('debug-page-title');
     await expect(debugTitle).toBeVisible();
   });
 
@@ -43,15 +41,11 @@ test.describe.skip('Debug Page - Layout Structure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Left panel should exist and be visible
-    const leftPanel = page.getByTestId('debug-left-panel')
-      .or(page.getByTestId('endpoint-list-panel'))
-      .or(page.locator('[data-testid*="left"]').first());
+    const leftPanel = page.getByTestId('debug-left-panel');
     await expect(leftPanel).toBeVisible();
 
     // Assert: Left panel should contain endpoint list component
-    const endpointList = page.getByTestId('endpoint-list')
-      .or(page.getByTestId('api-logs-list'))
-      .or(leftPanel.locator('[role="list"]'));
+    const endpointList = page.getByTestId('endpoint-list');
     await expect(endpointList).toBeVisible();
   });
 
@@ -63,15 +57,12 @@ test.describe.skip('Debug Page - Layout Structure', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Right panel should exist and be visible
-    const rightPanel = page.getByTestId('debug-right-panel')
-      .or(page.getByTestId('detail-view-panel'))
-      .or(page.getByTestId('endpoint-detail-view'))
-      .or(page.locator('[data-testid*="right"]').first());
+    const rightPanel = page.getByTestId('debug-right-panel');
     await expect(rightPanel).toBeVisible();
   });
 });
 
-test.describe.skip('Debug Page - API Log Display', () => {
+test.describe('Debug Page - API Log Display', () => {
   test('should display /api/overview log entry after visiting Overview page', async ({ page }) => {
     // Tests that DebugContext captures and displays API calls from page navigation
 
@@ -79,8 +70,7 @@ test.describe.skip('Debug Page - API Log Display', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const debugToggle = page.getByTestId('debug-toggle')
-      .or(page.getByRole('button', { name: /debug/i }));
+    const debugToggle = page.getByTestId('debug-toggle');
     await debugToggle.click();
 
     // Act: Navigate to Overview page to trigger /api/overview call
@@ -118,8 +108,7 @@ test.describe.skip('Debug Page - API Log Display', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: First log entry should display HTTP method (GET)
-    const firstLogEntry = page.getByTestId('endpoint-item').first()
-      .or(page.getByTestId('api-log-entry').first());
+    const firstLogEntry = page.getByTestId('endpoint-item').first();
     await expect(firstLogEntry).toContainText(/GET/i);
   });
 
@@ -199,7 +188,7 @@ test.describe.skip('Debug Page - API Log Display', () => {
   });
 });
 
-test.describe.skip('Debug Page - Endpoint Selection', () => {
+test.describe('Debug Page - Endpoint Selection', () => {
   test('should highlight selected endpoint when clicked', async ({ page }) => {
     // Tests that clicking an endpoint applies visual highlight (cyan-50 background + left border)
 
@@ -235,7 +224,7 @@ test.describe.skip('Debug Page - Endpoint Selection', () => {
   });
 });
 
-test.describe.skip('Debug Page - Empty State', () => {
+test.describe('Debug Page - Empty State', () => {
   test('should display empty state message when no API calls are recorded', async ({ page }) => {
     // Tests that /debug page shows empty state when DebugContext has no logs
 
@@ -244,8 +233,7 @@ test.describe.skip('Debug Page - Empty State', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Should display empty state message
-    const emptyState = page.getByTestId('debug-empty-state')
-      .or(page.getByText(/no api calls recorded/i));
+    const emptyState = page.getByTestId('debug-empty-state');
     await expect(emptyState).toBeVisible();
 
     // Assert: Empty state should contain guidance text
