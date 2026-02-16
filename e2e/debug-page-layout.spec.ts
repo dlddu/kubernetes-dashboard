@@ -10,13 +10,13 @@ import { test, expect } from '@playwright/test';
  * - Endpoint selection highlights the selected item
  * - Empty state displays when no API calls are logged
  *
- * Related Issue: DLD-392 - Debug Page Layout + Endpoint List (skipped)
+ * Related Issue: DLD-393 - Activated from DLD-392
  * Parent Issue: DLD-341 - Debug Page API Response Feature
  *
- * TODO: Activate when DLD-392 implementation is complete
+ * Activated for DLD-393 implementation
  */
 
-test.describe.skip('Debug Page - Layout Structure', () => {
+test.describe('Debug Page - Layout Structure', () => {
   test('should render DebugPage component when accessing /debug route', async ({ page }) => {
     // Tests that /debug route correctly renders the DebugPage component
 
@@ -71,7 +71,7 @@ test.describe.skip('Debug Page - Layout Structure', () => {
   });
 });
 
-test.describe.skip('Debug Page - API Log Display', () => {
+test.describe('Debug Page - API Log Display', () => {
   test('should display /api/overview log entry after visiting Overview page', async ({ page }) => {
     // Tests that DebugContext captures and displays API calls from page navigation
 
@@ -199,7 +199,7 @@ test.describe.skip('Debug Page - API Log Display', () => {
   });
 });
 
-test.describe.skip('Debug Page - Endpoint Selection', () => {
+test.describe('Debug Page - Endpoint Selection', () => {
   test('should highlight selected endpoint when clicked', async ({ page }) => {
     // Tests that clicking an endpoint applies visual highlight (cyan-50 background + left border)
 
@@ -235,7 +235,7 @@ test.describe.skip('Debug Page - Endpoint Selection', () => {
   });
 });
 
-test.describe.skip('Debug Page - Empty State', () => {
+test.describe('Debug Page - Empty State', () => {
   test('should display empty state message when no API calls are recorded', async ({ page }) => {
     // Tests that /debug page shows empty state when DebugContext has no logs
 

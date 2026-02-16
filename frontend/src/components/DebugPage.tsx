@@ -15,30 +15,38 @@ export function DebugPage() {
 
   if (!isDebugMode && logs.length === 0) {
     return (
-      <div data-testid="debug-empty-state" className="text-center py-16 text-gray-500">
-        <p className="text-lg font-medium">No API calls logged</p>
-        <p className="mt-2">Enable debug mode to start capturing API calls.</p>
+      <div data-testid="debug-page">
+        <h1 data-testid="debug-page-title" className="text-2xl font-bold mb-6">Debug</h1>
+        <div data-testid="debug-empty-state" className="text-center py-16 text-gray-500">
+          <p className="text-lg font-medium">No API calls recorded</p>
+          <p className="mt-2">Navigate to other pages to see API logs.</p>
+        </div>
       </div>
     );
   }
 
   if (logs.length === 0) {
     return (
-      <div data-testid="debug-empty-state" className="text-center py-16 text-gray-500">
-        <p className="text-lg font-medium">No logs yet</p>
-        <p className="mt-2">Navigate to other pages to generate API calls.</p>
+      <div data-testid="debug-page">
+        <h1 data-testid="debug-page-title" className="text-2xl font-bold mb-6">Debug</h1>
+        <div data-testid="debug-empty-state" className="text-center py-16 text-gray-500">
+          <p className="text-lg font-medium">No API calls recorded</p>
+          <p className="mt-2">Navigate to other pages to see API logs.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-200px)]">
+    <div data-testid="debug-page">
+      <h1 data-testid="debug-page-title" className="text-2xl font-bold mb-6">Debug</h1>
+      <div className="flex gap-4 h-[calc(100vh-200px)]">
       {/* Left panel - endpoint list */}
       <div
-        data-testid="endpoint-list"
+        data-testid="debug-left-panel"
         className="w-1/3 border border-gray-200 rounded-lg overflow-y-auto bg-white"
       >
-        <div data-testid="api-logs-list" role="list">
+        <div data-testid="endpoint-list" role="list">
           {logs.map((log, index) => (
             <div
               key={index}
@@ -49,7 +57,7 @@ export function DebugPage() {
                 setActiveTab('response');
               }}
               className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                selectedIndex === index ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                selectedIndex === index ? 'bg-cyan-50 border-l-4 border-l-blue-500' : ''
               }`}
             >
               <div className="flex items-center gap-2">
@@ -79,7 +87,7 @@ export function DebugPage() {
       </div>
 
       {/* Right panel - detail view */}
-      <div className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
+      <div data-testid="debug-right-panel" className="flex-1 border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col">
         {selectedLog ? (
           <>
             {/* Tabs */}
@@ -185,6 +193,7 @@ export function DebugPage() {
             <p>Select an endpoint to view details</p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
