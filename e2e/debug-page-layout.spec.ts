@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { enableDebugAndGenerateLogs } from './helpers/debug-setup';
 
 /**
  * E2E Tests for Debug Page - Layout and Endpoint List Display
@@ -63,24 +64,12 @@ test.describe('Debug Page - Layout Structure', () => {
 });
 
 test.describe('Debug Page - API Log Display', () => {
+  test.beforeEach(async ({ page }) => {
+    await enableDebugAndGenerateLogs(page);
+  });
+
   test('should display /api/overview log entry after visiting Overview page', async ({ page }) => {
     // Tests that DebugContext captures and displays API calls from page navigation
-
-    // Arrange: Enable debug mode
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const debugToggle = page.getByTestId('debug-toggle');
-    await debugToggle.click();
-
-    // Act: Navigate to Overview page to trigger /api/overview call
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    // Act: Navigate to /debug page
-    await page.goto('/debug');
-    await page.waitForLoadState('networkidle');
 
     // Assert: Should display /api/overview endpoint in the list
     const overviewEndpoint = page.getByTestId('endpoint-item')
@@ -92,21 +81,6 @@ test.describe('Debug Page - API Log Display', () => {
   test('should display HTTP method (GET) for each log entry', async ({ page }) => {
     // Tests that each API log entry shows the HTTP method
 
-    // Arrange: Enable debug mode and trigger API calls
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const debugToggle = page.getByTestId('debug-toggle');
-    await debugToggle.click();
-
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    // Act: Navigate to /debug page
-    await page.goto('/debug');
-    await page.waitForLoadState('networkidle');
-
     // Assert: First log entry should display HTTP method (GET)
     const firstLogEntry = page.getByTestId('endpoint-item').first();
     await expect(firstLogEntry).toContainText(/GET/i);
@@ -115,21 +89,6 @@ test.describe('Debug Page - API Log Display', () => {
   test('should display URL for each log entry', async ({ page }) => {
     // Tests that each API log entry shows the request URL
 
-    // Arrange: Enable debug mode and trigger API calls
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const debugToggle = page.getByTestId('debug-toggle');
-    await debugToggle.click();
-
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    // Act: Navigate to /debug page
-    await page.goto('/debug');
-    await page.waitForLoadState('networkidle');
-
     // Assert: First log entry should display URL path
     const firstLogEntry = page.getByTestId('endpoint-item').first();
     await expect(firstLogEntry).toContainText(/\/api\//i);
@@ -137,21 +96,6 @@ test.describe('Debug Page - API Log Display', () => {
 
   test('should display status code for each log entry', async ({ page }) => {
     // Tests that each API log entry shows the HTTP status code
-
-    // Arrange: Enable debug mode and trigger API calls
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const debugToggle = page.getByTestId('debug-toggle');
-    await debugToggle.click();
-
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    // Act: Navigate to /debug page
-    await page.goto('/debug');
-    await page.waitForLoadState('networkidle');
 
     // Assert: Log entry should display status code
     const statusCode = page.getByTestId('status-code').first();
@@ -163,21 +107,6 @@ test.describe('Debug Page - API Log Display', () => {
 
   test('should display duration for each log entry', async ({ page }) => {
     // Tests that each API log entry shows the request duration
-
-    // Arrange: Enable debug mode and trigger API calls
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const debugToggle = page.getByTestId('debug-toggle');
-    await debugToggle.click();
-
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    // Act: Navigate to /debug page
-    await page.goto('/debug');
-    await page.waitForLoadState('networkidle');
 
     // Assert: Log entry should display duration
     const firstLogEntry = page.getByTestId('endpoint-item').first();
@@ -193,19 +122,7 @@ test.describe('Debug Page - Endpoint Selection', () => {
     // Tests that clicking an endpoint applies visual highlight (cyan-50 background + left border)
 
     // Arrange: Enable debug mode and generate API logs
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const debugToggle = page.getByTestId('debug-toggle');
-    await debugToggle.click();
-
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    // Act: Navigate to /debug page
-    await page.goto('/debug');
-    await page.waitForLoadState('networkidle');
+    await enableDebugAndGenerateLogs(page);
 
     // Act: Click first endpoint in the list
     const firstEndpoint = page.getByTestId('endpoint-item').first();

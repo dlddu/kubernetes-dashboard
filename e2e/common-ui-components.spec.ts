@@ -709,41 +709,38 @@ test.describe('EmptyState Component - Secrets Tab', () => {
 });
 
 test.describe('Common UI Components - Consistency Across Tabs', () => {
-  test('should use consistent LoadingSkeleton design across all tabs', async ({ page }) => {
-    // Tests that loading skeletons have consistent visual design
+  // Split loop tests into individual parameterized tests for better isolation:
+  // if one tab fails, others still run and report independently.
 
-    const tabs = [
-      { url: '/', testId: 'loading-skeleton' },
-      { url: '/nodes', testId: 'nodes-loading' },
-      { url: '/workloads', testId: 'loading-indicator' },
-      { url: '/pods', testId: 'pods-loading' },
-      { url: '/secrets', testId: 'secrets-loading' }
-    ];
+  const loadingTabs = [
+    { url: '/', testId: 'loading-skeleton', name: 'Overview' },
+    { url: '/nodes', testId: 'nodes-loading', name: 'Nodes' },
+    { url: '/workloads', testId: 'loading-indicator', name: 'Workloads' },
+    { url: '/pods', testId: 'pods-loading', name: 'Pods' },
+    { url: '/secrets', testId: 'secrets-loading', name: 'Secrets' }
+  ];
 
-    for (const tab of tabs) {
-      // Arrange: Navigate to tab
+  for (const tab of loadingTabs) {
+    test(`should use consistent LoadingSkeleton design on ${tab.name} tab`, async ({ page }) => {
       await page.goto(tab.url);
       await page.waitForLoadState('networkidle');
 
       // Assert: Tab should load successfully (either with data or empty state)
       const body = await page.locator('body').innerHTML();
       expect(body.length).toBeGreaterThan(0);
-    }
-  });
+    });
+  }
 
-  test('should use consistent ErrorRetry button style across all tabs', async ({ page }) => {
-    // Tests that retry buttons have consistent design
+  const errorTabs = [
+    { url: '/', errorTestId: 'summary-cards-error', name: 'Overview' },
+    { url: '/nodes', errorTestId: 'nodes-error', name: 'Nodes' },
+    { url: '/workloads', errorTestId: 'error-message', name: 'Workloads' },
+    { url: '/pods', errorTestId: 'pods-error', name: 'Pods' },
+    { url: '/secrets', errorTestId: 'secrets-error', name: 'Secrets' }
+  ];
 
-    const tabs = [
-      { url: '/', errorTestId: 'summary-cards-error' },
-      { url: '/nodes', errorTestId: 'nodes-error' },
-      { url: '/workloads', errorTestId: 'error-message' },
-      { url: '/pods', errorTestId: 'pods-error' },
-      { url: '/secrets', errorTestId: 'secrets-error' }
-    ];
-
-    for (const tab of tabs) {
-      // Arrange: Navigate to tab
+  for (const tab of errorTabs) {
+    test(`should use consistent ErrorRetry button style on ${tab.name} tab`, async ({ page }) => {
       await page.goto(tab.url);
       await page.waitForLoadState('networkidle');
 
@@ -764,21 +761,18 @@ test.describe('Common UI Components - Consistency Across Tabs', () => {
           await expect(retryButton.first()).toBeEnabled();
         }
       }
-    }
-  });
+    });
+  }
 
-  test('should use consistent EmptyState design across all tabs', async ({ page }) => {
-    // Tests that empty states have consistent visual design
+  const emptyTabs = [
+    { url: '/nodes', emptyTestId: 'nodes-empty', name: 'Nodes' },
+    { url: '/workloads', emptyTestId: 'empty-state', name: 'Workloads' },
+    { url: '/pods', emptyTestId: 'no-unhealthy-pods-message', name: 'Pods' },
+    { url: '/secrets', emptyTestId: 'no-secrets-message', name: 'Secrets' }
+  ];
 
-    const tabs = [
-      { url: '/nodes', emptyTestId: 'nodes-empty' },
-      { url: '/workloads', emptyTestId: 'empty-state' },
-      { url: '/pods', emptyTestId: 'no-unhealthy-pods-message' },
-      { url: '/secrets', emptyTestId: 'no-secrets-message' }
-    ];
-
-    for (const tab of tabs) {
-      // Arrange: Navigate to tab
+  for (const tab of emptyTabs) {
+    test(`should use consistent EmptyState design on ${tab.name} tab`, async ({ page }) => {
       await page.goto(tab.url);
       await page.waitForLoadState('networkidle');
 
@@ -791,8 +785,8 @@ test.describe('Common UI Components - Consistency Across Tabs', () => {
         const message = await emptyState.innerText();
         expect(message.length).toBeGreaterThan(0);
       }
-    }
-  });
+    });
+  }
 });
 
 test.describe('Common UI Components - Accessibility', () => {
