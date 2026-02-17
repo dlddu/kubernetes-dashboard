@@ -47,7 +47,7 @@ test.describe.skip('Debug Route - SPA Routing Infrastructure', () => {
     });
 
     // Wait for React Router to process the navigation
-    await page.waitForTimeout(500);
+    await page.waitForURL('**/debug');
 
     // Assert: URL should be /debug
     expect(page.url()).toContain('/debug');

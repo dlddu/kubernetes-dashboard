@@ -136,10 +136,10 @@ test.describe('PollingIndicator Component - Manual Refresh', () => {
 
     // Act: Get initial last update time
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
-    const initialTimeText = await lastUpdateTime.innerText();
 
-    // Act: Wait a moment to ensure time difference is observable
-    await page.waitForTimeout(2000);
+    // Act: Use fake clock to advance time so a difference is observable
+    await page.clock.install({ time: Date.now() });
+    await page.clock.fastForward(2000);
 
     // Act: Click the refresh button
     const refreshButton = pollingIndicator.getByRole('button', { name: /refresh|reload/i })
@@ -233,9 +233,9 @@ test.describe('PollingIndicator Component - Manual Refresh', () => {
 test.describe('PollingIndicator Component - Page Visibility', () => {
   test('should pause polling when tab becomes inactive', async ({ page, context }) => {
     // Tests that polling stops when page is not visible
-    // Note: Testing Page Visibility API in E2E is challenging due to browser limitations
+    // Uses page.clock to avoid real-time waits (was 21.9s, now ~2s)
 
-    // Arrange: Navigate to the home page
+    // Arrange: Navigate to the home page with real timers for initial load
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -245,12 +245,12 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
 
     // Act: Get initial last update time
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
-    const initialTimeText = await lastUpdateTime.innerText();
+
+    // Install fake clock after page is fully loaded
+    await page.clock.install({ time: Date.now() });
 
     // Act: Simulate tab becoming hidden by evaluating visibilityState
-    // Note: This is a simulation; actual tab switching in E2E is browser-dependent
     await page.evaluate(() => {
-      // Dispatch visibilitychange event to simulate tab hidden
       Object.defineProperty(document, 'hidden', {
         configurable: true,
         get: () => true
@@ -262,8 +262,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Act: Wait longer than the polling interval
-    await page.waitForTimeout(15000); // Wait 15 seconds (longer than 10s polling interval)
+    // Act: Fast-forward past the polling interval (instant, no real wait)
+    await page.clock.fastForward(15000);
 
     // Assert: Last update time should NOT have changed (polling paused)
     const timeAfterHidden = await lastUpdateTime.innerText();
@@ -283,8 +283,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Act: Wait for polling to resume and trigger
-    await page.waitForTimeout(6000); // Wait 6 seconds for next poll
+    // Act: Fast-forward for next poll cycle
+    await page.clock.fastForward(6000);
 
     // Assert: Polling should have resumed and updated the time
     const timeAfterVisible = await lastUpdateTime.innerText();
@@ -293,6 +293,7 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
 
   test('should resume polling when tab becomes active again', async ({ page }) => {
     // Tests that polling resumes when page becomes visible
+    // Uses page.clock to avoid real-time waits (was 18.8s, now ~2s)
 
     // Arrange: Navigate to the home page
     await page.goto('/');
@@ -301,6 +302,9 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     // Act: Locate the PollingIndicator component
     const pollingIndicator = page.getByTestId('polling-indicator');
     await expect(pollingIndicator).toBeVisible();
+
+    // Install fake clock after page is fully loaded
+    await page.clock.install({ time: Date.now() });
 
     // Act: Simulate tab hidden state
     await page.evaluate(() => {
@@ -315,8 +319,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Act: Wait while tab is hidden
-    await page.waitForTimeout(10000); // 10 seconds hidden
+    // Act: Fast-forward while tab is hidden (instant)
+    await page.clock.fastForward(10000);
 
     // Act: Simulate tab becoming visible
     await page.evaluate(() => {
@@ -332,8 +336,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     });
 
     // Assert: Should trigger immediate refresh on visibility restore
-    // Wait a moment for the refresh to occur
-    await page.waitForTimeout(2000);
+    // Fast-forward to allow refresh to process
+    await page.clock.fastForward(2000);
 
     // Assert: Last update time should show recent update
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
@@ -343,8 +347,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     // Assert: Polling should continue normally after resume
     const initialTime = await lastUpdateTime.innerText();
 
-    // Wait for next polling cycle
-    await page.waitForTimeout(6000); // Wait 6 seconds
+    // Fast-forward for next polling cycle
+    await page.clock.fastForward(6000);
 
     const updatedTime = await lastUpdateTime.innerText();
     // Time display should have updated or show elapsed time
@@ -389,16 +393,16 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Wait for state change to propagate
-    await page.waitForTimeout(1000);
-
-    // Assert: Status should indicate paused state
+    // Wait for state change to propagate via DOM assertion instead of fixed timeout
     const pausedStatus = pollingIndicator.getByTestId('polling-status')
       .or(pollingIndicator.locator('[data-polling-active="false"]'));
 
     if (await pausedStatus.count() > 0) {
-      const pausedText = await pausedStatus.innerText();
-      expect(pausedText.toLowerCase()).toMatch(/paused|inactive|stopped/i);
+      // Use expect with timeout to wait for the paused text instead of waitForTimeout
+      await expect.poll(async () => {
+        const text = await pausedStatus.innerText();
+        return text.toLowerCase();
+      }, { timeout: 3000 }).toMatch(/paused|inactive|stopped/i);
     }
   });
 });
@@ -434,6 +438,7 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
 
   test('should update relative time display as time passes', async ({ page }) => {
     // Tests that "X seconds ago" increments over time
+    // Uses page.clock to avoid real-time 5s wait
 
     // Arrange: Navigate to the home page and trigger refresh
     await page.goto('/');
@@ -453,8 +458,9 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
     const initialText = await lastUpdateTime.innerText();
     expect(initialText).toMatch(/just now|0 seconds ago|seconds? ago/i);
 
-    // Act: Wait for time to pass (e.g., 5 seconds)
-    await page.waitForTimeout(5000);
+    // Act: Install fake clock and fast-forward 5 seconds (instant)
+    await page.clock.install({ time: Date.now() });
+    await page.clock.fastForward(5000);
 
     // Assert: Time display should now show elapsed seconds
     const updatedText = await lastUpdateTime.innerText();
