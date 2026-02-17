@@ -126,7 +126,8 @@ test.describe('PollingIndicator Component - Manual Refresh', () => {
   test('should trigger immediate data refresh when refresh button is clicked', async ({ page }) => {
     // Tests manual refresh functionality
 
-    // Arrange: Navigate to the home page
+    // Install fake clock BEFORE navigation so all timers are controlled
+    await page.clock.install({ time: Date.now() });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -137,8 +138,7 @@ test.describe('PollingIndicator Component - Manual Refresh', () => {
     // Act: Get initial last update time
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
 
-    // Act: Use fake clock to advance time so a difference is observable
-    await page.clock.install({ time: Date.now() });
+    // Act: Advance fake time so a difference is observable
     await page.clock.fastForward(2000);
 
     // Act: Click the refresh button
@@ -235,7 +235,8 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     // Tests that polling stops when page is not visible
     // Uses page.clock to avoid real-time waits (was 21.9s, now ~2s)
 
-    // Arrange: Navigate to the home page with real timers for initial load
+    // Install fake clock BEFORE navigation so all setIntervals are controlled
+    await page.clock.install({ time: Date.now() });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -245,9 +246,6 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
 
     // Act: Get initial last update time
     const lastUpdateTime = pollingIndicator.getByTestId('last-update-time');
-
-    // Install fake clock after page is fully loaded
-    await page.clock.install({ time: Date.now() });
 
     // Act: Simulate tab becoming hidden by evaluating visibilityState
     await page.evaluate(() => {
@@ -295,16 +293,14 @@ test.describe('PollingIndicator Component - Page Visibility', () => {
     // Tests that polling resumes when page becomes visible
     // Uses page.clock to avoid real-time waits (was 18.8s, now ~2s)
 
-    // Arrange: Navigate to the home page
+    // Install fake clock BEFORE navigation so all setIntervals are controlled
+    await page.clock.install({ time: Date.now() });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     // Act: Locate the PollingIndicator component
     const pollingIndicator = page.getByTestId('polling-indicator');
     await expect(pollingIndicator).toBeVisible();
-
-    // Install fake clock after page is fully loaded
-    await page.clock.install({ time: Date.now() });
 
     // Act: Simulate tab hidden state
     await page.evaluate(() => {
@@ -458,18 +454,15 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
     const initialText = await lastUpdateTime.innerText();
     expect(initialText).toMatch(/just now|0 seconds ago|seconds? ago/i);
 
-    // Act: Install fake clock and fast-forward 5 seconds (instant)
-    await page.clock.install({ time: Date.now() });
-    await page.clock.fastForward(5000);
-
-    // Assert: Time display should now show elapsed seconds
-    const updatedText = await lastUpdateTime.innerText();
-
-    // Should show progression like "5 seconds ago"
-    // (unless auto-polling updated it)
-    if (!updatedText.match(/just now/i)) {
-      expect(updatedText).toMatch(/\d+\s*seconds?\s*ago/i);
-    }
+    // Assert: Wait for the relative time display to update from "just now" to "N seconds ago"
+    // Uses expect.poll for deterministic waiting instead of fixed waitForTimeout(5000)
+    await expect.poll(async () => {
+      return await lastUpdateTime.innerText();
+    }, {
+      message: 'Expected time display to show elapsed seconds',
+      timeout: 8000,
+      intervals: [1000],
+    }).toMatch(/\d+\s*seconds?\s*ago/i);
   });
 
   test('should display tooltip with exact timestamp on hover', async ({ page }) => {
