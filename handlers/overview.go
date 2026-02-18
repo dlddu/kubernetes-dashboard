@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -37,68 +36,48 @@ type NodeInfo struct {
 
 // OverviewResponse represents the overview data
 type OverviewResponse struct {
-	Nodes             NodesResponse       `json:"nodes"`
-	UnhealthyPods     int                 `json:"unhealthyPods"`
-	UnhealthyPodsList []UnhealthyPodInfo  `json:"unhealthyPodsList,omitempty"`
-	AvgCpuPercent     float64             `json:"avgCpuPercent"`
-	AvgMemoryPercent  float64             `json:"avgMemoryPercent"`
-	NodesList         []NodeInfo          `json:"nodesList,omitempty"`
+	Nodes             NodesResponse      `json:"nodes"`
+	UnhealthyPods     int                `json:"unhealthyPods"`
+	UnhealthyPodsList []UnhealthyPodInfo `json:"unhealthyPodsList,omitempty"`
+	AvgCpuPercent     float64            `json:"avgCpuPercent"`
+	AvgMemoryPercent  float64            `json:"avgMemoryPercent"`
+	NodesList         []NodeInfo         `json:"nodesList,omitempty"`
 }
 
 // OverviewHandler handles the /api/overview endpoint
 func OverviewHandler(w http.ResponseWriter, r *http.Request) {
-	// Only allow GET method
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 
-	// Set content type
-	w.Header().Set("Content-Type", "application/json")
-
-	// Get namespace from query parameter
 	namespace := r.URL.Query().Get("namespace")
-	if namespace == "" {
-		namespace = "" // Empty string means all namespaces
-	}
 
-	// Get Kubernetes client
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		// If client creation fails, return 500
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create Kubernetes client"})
+		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
-	// Attempt to create metrics client (nil on failure — graceful fallback)
 	metricsClient, _ := getMetricsClient()
 
-	// Fetch overview data
 	overview, err := getOverviewData(clientset, metricsClient, namespace)
 	if err != nil {
-		// If fetching fails, return 500
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch overview data"})
+		writeError(w, http.StatusInternalServerError, "Failed to fetch overview data")
 		return
 	}
 
-	// Send response
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(overview)
+	writeJSON(w, http.StatusOK, overview)
 }
 
 // getOverviewData fetches overview data from Kubernetes
 func getOverviewData(clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset, namespace string) (*OverviewResponse, error) {
 	ctx := context.Background()
 
-	// Fetch nodes
 	nodeList, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Calculate ready nodes
 	readyNodes := 0
 	totalNodes := len(nodeList.Items)
 	for _, node := range nodeList.Items {
@@ -107,38 +86,29 @@ func getOverviewData(clientset *kubernetes.Clientset, metricsClient *metricsv.Cl
 		}
 	}
 
-	// Fetch pods
 	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Calculate unhealthy pods and collect their details
 	unhealthyPods := 0
 	var unhealthyPodsList []UnhealthyPodInfo
 	for _, pod := range podList.Items {
 		if !isPodHealthy(pod) {
 			unhealthyPods++
-			// Get pod status
-			status := getPodStatus(pod)
 			unhealthyPodsList = append(unhealthyPodsList, UnhealthyPodInfo{
 				Name:      pod.Name,
 				Namespace: pod.Namespace,
-				Status:    status,
+				Status:    getPodStatus(pod),
 			})
 		}
 	}
 
-	// Fetch real metrics from metrics-server (nil if unavailable)
 	metricsMap := fetchNodeMetrics(metricsClient)
-
-	// Calculate CPU and Memory averages
 	avgCpu, avgMemory := calculateResourceUsage(nodeList.Items, metricsMap)
-
-	// Build nodes list with detailed information
 	nodesList := buildNodesList(nodeList.Items, metricsMap)
 
-	overview := &OverviewResponse{
+	return &OverviewResponse{
 		Nodes: NodesResponse{
 			Ready: readyNodes,
 			Total: totalNodes,
@@ -148,9 +118,7 @@ func getOverviewData(clientset *kubernetes.Clientset, metricsClient *metricsv.Cl
 		AvgCpuPercent:     avgCpu,
 		AvgMemoryPercent:  avgMemory,
 		NodesList:         nodesList,
-	}
-
-	return overview, nil
+	}, nil
 }
 
 // isNodeReady checks if a node is ready
@@ -185,16 +153,15 @@ func getNodeRole(node corev1.Node) string {
 	return ""
 }
 
-// isPodHealthy checks if a pod is healthy
-// Uses the same logic as isPodHealthyDetailed to ensure consistency
-// between Overview and Pods pages
+// isPodHealthy checks if a pod is healthy.
+// A pod is considered unhealthy if:
+//   - It's not in Running phase (except Succeeded), OR
+//   - It has container issues (Waiting or Terminated state)
 func isPodHealthy(pod corev1.Pod) bool {
-	// Succeeded pods are considered healthy (completed jobs)
 	if pod.Status.Phase == corev1.PodSucceeded {
 		return true
 	}
 
-	// Check for container issues (e.g., ImagePullBackOff, CrashLoopBackOff)
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.State.Waiting != nil {
 			return false
@@ -204,13 +171,26 @@ func isPodHealthy(pod corev1.Pod) bool {
 		}
 	}
 
-	// Pod is healthy if in Running phase
 	return pod.Status.Phase == corev1.PodRunning
 }
 
-// getPodStatus returns the status string for a pod
+// getPodStatus returns the detailed status string for a pod.
+// Checks container statuses first for more specific information
+// (e.g., ImagePullBackOff, CrashLoopBackOff), then falls back to pod phase.
 func getPodStatus(pod corev1.Pod) string {
-	// Check if pod is in a terminal state
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.State.Waiting != nil {
+			if reason := containerStatus.State.Waiting.Reason; reason != "" {
+				return reason
+			}
+		}
+		if containerStatus.State.Terminated != nil {
+			if reason := containerStatus.State.Terminated.Reason; reason != "" {
+				return reason
+			}
+		}
+	}
+
 	if pod.Status.Phase == corev1.PodSucceeded {
 		return "Succeeded"
 	}
@@ -224,23 +204,6 @@ func getPodStatus(pod corev1.Pod) string {
 		return "Pending"
 	}
 
-	// Check container statuses for more detailed information
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		if containerStatus.State.Waiting != nil {
-			reason := containerStatus.State.Waiting.Reason
-			if reason != "" {
-				return reason
-			}
-		}
-		if containerStatus.State.Terminated != nil {
-			reason := containerStatus.State.Terminated.Reason
-			if reason != "" {
-				return reason
-			}
-		}
-	}
-
-	// Return phase as default
 	return string(pod.Status.Phase)
 }
 
@@ -288,6 +251,40 @@ func clamp(val, min, max float64) float64 {
 	return val
 }
 
+// calculateNodeResourceUsage calculates CPU and memory usage for a single node.
+// Uses real metrics from metrics-server when available, falls back to capacity-allocatable.
+func calculateNodeResourceUsage(node corev1.Node, metricsMap map[string]nodeMetricsUsage) (float64, float64) {
+	cpuCapacity := node.Status.Capacity[corev1.ResourceCPU]
+	memCapacity := node.Status.Capacity[corev1.ResourceMemory]
+
+	var cpuUsedMilli int64
+	var memUsedBytes int64
+
+	if usage, ok := metricsMap[node.Name]; metricsMap != nil && ok {
+		cpuUsedMilli = usage.cpuMillis
+		memUsedBytes = usage.memoryBytes
+	} else {
+		cpuAllocatable := node.Status.Allocatable[corev1.ResourceCPU]
+		memAllocatable := node.Status.Allocatable[corev1.ResourceMemory]
+		cpuUsed := cpuCapacity.DeepCopy()
+		cpuUsed.Sub(cpuAllocatable)
+		cpuUsedMilli = cpuUsed.MilliValue()
+		memUsed := memCapacity.DeepCopy()
+		memUsed.Sub(memAllocatable)
+		memUsedBytes = memUsed.Value()
+	}
+
+	var cpuPercent, memoryPercent float64
+	if cpuCapacity.MilliValue() > 0 {
+		cpuPercent = float64(cpuUsedMilli) / float64(cpuCapacity.MilliValue()) * 100
+	}
+	if memCapacity.Value() > 0 {
+		memoryPercent = float64(memUsedBytes) / float64(memCapacity.Value()) * 100
+	}
+
+	return clamp(cpuPercent, 0, 100), clamp(memoryPercent, 0, 100)
+}
+
 // calculateResourceUsage calculates average CPU and memory usage across all nodes.
 // Uses real metrics from metrics-server when available, falls back to capacity-allocatable.
 func calculateResourceUsage(nodes []corev1.Node, metricsMap map[string]nodeMetricsUsage) (float64, float64) {
@@ -307,11 +304,9 @@ func calculateResourceUsage(nodes []corev1.Node, metricsMap map[string]nodeMetri
 		totalMemCapacityBytes += memCapacity.Value()
 
 		if usage, ok := metricsMap[node.Name]; metricsMap != nil && ok {
-			// Use real metrics from metrics-server
 			totalCpuUsedMilli += usage.cpuMillis
 			totalMemUsedBytes += usage.memoryBytes
 		} else {
-			// Fallback: capacity - allocatable
 			cpuAllocatable := node.Status.Allocatable[corev1.ResourceCPU]
 			memAllocatable := node.Status.Allocatable[corev1.ResourceMemory]
 			cpuUsed := cpuCapacity.DeepCopy()
@@ -339,16 +334,12 @@ func buildNodesList(nodes []corev1.Node, metricsMap map[string]nodeMetricsUsage)
 	nodesList := make([]NodeInfo, 0, len(nodes))
 
 	for _, node := range nodes {
-		// Determine node status
 		status := "NotReady"
 		if isNodeReady(node) {
 			status = "Ready"
 		}
 
-		// Calculate CPU and memory percentages for this node
 		cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
-
-		// Extract node role from labels
 		role := getNodeRole(node)
 
 		nodesList = append(nodesList, NodeInfo{
@@ -361,40 +352,4 @@ func buildNodesList(nodes []corev1.Node, metricsMap map[string]nodeMetricsUsage)
 	}
 
 	return nodesList
-}
-
-// calculateNodeResourceUsage calculates CPU and memory usage for a single node.
-// Uses real metrics from metrics-server when available, falls back to capacity-allocatable.
-func calculateNodeResourceUsage(node corev1.Node, metricsMap map[string]nodeMetricsUsage) (float64, float64) {
-	cpuCapacity := node.Status.Capacity[corev1.ResourceCPU]
-	memCapacity := node.Status.Capacity[corev1.ResourceMemory]
-
-	var cpuUsedMilli int64
-	var memUsedBytes int64
-
-	if usage, ok := metricsMap[node.Name]; metricsMap != nil && ok {
-		// Use real metrics from metrics-server
-		cpuUsedMilli = usage.cpuMillis
-		memUsedBytes = usage.memoryBytes
-	} else {
-		// Fallback: capacity - allocatable
-		cpuAllocatable := node.Status.Allocatable[corev1.ResourceCPU]
-		memAllocatable := node.Status.Allocatable[corev1.ResourceMemory]
-		cpuUsed := cpuCapacity.DeepCopy()
-		cpuUsed.Sub(cpuAllocatable)
-		cpuUsedMilli = cpuUsed.MilliValue()
-		memUsed := memCapacity.DeepCopy()
-		memUsed.Sub(memAllocatable)
-		memUsedBytes = memUsed.Value()
-	}
-
-	var cpuPercent, memoryPercent float64
-	if cpuCapacity.MilliValue() > 0 {
-		cpuPercent = float64(cpuUsedMilli) / float64(cpuCapacity.MilliValue()) * 100
-	}
-	if memCapacity.Value() > 0 {
-		memoryPercent = float64(memUsedBytes) / float64(memCapacity.Value()) * 100
-	}
-
-	return clamp(cpuPercent, 0, 100), clamp(memoryPercent, 0, 100)
 }

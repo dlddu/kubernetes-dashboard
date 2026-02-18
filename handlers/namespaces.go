@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,34 +17,22 @@ import (
 
 // NamespacesHandler handles the /api/namespaces endpoint
 func NamespacesHandler(w http.ResponseWriter, r *http.Request) {
-	// Only allow GET method
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 
-	// Set content type
-	w.Header().Set("Content-Type", "application/json")
-
-	// Get Kubernetes client
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		// If client creation fails, return 500 with empty array
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode([]string{})
+		writeJSON(w, http.StatusInternalServerError, []string{})
 		return
 	}
 
-	// Fetch namespaces from Kubernetes
 	namespaceList, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		// If listing fails, return 500 with empty array
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode([]string{})
+		writeJSON(w, http.StatusInternalServerError, []string{})
 		return
 	}
 
-	// Extract namespace names
 	namespaces := make([]string, 0, len(namespaceList.Items))
 	for _, ns := range namespaceList.Items {
 		if ns.Name != "" {
@@ -53,12 +40,9 @@ func NamespacesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Sort namespaces alphabetically
 	sort.Strings(namespaces)
 
-	// Send response
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(namespaces)
+	writeJSON(w, http.StatusOK, namespaces)
 }
 
 // getRESTConfig resolves the Kubernetes REST configuration.
