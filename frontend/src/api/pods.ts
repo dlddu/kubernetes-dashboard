@@ -1,6 +1,6 @@
 import { fetchJSON, buildURL } from './client';
 
-export interface UnhealthyPodDetails {
+export interface PodDetails {
   name: string;
   namespace: string;
   status: string;
@@ -9,14 +9,15 @@ export interface UnhealthyPodDetails {
   age: string;
 }
 
-export type PodDetails = UnhealthyPodDetails;
+/** @deprecated Use PodDetails instead */
+export type UnhealthyPodDetails = PodDetails;
 
 export async function fetchAllPods(namespace?: string): Promise<PodDetails[]> {
   const url = buildURL('/api/pods/all', { ns: namespace });
   return fetchJSON<PodDetails[]>(url);
 }
 
-export async function fetchUnhealthyPods(namespace?: string): Promise<UnhealthyPodDetails[]> {
+export async function fetchUnhealthyPods(namespace?: string): Promise<PodDetails[]> {
   const url = buildURL('/api/pods/unhealthy', { ns: namespace });
-  return fetchJSON<UnhealthyPodDetails[]>(url);
+  return fetchJSON<PodDetails[]>(url);
 }

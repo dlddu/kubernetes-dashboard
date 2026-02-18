@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -29,12 +30,14 @@ func DeploymentsHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		log.Printf("Failed to create Kubernetes client: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
 	deployments, err := getDeploymentsData(clientset, namespace)
 	if err != nil {
+		log.Printf("Failed to fetch deployments data: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to fetch deployments data")
 		return
 	}
@@ -100,6 +103,7 @@ func DeploymentRestartHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		log.Printf("Failed to create Kubernetes client: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}

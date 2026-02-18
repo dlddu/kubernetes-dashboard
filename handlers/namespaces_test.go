@@ -78,6 +78,8 @@ func TestNamespacesHandler(t *testing.T) {
 	})
 
 	t.Run("should return valid namespace names array", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
 		w := httptest.NewRecorder()
@@ -89,13 +91,16 @@ func TestNamespacesHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
 		var namespaces []string
 		if err := json.NewDecoder(res.Body).Decode(&namespaces); err != nil {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
 		// Should contain at least the default namespace in a real cluster
-		// In TDD Red phase, this will fail until implementation exists
 		if len(namespaces) == 0 {
 			t.Log("Warning: expected at least one namespace (e.g., 'default'), got empty array")
 		}
@@ -131,6 +136,8 @@ func TestNamespacesHandler(t *testing.T) {
 // TestNamespacesHandlerWithMockClient tests namespace handler with mock Kubernetes client
 func TestNamespacesHandlerWithMockClient(t *testing.T) {
 	t.Run("should return namespaces from Kubernetes cluster", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
 		w := httptest.NewRecorder()
@@ -141,6 +148,10 @@ func TestNamespacesHandlerWithMockClient(t *testing.T) {
 		// Assert
 		res := w.Result()
 		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
 
 		var namespaces []string
 		if err := json.NewDecoder(res.Body).Decode(&namespaces); err != nil {
@@ -161,13 +172,14 @@ func TestNamespacesHandlerWithMockClient(t *testing.T) {
 		}
 
 		// At least 'default' namespace should exist
-		// This test will fail until implementation is complete
 		if !expectedNamespaces["default"] {
 			t.Log("Warning: 'default' namespace not found in response")
 		}
 	})
 
 	t.Run("should return sorted namespace list", func(t *testing.T) {
+		skipIfNoCluster(t)
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
 		w := httptest.NewRecorder()
@@ -178,6 +190,10 @@ func TestNamespacesHandlerWithMockClient(t *testing.T) {
 		// Assert
 		res := w.Result()
 		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
 
 		var namespaces []string
 		if err := json.NewDecoder(res.Body).Decode(&namespaces); err != nil {

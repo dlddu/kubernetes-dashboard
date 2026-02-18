@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,14 +28,19 @@ func NodesHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		log.Printf("Failed to create Kubernetes client: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
-	metricsClient, _ := getMetricsClient()
+	metricsClient, err := getMetricsClient()
+	if err != nil {
+		log.Printf("Metrics client unavailable for nodes endpoint: %v", err)
+	}
 
 	nodes, err := getNodesData(clientset, metricsClient)
 	if err != nil {
+		log.Printf("Failed to fetch nodes data: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to fetch nodes data")
 		return
 	}

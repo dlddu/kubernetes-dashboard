@@ -1,8 +1,8 @@
-import { UnhealthyPodDetails } from '../api/pods';
+import type { PodDetails } from '../api/pods';
 import { StatusBadge } from './StatusBadge';
 
 interface UnhealthyPodCardProps {
-  pod: UnhealthyPodDetails;
+  pod: PodDetails;
 }
 
 export function UnhealthyPodCard({ pod }: UnhealthyPodCardProps) {

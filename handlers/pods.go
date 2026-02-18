@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -11,8 +12,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// UnhealthyPodDetails represents detailed information about an unhealthy pod
-type UnhealthyPodDetails struct {
+// PodDetails represents detailed information about a pod
+type PodDetails struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
 	Status    string `json:"status"`
@@ -31,48 +32,19 @@ func UnhealthyPodsHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		log.Printf("Failed to create Kubernetes client: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
-	unhealthyPods, err := getUnhealthyPodsData(clientset, namespace)
+	pods, err := listPods(clientset, namespace, true)
 	if err != nil {
+		log.Printf("Failed to fetch unhealthy pods data: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, unhealthyPods)
-}
-
-// getUnhealthyPodsData fetches unhealthy pods data from Kubernetes
-func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
-	ctx := context.Background()
-
-	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	unhealthyPods := make([]UnhealthyPodDetails, 0)
-	for _, pod := range podList.Items {
-		if !isPodHealthy(pod) {
-			nodeName := pod.Spec.NodeName
-			if nodeName == "" {
-				nodeName = "Pending"
-			}
-
-			unhealthyPods = append(unhealthyPods, UnhealthyPodDetails{
-				Name:      pod.Name,
-				Namespace: pod.Namespace,
-				Status:    getPodStatus(pod),
-				Restarts:  getPodRestartCount(pod),
-				Node:      nodeName,
-				Age:       formatPodAge(pod.CreationTimestamp.Time),
-			})
-		}
-	}
-
-	return unhealthyPods, nil
+	writeJSON(w, http.StatusOK, pods)
 }
 
 // AllPodsHandler handles the GET /api/pods/all endpoint
@@ -85,21 +57,24 @@ func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		log.Printf("Failed to create Kubernetes client: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
-	allPods, err := getAllPodsData(clientset, namespace)
+	pods, err := listPods(clientset, namespace, false)
 	if err != nil {
+		log.Printf("Failed to fetch all pods data: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, allPods)
+	writeJSON(w, http.StatusOK, pods)
 }
 
-// getAllPodsData fetches all pods data from Kubernetes
-func getAllPodsData(clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
+// listPods fetches pods from Kubernetes. When unhealthyOnly is true,
+// only unhealthy pods are returned.
+func listPods(clientset *kubernetes.Clientset, namespace string, unhealthyOnly bool) ([]PodDetails, error) {
 	ctx := context.Background()
 
 	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
@@ -107,14 +82,18 @@ func getAllPodsData(clientset *kubernetes.Clientset, namespace string) ([]Unheal
 		return nil, err
 	}
 
-	allPods := make([]UnhealthyPodDetails, 0)
+	pods := make([]PodDetails, 0)
 	for _, pod := range podList.Items {
+		if unhealthyOnly && isPodHealthy(pod) {
+			continue
+		}
+
 		nodeName := pod.Spec.NodeName
 		if nodeName == "" {
 			nodeName = "Pending"
 		}
 
-		allPods = append(allPods, UnhealthyPodDetails{
+		pods = append(pods, PodDetails{
 			Name:      pod.Name,
 			Namespace: pod.Namespace,
 			Status:    getPodStatus(pod),
@@ -124,7 +103,7 @@ func getAllPodsData(clientset *kubernetes.Clientset, namespace string) ([]Unheal
 		})
 	}
 
-	return allPods, nil
+	return pods, nil
 }
 
 // getPodRestartCount calculates the total restart count for all containers in a pod

@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -36,12 +37,14 @@ func SecretsHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		log.Printf("Failed to create Kubernetes client: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
 	secrets, err := getSecretsData(clientset, namespace)
 	if err != nil {
+		log.Printf("Failed to fetch secrets data: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to fetch secrets data")
 		return
 	}
@@ -68,6 +71,7 @@ func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		log.Printf("Failed to create Kubernetes client: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
@@ -78,6 +82,7 @@ func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "Secret not found")
 			return
 		}
+		log.Printf("Failed to fetch secret detail %s/%s: %v", namespace, name, err)
 		writeError(w, http.StatusInternalServerError, "Failed to fetch secret detail")
 		return
 	}
