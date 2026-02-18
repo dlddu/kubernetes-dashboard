@@ -1,4 +1,4 @@
-import { debugFetch } from './debugFetch';
+import { fetchJSON, buildURL } from './client';
 
 export interface SecretInfo {
   name: string;
@@ -15,32 +15,10 @@ export interface SecretDetail {
 }
 
 export async function fetchSecrets(namespace?: string): Promise<SecretInfo[]> {
-  let url = '/api/secrets';
-
-  // Add namespace query parameter if provided and not empty
-  if (namespace && namespace !== '') {
-    url += `?ns=${namespace}`;
-  }
-
-  const response = await debugFetch(url);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  const url = buildURL('/api/secrets', { ns: namespace });
+  return fetchJSON<SecretInfo[]>(url);
 }
 
 export async function fetchSecretDetail(namespace: string, name: string): Promise<SecretDetail> {
-  const url = `/api/secrets/${namespace}/${name}`;
-
-  const response = await debugFetch(url);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  return fetchJSON<SecretDetail>(`/api/secrets/${namespace}/${name}`);
 }

@@ -1,4 +1,5 @@
 import { debugFetch } from './debugFetch';
+import { fetchJSON, buildURL } from './client';
 
 export interface DeploymentInfo {
   name: string;
@@ -9,21 +10,8 @@ export interface DeploymentInfo {
 }
 
 export async function fetchDeployments(namespace?: string): Promise<DeploymentInfo[]> {
-  let url = '/api/deployments';
-
-  // Add namespace query parameter if provided and not empty
-  if (namespace && namespace !== '') {
-    url += `?ns=${namespace}`;
-  }
-
-  const response = await debugFetch(url);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  const url = buildURL('/api/deployments', { ns: namespace });
+  return fetchJSON<DeploymentInfo[]>(url);
 }
 
 export async function restartDeployment(namespace: string, name: string): Promise<void> {

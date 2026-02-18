@@ -1,4 +1,4 @@
-import { debugFetch } from './debugFetch';
+import { fetchJSON } from './client';
 
 export interface NodeInfo {
   name: string;
@@ -10,12 +10,5 @@ export interface NodeInfo {
 }
 
 export async function fetchNodes(): Promise<NodeInfo[]> {
-  const response = await debugFetch('/api/nodes');
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  return fetchJSON<NodeInfo[]>('/api/nodes');
 }

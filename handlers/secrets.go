@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -29,110 +28,74 @@ type SecretDetail struct {
 
 // SecretsHandler handles the GET /api/secrets endpoint
 func SecretsHandler(w http.ResponseWriter, r *http.Request) {
-	// Only allow GET method
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 
-	// Set content type
-	w.Header().Set("Content-Type", "application/json")
-
-	// Get namespace from query parameter
 	namespace := r.URL.Query().Get("ns")
-	if namespace == "" {
-		namespace = "" // Empty string means all namespaces
-	}
 
-	// Get Kubernetes client
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		// If client creation fails, return 500
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create Kubernetes client"})
+		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
-	// Fetch secrets data
 	secrets, err := getSecretsData(clientset, namespace)
 	if err != nil {
-		// If fetching fails, return 500
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch secrets data"})
+		writeError(w, http.StatusInternalServerError, "Failed to fetch secrets data")
 		return
 	}
 
-	// Send response
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(secrets)
+	writeJSON(w, http.StatusOK, secrets)
 }
 
 // SecretDetailHandler handles the GET /api/secrets/:ns/:name endpoint
 func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
-	// Only allow GET method
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 
-	// Set content type
-	w.Header().Set("Content-Type", "application/json")
-
-	// Parse namespace and name from URL path
-	// Expected format: /api/secrets/{namespace}/{name}
 	path := strings.TrimPrefix(r.URL.Path, "/api/secrets/")
 	parts := strings.SplitN(path, "/", 2)
 
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid URL format. Expected /api/secrets/{namespace}/{name}"})
+		writeError(w, http.StatusBadRequest, "Invalid URL format. Expected /api/secrets/{namespace}/{name}")
 		return
 	}
 
 	namespace := parts[0]
 	name := parts[1]
 
-	// Get Kubernetes client
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create Kubernetes client"})
+		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
 		return
 	}
 
-	// Fetch secret detail
 	secretDetail, err := getSecretDetail(clientset, namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Secret not found"})
+			writeError(w, http.StatusNotFound, "Secret not found")
 			return
 		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch secret detail"})
+		writeError(w, http.StatusInternalServerError, "Failed to fetch secret detail")
 		return
 	}
 
-	// Send response
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(secretDetail)
+	writeJSON(w, http.StatusOK, secretDetail)
 }
 
 // getSecretsData fetches secrets data from Kubernetes (without values)
 func getSecretsData(clientset *kubernetes.Clientset, namespace string) ([]SecretInfo, error) {
 	ctx := context.Background()
 
-	// Fetch secrets
 	secretList, err := clientset.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Build secrets list
 	secrets := make([]SecretInfo, 0)
-
 	for _, secret := range secretList.Items {
-		// Extract keys from secret data (without values)
 		keys := make([]string, 0, len(secret.Data))
 		for key := range secret.Data {
 			keys = append(keys, key)
@@ -153,17 +116,13 @@ func getSecretsData(clientset *kubernetes.Clientset, namespace string) ([]Secret
 func getSecretDetail(clientset *kubernetes.Clientset, namespace, name string) (*SecretDetail, error) {
 	ctx := context.Background()
 
-	// Fetch secret
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode secret data (Kubernetes already stores it as []byte, not base64)
 	data := make(map[string]string)
 	for key, value := range secret.Data {
-		// Secret.Data is already decoded from base64 by the client library
-		// We just need to convert []byte to string
 		data[key] = string(value)
 	}
 

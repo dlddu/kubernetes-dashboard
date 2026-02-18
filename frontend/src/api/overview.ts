@@ -1,4 +1,4 @@
-import { debugFetch } from './debugFetch';
+import { fetchJSON, buildURL } from './client';
 
 export interface UnhealthyPodInfo {
   name: string;
@@ -27,19 +27,6 @@ export interface OverviewData {
 }
 
 export async function fetchOverview(namespace?: string): Promise<OverviewData> {
-  let url = '/api/overview';
-
-  // Add namespace query parameter if provided and not empty
-  if (namespace && namespace !== '') {
-    url += `?namespace=${namespace}`;
-  }
-
-  const response = await debugFetch(url);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  const url = buildURL('/api/overview', { namespace });
+  return fetchJSON<OverviewData>(url);
 }

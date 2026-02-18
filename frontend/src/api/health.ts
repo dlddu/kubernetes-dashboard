@@ -1,4 +1,4 @@
-import { debugFetch } from './debugFetch';
+import { fetchJSON } from './client';
 
 export interface HealthResponse {
   status: string;
@@ -6,12 +6,5 @@ export interface HealthResponse {
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const response = await debugFetch('/api/health');
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  return fetchJSON<HealthResponse>('/api/health');
 }
