@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
  * TODO: Activate when DLD-341 implementation is complete
  */
 
-test.describe.skip('Debug Route - SPA Routing Infrastructure', () => {
+test.describe('Debug Route - SPA Routing Infrastructure', () => {
   test('should access /debug route via page.goto()', async ({ page }) => {
     // Tests that Playwright can navigate directly to /debug route
 
@@ -134,7 +134,7 @@ test.describe.skip('Debug Route - SPA Routing Infrastructure', () => {
   });
 });
 
-test.describe.skip('Debug Route - DebugContext Data Display', () => {
+test.describe('Debug Route - DebugContext Data Display', () => {
   test('should display API call logs from DebugContext', async ({ page }) => {
     // Tests that debug page displays captured API logs
 
@@ -240,7 +240,7 @@ test.describe.skip('Debug Route - DebugContext Data Display', () => {
   });
 });
 
-test.describe.skip('Debug Route - Detail View Tabs', () => {
+test.describe('Debug Route - Detail View Tabs', () => {
   test('should display Response tab in detail view', async ({ page }) => {
     // Tests that Response tab exists and shows JSON response
 
@@ -383,7 +383,7 @@ test.describe.skip('Debug Route - Detail View Tabs', () => {
   });
 });
 
-test.describe.skip('Debug Route - TopBar Debug Toggle', () => {
+test.describe('Debug Route - TopBar Debug Toggle', () => {
   test('should display Debug ON/OFF toggle in TopBar', async ({ page }) => {
     // Tests that TopBar has debug mode toggle button
 
@@ -496,7 +496,7 @@ test.describe.skip('Debug Route - TopBar Debug Toggle', () => {
   });
 });
 
-test.describe.skip('Debug Route - Copy to Clipboard Feature', () => {
+test.describe('Debug Route - Copy to Clipboard Feature', () => {
   test('should have copy button for Response JSON', async ({ page }) => {
     // Tests that Response tab has clipboard copy functionality
 
@@ -602,7 +602,7 @@ test.describe.skip('Debug Route - Copy to Clipboard Feature', () => {
   });
 });
 
-test.describe.skip('Debug Route - Accessibility', () => {
+test.describe('Debug Route - Accessibility', () => {
   test('should have proper ARIA labels for debug page elements', async ({ page }) => {
     // Tests accessibility of debug page structure
 

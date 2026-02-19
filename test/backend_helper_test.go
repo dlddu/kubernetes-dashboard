@@ -3,16 +3,59 @@ package test
 import (
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
 
-func TestBackendServer_StartStop(t *testing.T) {
-	// Skip if no kubeconfig available
-	kubeconfig := getDefaultKubeconfig()
-	if _, err := os.Stat(kubeconfig); err != nil {
-		t.Skip("Skipping test: kubeconfig not found")
+// createTempKubeconfig creates a minimal kubeconfig file for testing and
+// returns its path. The file is cleaned up when the test finishes.
+func createTempKubeconfig(t *testing.T) string {
+	t.Helper()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config")
+
+	content := `apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://127.0.0.1:6443
+  name: test-cluster
+contexts:
+- context:
+    cluster: test-cluster
+    user: test-user
+  name: test-context
+current-context: test-context
+users:
+- name: test-user
+  user:
+    token: test-token
+`
+
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatalf("failed to create temp kubeconfig: %v", err)
 	}
+
+	return path
+}
+
+// getTestKubeconfig returns a valid kubeconfig path for testing.
+// It prefers the system kubeconfig if available, otherwise creates a temporary one.
+func getTestKubeconfig(t *testing.T) string {
+	t.Helper()
+
+	kubeconfig := getDefaultKubeconfig()
+	if _, err := os.Stat(kubeconfig); err == nil {
+		return kubeconfig
+	}
+
+	return createTempKubeconfig(t)
+}
+
+func TestBackendServer_StartStop(t *testing.T) {
+	kubeconfig := getTestKubeconfig(t)
 
 	// Arrange
 	config := BackendConfig{
@@ -57,11 +100,7 @@ func TestBackendServer_StartStop(t *testing.T) {
 }
 
 func TestBackendServer_HealthEndpoint(t *testing.T) {
-	// Skip if no kubeconfig available
-	kubeconfig := getDefaultKubeconfig()
-	if _, err := os.Stat(kubeconfig); err != nil {
-		t.Skip("Skipping test: kubeconfig not found")
-	}
+	kubeconfig := getTestKubeconfig(t)
 
 	// Arrange
 	server, err := NewBackendServer(t, BackendConfig{

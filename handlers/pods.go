@@ -48,7 +48,7 @@ var AllPodsHandler = handleGet("Failed to fetch pods data", func(r *http.Request
 
 // listPods fetches pods from Kubernetes and converts them to PodDetails.
 // If filter is non-nil, only pods matching the filter are included.
-func listPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, filter podFilter) ([]PodDetails, error) {
+func listPods(ctx context.Context, clientset kubernetes.Interface, namespace string, filter podFilter) ([]PodDetails, error) {
 	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err

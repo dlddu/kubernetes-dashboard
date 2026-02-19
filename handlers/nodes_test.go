@@ -83,7 +83,8 @@ func TestNodesHandler(t *testing.T) {
 // TestNodesHandlerResponseStructure tests the exact response structure
 func TestNodesHandlerResponseStructure(t *testing.T) {
 	t.Run("should return array of nodes with required fields", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -121,7 +122,8 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return node with valid name", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -154,7 +156,8 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return node with valid status", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -187,7 +190,8 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return CPU percentage between 0 and 100", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -220,7 +224,8 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return Memory percentage between 0 and 100", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -253,7 +258,8 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return non-negative pod count", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -289,7 +295,8 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 // TestNodesHandlerResourceCalculation tests resource usage calculation logic
 func TestNodesHandlerResourceCalculation(t *testing.T) {
 	t.Run("should calculate resources based on allocatable vs requested", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -324,7 +331,8 @@ func TestNodesHandlerResourceCalculation(t *testing.T) {
 	})
 
 	t.Run("should not require metrics-server for resource calculation", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -389,7 +397,8 @@ func TestNodesHandlerErrorHandling(t *testing.T) {
 // TestNodesHandlerPodCountAccuracy tests pod counting logic
 func TestNodesHandlerPodCountAccuracy(t *testing.T) {
 	t.Run("should count pods running on each node", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)
@@ -417,7 +426,8 @@ func TestNodesHandlerPodCountAccuracy(t *testing.T) {
 	})
 
 	t.Run("should include all pod phases in count", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/nodes", nil)

@@ -18,7 +18,7 @@ var (
 	restConfigErr  error
 	restConfigOnce sync.Once
 
-	kubeClient     *kubernetes.Clientset
+	kubeClient     kubernetes.Interface
 	kubeClientErr  error
 	kubeClientOnce sync.Once
 
@@ -51,7 +51,10 @@ func getRESTConfig() (*rest.Config, error) {
 }
 
 // getKubernetesClient returns a cached Kubernetes client, creating it on first call.
-func getKubernetesClient() (*kubernetes.Clientset, error) {
+func getKubernetesClient() (kubernetes.Interface, error) {
+	if testKubeClient != nil {
+		return testKubeClient, nil
+	}
 	kubeClientOnce.Do(func() {
 		config, err := getRESTConfig()
 		if err != nil {
@@ -62,6 +65,9 @@ func getKubernetesClient() (*kubernetes.Clientset, error) {
 	})
 	return kubeClient, kubeClientErr
 }
+
+// testKubeClient is used only for testing; when non-nil it overrides the real client.
+var testKubeClient kubernetes.Interface
 
 // getMetricsClient returns a cached Kubernetes metrics client, creating it on first call.
 func getMetricsClient() (*metricsv.Clientset, error) {

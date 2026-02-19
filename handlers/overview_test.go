@@ -11,17 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// skipIfNoCluster skips the test if no Kubernetes cluster is available.
-func skipIfNoCluster(t *testing.T) {
-	t.Helper()
-	if _, err := getKubernetesClient(); err != nil {
-		t.Skipf("skipping: no k8s cluster available (%v)", err)
-	}
-}
-
 // TestOverviewHandler tests the /api/overview endpoint
 func TestOverviewHandler(t *testing.T) {
 	t.Run("should return 200 OK with overview data", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -33,25 +28,23 @@ func TestOverviewHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// In CI environment without cluster, 500 is acceptable
-		// In cluster environment, 200 is expected
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 
-		// If 200, verify JSON response structure
-		if res.StatusCode == http.StatusOK {
-			var overview map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&overview); err != nil {
-				t.Fatalf("failed to decode response: %v", err)
-			}
-			if overview == nil {
-				t.Error("expected overview object, got nil")
-			}
+		var overview map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&overview); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if overview == nil {
+			t.Error("expected overview object, got nil")
 		}
 	})
 
 	t.Run("should set correct content-type header", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -90,7 +83,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return valid overview response structure", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
@@ -118,7 +112,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return nodes with ready and total counts", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
@@ -152,7 +147,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return non-negative unhealthyPods count", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
@@ -181,7 +177,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return avgCpuPercent between 0 and 100", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
@@ -210,7 +207,8 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should return avgMemoryPercent between 0 and 100", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
@@ -239,7 +237,7 @@ func TestOverviewHandler(t *testing.T) {
 	})
 
 	t.Run("should handle Kubernetes client errors gracefully", func(t *testing.T) {
-		// Arrange
+		// Arrange - no fake client
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
 
@@ -250,8 +248,6 @@ func TestOverviewHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should either succeed or return error status
-		// In TDD Red phase, this might fail or return 500 if client is not configured
 		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
 			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
 		}
@@ -261,6 +257,9 @@ func TestOverviewHandler(t *testing.T) {
 // TestOverviewHandlerWithNamespaceFilter tests namespace filtering
 func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 	t.Run("should accept namespace query parameter", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=default", nil)
 		w := httptest.NewRecorder()
@@ -272,14 +271,14 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should not fail with namespace parameter
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 
 	t.Run("should filter pods by namespace when specified", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=kube-system", nil)
@@ -304,7 +303,8 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 	})
 
 	t.Run("should return all namespaces data when namespace not specified", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
@@ -329,6 +329,9 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 	})
 
 	t.Run("should handle empty namespace parameter", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=", nil)
 		w := httptest.NewRecorder()
@@ -340,14 +343,14 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Empty namespace should be treated as all namespaces
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 
 	t.Run("should handle non-existent namespace gracefully", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=non-existent-namespace", nil)
@@ -366,7 +369,6 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 		}
 
 		// Should return valid response even for non-existent namespace
-		// Likely with zero values
 		if overview["unhealthyPods"] == nil {
 			t.Error("expected unhealthyPods field even for non-existent namespace")
 		}
@@ -376,6 +378,9 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 // TestOverviewHandlerResponseFormat tests exact response format
 func TestOverviewHandlerResponseFormat(t *testing.T) {
 	t.Run("should match expected JSON structure", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -401,7 +406,6 @@ func TestOverviewHandlerResponseFormat(t *testing.T) {
 			t.Fatalf("failed to decode response into expected structure: %v", err)
 		}
 
-		// Verify types are correct (compile-time check ensures this)
 		t.Logf("Nodes: ready=%d, total=%d", overview.Nodes.Ready, overview.Nodes.Total)
 		t.Logf("UnhealthyPods: %d", overview.UnhealthyPods)
 		t.Logf("AvgCpuPercent: %.2f", overview.AvgCpuPercent)
@@ -409,6 +413,9 @@ func TestOverviewHandlerResponseFormat(t *testing.T) {
 	})
 
 	t.Run("should return ready nodes less than or equal to total nodes", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/overview", nil)
 		w := httptest.NewRecorder()
@@ -440,7 +447,6 @@ func TestOverviewHandlerResponseFormat(t *testing.T) {
 
 // TestCalculateResourceUsageFallback tests metric calculation with and without metrics-server data
 func TestCalculateResourceUsageFallback(t *testing.T) {
-	// Helper to create a test node with given capacity and allocatable
 	makeNode := func(name string, cpuCapacity, cpuAllocatable, memCapacity, memAllocatable string) corev1.Node {
 		return corev1.Node{
 			ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -469,7 +475,6 @@ func TestCalculateResourceUsageFallback(t *testing.T) {
 			makeNode("node-1", "4000m", "3800m", "8Gi", "7Gi"),
 		}
 		cpu, mem := calculateResourceUsage(nodes, nil)
-		// capacity - allocatable: 200m / 4000m = 5%, 1Gi / 8Gi = 12.5%
 		if cpu < 4.9 || cpu > 5.1 {
 			t.Errorf("expected ~5%% CPU fallback, got %f", cpu)
 		}
@@ -484,8 +489,8 @@ func TestCalculateResourceUsageFallback(t *testing.T) {
 		}
 		metricsMap := map[string]nodeMetricsUsage{
 			"node-1": {
-				cpuMillis:   2000,                   // 2000m / 4000m = 50%
-				memoryBytes: 4 * 1024 * 1024 * 1024, // 4Gi / 8Gi = 50%
+				cpuMillis:   2000,
+				memoryBytes: 4 * 1024 * 1024 * 1024,
 			},
 		}
 		cpu, mem := calculateResourceUsage(nodes, metricsMap)
@@ -502,7 +507,6 @@ func TestCalculateResourceUsageFallback(t *testing.T) {
 			makeNode("node-1", "4000m", "4000m", "8Gi", "8Gi"),
 			makeNode("node-2", "4000m", "3800m", "8Gi", "7Gi"),
 		}
-		// Only node-1 has metrics; node-2 should fall back
 		metricsMap := map[string]nodeMetricsUsage{
 			"node-1": {
 				cpuMillis:   2000,
@@ -510,8 +514,6 @@ func TestCalculateResourceUsageFallback(t *testing.T) {
 			},
 		}
 		cpu, mem := calculateResourceUsage(nodes, metricsMap)
-		// node-1: 2000m/4000m, node-2 fallback: 200m/4000m
-		// total: 2200m/8000m = 27.5%
 		if cpu < 27.0 || cpu > 28.0 {
 			t.Errorf("expected ~27.5%% CPU mixed mode, got %f", cpu)
 		}
@@ -526,7 +528,7 @@ func TestCalculateResourceUsageFallback(t *testing.T) {
 		}
 		metricsMap := map[string]nodeMetricsUsage{
 			"node-1": {
-				cpuMillis:   5000, // 500% — should be clamped to 100
+				cpuMillis:   5000,
 				memoryBytes: 10 * 1024 * 1024 * 1024,
 			},
 		}

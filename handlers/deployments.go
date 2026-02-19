@@ -30,7 +30,7 @@ var DeploymentsHandler = handleGet("Failed to fetch deployments data", func(r *h
 })
 
 // getDeploymentsData fetches deployments data from Kubernetes
-func getDeploymentsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]DeploymentInfo, error) {
+func getDeploymentsData(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]DeploymentInfo, error) {
 	deploymentList, err := clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func DeploymentRestartHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // restartDeployment restarts a deployment by adding/updating the restartedAt annotation
-func restartDeployment(ctx context.Context, clientset *kubernetes.Clientset, namespace, deploymentName string) error {
+func restartDeployment(ctx context.Context, clientset kubernetes.Interface, namespace, deploymentName string) error {
 	deployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
 	if err != nil {
 		return err

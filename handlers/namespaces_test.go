@@ -10,6 +10,9 @@ import (
 // TestNamespacesHandler tests the /api/namespaces endpoint
 func TestNamespacesHandler(t *testing.T) {
 	t.Run("should return 200 OK with namespace list", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
 		w := httptest.NewRecorder()
@@ -21,25 +24,23 @@ func TestNamespacesHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// In CI environment without cluster, 500 is acceptable
-		// In cluster environment, 200 is expected
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 
-		// If 200, verify JSON array response
-		if res.StatusCode == http.StatusOK {
-			var namespaces []string
-			if err := json.NewDecoder(res.Body).Decode(&namespaces); err != nil {
-				t.Fatalf("failed to decode response: %v", err)
-			}
-			if namespaces == nil {
-				t.Error("expected namespaces array, got nil")
-			}
+		var namespaces []string
+		if err := json.NewDecoder(res.Body).Decode(&namespaces); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if namespaces == nil {
+			t.Error("expected namespaces array, got nil")
 		}
 	})
 
 	t.Run("should set correct content-type header", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
 		w := httptest.NewRecorder()
@@ -78,6 +79,9 @@ func TestNamespacesHandler(t *testing.T) {
 	})
 
 	t.Run("should return valid namespace names array", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
 		w := httptest.NewRecorder()
@@ -90,7 +94,7 @@ func TestNamespacesHandler(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
-			t.Skipf("skipping: no k8s cluster available (status %d)", res.StatusCode)
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
 		}
 
 		var namespaces []string
@@ -98,9 +102,9 @@ func TestNamespacesHandler(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// Should contain at least the default namespace in a real cluster
+		// Should contain at least the default namespace
 		if len(namespaces) == 0 {
-			t.Log("Warning: expected at least one namespace (e.g., 'default'), got empty array")
+			t.Fatal("expected at least one namespace, got empty array")
 		}
 
 		// All items should be non-empty strings
@@ -112,7 +116,7 @@ func TestNamespacesHandler(t *testing.T) {
 	})
 
 	t.Run("should handle Kubernetes client errors gracefully", func(t *testing.T) {
-		// Arrange
+		// Arrange - no fake client
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
 		w := httptest.NewRecorder()
 
@@ -123,8 +127,6 @@ func TestNamespacesHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should either succeed with empty array or return error status
-		// In TDD Red phase, this might fail or return 500 if client is not configured
 		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
 			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
 		}
@@ -134,7 +136,8 @@ func TestNamespacesHandler(t *testing.T) {
 // TestNamespacesHandlerWithMockClient tests namespace handler with mock Kubernetes client
 func TestNamespacesHandlerWithMockClient(t *testing.T) {
 	t.Run("should return namespaces from Kubernetes cluster", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
@@ -148,7 +151,7 @@ func TestNamespacesHandlerWithMockClient(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
-			t.Skipf("skipping: API returned %d", res.StatusCode)
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
 		}
 
 		var namespaces []string
@@ -156,7 +159,7 @@ func TestNamespacesHandlerWithMockClient(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// Expected namespaces in a typical Kubernetes cluster
+		// Expected namespaces from fake client
 		expectedNamespaces := map[string]bool{
 			"default":     false,
 			"kube-system": false,
@@ -169,14 +172,15 @@ func TestNamespacesHandlerWithMockClient(t *testing.T) {
 			}
 		}
 
-		// At least 'default' namespace should exist
+		// 'default' namespace must exist
 		if !expectedNamespaces["default"] {
-			t.Log("Warning: 'default' namespace not found in response")
+			t.Error("'default' namespace not found in response")
 		}
 	})
 
 	t.Run("should return sorted namespace list", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/namespaces", nil)
@@ -190,7 +194,7 @@ func TestNamespacesHandlerWithMockClient(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusOK {
-			t.Skipf("skipping: API returned %d", res.StatusCode)
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
 		}
 
 		var namespaces []string

@@ -10,6 +10,9 @@ import (
 // TestUnhealthyPodsHandler tests the GET /api/pods/unhealthy endpoint
 func TestUnhealthyPodsHandler(t *testing.T) {
 	t.Run("should return 200 OK with unhealthy pods list", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
 		w := httptest.NewRecorder()
@@ -21,25 +24,23 @@ func TestUnhealthyPodsHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// In CI environment without cluster, 500 is acceptable
-		// In cluster environment, 200 is expected
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 
-		// If 200, verify JSON response structure
-		if res.StatusCode == http.StatusOK {
-			var pods []map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
-				t.Fatalf("failed to decode response: %v", err)
-			}
-			if pods == nil {
-				t.Error("expected pods array, got nil")
-			}
+		var pods []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if pods == nil {
+			t.Error("expected pods array, got nil")
 		}
 	})
 
 	t.Run("should set correct content-type header", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
 		w := httptest.NewRecorder()
@@ -78,6 +79,9 @@ func TestUnhealthyPodsHandler(t *testing.T) {
 	})
 
 	t.Run("should accept namespace query parameter", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy?ns=default", nil)
 		w := httptest.NewRecorder()
@@ -89,13 +93,15 @@ func TestUnhealthyPodsHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should not fail with namespace parameter
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 
 	t.Run("should return empty array when namespace parameter is empty", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy?ns=", nil)
 		w := httptest.NewRecorder()
@@ -108,8 +114,8 @@ func TestUnhealthyPodsHandler(t *testing.T) {
 		defer res.Body.Close()
 
 		// Empty namespace should fetch from all namespaces
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 }
@@ -117,6 +123,9 @@ func TestUnhealthyPodsHandler(t *testing.T) {
 // TestAllPodsHandler tests the GET /api/pods/all endpoint
 func TestAllPodsHandler(t *testing.T) {
 	t.Run("should return 200 OK with all pods list", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
 		w := httptest.NewRecorder()
@@ -128,22 +137,23 @@ func TestAllPodsHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 
-		if res.StatusCode == http.StatusOK {
-			var pods []map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
-				t.Fatalf("failed to decode response: %v", err)
-			}
-			if pods == nil {
-				t.Error("expected pods array, got nil")
-			}
+		var pods []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if pods == nil {
+			t.Error("expected pods array, got nil")
 		}
 	})
 
 	t.Run("should set correct content-type header", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
 		w := httptest.NewRecorder()
@@ -182,6 +192,9 @@ func TestAllPodsHandler(t *testing.T) {
 	})
 
 	t.Run("should accept namespace query parameter", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/all?ns=default", nil)
 		w := httptest.NewRecorder()
@@ -193,12 +206,15 @@ func TestAllPodsHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 
 	t.Run("should return valid JSON even on error", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
 		w := httptest.NewRecorder()
@@ -217,7 +233,8 @@ func TestAllPodsHandler(t *testing.T) {
 	})
 
 	t.Run("should return pods including healthy ones", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
@@ -260,7 +277,8 @@ func TestAllPodsHandler(t *testing.T) {
 // TestUnhealthyPodsHandlerResponseStructure tests the exact response structure
 func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 	t.Run("should return array of unhealthy pods with required fields", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -282,20 +300,22 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// If there are unhealthy pods, verify structure
-		if len(pods) > 0 {
-			firstPod := pods[0]
-			requiredFields := []string{"name", "namespace", "status", "restarts", "node", "age"}
-			for _, field := range requiredFields {
-				if _, exists := firstPod[field]; !exists {
-					t.Errorf("expected field '%s' in pod object, but not found", field)
-				}
+		if len(pods) == 0 {
+			t.Fatal("expected unhealthy pods from fake client, got none")
+		}
+
+		firstPod := pods[0]
+		requiredFields := []string{"name", "namespace", "status", "restarts", "node", "age"}
+		for _, field := range requiredFields {
+			if _, exists := firstPod[field]; !exists {
+				t.Errorf("expected field '%s' in pod object, but not found", field)
 			}
 		}
 	})
 
 	t.Run("should return pod with valid name", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -314,7 +334,7 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 		}
 
 		if len(pods) == 0 {
-			t.Skip("no unhealthy pods in cluster")
+			t.Fatal("expected unhealthy pods from fake client, got none")
 		}
 
 		// Verify pod name is a non-empty string
@@ -328,7 +348,8 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return pod with valid namespace", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -347,7 +368,7 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 		}
 
 		if len(pods) == 0 {
-			t.Skip("no unhealthy pods in cluster")
+			t.Fatal("expected unhealthy pods from fake client, got none")
 		}
 
 		// Verify namespace is a non-empty string
@@ -361,7 +382,8 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return non-negative restart count", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -380,7 +402,7 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 		}
 
 		if len(pods) == 0 {
-			t.Skip("no unhealthy pods in cluster")
+			t.Fatal("expected unhealthy pods from fake client, got none")
 		}
 
 		// Verify restart count is a non-negative number
@@ -394,7 +416,8 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return pod with non-empty age", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -413,7 +436,7 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 		}
 
 		if len(pods) == 0 {
-			t.Skip("no unhealthy pods in cluster")
+			t.Fatal("expected unhealthy pods from fake client, got none")
 		}
 
 		// Verify age is a non-empty string
@@ -430,7 +453,8 @@ func TestUnhealthyPodsHandlerResponseStructure(t *testing.T) {
 // TestUnhealthyPodsHandlerFiltering tests unhealthy pod filtering logic
 func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 	t.Run("should filter pods by namespace when ns parameter provided", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy?ns=dashboard-test", nil)
@@ -466,7 +490,8 @@ func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 	})
 
 	t.Run("should only return pods with phase != Running", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -504,7 +529,8 @@ func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 	})
 
 	t.Run("should include pods with ImagePullBackOff status", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy?ns=dashboard-test", nil)
@@ -526,9 +552,9 @@ func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// Test fixture has 4 ImagePullBackOff pods
+		// Test fixture has 4 unhealthy pods
 		if len(pods) < 4 {
-			t.Logf("Expected at least 4 unhealthy pods from test fixture, got %d", len(pods))
+			t.Errorf("expected at least 4 unhealthy pods from test fixture, got %d", len(pods))
 		}
 
 		// Look for ImagePullBackOff status
@@ -541,13 +567,14 @@ func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 			}
 		}
 
-		if !foundImagePullBackOff && len(pods) > 0 {
-			t.Log("Note: Expected to find ImagePullBackOff pods from test fixture")
+		if !foundImagePullBackOff {
+			t.Error("expected to find ImagePullBackOff pods from test fixture")
 		}
 	})
 
 	t.Run("should include pods with CrashLoopBackOff status", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -569,17 +596,23 @@ func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// Look for CrashLoopBackOff status (if exists in cluster)
+		// Look for CrashLoopBackOff status
+		foundCrashLoop := false
 		for _, pod := range pods {
 			status, ok := pod["status"].(string)
 			if ok && status == "CrashLoopBackOff" {
+				foundCrashLoop = true
 				t.Logf("Found CrashLoopBackOff pod: %s", pod["name"])
 			}
+		}
+		if !foundCrashLoop {
+			t.Error("expected to find CrashLoopBackOff pod from test fixture")
 		}
 	})
 
 	t.Run("should include pods with Pending status", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
@@ -601,17 +634,16 @@ func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// Look for Pending status (if exists in cluster)
-		for _, pod := range pods {
-			status, ok := pod["status"].(string)
-			if ok && status == "Pending" {
-				t.Logf("Found Pending pod: %s", pod["name"])
-			}
+		// All our unhealthy test fixture pods have Waiting container state
+		// which means isPodHealthy returns false for them
+		if len(pods) == 0 {
+			t.Error("expected unhealthy pods from fake client")
 		}
 	})
 
 	t.Run("should handle non-existent namespace gracefully", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy?ns=non-existent-namespace", nil)
@@ -643,7 +675,7 @@ func TestUnhealthyPodsHandlerFiltering(t *testing.T) {
 // TestUnhealthyPodsHandlerErrorHandling tests error scenarios
 func TestUnhealthyPodsHandlerErrorHandling(t *testing.T) {
 	t.Run("should handle Kubernetes client errors gracefully", func(t *testing.T) {
-		// Arrange
+		// Arrange - no fake client setup, so real client (or none) is used
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
 		w := httptest.NewRecorder()
 
@@ -655,7 +687,6 @@ func TestUnhealthyPodsHandlerErrorHandling(t *testing.T) {
 		defer res.Body.Close()
 
 		// Should either succeed or return error status
-		// In TDD Red phase, this might fail or return 500 if client is not configured
 		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
 			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
 		}
@@ -684,7 +715,8 @@ func TestUnhealthyPodsHandlerErrorHandling(t *testing.T) {
 // TestUnhealthyPodsHandlerTestFixture tests with actual test fixtures
 func TestUnhealthyPodsHandlerTestFixture(t *testing.T) {
 	t.Run("should return test fixture pods from dashboard-test namespace", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy?ns=dashboard-test", nil)
@@ -727,10 +759,10 @@ func TestUnhealthyPodsHandlerTestFixture(t *testing.T) {
 			}
 		}
 
-		// Log which test pods were found
+		// Verify all expected pods were found
 		for _, expectedName := range expectedPodNames {
-			if foundPods[expectedName] {
-				t.Logf("Found test fixture pod: %s", expectedName)
+			if !foundPods[expectedName] {
+				t.Errorf("expected test fixture pod '%s' not found", expectedName)
 			}
 		}
 	})

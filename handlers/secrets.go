@@ -105,7 +105,7 @@ func handleDeleteSecret(w http.ResponseWriter, r *http.Request) {
 }
 
 // getSecretsData fetches secrets data from Kubernetes (without values)
-func getSecretsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]SecretInfo, error) {
+func getSecretsData(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]SecretInfo, error) {
 	secretList, err := clientset.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func getSecretsData(ctx context.Context, clientset *kubernetes.Clientset, namesp
 }
 
 // getSecretDetail fetches a specific secret with decoded values
-func getSecretDetail(ctx context.Context, clientset *kubernetes.Clientset, namespace, name string) (*SecretDetail, error) {
+func getSecretDetail(ctx context.Context, clientset kubernetes.Interface, namespace, name string) (*SecretDetail, error) {
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -150,6 +150,6 @@ func getSecretDetail(ctx context.Context, clientset *kubernetes.Clientset, names
 }
 
 // deleteSecret deletes a specific secret from Kubernetes
-func deleteSecret(ctx context.Context, clientset *kubernetes.Clientset, namespace, name string) error {
+func deleteSecret(ctx context.Context, clientset kubernetes.Interface, namespace, name string) error {
 	return clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 }

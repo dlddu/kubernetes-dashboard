@@ -60,31 +60,24 @@ test.describe('Health Check', () => {
 });
 
 test.describe('Kubernetes Integration', () => {
-  test.skip('should connect to Kubernetes cluster', async ({ request }) => {
-    // This test will be implemented after Kubernetes endpoints are added
-    // Currently skipped as the feature is not yet implemented
+  test('should connect to Kubernetes cluster via namespaces endpoint', async ({ request }) => {
+    // Act: Call the namespaces API endpoint
+    const response = await request.get('/api/namespaces');
 
-    // Act: Call the Kubernetes API endpoint
-    const response = await request.get('/api/k8s/namespaces');
-
-    // Assert: Should return namespaces
+    // Assert: Should return namespaces as a string array
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
-    expect(body).toHaveProperty('items');
-    expect(Array.isArray(body.items)).toBeTruthy();
+    expect(Array.isArray(body)).toBeTruthy();
+    expect(body.length).toBeGreaterThan(0);
   });
 
-  test.skip('should list pods in default namespace', async ({ request }) => {
-    // This test will be implemented after pod listing endpoint is added
-    // Currently skipped as the feature is not yet implemented
+  test('should list pods in default namespace', async ({ request }) => {
+    // Act: Call the pods endpoint with namespace filter
+    const response = await request.get('/api/pods/all?ns=default');
 
-    // Act: Call the pods endpoint
-    const response = await request.get('/api/k8s/namespaces/default/pods');
-
-    // Assert: Should return pods
+    // Assert: Should return pods as an array
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
-    expect(body).toHaveProperty('items');
-    expect(Array.isArray(body.items)).toBeTruthy();
+    expect(Array.isArray(body)).toBeTruthy();
   });
 });

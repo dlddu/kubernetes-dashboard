@@ -26,7 +26,7 @@ var NodesHandler = handleGet("Failed to fetch nodes data", func(r *http.Request)
 })
 
 // getNodesData fetches nodes data from Kubernetes
-func getNodesData(ctx context.Context, clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset) ([]NodeDetailInfo, error) {
+func getNodesData(ctx context.Context, clientset kubernetes.Interface, metricsClient *metricsv.Clientset) ([]NodeDetailInfo, error) {
 	nodeList, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err

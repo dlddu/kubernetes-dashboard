@@ -10,6 +10,9 @@ import (
 // TestSecretsHandler tests the GET /api/secrets endpoint
 func TestSecretsHandler(t *testing.T) {
 	t.Run("should return 200 OK with secrets list", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets", nil)
 		w := httptest.NewRecorder()
@@ -21,22 +24,20 @@ func TestSecretsHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// In CI environment without cluster, 500 is acceptable
-		// In cluster environment, 200 is expected
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 
-		// If 200, verify JSON response structure
-		if res.StatusCode == http.StatusOK {
-			var secrets []map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&secrets); err != nil {
-				t.Fatalf("failed to decode response: %v", err)
-			}
+		var secrets []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&secrets); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
 		}
 	})
 
 	t.Run("should set correct content-type header", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets", nil)
 		w := httptest.NewRecorder()
@@ -75,6 +76,9 @@ func TestSecretsHandler(t *testing.T) {
 	})
 
 	t.Run("should accept namespace query parameter", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets?ns=default", nil)
 		w := httptest.NewRecorder()
@@ -86,13 +90,15 @@ func TestSecretsHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should not fail with namespace parameter
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 
 	t.Run("should return all namespaces secrets when ns parameter is empty", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets?ns=", nil)
 		w := httptest.NewRecorder()
@@ -104,9 +110,8 @@ func TestSecretsHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Empty namespace should be treated as all namespaces
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 }
@@ -114,7 +119,8 @@ func TestSecretsHandler(t *testing.T) {
 // TestSecretsHandlerResponseStructure tests the exact response structure
 func TestSecretsHandlerResponseStructure(t *testing.T) {
 	t.Run("should return array of secrets with required fields", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets", nil)
@@ -136,20 +142,22 @@ func TestSecretsHandlerResponseStructure(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		// If there are secrets, verify structure
-		if len(secrets) > 0 {
-			firstSecret := secrets[0]
-			requiredFields := []string{"name", "namespace", "type", "keys"}
-			for _, field := range requiredFields {
-				if _, exists := firstSecret[field]; !exists {
-					t.Errorf("expected field '%s' in secret object, but not found", field)
-				}
+		if len(secrets) == 0 {
+			t.Fatal("expected secrets from fake client, got none")
+		}
+
+		firstSecret := secrets[0]
+		requiredFields := []string{"name", "namespace", "type", "keys"}
+		for _, field := range requiredFields {
+			if _, exists := firstSecret[field]; !exists {
+				t.Errorf("expected field '%s' in secret object, but not found", field)
 			}
 		}
 	})
 
 	t.Run("should NOT include data/value field in list response", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets", nil)
@@ -183,7 +191,8 @@ func TestSecretsHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should return keys as array of strings", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets", nil)
@@ -206,7 +215,7 @@ func TestSecretsHandlerResponseStructure(t *testing.T) {
 		}
 
 		if len(secrets) == 0 {
-			t.Skip("no secrets in cluster")
+			t.Fatal("expected secrets from fake client, got none")
 		}
 
 		// Verify keys is an array
@@ -225,7 +234,8 @@ func TestSecretsHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should filter secrets by namespace when ns parameter provided", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets?ns=kube-system", nil)
@@ -261,7 +271,8 @@ func TestSecretsHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should handle non-existent namespace gracefully", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets?ns=non-existent-namespace", nil)
@@ -293,6 +304,9 @@ func TestSecretsHandlerResponseStructure(t *testing.T) {
 // TestSecretDetailHandler tests the GET /api/secrets/:ns/:name endpoint
 func TestSecretDetailHandler(t *testing.T) {
 	t.Run("should return 200 OK with secret detail", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/default/test-secret", nil)
 		w := httptest.NewRecorder()
@@ -304,22 +318,20 @@ func TestSecretDetailHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// In CI environment without cluster, 500 or 404 is acceptable
-		// In cluster environment, 200 or 404 is expected
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError && res.StatusCode != http.StatusNotFound {
-			t.Errorf("expected status 200, 404, or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 
-		// If 200, verify JSON response
-		if res.StatusCode == http.StatusOK {
-			var secret map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&secret); err != nil {
-				t.Fatalf("failed to decode response: %v", err)
-			}
+		var secret map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&secret); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
 		}
 	})
 
 	t.Run("should set correct content-type header", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/default/test-secret", nil)
 		w := httptest.NewRecorder()
@@ -358,7 +370,8 @@ func TestSecretDetailHandler(t *testing.T) {
 	})
 
 	t.Run("should return 404 for non-existent secret", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/default/non-existent-secret", nil)
@@ -380,10 +393,10 @@ func TestSecretDetailHandler(t *testing.T) {
 // TestSecretDetailHandlerResponseStructure tests the exact response structure for detail endpoint
 func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 	t.Run("should include data field with decoded values in detail response", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
-		// This test assumes a secret exists
-		// We'll test with kube-system namespace which typically has secrets
+		// Arrange - use test-secret in kube-system (from fake client)
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/kube-system/test-secret", nil)
 		w := httptest.NewRecorder()
 
@@ -393,11 +406,6 @@ func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 		// Assert
 		res := w.Result()
 		defer res.Body.Close()
-
-		// Skip if secret doesn't exist
-		if res.StatusCode == http.StatusNotFound {
-			t.Skip("test secret does not exist")
-		}
 
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
@@ -424,9 +432,10 @@ func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should include basic metadata in detail response", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
-		// Arrange - use a known namespace that typically has secrets
+		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/kube-system/test-secret", nil)
 		w := httptest.NewRecorder()
 
@@ -436,10 +445,6 @@ func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 		// Assert
 		res := w.Result()
 		defer res.Body.Close()
-
-		if res.StatusCode == http.StatusNotFound {
-			t.Skip("test secret does not exist")
-		}
 
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
@@ -460,7 +465,8 @@ func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 	})
 
 	t.Run("should decode base64 values in data field", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/kube-system/test-secret", nil)
@@ -472,10 +478,6 @@ func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 		// Assert
 		res := w.Result()
 		defer res.Body.Close()
-
-		if res.StatusCode == http.StatusNotFound {
-			t.Skip("test secret does not exist")
-		}
 
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
@@ -489,7 +491,7 @@ func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 		// Verify values are decoded (not base64)
 		data, exists := secret["data"].(map[string]interface{})
 		if !exists {
-			t.Skip("no data field in response")
+			t.Fatal("expected 'data' field in response")
 		}
 
 		// Values should be strings (decoded, not base64)
@@ -505,7 +507,7 @@ func TestSecretDetailHandlerResponseStructure(t *testing.T) {
 // TestSecretsHandlerErrorHandling tests error scenarios
 func TestSecretsHandlerErrorHandling(t *testing.T) {
 	t.Run("should handle Kubernetes client errors gracefully", func(t *testing.T) {
-		// Arrange
+		// Arrange - no fake client
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets", nil)
 		w := httptest.NewRecorder()
 
@@ -516,8 +518,6 @@ func TestSecretsHandlerErrorHandling(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should either succeed or return error status
-		// In TDD Red phase, this might fail or return 500 if client is not configured
 		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
 			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
 		}
@@ -535,7 +535,6 @@ func TestSecretsHandlerErrorHandling(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Response should always be valid JSON
 		var result interface{}
 		if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 			t.Errorf("response should be valid JSON, got error: %v", err)
@@ -546,6 +545,9 @@ func TestSecretsHandlerErrorHandling(t *testing.T) {
 // TestSecretDetailHandlerErrorHandling tests error scenarios for detail endpoint
 func TestSecretDetailHandlerErrorHandling(t *testing.T) {
 	t.Run("should handle missing namespace parameter", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange - malformed URL without namespace
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets//test-secret", nil)
 		w := httptest.NewRecorder()
@@ -557,13 +559,15 @@ func TestSecretDetailHandlerErrorHandling(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should return error for missing namespace
 		if res.StatusCode == http.StatusOK {
 			t.Error("expected error status for missing namespace")
 		}
 	})
 
 	t.Run("should handle missing secret name parameter", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange - malformed URL without secret name
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/default/", nil)
 		w := httptest.NewRecorder()
@@ -575,14 +579,13 @@ func TestSecretDetailHandlerErrorHandling(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should return error for missing secret name
 		if res.StatusCode == http.StatusOK {
 			t.Error("expected error status for missing secret name")
 		}
 	})
 
 	t.Run("should handle Kubernetes client errors gracefully", func(t *testing.T) {
-		// Arrange
+		// Arrange - no fake client
 		req := httptest.NewRequest(http.MethodGet, "/api/secrets/default/test-secret", nil)
 		w := httptest.NewRecorder()
 
@@ -593,7 +596,6 @@ func TestSecretDetailHandlerErrorHandling(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// Should either succeed or return error status
 		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError && res.StatusCode != http.StatusNotFound {
 			t.Errorf("expected status 200, 404, or 500, got %d", res.StatusCode)
 		}
@@ -603,6 +605,9 @@ func TestSecretDetailHandlerErrorHandling(t *testing.T) {
 // TestSecretDeleteHandler tests the DELETE /api/secrets/:ns/:name endpoint
 func TestSecretDeleteHandler(t *testing.T) {
 	t.Run("should accept DELETE method", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange
 		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/test-secret", nil)
 		w := httptest.NewRecorder()
@@ -614,14 +619,15 @@ func TestSecretDeleteHandler(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		// In CI environment without cluster, 500 is acceptable
-		// In cluster environment, 200 or 404 is expected
-		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusInternalServerError {
-			t.Errorf("expected status 200, 404, or 500, got %d", res.StatusCode)
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 	})
 
 	t.Run("should return 400 for invalid URL format on DELETE", func(t *testing.T) {
+		cleanup := setupFakeClient(t)
+		defer cleanup()
+
 		// Arrange - URL with only namespace, no name
 		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/", nil)
 		w := httptest.NewRecorder()
@@ -639,10 +645,11 @@ func TestSecretDeleteHandler(t *testing.T) {
 	})
 
 	t.Run("should return JSON response on successful delete", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
-		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/non-existent-secret-for-delete", nil)
+		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/test-secret", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -664,7 +671,8 @@ func TestSecretDeleteHandler(t *testing.T) {
 	})
 
 	t.Run("should return 404 for non-existent secret on DELETE", func(t *testing.T) {
-		skipIfNoCluster(t)
+		cleanup := setupFakeClient(t)
+		defer cleanup()
 
 		// Arrange
 		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/non-existent-secret-xyz", nil)
