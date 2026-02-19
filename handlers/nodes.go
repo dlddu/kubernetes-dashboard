@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,10 +31,7 @@ func NodesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metricsClient, err := getMetricsClient()
-	if err != nil {
-		log.Printf("metrics client unavailable, falling back to capacity-allocatable: %v", err)
-	}
+	metricsClient := getMetricsClientSafe()
 
 	nodes, err := getNodesData(r.Context(), clientset, metricsClient)
 	if err != nil {

@@ -1,4 +1,3 @@
-import { debugFetch } from './debugFetch';
 import { fetchJSON, buildURL } from './client';
 
 export interface DeploymentInfo {
@@ -15,14 +14,7 @@ export async function fetchDeployments(namespace?: string): Promise<DeploymentIn
 }
 
 export async function restartDeployment(namespace: string, name: string): Promise<void> {
-  const url = `/api/deployments/${namespace}/${name}/restart`;
-
-  const response = await debugFetch(url, {
+  await fetchJSON(`/api/deployments/${namespace}/${name}/restart`, {
     method: 'POST',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-  }
 }
