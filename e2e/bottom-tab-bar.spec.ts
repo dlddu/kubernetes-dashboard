@@ -478,7 +478,11 @@ test.describe('BottomTabBar - Namespace Context Integration', () => {
 
     // Wait for pods API response after namespace selection
     await Promise.all([
-      page.waitForResponse(resp => resp.url().includes('/api/pods') && resp.status() === 200),
+      page.waitForResponse(resp =>
+        resp.url().includes('/api/pods') &&
+        resp.url().includes('ns=default') &&
+        resp.status() === 200
+      ),
       defaultNamespaceOption.click(),
     ]);
 
@@ -497,8 +501,7 @@ test.describe('BottomTabBar - Namespace Context Integration', () => {
     // Assert: All visible pods should belong to default namespace
     if (filteredCount > 0) {
       const firstPod = filteredPodCards.first();
-      const podDetails = await firstPod.innerText();
-      expect(podDetails.toLowerCase()).toContain('default');
+      await expect(firstPod).toContainText('default', { timeout: 5000 });
     }
   });
 
