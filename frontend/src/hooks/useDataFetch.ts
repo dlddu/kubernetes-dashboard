@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { usePolling, UsePollingReturn } from './usePolling';
 
 export interface UseDataFetchReturn<T> {
@@ -24,27 +24,35 @@ export function useDataFetch<T>(
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetcherRef = useRef(fetcher);
+  const errorMessageRef = useRef(errorMessage);
+
+  // Keep refs in sync with latest values
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+    errorMessageRef.current = errorMessage;
+  });
 
   const load = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await fetcher();
+      const result = await fetcherRef.current();
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : errorMessage);
+      setError(err instanceof Error ? err.message : errorMessageRef.current);
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, []);
 
   const { refresh } = usePolling(load);
 
+  // Re-fetch when deps change
+  const depsKey = JSON.stringify(deps);
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [depsKey, load]);
 
   return { data, isLoading, error, refresh };
 }
