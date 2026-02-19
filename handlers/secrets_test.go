@@ -334,9 +334,9 @@ func TestSecretDetailHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("should reject non-GET methods", func(t *testing.T) {
-		// Arrange
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+	t.Run("should reject unsupported methods", func(t *testing.T) {
+		// Arrange - DELETE is now allowed, so only test POST, PUT, PATCH
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodPatch}
 
 		for _, method := range methods {
 			t.Run(method, func(t *testing.T) {
@@ -596,6 +596,89 @@ func TestSecretDetailHandlerErrorHandling(t *testing.T) {
 		// Should either succeed or return error status
 		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError && res.StatusCode != http.StatusNotFound {
 			t.Errorf("expected status 200, 404, or 500, got %d", res.StatusCode)
+		}
+	})
+}
+
+// TestSecretDeleteHandler tests the DELETE /api/secrets/:ns/:name endpoint
+func TestSecretDeleteHandler(t *testing.T) {
+	t.Run("should accept DELETE method", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/test-secret", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		SecretDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// In CI environment without cluster, 500 is acceptable
+		// In cluster environment, 200 or 404 is expected
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected status 200, 404, or 500, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return 400 for invalid URL format on DELETE", func(t *testing.T) {
+		// Arrange - URL with only namespace, no name
+		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		SecretDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected status 400 for invalid URL, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return JSON response on successful delete", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/non-existent-secret-for-delete", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		SecretDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		contentType := w.Header().Get("Content-Type")
+		if contentType != "application/json" {
+			t.Errorf("expected Content-Type 'application/json', got '%s'", contentType)
+		}
+
+		var result map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+	})
+
+	t.Run("should return 404 for non-existent secret on DELETE", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodDelete, "/api/secrets/default/non-existent-secret-xyz", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		SecretDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusNotFound {
+			t.Errorf("expected status 404 for non-existent secret, got %d", res.StatusCode)
 		}
 	})
 }

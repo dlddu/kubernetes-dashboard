@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchSecrets, fetchSecretDetail } from './secrets';
+import { fetchSecrets, fetchSecretDetail, deleteSecret } from './secrets';
 
 // Mock fetch globally with proper typing
 const mockFetch = vi.fn();
@@ -523,6 +523,43 @@ describe('Secrets API', () => {
       expect(namespace).toBe('default');
       expect(type).toBe('Opaque');
       expect(data).toBeDefined();
+    });
+  });
+
+  describe('deleteSecret', () => {
+    it('should call DELETE /api/secrets/:namespace/:name', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Secret deleted successfully' }),
+      });
+
+      // Act
+      await deleteSecret('default', 'my-secret');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/secrets/default/my-secret', {
+        method: 'DELETE',
+      });
+    });
+
+    it('should throw error on non-ok response', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+      // Act & Assert
+      await expect(deleteSecret('default', 'non-existent')).rejects.toThrow();
+    });
+
+    it('should throw error on network failure', async () => {
+      // Arrange
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      // Act & Assert
+      await expect(deleteSecret('default', 'my-secret')).rejects.toThrow('Network error');
     });
   });
 });

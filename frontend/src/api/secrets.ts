@@ -22,3 +22,7 @@ export async function fetchSecrets(namespace?: string): Promise<SecretInfo[]> {
 export async function fetchSecretDetail(namespace: string, name: string): Promise<SecretDetail> {
   return fetchJSON<SecretDetail>(`/api/secrets/${namespace}/${name}`);
 }
+
+export async function deleteSecret(namespace: string, name: string): Promise<void> {
+  return fetchJSON(`/api/secrets/${namespace}/${name}`, { method: 'DELETE' });
+}
