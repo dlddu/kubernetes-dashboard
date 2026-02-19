@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -14,6 +14,10 @@ import (
 )
 
 var (
+	restConfig     *rest.Config
+	restConfigErr  error
+	restConfigOnce sync.Once
+
 	kubeClient     *kubernetes.Clientset
 	kubeClientErr  error
 	kubeClientOnce sync.Once
@@ -23,23 +27,27 @@ var (
 	metricsClientOnce sync.Once
 )
 
-// getRESTConfig resolves the Kubernetes REST configuration.
+// getRESTConfig resolves and caches the Kubernetes REST configuration.
 // Tries in-cluster config first, then KUBECONFIG env var, then ~/.kube/config.
 func getRESTConfig() (*rest.Config, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		kubeconfig := os.Getenv("KUBECONFIG")
-		if kubeconfig == "" {
-			if home := homedir.HomeDir(); home != "" {
-				kubeconfig = filepath.Join(home, ".kube", "config")
+	restConfigOnce.Do(func() {
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			kubeconfig := os.Getenv("KUBECONFIG")
+			if kubeconfig == "" {
+				if home := homedir.HomeDir(); home != "" {
+					kubeconfig = filepath.Join(home, ".kube", "config")
+				}
+			}
+			config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+			if err != nil {
+				restConfigErr = err
+				return
 			}
 		}
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return config, nil
+		restConfig = config
+	})
+	return restConfig, restConfigErr
 }
 
 // getKubernetesClient returns a cached Kubernetes client, creating it on first call.
@@ -73,7 +81,7 @@ func getMetricsClient() (*metricsv.Clientset, error) {
 func getMetricsClientSafe() *metricsv.Clientset {
 	mc, err := getMetricsClient()
 	if err != nil {
-		log.Printf("metrics client unavailable, falling back to capacity-allocatable: %v", err)
+		slog.Warn("metrics client unavailable, falling back to capacity-allocatable", "error", err)
 		return nil
 	}
 	return mc

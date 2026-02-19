@@ -484,7 +484,7 @@ func TestCalculateResourceUsageFallback(t *testing.T) {
 		}
 		metricsMap := map[string]nodeMetricsUsage{
 			"node-1": {
-				cpuMillis:   2000, // 2000m / 4000m = 50%
+				cpuMillis:   2000,                   // 2000m / 4000m = 50%
 				memoryBytes: 4 * 1024 * 1024 * 1024, // 4Gi / 8Gi = 50%
 			},
 		}

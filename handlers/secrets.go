@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -40,6 +38,8 @@ var SecretsHandler = handleGet("Failed to fetch secrets data", func(r *http.Requ
 // SecretDetailHandler handles the /api/secrets/:ns/:name endpoint
 // Supports GET (detail) and DELETE (deletion)
 func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
+	r = withTimeout(r)
+
 	switch r.Method {
 	case http.MethodGet:
 		handleGetSecretDetail(w, r)
@@ -50,19 +50,8 @@ func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func parseSecretPath(r *http.Request) (namespace string, name string, err error) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/secrets/")
-	parts := strings.SplitN(path, "/", 2)
-
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return "", "", fmt.Errorf("invalid URL format")
-	}
-
-	return parts[0], parts[1], nil
-}
-
 func handleGetSecretDetail(w http.ResponseWriter, r *http.Request) {
-	namespace, name, err := parseSecretPath(r)
+	namespace, name, err := parseResourcePath(r.URL.Path, secretsPathPrefix, "")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid URL format. Expected /api/secrets/{namespace}/{name}")
 		return
@@ -88,7 +77,7 @@ func handleGetSecretDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteSecret(w http.ResponseWriter, r *http.Request) {
-	namespace, name, err := parseSecretPath(r)
+	namespace, name, err := parseResourcePath(r.URL.Path, secretsPathPrefix, "")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid URL format. Expected /api/secrets/{namespace}/{name}")
 		return

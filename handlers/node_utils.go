@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -39,14 +39,13 @@ func isNodeReady(node corev1.Node) bool {
 //  1. "node.kubernetes.io/role" — the value is the role name
 //  2. "node-role.kubernetes.io/<role>" — the key suffix is the role name
 func getNodeRole(node corev1.Node) string {
-	if role, exists := node.Labels["node.kubernetes.io/role"]; exists && role != "" {
+	if role, exists := node.Labels[labelNodeRole]; exists && role != "" {
 		return role
 	}
 
-	const prefix = "node-role.kubernetes.io/"
 	for key := range node.Labels {
-		if strings.HasPrefix(key, prefix) {
-			role := strings.TrimPrefix(key, prefix)
+		if strings.HasPrefix(key, labelNodeRolePrefix) {
+			role := strings.TrimPrefix(key, labelNodeRolePrefix)
 			if role != "" {
 				return role
 			}
@@ -59,9 +58,9 @@ func getNodeRole(node corev1.Node) string {
 // nodeStatusString returns "Ready" or "NotReady" based on node condition.
 func nodeStatusString(node corev1.Node) string {
 	if isNodeReady(node) {
-		return "Ready"
+		return nodeStatusReady
 	}
-	return "NotReady"
+	return nodeStatusNotReady
 }
 
 // fetchNodeMetrics queries the metrics-server for actual node resource usage.
@@ -75,7 +74,7 @@ func fetchNodeMetrics(ctx context.Context, metricsClient *metricsv.Clientset) ma
 		ctx, metav1.ListOptions{},
 	)
 	if err != nil {
-		log.Printf("metrics-server unavailable, falling back to capacity-allocatable: %v", err)
+		slog.Warn("metrics-server unavailable, falling back to capacity-allocatable", "error", err)
 		return nil
 	}
 
