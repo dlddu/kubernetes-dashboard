@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -51,25 +50,14 @@ func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetSecretDetail(w http.ResponseWriter, r *http.Request) {
-	namespace, name, err := parseResourcePath(r.URL.Path, secretsPathPrefix, "")
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid URL format. Expected /api/secrets/{namespace}/{name}")
+	rc := withParsedResource(w, r, secretsPathPrefix, "")
+	if rc == nil {
 		return
 	}
 
-	clientset, err := getKubernetesClient()
+	secretDetail, err := getSecretDetail(r.Context(), rc.clientset, rc.namespace, rc.name)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
-	}
-
-	secretDetail, err := getSecretDetail(r.Context(), clientset, namespace, name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			writeError(w, http.StatusNotFound, "Secret not found")
-			return
-		}
-		writeError(w, http.StatusInternalServerError, "Failed to fetch secret detail")
+		writeResourceError(w, err, errMsgSecretNotFound, errMsgSecretFetch)
 		return
 	}
 
@@ -77,25 +65,14 @@ func handleGetSecretDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteSecret(w http.ResponseWriter, r *http.Request) {
-	namespace, name, err := parseResourcePath(r.URL.Path, secretsPathPrefix, "")
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid URL format. Expected /api/secrets/{namespace}/{name}")
+	rc := withParsedResource(w, r, secretsPathPrefix, "")
+	if rc == nil {
 		return
 	}
 
-	clientset, err := getKubernetesClient()
+	err := deleteSecret(r.Context(), rc.clientset, rc.namespace, rc.name)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
-	}
-
-	err = deleteSecret(r.Context(), clientset, namespace, name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			writeError(w, http.StatusNotFound, "Secret not found")
-			return
-		}
-		writeError(w, http.StatusInternalServerError, "Failed to delete secret")
+		writeResourceError(w, err, errMsgSecretNotFound, errMsgSecretDelete)
 		return
 	}
 
