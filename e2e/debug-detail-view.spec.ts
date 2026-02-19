@@ -23,387 +23,207 @@ test.describe('Debug Page - Detail View', () => {
     await enableDebugAndGenerateLogs(page);
   });
 
-  test.describe('Display', () => {
-    test('should display detail view when endpoint is clicked', async ({ page }) => {
-      // Act: Click first endpoint in the list
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+  test('should display detail view when endpoint is clicked', async ({ page }) => {
+    // Act: Click first endpoint in the list
+    const firstEndpoint = page.getByTestId('endpoint-item').first();
+    await firstEndpoint.click();
 
-      // Assert: Detail view should be visible
-      const detailView = page.getByTestId('detail-view');
-      await expect(detailView).toBeVisible();
-    });
+    // Assert: Detail view should be visible
+    const detailView = page.getByTestId('detail-view');
+    await expect(detailView).toBeVisible();
 
-    test('should display detail view in right panel area', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Assert: Right panel should contain detail view
-      const rightPanel = page.getByTestId('debug-right-panel');
-      const detailView = rightPanel.getByTestId('detail-view');
-      await expect(detailView).toBeVisible();
-    });
+    // Assert: Right panel should contain detail view
+    const rightPanel = page.getByTestId('debug-right-panel');
+    const detailViewInPanel = rightPanel.getByTestId('detail-view');
+    await expect(detailViewInPanel).toBeVisible();
   });
 
-  test.describe('Response Tab', () => {
-    test('should display Response tab as active by default', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+  test('should display Response tab with JSON content and syntax highlighting', async ({ page }) => {
+    // Act: Click first endpoint
+    const firstEndpoint = page.getByTestId('endpoint-item').first();
+    await firstEndpoint.click();
 
-      // Assert: Response tab should be active (aria-selected="true")
-      const responseTab = page.getByRole('tab', { name: /response/i });
-      await expect(responseTab).toHaveAttribute('aria-selected', 'true');
+    // Assert: Response tab should be active by default (aria-selected="true")
+    const responseTab = page.getByRole('tab', { name: /response/i });
+    await expect(responseTab).toHaveAttribute('aria-selected', 'true');
+
+    // Assert: Response tab content should be visible
+    const responseContent = page.getByTestId('response-content');
+    await expect(responseContent).toBeVisible();
+
+    // Assert: Should contain JSON-like content (braces, quotes, colons)
+    const contentText = await responseContent.textContent();
+    expect(contentText).toMatch(/[\{\}\[\]]/); // JSON structure characters
+
+    // Assert: JSON string values should have color styling
+    const jsonStrings = responseContent.locator('.json-string')
+      .or(responseContent.locator('[class*="string"]'));
+    const stringCount = await jsonStrings.count();
+    expect(stringCount).toBeGreaterThan(0);
+
+    const firstString = jsonStrings.first();
+    const stringHasColor = await firstString.evaluate((el) => {
+      const style = window.getComputedStyle(el);
+      return style.color !== '' && style.color !== 'rgb(0, 0, 0)';
     });
+    expect(stringHasColor).toBe(true);
 
-    test('should display JSON content in Response tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Assert: Response tab content should be visible
-      const responseContent = page.getByTestId('response-content');
-      await expect(responseContent).toBeVisible();
-
-      // Assert: Should contain JSON-like content (braces, quotes, colons)
-      const contentText = await responseContent.textContent();
-      expect(contentText).toMatch(/[\{\}\[\]]/); // JSON structure characters
-    });
-
-    test('should apply syntax highlighting to JSON keys', async ({ page }) => {
-      // Act: Click an endpoint that returns a JSON object (not an array)
-      // /api/namespaces returns a string array which has no object keys,
-      // so we select /api/overview which returns a JSON object with keys.
-      const overviewEndpoint = page.getByTestId('endpoint-item').filter({ hasText: /\/api\/overview/ }).first();
-      await overviewEndpoint.click();
-
-      // Assert: JSON keys should have specific color styling
-      const responseContent = page.getByTestId('response-content');
-      const jsonKeys = responseContent.locator('.json-key')
-        .or(responseContent.locator('[class*="key"]'))
-        .or(responseContent.locator('span').filter({ hasText: /"[^"]+":/ }));
-
-      // Check that at least one key element exists
-      const keyCount = await jsonKeys.count();
-      expect(keyCount).toBeGreaterThan(0);
-
-      // Verify first key has color styling (non-default text color)
-      const firstKey = jsonKeys.first();
-      const hasColor = await firstKey.evaluate((el) => {
+    // Assert: JSON number values should have color styling (if present)
+    const jsonNumbers = responseContent.locator('.json-number')
+      .or(responseContent.locator('[class*="number"]'));
+    const numberCount = await jsonNumbers.count();
+    if (numberCount > 0) {
+      const firstNumber = jsonNumbers.first();
+      const numberHasColor = await firstNumber.evaluate((el) => {
         const style = window.getComputedStyle(el);
         return style.color !== '' && style.color !== 'rgb(0, 0, 0)';
       });
-      expect(hasColor).toBe(true);
+      expect(numberHasColor).toBe(true);
+    }
+
+    // Act: Click /api/overview endpoint for JSON key highlighting check
+    const overviewEndpoint = page.getByTestId('endpoint-item').filter({ hasText: /\/api\/overview/ }).first();
+    await overviewEndpoint.click();
+
+    // Assert: JSON keys should have specific color styling
+    const jsonKeys = responseContent.locator('.json-key')
+      .or(responseContent.locator('[class*="key"]'))
+      .or(responseContent.locator('span').filter({ hasText: /"[^"]+":/ }));
+    const keyCount = await jsonKeys.count();
+    expect(keyCount).toBeGreaterThan(0);
+
+    const firstKey = jsonKeys.first();
+    const keyHasColor = await firstKey.evaluate((el) => {
+      const style = window.getComputedStyle(el);
+      return style.color !== '' && style.color !== 'rgb(0, 0, 0)';
     });
-
-    test('should apply syntax highlighting to JSON string values', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Assert: JSON string values should have color styling different from keys
-      const responseContent = page.getByTestId('response-content');
-      const jsonStrings = responseContent.locator('.json-string')
-        .or(responseContent.locator('[class*="string"]'));
-
-      // Check that string elements exist
-      const stringCount = await jsonStrings.count();
-      expect(stringCount).toBeGreaterThan(0);
-
-      // Verify string values have color styling
-      const firstString = jsonStrings.first();
-      const hasColor = await firstString.evaluate((el) => {
-        const style = window.getComputedStyle(el);
-        return style.color !== '' && style.color !== 'rgb(0, 0, 0)';
-      });
-      expect(hasColor).toBe(true);
-    });
-
-    test('should apply syntax highlighting to JSON number values', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Assert: JSON number values should have color styling
-      const responseContent = page.getByTestId('response-content');
-      const jsonNumbers = responseContent.locator('.json-number')
-        .or(responseContent.locator('[class*="number"]'));
-
-      // Check that number elements exist (response might contain numbers)
-      const numberCount = await jsonNumbers.count();
-
-      // If numbers exist, verify they have color styling
-      if (numberCount > 0) {
-        const firstNumber = jsonNumbers.first();
-        const hasColor = await firstNumber.evaluate((el) => {
-          const style = window.getComputedStyle(el);
-          return style.color !== '' && style.color !== 'rgb(0, 0, 0)';
-        });
-        expect(hasColor).toBe(true);
-      }
-    });
+    expect(keyHasColor).toBe(true);
   });
 
-  test.describe('Request Tab', () => {
-    test('should switch to Request tab when clicked', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+  test('should display Request tab with method, URL, and parameters', async ({ page }) => {
+    // Act: Click first endpoint
+    const firstEndpoint = page.getByTestId('endpoint-item').first();
+    await firstEndpoint.click();
 
-      // Act: Click Request tab
-      const requestTab = page.getByRole('tab', { name: /request/i });
-      await requestTab.click();
+    // Act: Click Request tab
+    const requestTab = page.getByRole('tab', { name: /request/i });
+    await requestTab.click();
 
-      // Assert: Request tab should be active
-      await expect(requestTab).toHaveAttribute('aria-selected', 'true');
+    // Assert: Request tab should be active
+    await expect(requestTab).toHaveAttribute('aria-selected', 'true');
 
-      // Assert: Response tab should no longer be active
-      const responseTab = page.getByRole('tab', { name: /response/i });
-      await expect(responseTab).toHaveAttribute('aria-selected', 'false');
-    });
+    // Assert: Response tab should no longer be active
+    const responseTab = page.getByRole('tab', { name: /response/i });
+    await expect(responseTab).toHaveAttribute('aria-selected', 'false');
 
-    test('should display HTTP method in Request tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+    // Assert: Request content should show HTTP method
+    const requestContent = page.getByTestId('request-content');
+    await expect(requestContent).toContainText(/GET|POST|PUT|DELETE|PATCH/i);
 
-      // Act: Click Request tab
-      const requestTab = page.getByRole('tab', { name: /request/i });
-      await requestTab.click();
+    // Assert: Request content should show URL
+    await expect(requestContent).toContainText(/\/api\//i);
 
-      // Assert: Request content should show HTTP method
-      const requestContent = page.getByTestId('request-content');
-      await expect(requestContent).toContainText(/GET|POST|PUT|DELETE|PATCH/i);
-    });
-
-    test('should display request URL in Request tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Act: Click Request tab
-      const requestTab = page.getByRole('tab', { name: /request/i });
-      await requestTab.click();
-
-      // Assert: Request content should show URL
-      const requestContent = page.getByTestId('request-content');
-      await expect(requestContent).toContainText(/\/api\//i);
-    });
-
-    test('should display query parameters in Request tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Act: Click Request tab
-      const requestTab = page.getByRole('tab', { name: /request/i });
-      await requestTab.click();
-
-      // Assert: Request content should contain params section
-      const requestContent = page.getByTestId('request-content');
-
-      // Check if "Params" or "Parameters" section exists
-      const paramsSection = requestContent.getByText(/params|parameters/i);
-      const hasParams = await paramsSection.isVisible().catch(() => false);
-
-      // Either params section exists, or URL contains query string
-      const contentText = await requestContent.textContent();
-      const hasQueryString = contentText?.includes('?') || false;
-
-      // At minimum, Request tab should mention params even if none present
-      expect(hasParams || hasQueryString || contentText?.includes('none')).toBe(true);
-    });
+    // Assert: Request content should contain params section or query string
+    const paramsSection = requestContent.getByText(/params|parameters/i);
+    const hasParams = await paramsSection.isVisible().catch(() => false);
+    const contentTextReq = await requestContent.textContent();
+    const hasQueryString = contentTextReq?.includes('?') || false;
+    expect(hasParams || hasQueryString || contentTextReq?.includes('none')).toBe(true);
   });
 
-  test.describe('Metadata Tab', () => {
-    test('should switch to Metadata tab when clicked', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+  test('should display Metadata tab with all fields', async ({ page }) => {
+    // Act: Click first endpoint
+    const firstEndpoint = page.getByTestId('endpoint-item').first();
+    await firstEndpoint.click();
 
-      // Act: Click Metadata tab
-      const metadataTab = page.getByRole('tab', { name: /metadata/i });
-      await metadataTab.click();
+    // Act: Click Metadata tab
+    const metadataTab = page.getByRole('tab', { name: /metadata/i });
+    await metadataTab.click();
 
-      // Assert: Metadata tab should be active
-      await expect(metadataTab).toHaveAttribute('aria-selected', 'true');
-    });
+    // Assert: Metadata tab should be active
+    await expect(metadataTab).toHaveAttribute('aria-selected', 'true');
 
-    test('should display timestamp in Metadata tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+    // Assert: Metadata content area
+    const metadataContent = page.getByTestId('metadata-content');
 
-      // Act: Click Metadata tab
-      const metadataTab = page.getByRole('tab', { name: /metadata/i });
-      await metadataTab.click();
+    // Assert: Timestamp should be visible
+    const timestamp = metadataContent.getByTestId('request-timestamp');
+    await expect(timestamp).toBeVisible();
 
-      // Assert: Timestamp should be visible
-      const metadataContent = page.getByTestId('metadata-content');
-      const timestamp = metadataContent.getByTestId('request-timestamp');
-      await expect(timestamp).toBeVisible();
-    });
+    // Assert: Duration should be visible and contain numeric value
+    const duration = metadataContent.getByTestId('request-duration');
+    await expect(duration).toBeVisible();
+    const durationText = await duration.textContent();
+    expect(durationText).toMatch(/\d+/);
 
-    test('should display duration in Metadata tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+    // Assert: Status code should be visible and show 200
+    const statusCode = metadataContent.getByTestId('status-code');
+    await expect(statusCode).toBeVisible();
+    await expect(statusCode).toContainText('200');
 
-      // Act: Click Metadata tab
-      const metadataTab = page.getByRole('tab', { name: /metadata/i });
-      await metadataTab.click();
+    // Assert: Content-type should show JSON
+    await expect(metadataContent).toContainText(/content-type/i);
+    await expect(metadataContent).toContainText(/application\/json/i);
 
-      // Assert: Duration should be visible
-      const metadataContent = page.getByTestId('metadata-content');
-      const duration = metadataContent.getByTestId('request-duration');
-      await expect(duration).toBeVisible();
-
-      // Assert: Duration should contain numeric value
-      const durationText = await duration.textContent();
-      expect(durationText).toMatch(/\d+/);
-    });
-
-    test('should display status code in Metadata tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Act: Click Metadata tab
-      const metadataTab = page.getByRole('tab', { name: /metadata/i });
-      await metadataTab.click();
-
-      // Assert: Status code should be visible
-      const metadataContent = page.getByTestId('metadata-content');
-      const statusCode = metadataContent.getByTestId('status-code');
-      await expect(statusCode).toBeVisible();
-
-      // Assert: Status code should be 200 for successful requests
-      await expect(statusCode).toContainText('200');
-    });
-
-    test('should display content-type in Metadata tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Act: Click Metadata tab
-      const metadataTab = page.getByRole('tab', { name: /metadata/i });
-      await metadataTab.click();
-
-      // Assert: Content-type should be visible
-      const metadataContent = page.getByTestId('metadata-content');
-      await expect(metadataContent).toContainText(/content-type/i);
-
-      // Assert: Should show JSON content type for API responses
-      await expect(metadataContent).toContainText(/application\/json/i);
-    });
-
-    test('should display response size in Metadata tab', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Act: Click Metadata tab
-      const metadataTab = page.getByRole('tab', { name: /metadata/i });
-      await metadataTab.click();
-
-      // Assert: Response size should be visible
-      const metadataContent = page.getByTestId('metadata-content');
-      await expect(metadataContent).toContainText(/size|bytes/i);
-
-      // Assert: Size value should be numeric
-      const contentText = await metadataContent.textContent();
-      expect(contentText).toMatch(/\d+\s*(bytes|kb|mb)/i);
-    });
+    // Assert: Response size should be visible with numeric value
+    await expect(metadataContent).toContainText(/size|bytes/i);
+    const metadataText = await metadataContent.textContent();
+    expect(metadataText).toMatch(/\d+\s*(bytes|kb|mb)/i);
   });
 
-  test.describe('Copy to Clipboard', () => {
-    test.beforeEach(async ({ page }) => {
-      await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-    });
+  test('should copy tab contents to clipboard', async ({ page }) => {
+    // Grant clipboard permissions
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
 
-    test('should display Copy button in detail view', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+    // Act: Click first endpoint (Response tab is active by default)
+    const firstEndpoint = page.getByTestId('endpoint-item').first();
+    await firstEndpoint.click();
 
-      // Assert: Copy button should be visible
-      const copyButton = page.getByTestId('copy-button')
-        .or(page.getByRole('button', { name: /copy/i }));
-      await expect(copyButton).toBeVisible();
-    });
+    // Assert: Copy button should be visible
+    const copyButton = page.getByTestId('copy-button')
+      .or(page.getByRole('button', { name: /copy/i }));
+    await expect(copyButton).toBeVisible();
 
-    test('should copy Response tab content to clipboard when Copy button clicked', async ({ page }) => {
-      // Act: Click first endpoint (Response tab is active by default)
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+    // Act: Click Copy button on Response tab
+    await copyButton.click();
 
-      // Act: Click Copy button
-      const copyButton = page.getByTestId('copy-button')
-        .or(page.getByRole('button', { name: /copy/i }));
-      await copyButton.click();
+    // Assert: Clipboard should contain valid JSON data
+    const responseClipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(responseClipboard).toBeTruthy();
+    expect(responseClipboard.length).toBeGreaterThan(0);
+    expect(() => JSON.parse(responseClipboard)).not.toThrow();
 
-      // Assert: Clipboard should contain JSON data
-      const clipboardContent = await page.evaluate(() => navigator.clipboard.readText());
-      expect(clipboardContent).toBeTruthy();
-      expect(clipboardContent.length).toBeGreaterThan(0);
+    // Act: Switch to Request tab and copy
+    const requestTab = page.getByRole('tab', { name: /request/i });
+    await requestTab.click();
 
-      // Assert: Clipboard content should be valid JSON
-      expect(() => JSON.parse(clipboardContent)).not.toThrow();
-    });
+    const copyButtonReq = page.getByTestId('copy-button');
+    await copyButtonReq.click();
 
-    test('should copy Request tab content to clipboard when Request tab is active', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
+    // Assert: Clipboard should contain request information
+    const requestClipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(requestClipboard).toBeTruthy();
+    expect(requestClipboard).toMatch(/GET|POST|PUT|DELETE|PATCH/);
+    expect(requestClipboard).toContain('/api/');
+  });
 
-      // Act: Switch to Request tab
-      const requestTab = page.getByRole('tab', { name: /request/i });
-      await requestTab.click();
+  test('should show and auto-hide "Copied!" feedback message', async ({ page }) => {
+    // Grant clipboard permissions
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
 
-      // Act: Click Copy button
-      const copyButton = page.getByTestId('copy-button');
-      await copyButton.click();
+    // Act: Click first endpoint
+    const firstEndpoint = page.getByTestId('endpoint-item').first();
+    await firstEndpoint.click();
 
-      // Assert: Clipboard should contain request information
-      const clipboardContent = await page.evaluate(() => navigator.clipboard.readText());
-      expect(clipboardContent).toBeTruthy();
+    // Act: Click Copy button
+    const copyButton = page.getByTestId('copy-button');
+    await copyButton.click();
 
-      // Assert: Should contain HTTP method and URL
-      expect(clipboardContent).toMatch(/GET|POST|PUT|DELETE|PATCH/);
-      expect(clipboardContent).toContain('/api/');
-    });
+    // Assert: "Copied!" message should appear
+    const copiedMessage = page.getByText(/copied!/i);
+    await expect(copiedMessage).toBeVisible({ timeout: 2000 });
 
-    test('should display "Copied!" feedback after clicking Copy button', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Act: Click Copy button
-      const copyButton = page.getByTestId('copy-button');
-      await copyButton.click();
-
-      // Assert: "Copied!" message should appear
-      const copiedMessage = page.getByText(/copied!/i);
-      await expect(copiedMessage).toBeVisible({ timeout: 2000 });
-    });
-
-    test('should hide "Copied!" feedback after 1.5 seconds', async ({ page }) => {
-      // Act: Click first endpoint
-      const firstEndpoint = page.getByTestId('endpoint-item').first();
-      await firstEndpoint.click();
-
-      // Act: Click Copy button
-      const copyButton = page.getByTestId('copy-button');
-      await copyButton.click();
-
-      // Assert: "Copied!" message should be visible initially
-      const copiedMessage = page.getByText(/copied!/i);
-      await expect(copiedMessage).toBeVisible({ timeout: 2000 });
-
-      // Assert: "Copied!" message should disappear after the feedback timeout
-      await expect(copiedMessage).not.toBeVisible({ timeout: 3000 });
-    });
+    // Assert: "Copied!" message should disappear after the feedback timeout
+    await expect(copiedMessage).not.toBeVisible({ timeout: 3000 });
   });
 });
