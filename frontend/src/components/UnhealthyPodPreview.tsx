@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { UnhealthyPodInfo } from '../api/overview';
 import { StatusBadge } from './StatusBadge';
 import { useDashboard } from '../contexts/DashboardContext';
@@ -98,21 +99,15 @@ export function UnhealthyPodPreview() {
         </ul>
       )}
 
-      {/* View more link - TODO: Replace <a> with React Router <Link> when implementing Pods page */}
       {hasMorePods && (
         <div className="mt-4 text-center">
-          <a
+          <Link
             data-testid="view-more-link"
-            href="/pods"
-            onClick={(e) => {
-              e.preventDefault();
-              window.history.pushState({}, '', '/pods');
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            }}
+            to="/pods"
             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
           >
             View all pods ({unhealthyPods.length} total)
-          </a>
+          </Link>
         </div>
       )}
     </section>

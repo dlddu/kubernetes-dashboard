@@ -35,7 +35,7 @@ func UnhealthyPodsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unhealthyPods, err := getUnhealthyPodsData(clientset, namespace)
+	unhealthyPods, err := getUnhealthyPodsData(r.Context(), clientset, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
 		return
@@ -45,15 +45,13 @@ func UnhealthyPodsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getUnhealthyPodsData fetches unhealthy pods data from Kubernetes
-func getUnhealthyPodsData(clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
-	ctx := context.Background()
-
+func getUnhealthyPodsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
 	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	unhealthyPods := make([]UnhealthyPodDetails, 0)
+	unhealthyPods := make([]UnhealthyPodDetails, 0, len(podList.Items))
 	for _, pod := range podList.Items {
 		if !isPodHealthy(pod) {
 			nodeName := pod.Spec.NodeName
@@ -89,7 +87,7 @@ func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allPods, err := getAllPodsData(clientset, namespace)
+	allPods, err := getAllPodsData(r.Context(), clientset, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
 		return
@@ -99,15 +97,13 @@ func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getAllPodsData fetches all pods data from Kubernetes
-func getAllPodsData(clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
-	ctx := context.Background()
-
+func getAllPodsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
 	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	allPods := make([]UnhealthyPodDetails, 0)
+	allPods := make([]UnhealthyPodDetails, 0, len(podList.Items))
 	for _, pod := range podList.Items {
 		nodeName := pod.Spec.NodeName
 		if nodeName == "" {

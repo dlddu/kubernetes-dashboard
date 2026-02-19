@@ -40,7 +40,7 @@ func SecretsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secrets, err := getSecretsData(clientset, namespace)
+	secrets, err := getSecretsData(r.Context(), clientset, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch secrets data")
 		return
@@ -72,7 +72,7 @@ func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secretDetail, err := getSecretDetail(clientset, namespace, name)
+	secretDetail, err := getSecretDetail(r.Context(), clientset, namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			writeError(w, http.StatusNotFound, "Secret not found")
@@ -86,15 +86,13 @@ func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getSecretsData fetches secrets data from Kubernetes (without values)
-func getSecretsData(clientset *kubernetes.Clientset, namespace string) ([]SecretInfo, error) {
-	ctx := context.Background()
-
+func getSecretsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]SecretInfo, error) {
 	secretList, err := clientset.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	secrets := make([]SecretInfo, 0)
+	secrets := make([]SecretInfo, 0, len(secretList.Items))
 	for _, secret := range secretList.Items {
 		keys := make([]string, 0, len(secret.Data))
 		for key := range secret.Data {
@@ -113,9 +111,7 @@ func getSecretsData(clientset *kubernetes.Clientset, namespace string) ([]Secret
 }
 
 // getSecretDetail fetches a specific secret with decoded values
-func getSecretDetail(clientset *kubernetes.Clientset, namespace, name string) (*SecretDetail, error) {
-	ctx := context.Background()
-
+func getSecretDetail(ctx context.Context, clientset *kubernetes.Clientset, namespace, name string) (*SecretDetail, error) {
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

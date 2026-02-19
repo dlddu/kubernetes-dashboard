@@ -33,7 +33,7 @@ func DeploymentsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deployments, err := getDeploymentsData(clientset, namespace)
+	deployments, err := getDeploymentsData(r.Context(), clientset, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch deployments data")
 		return
@@ -43,9 +43,7 @@ func DeploymentsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getDeploymentsData fetches deployments data from Kubernetes
-func getDeploymentsData(clientset *kubernetes.Clientset, namespace string) ([]DeploymentInfo, error) {
-	ctx := context.Background()
-
+func getDeploymentsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]DeploymentInfo, error) {
 	deploymentList, err := clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -104,7 +102,7 @@ func DeploymentRestartHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = restartDeployment(clientset, namespace, deploymentName)
+	err = restartDeployment(r.Context(), clientset, namespace, deploymentName)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			writeError(w, http.StatusNotFound, "Deployment not found")
@@ -120,9 +118,7 @@ func DeploymentRestartHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // restartDeployment restarts a deployment by adding/updating the restartedAt annotation
-func restartDeployment(clientset *kubernetes.Clientset, namespace, deploymentName string) error {
-	ctx := context.Background()
-
+func restartDeployment(ctx context.Context, clientset *kubernetes.Clientset, namespace, deploymentName string) error {
 	deployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
 	if err != nil {
 		return err

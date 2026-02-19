@@ -60,7 +60,7 @@ func OverviewHandler(w http.ResponseWriter, r *http.Request) {
 
 	metricsClient, _ := getMetricsClient()
 
-	overview, err := getOverviewData(clientset, metricsClient, namespace)
+	overview, err := getOverviewData(r.Context(), clientset, metricsClient, namespace)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch overview data")
 		return
@@ -70,8 +70,7 @@ func OverviewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getOverviewData fetches overview data from Kubernetes
-func getOverviewData(clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset, namespace string) (*OverviewResponse, error) {
-	ctx := context.Background()
+func getOverviewData(ctx context.Context, clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset, namespace string) (*OverviewResponse, error) {
 
 	nodeList, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -104,7 +103,7 @@ func getOverviewData(clientset *kubernetes.Clientset, metricsClient *metricsv.Cl
 		}
 	}
 
-	metricsMap := fetchNodeMetrics(metricsClient)
+	metricsMap := fetchNodeMetrics(ctx, metricsClient)
 	avgCpu, avgMemory := calculateResourceUsage(nodeList.Items, metricsMap)
 	nodesList := buildNodesList(nodeList.Items, metricsMap)
 
@@ -215,13 +214,13 @@ type nodeMetricsUsage struct {
 
 // fetchNodeMetrics queries the metrics-server for actual node resource usage.
 // Returns a map of node name to usage, or nil if metrics-server is unavailable.
-func fetchNodeMetrics(metricsClient *metricsv.Clientset) map[string]nodeMetricsUsage {
+func fetchNodeMetrics(ctx context.Context, metricsClient *metricsv.Clientset) map[string]nodeMetricsUsage {
 	if metricsClient == nil {
 		return nil
 	}
 
 	nodeMetricsList, err := metricsClient.MetricsV1beta1().NodeMetricses().List(
-		context.Background(), metav1.ListOptions{},
+		ctx, metav1.ListOptions{},
 	)
 	if err != nil {
 		log.Printf("metrics-server unavailable, falling back to capacity-allocatable: %v", err)
