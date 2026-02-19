@@ -20,13 +20,20 @@ rules:
   - namespaces
   - events
   - configmaps
-  - secrets
   - persistentvolumes
   - persistentvolumeclaims
   verbs:
   - get
   - list
   - watch
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
 - apiGroups: ["apps"]
   resources:
   - deployments

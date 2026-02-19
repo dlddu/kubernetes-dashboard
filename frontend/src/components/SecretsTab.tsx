@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchSecrets, SecretInfo } from '../api/secrets';
+import { fetchSecrets, deleteSecret, SecretInfo } from '../api/secrets';
 import { SecretAccordion } from './SecretAccordion';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
@@ -15,6 +16,13 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openAccordionIndex, setOpenAccordionIndex] = useState<number | null>(null);
+  const [deletingSecret, setDeletingSecret] = useState<{
+    name: string;
+    namespace: string;
+  } | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadSecrets = useCallback(async () => {
     try {
@@ -39,6 +47,38 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
 
   const handleAccordionToggle = (index: number) => {
     setOpenAccordionIndex(openAccordionIndex === index ? null : index);
+  };
+
+  const handleDeleteClick = (secret: { name: string; namespace: string }) => {
+    setDeletingSecret(secret);
+    setShowDeleteDialog(true);
+    setDeleteError(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingSecret) return;
+
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+      await deleteSecret(deletingSecret.namespace, deletingSecret.name);
+      setShowDeleteDialog(false);
+      setDeletingSecret(null);
+      setOpenAccordionIndex(null);
+      await loadSecrets();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete secret');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    if (!isDeleting) {
+      setShowDeleteDialog(false);
+      setDeletingSecret(null);
+      setDeleteError(null);
+    }
   };
 
   return (
@@ -77,9 +117,22 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
               secret={secret}
               isOpen={openAccordionIndex === index}
               onToggle={() => handleAccordionToggle(index)}
+              onDelete={handleDeleteClick}
             />
           ))}
         </div>
+      )}
+
+      {deletingSecret && (
+        <DeleteConfirmDialog
+          isOpen={showDeleteDialog}
+          secretName={deletingSecret.name}
+          secretNamespace={deletingSecret.namespace}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          isDeleting={isDeleting}
+          error={deleteError || undefined}
+        />
       )}
     </div>
   );

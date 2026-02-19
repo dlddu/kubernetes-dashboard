@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -49,22 +50,36 @@ func SecretsHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, secrets)
 }
 
-// SecretDetailHandler handles the GET /api/secrets/:ns/:name endpoint
+// SecretDetailHandler handles the /api/secrets/:ns/:name endpoint
+// Supports GET (detail) and DELETE (deletion)
 func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
+	switch r.Method {
+	case http.MethodGet:
+		handleGetSecretDetail(w, r)
+	case http.MethodDelete:
+		handleDeleteSecret(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
 
+func parseSecretPath(r *http.Request) (namespace string, name string, err error) {
 	path := strings.TrimPrefix(r.URL.Path, "/api/secrets/")
 	parts := strings.SplitN(path, "/", 2)
 
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("invalid URL format")
+	}
+
+	return parts[0], parts[1], nil
+}
+
+func handleGetSecretDetail(w http.ResponseWriter, r *http.Request) {
+	namespace, name, err := parseSecretPath(r)
+	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid URL format. Expected /api/secrets/{namespace}/{name}")
 		return
 	}
-
-	namespace := parts[0]
-	name := parts[1]
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
@@ -83,6 +98,34 @@ func SecretDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, secretDetail)
+}
+
+func handleDeleteSecret(w http.ResponseWriter, r *http.Request) {
+	namespace, name, err := parseSecretPath(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid URL format. Expected /api/secrets/{namespace}/{name}")
+		return
+	}
+
+	clientset, err := getKubernetesClient()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
+		return
+	}
+
+	err = deleteSecret(clientset, namespace, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			writeError(w, http.StatusNotFound, "Secret not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "Failed to delete secret")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "Secret deleted successfully",
+	})
 }
 
 // getSecretsData fetches secrets data from Kubernetes (without values)
@@ -132,4 +175,10 @@ func getSecretDetail(clientset *kubernetes.Clientset, namespace, name string) (*
 		Type:      string(secret.Type),
 		Data:      data,
 	}, nil
+}
+
+// deleteSecret deletes a specific secret from Kubernetes
+func deleteSecret(clientset *kubernetes.Clientset, namespace, name string) error {
+	ctx := context.Background()
+	return clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 }

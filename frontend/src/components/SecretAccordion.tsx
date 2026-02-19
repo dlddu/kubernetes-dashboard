@@ -6,9 +6,10 @@ interface SecretAccordionProps {
   secret: SecretInfo;
   isOpen?: boolean;
   onToggle?: () => void;
+  onDelete?: (secret: { name: string; namespace: string }) => void;
 }
 
-export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: SecretAccordionProps) {
+export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle, onDelete }: SecretAccordionProps) {
   // Internal state for uncontrolled mode
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [secretDetail, setSecretDetail] = useState<SecretDetail | null>(null);
@@ -79,8 +80,23 @@ export function SecretAccordion({ secret, isOpen: isOpenProp, onToggle }: Secret
               </span>
             </div>
           </div>
-          <div className="text-gray-400">
-            {isOpen ? '▼' : '▶'}
+          <div className="flex items-center gap-2">
+            {onDelete && (
+              <button
+                data-testid="secret-delete-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete({ name: secret.name, namespace: secret.namespace });
+                }}
+                className="px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+                aria-label={`Delete secret ${secret.name}`}
+              >
+                Delete
+              </button>
+            )}
+            <div className="text-gray-400">
+              {isOpen ? '▼' : '▶'}
+            </div>
           </div>
         </div>
       </button>
