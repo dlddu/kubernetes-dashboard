@@ -247,9 +247,14 @@ test.describe('BottomTabBar - Pods Tab Badge', () => {
       initialCount = parseInt(initialText, 10);
     }
 
-    // Act: Navigate to Pods page to verify total pod count
+    // Act: Navigate to Pods page and wait for data to load
     await podsTab.click();
-    await page.waitForLoadState('networkidle');
+
+    // Wait for pods data to finish loading by waiting for either pod cards or empty state
+    await expect(
+      page.getByTestId('pod-card').first()
+        .or(page.getByTestId('no-pods-message'))
+    ).toBeVisible({ timeout: 10000 });
 
     const podCards = page.getByTestId('pod-card');
     const totalPodCount = await podCards.count();
@@ -266,16 +271,20 @@ test.describe('BottomTabBar - Pods Tab Badge', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Act: Select specific namespace
+    // Act: Select specific namespace and wait for API response
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
       .or(page.getByTestId('namespace-option-default'));
-    await defaultNamespaceOption.click();
-    await page.waitForLoadState('networkidle');
 
-    // Act: Check Pods tab badge
+    // Wait for the overview API response after namespace selection
+    await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/api/overview') && resp.status() === 200),
+      defaultNamespaceOption.click(),
+    ]);
+
+    // Act: Check Pods tab badge (shows unhealthy pod count)
     const podsTab = page.getByTestId('tab-pods');
     const podsBadge = podsTab.getByTestId('pods-badge')
       .or(podsTab.locator('[data-testid*="badge"]'));
@@ -284,17 +293,22 @@ test.describe('BottomTabBar - Pods Tab Badge', () => {
 
     if (badgeExists) {
       const badgeCount = await podsBadge.innerText();
-      const expectedCount = parseInt(badgeCount, 10);
+      const unhealthyCount = parseInt(badgeCount, 10);
 
-      // Act: Navigate to Pods page
+      // Act: Navigate to Pods page and wait for data to load
       await podsTab.click();
-      await page.waitForLoadState('networkidle');
 
-      // Assert: Pod count should match badge for selected namespace
+      await expect(
+        page.getByTestId('pod-card').first()
+          .or(page.getByTestId('no-pods-message'))
+      ).toBeVisible({ timeout: 10000 });
+
+      // Assert: Pods page shows all pods, badge shows only unhealthy
+      // Total pod count should be >= unhealthy count
       const podCards = page.getByTestId('pod-card');
       const actualCount = await podCards.count();
 
-      expect(actualCount).toBe(expectedCount);
+      expect(actualCount).toBeGreaterThanOrEqual(unhealthyCount);
     }
   });
 });
@@ -444,20 +458,35 @@ test.describe('BottomTabBar - Namespace Context Integration', () => {
     // Arrange: Set mobile viewport and navigate to Pods tab
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
+
+    // Wait for initial pod data to load
+    await expect(
+      page.getByTestId('pod-card').first()
+        .or(page.getByTestId('no-pods-message'))
+    ).toBeVisible({ timeout: 10000 });
 
     // Act: Record initial pod count (all namespaces)
     const initialPodCards = page.getByTestId('pod-card');
     const initialCount = await initialPodCards.count();
 
-    // Act: Select "default" namespace
+    // Act: Select "default" namespace and wait for API response
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
       .or(page.getByTestId('namespace-option-default'));
-    await defaultNamespaceOption.click();
-    await page.waitForLoadState('networkidle');
+
+    // Wait for pods API response after namespace selection
+    await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/api/pods') && resp.status() === 200),
+      defaultNamespaceOption.click(),
+    ]);
+
+    // Wait for the filtered pod list to render
+    await expect(
+      page.getByTestId('pod-card').first()
+        .or(page.getByTestId('no-pods-message'))
+    ).toBeVisible({ timeout: 10000 });
 
     // Assert: Pod list should be filtered to default namespace
     const filteredPodCards = page.getByTestId('pod-card');
@@ -551,14 +580,18 @@ test.describe('BottomTabBar - Namespace Context Integration', () => {
       allNamespacesCount = parseInt(badgeText, 10);
     }
 
-    // Act: Select "default" namespace
+    // Act: Select "default" namespace and wait for API response
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
       .or(page.getByTestId('namespace-option-default'));
-    await defaultNamespaceOption.click();
-    await page.waitForLoadState('networkidle');
+
+    // Wait for the overview API response after namespace selection
+    await Promise.all([
+      page.waitForResponse(resp => resp.url().includes('/api/overview') && resp.status() === 200),
+      defaultNamespaceOption.click(),
+    ]);
 
     // Assert: Badge count should update to reflect filtered namespace
     const defaultNamespaceBadgeVisible = await podsBadge.isVisible().catch(() => false);
@@ -569,9 +602,13 @@ test.describe('BottomTabBar - Namespace Context Integration', () => {
 
       expect(filteredCount).toBeLessThanOrEqual(allNamespacesCount);
 
-      // Act: Navigate to Pods page to verify
+      // Act: Navigate to Pods page and wait for data to load
       await podsTab.click();
-      await page.waitForLoadState('networkidle');
+
+      await expect(
+        page.getByTestId('pod-card').first()
+          .or(page.getByTestId('no-pods-message'))
+      ).toBeVisible({ timeout: 10000 });
 
       const podCards = page.getByTestId('pod-card');
       const actualCount = await podCards.count();

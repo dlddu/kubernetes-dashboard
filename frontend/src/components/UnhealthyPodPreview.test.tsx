@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { UnhealthyPodPreview } from './UnhealthyPodPreview';
 
 interface ErrorWithStatus extends Error {
@@ -19,6 +20,10 @@ vi.mock('./StatusBadge', () => ({
     </span>
   ),
 }));
+
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 import { useDashboard } from '../contexts/DashboardContext';
 
@@ -55,7 +60,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -80,7 +85,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -105,7 +110,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -126,7 +131,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       const loadingIndicator = screen.getByTestId('loading-indicator');
@@ -143,7 +148,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       const loadingText = screen.getByText(/loading/i);
@@ -160,7 +165,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       const component = screen.getByTestId('unhealthy-pod-preview');
@@ -185,7 +190,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -210,7 +215,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -235,7 +240,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -260,7 +265,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -287,7 +292,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -313,7 +318,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -339,7 +344,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -364,7 +369,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -401,7 +406,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -428,7 +433,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -453,7 +458,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -480,7 +485,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -505,7 +510,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -530,7 +535,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -555,7 +560,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -582,7 +587,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -607,7 +612,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -632,7 +637,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -659,7 +664,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -684,7 +689,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -705,7 +710,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -724,7 +729,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -743,7 +748,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -767,7 +772,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -788,7 +793,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -815,7 +820,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -840,7 +845,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -865,7 +870,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -890,7 +895,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -915,7 +920,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -942,7 +947,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -967,7 +972,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -992,7 +997,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1023,7 +1028,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1048,7 +1053,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1074,7 +1079,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1100,7 +1105,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      render(<UnhealthyPodPreview />);
+      renderWithRouter(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {

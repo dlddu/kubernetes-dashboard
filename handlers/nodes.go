@@ -33,7 +33,7 @@ func NodesHandler(w http.ResponseWriter, r *http.Request) {
 
 	metricsClient, _ := getMetricsClient()
 
-	nodes, err := getNodesData(clientset, metricsClient)
+	nodes, err := getNodesData(r.Context(), clientset, metricsClient)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch nodes data")
 		return
@@ -43,9 +43,7 @@ func NodesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // getNodesData fetches nodes data from Kubernetes
-func getNodesData(clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset) ([]NodeDetailInfo, error) {
-	ctx := context.Background()
-
+func getNodesData(ctx context.Context, clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset) ([]NodeDetailInfo, error) {
 	nodeList, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -63,7 +61,7 @@ func getNodesData(clientset *kubernetes.Clientset, metricsClient *metricsv.Clien
 		}
 	}
 
-	metricsMap := fetchNodeMetrics(metricsClient)
+	metricsMap := fetchNodeMetrics(ctx, metricsClient)
 
 	nodesData := make([]NodeDetailInfo, 0, len(nodeList.Items))
 	for _, node := range nodeList.Items {
