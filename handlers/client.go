@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -65,4 +66,15 @@ func getMetricsClient() (*metricsv.Clientset, error) {
 		metricsClient, metricsClientErr = metricsv.NewForConfig(config)
 	})
 	return metricsClient, metricsClientErr
+}
+
+// getMetricsClientSafe returns the metrics client, logging and returning nil if unavailable.
+// This consolidates the repeated pattern of getting the metrics client with fallback logging.
+func getMetricsClientSafe() *metricsv.Clientset {
+	mc, err := getMetricsClient()
+	if err != nil {
+		log.Printf("metrics client unavailable, falling back to capacity-allocatable: %v", err)
+		return nil
+	}
+	return mc
 }

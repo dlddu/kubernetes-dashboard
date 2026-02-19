@@ -22,13 +22,15 @@ export function buildURL(path: string, params?: Record<string, string | undefine
 
 /**
  * Fetches JSON data from the given URL using debugFetch.
- * Throws an error if the response is not ok.
+ * Throws an error with the server's error message if the response is not ok.
  */
 export async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await debugFetch(url, options);
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => null);
+    const message = errorData?.error || `HTTP error! status: ${response.status}`;
+    throw new Error(message);
   }
 
   return response.json();
