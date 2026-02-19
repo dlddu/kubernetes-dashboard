@@ -64,55 +64,32 @@ test.describe('Debug Page - Layout Structure', () => {
 });
 
 test.describe('Debug Page - API Log Display', () => {
-  test.beforeEach(async ({ page }) => {
-    await enableDebugAndGenerateLogs(page);
-  });
+  test('should display log entries with method, URL, status code, and duration', async ({ page }) => {
+    // Tests that DebugContext captures and displays API calls with full metadata
 
-  test('should display /api/overview log entry after visiting Overview page', async ({ page }) => {
-    // Tests that DebugContext captures and displays API calls from page navigation
+    // Arrange: Enable debug mode and generate API logs
+    await enableDebugAndGenerateLogs(page);
 
     // Assert: Should display /api/overview endpoint in the list
     const overviewEndpoint = page.getByTestId('endpoint-item')
       .filter({ hasText: '/api/overview' })
       .first();
     await expect(overviewEndpoint).toBeVisible();
-  });
-
-  test('should display HTTP method (GET) for each log entry', async ({ page }) => {
-    // Tests that each API log entry shows the HTTP method
 
     // Assert: First log entry should display HTTP method (GET)
     const firstLogEntry = page.getByTestId('endpoint-item').first();
     await expect(firstLogEntry).toContainText(/GET/i);
-  });
-
-  test('should display URL for each log entry', async ({ page }) => {
-    // Tests that each API log entry shows the request URL
 
     // Assert: First log entry should display URL path
-    const firstLogEntry = page.getByTestId('endpoint-item').first();
     await expect(firstLogEntry).toContainText(/\/api\//i);
-  });
 
-  test('should display status code for each log entry', async ({ page }) => {
-    // Tests that each API log entry shows the HTTP status code
-
-    // Assert: Log entry should display status code
+    // Assert: Log entry should display status code 200
     const statusCode = page.getByTestId('status-code').first();
     await expect(statusCode).toBeVisible();
-
-    // Assert: Status code should be 200 for successful requests
     await expect(statusCode).toContainText('200');
-  });
 
-  test('should display duration for each log entry', async ({ page }) => {
-    // Tests that each API log entry shows the request duration
-
-    // Assert: Log entry should display duration
-    const firstLogEntry = page.getByTestId('endpoint-item').first();
+    // Assert: Log entry should display duration with time unit (ms, s)
     const durationText = await firstLogEntry.textContent();
-
-    // Duration should be a number with time unit (ms, s)
     expect(durationText).toMatch(/\d+\s*(ms|s)/i);
   });
 });

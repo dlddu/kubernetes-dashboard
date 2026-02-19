@@ -16,8 +16,8 @@ import { enableDebugAndGenerateLogs } from './helpers/debug-setup';
  */
 
 test.describe('Debug Context - Debug Mode Toggle', () => {
-  test('should toggle debug mode ON when debug toggle button is clicked', async ({ page }) => {
-    // Tests that clicking the debug toggle activates debug mode in DebugContext
+  test('should toggle debug mode ON and OFF', async ({ page }) => {
+    // Tests that clicking the debug toggle activates and deactivates debug mode
 
     // Arrange: Navigate to home page (debug mode OFF by default)
     await page.goto('/');
@@ -41,21 +41,6 @@ test.describe('Debug Context - Debug Mode Toggle', () => {
     const debugIndicator = debugToggle.getByText(/on|enabled/i)
       .or(debugToggle.locator('[data-testid="debug-on-icon"]'));
     await expect(debugIndicator).toBeVisible();
-  });
-
-  test('should toggle debug mode OFF when debug toggle button is clicked again', async ({ page }) => {
-    // Tests that clicking the toggle again deactivates debug mode
-
-    // Arrange: Navigate to home page and enable debug mode
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const debugToggle = page.getByTestId('debug-toggle')
-      .or(page.getByRole('button', { name: /debug/i }));
-
-    // Act: Turn debug mode ON first
-    await debugToggle.click();
-    await expect(debugToggle).toHaveAttribute('aria-pressed', 'true');
 
     // Act: Click toggle again to turn OFF
     await debugToggle.click();
@@ -69,7 +54,7 @@ test.describe('Debug Context - Debug Mode Toggle', () => {
     await expect(debugOffIndicator).toBeVisible();
   });
 
-  test('should persist debug mode state across page navigation', async ({ page }) => {
+  test('should persist debug mode ON state across page navigation', async ({ page }) => {
     // Tests that DebugContext maintains isDebugMode state when navigating
 
     // Arrange: Navigate to home page and enable debug mode
@@ -130,7 +115,7 @@ test.describe('Debug Context - Debug Mode Toggle', () => {
 });
 
 test.describe('Debug Context - API Logging with Debug Mode ON', () => {
-  test('should log API calls to DebugContext when debug mode is ON', async ({ page }) => {
+  test('should log API calls including /api/overview when debug mode is ON', async ({ page }) => {
     // Tests that API interceptor captures calls when isDebugMode = true
 
     // Arrange: Enable debug mode and generate API logs
@@ -146,13 +131,6 @@ test.describe('Debug Context - API Logging with Debug Mode ON', () => {
       .or(apiLogsList.locator('[role="listitem"]'));
     const logCount = await logEntries.count();
     expect(logCount).toBeGreaterThan(0);
-  });
-
-  test('should display /api/overview endpoint in logs after visiting Overview page', async ({ page }) => {
-    // Tests that specific API endpoint is captured in DebugContext
-
-    // Arrange: Enable debug mode and generate API logs
-    await enableDebugAndGenerateLogs(page);
 
     // Assert: Should see /api/overview in the endpoint list
     const overviewEndpoint = page.getByTestId('endpoint-item').filter({ hasText: '/api/overview' }).first();
@@ -200,34 +178,22 @@ test.describe('Debug Context - API Logging with Debug Mode ON', () => {
 });
 
 test.describe('Debug Context - API Log Metadata', () => {
-  test.beforeEach(async ({ page }) => {
-    await enableDebugAndGenerateLogs(page);
-  });
+  test('should display all metadata fields in detail view', async ({ page }) => {
+    // Tests that DebugContext captures all metadata (status code, timestamp, duration)
 
-  test('should include status code in API log entry', async ({ page }) => {
-    // Tests that DebugContext captures HTTP status code metadata
+    // Arrange: Enable debug mode and generate API logs
+    await enableDebugAndGenerateLogs(page);
 
     // Act: Select first log entry
     const firstLogEntry = page.getByTestId('endpoint-item').first()
       .or(page.getByTestId('api-log-entry').first());
     await firstLogEntry.click();
 
-    // Assert: Status code should be displayed
+    // Assert: Status code should be displayed and show 200
     const statusCode = page.getByTestId('status-code').first();
     await expect(statusCode).toBeVisible();
-
-    // Assert: Status code should be 200 for successful requests
     const statusCodeText = await statusCode.textContent();
     expect(statusCodeText).toContain('200');
-  });
-
-  test('should include timestamp in API log entry', async ({ page }) => {
-    // Tests that DebugContext captures request timestamp
-
-    // Act: Select first log entry
-    const firstLogEntry = page.getByTestId('endpoint-item').first()
-      .or(page.getByTestId('api-log-entry').first());
-    await firstLogEntry.click();
 
     // Act: Navigate to Metadata tab
     const metadataTab = page.getByRole('tab', { name: /metadata/i })
@@ -237,49 +203,18 @@ test.describe('Debug Context - API Log Metadata', () => {
     // Assert: Timestamp should be displayed
     const timestamp = page.getByTestId('request-timestamp');
     await expect(timestamp).toBeVisible();
-  });
 
-  test('should include duration in API log entry', async ({ page }) => {
-    // Tests that DebugContext captures request duration
-
-    // Act: Select first log entry
-    const firstLogEntry = page.getByTestId('endpoint-item').first()
-      .or(page.getByTestId('api-log-entry').first());
-    await firstLogEntry.click();
-
-    // Act: Navigate to Metadata tab
-    const metadataTab = page.getByRole('tab', { name: /metadata/i })
-      .or(page.getByTestId('metadata-tab'));
-    await metadataTab.click();
-
-    // Assert: Duration should be displayed
+    // Assert: Duration should be displayed and contain numeric value
     const duration = page.getByTestId('request-duration');
     await expect(duration).toBeVisible();
-
-    // Assert: Duration should be a positive number
     const durationText = await duration.textContent();
     expect(durationText).toMatch(/\d+/);
-  });
 
-  test('should display all metadata fields together in detail view', async ({ page }) => {
-    // Tests that all metadata (status, timestamp, duration) are visible
-
-    // Act: Select first log entry
-    const firstLogEntry = page.getByTestId('endpoint-item').first();
-    await firstLogEntry.click();
-
-    // Act: Navigate to Metadata tab
-    const metadataTab = page.getByRole('tab', { name: /metadata/i });
-    await metadataTab.click();
-
+    // Assert: All three metadata fields should be visible together
     const metadataContent = page.getByTestId('metadata-content')
       .or(page.getByRole('tabpanel'));
-
-    // Assert: All three metadata fields should be visible
     await expect(metadataContent.getByTestId('status-code')).toBeVisible();
-
     await expect(metadataContent.getByTestId('request-timestamp')).toBeVisible();
-
     await expect(metadataContent.getByTestId('request-duration')).toBeVisible();
   });
 });

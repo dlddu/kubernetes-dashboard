@@ -434,7 +434,10 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
 
   test('should update relative time display as time passes', async ({ page }) => {
     // Tests that "X seconds ago" increments over time
-    // Uses page.clock to avoid real-time 5s wait
+    // Uses page.clock to fast-forward time instead of waiting in real-time
+
+    // Install fake clock before navigation so all timers are controlled
+    await page.clock.install({ time: Date.now() });
 
     // Arrange: Navigate to the home page and trigger refresh
     await page.goto('/');
@@ -454,15 +457,11 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
     const initialText = await lastUpdateTime.innerText();
     expect(initialText).toMatch(/just now|0 seconds ago|seconds? ago/i);
 
-    // Assert: Wait for the relative time display to update from "just now" to "N seconds ago"
-    // Uses expect.poll for deterministic waiting instead of fixed waitForTimeout(5000)
-    await expect.poll(async () => {
-      return await lastUpdateTime.innerText();
-    }, {
-      message: 'Expected time display to show elapsed seconds',
-      timeout: 8000,
-      intervals: [1000],
-    }).toMatch(/\d+\s*seconds?\s*ago/i);
+    // Act: Fast-forward time by 5 seconds instead of waiting in real-time
+    await page.clock.fastForward(5000);
+
+    // Assert: Time display should now show elapsed seconds
+    await expect(lastUpdateTime).toHaveText(/\d+\s*seconds?\s*ago/i);
   });
 
   test('should display tooltip with exact timestamp on hover', async ({ page }) => {
