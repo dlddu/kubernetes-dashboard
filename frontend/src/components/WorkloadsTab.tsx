@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
 import { fetchDeployments, restartDeployment, DeploymentInfo } from '../api/deployments';
 import { DeploymentCard } from './DeploymentCard';
 import { RestartConfirmDialog } from './RestartConfirmDialog';
@@ -6,6 +6,7 @@ import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
 import { useDataFetch } from '../hooks/useDataFetch';
+import { useConfirmAction } from '../hooks/useConfirmAction';
 
 interface WorkloadsTabProps {
   namespace?: string;
@@ -18,45 +19,15 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
     [namespace],
   );
 
-  const [restartingDeployment, setRestartingDeployment] = useState<{
-    name: string;
-    namespace: string;
-  } | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [isRestarting, setIsRestarting] = useState(false);
-  const [restartError, setRestartError] = useState<string | null>(null);
-
-  const handleRestartClick = (deployment: { name: string; namespace: string }) => {
-    setRestartingDeployment(deployment);
-    setShowConfirmDialog(true);
-    setRestartError(null);
-  };
-
-  const handleConfirmRestart = async () => {
-    if (!restartingDeployment) return;
-
-    try {
-      setIsRestarting(true);
-      setRestartError(null);
-      await restartDeployment(restartingDeployment.namespace, restartingDeployment.name);
-      // Success - close dialog and reload deployments
-      setShowConfirmDialog(false);
-      setRestartingDeployment(null);
-      refresh();
-    } catch (err) {
-      setRestartError(err instanceof Error ? err.message : 'Failed to restart deployment');
-    } finally {
-      setIsRestarting(false);
-    }
-  };
-
-  const handleCancelRestart = () => {
-    if (!isRestarting) {
-      setShowConfirmDialog(false);
-      setRestartingDeployment(null);
-      setRestartError(null);
-    }
-  };
+  const restartAction = useConfirmAction(
+    useCallback(
+      (target: { name: string; namespace: string }) =>
+        restartDeployment(target.namespace, target.name),
+      [],
+    ),
+    refresh,
+    'Failed to restart deployment',
+  );
 
   return (
     <div data-testid="workloads-page" className="space-y-6">
@@ -92,26 +63,26 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
             <DeploymentCard
               key={`${deployment.namespace}-${deployment.name}`}
               {...deployment}
-              onRestart={handleRestartClick}
+              onRestart={restartAction.requestAction}
               isRestarting={
-                isRestarting &&
-                restartingDeployment?.name === deployment.name &&
-                restartingDeployment?.namespace === deployment.namespace
+                restartAction.isProcessing &&
+                restartAction.target?.name === deployment.name &&
+                restartAction.target?.namespace === deployment.namespace
               }
             />
           ))}
         </div>
       )}
 
-      {restartingDeployment && (
+      {restartAction.target && (
         <RestartConfirmDialog
-          isOpen={showConfirmDialog}
-          deploymentName={restartingDeployment.name}
-          deploymentNamespace={restartingDeployment.namespace}
-          onConfirm={handleConfirmRestart}
-          onCancel={handleCancelRestart}
-          isRestarting={isRestarting}
-          error={restartError || undefined}
+          isOpen={restartAction.showDialog}
+          deploymentName={restartAction.target.name}
+          deploymentNamespace={restartAction.target.namespace}
+          onConfirm={restartAction.confirm}
+          onCancel={restartAction.cancel}
+          isRestarting={restartAction.isProcessing}
+          error={restartAction.error || undefined}
         />
       )}
     </div>

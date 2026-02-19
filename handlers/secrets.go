@@ -28,27 +28,14 @@ type SecretDetail struct {
 }
 
 // SecretsHandler handles the GET /api/secrets endpoint
-func SecretsHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
-	namespace := r.URL.Query().Get("ns")
-
+var SecretsHandler = handleGet("Failed to fetch secrets data", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
+		return nil, err
 	}
-
-	secrets, err := getSecretsData(r.Context(), clientset, namespace)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch secrets data")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, secrets)
-}
+	namespace := r.URL.Query().Get("ns")
+	return getSecretsData(r.Context(), clientset, namespace)
+})
 
 // SecretDetailHandler handles the /api/secrets/:ns/:name endpoint
 // Supports GET (detail) and DELETE (deletion)

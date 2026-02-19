@@ -128,7 +128,7 @@ describe('Overview API', () => {
       const result = await fetchOverview('default');
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=default');
+      expect(mockFetch).toHaveBeenCalledWith('/api/overview?ns=default');
       expect(result).toEqual(mockOverview);
     });
 
@@ -150,7 +150,7 @@ describe('Overview API', () => {
       const result = await fetchOverview('kube-system');
 
       // Assert
-      expect(mockFetch).toHaveBeenCalledWith('/api/overview?namespace=kube-system');
+      expect(mockFetch).toHaveBeenCalledWith('/api/overview?ns=kube-system');
       expect(result).toEqual(mockOverview);
     });
 

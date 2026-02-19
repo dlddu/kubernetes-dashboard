@@ -149,6 +149,18 @@ func calculateNodeResourceUsage(node corev1.Node, metricsMap map[string]nodeMetr
 	return clamp(cpuPercent, 0, 100), clamp(memoryPercent, 0, 100)
 }
 
+// buildNodeInfo constructs a NodeInfo from a Kubernetes node and its metrics.
+func buildNodeInfo(node corev1.Node, metricsMap map[string]nodeMetricsUsage) NodeInfo {
+	cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
+	return NodeInfo{
+		Name:          node.Name,
+		Status:        nodeStatusString(node),
+		Role:          getNodeRole(node),
+		CpuPercent:    cpuPercent,
+		MemoryPercent: memoryPercent,
+	}
+}
+
 // calculateResourceUsage calculates average CPU and memory usage across all nodes,
 // weighted by each node's capacity. Uses real metrics from metrics-server when
 // available, falls back to capacity-allocatable.

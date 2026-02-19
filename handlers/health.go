@@ -11,13 +11,9 @@ type HealthResponse struct {
 }
 
 // HealthHandler handles the /api/health endpoint
-func HealthHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
-	writeJSON(w, http.StatusOK, HealthResponse{
+var HealthHandler = handleGet("Health check failed", func(r *http.Request) (interface{}, error) {
+	return HealthResponse{
 		Status:  "ok",
 		Message: "Backend is healthy",
-	})
-}
+	}, nil
+})

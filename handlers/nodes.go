@@ -9,38 +9,21 @@ import (
 	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
-// NodeDetailInfo represents detailed information about a node including pod count
+// NodeDetailInfo extends NodeInfo with pod count for the /api/nodes endpoint.
 type NodeDetailInfo struct {
-	Name          string  `json:"name"`
-	Status        string  `json:"status"`
-	Role          string  `json:"role"`
-	CPUPercent    float64 `json:"cpuPercent"`
-	MemoryPercent float64 `json:"memoryPercent"`
-	PodCount      int     `json:"podCount"`
+	NodeInfo
+	PodCount int `json:"podCount"`
 }
 
 // NodesHandler handles the /api/nodes endpoint
-func NodesHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
+var NodesHandler = handleGet("Failed to fetch nodes data", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
+		return nil, err
 	}
-
 	metricsClient := getMetricsClientSafe()
-
-	nodes, err := getNodesData(r.Context(), clientset, metricsClient)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch nodes data")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, nodes)
-}
+	return getNodesData(r.Context(), clientset, metricsClient)
+})
 
 // getNodesData fetches nodes data from Kubernetes
 func getNodesData(ctx context.Context, clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset) ([]NodeDetailInfo, error) {
@@ -65,15 +48,9 @@ func getNodesData(ctx context.Context, clientset *kubernetes.Clientset, metricsC
 
 	nodesData := make([]NodeDetailInfo, 0, len(nodeList.Items))
 	for _, node := range nodeList.Items {
-		cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
-
 		nodesData = append(nodesData, NodeDetailInfo{
-			Name:          node.Name,
-			Status:        nodeStatusString(node),
-			Role:          getNodeRole(node),
-			CPUPercent:    cpuPercent,
-			MemoryPercent: memoryPercent,
-			PodCount:      nodePodCount[node.Name],
+			NodeInfo: buildNodeInfo(node, metricsMap),
+			PodCount: nodePodCount[node.Name],
 		})
 	}
 

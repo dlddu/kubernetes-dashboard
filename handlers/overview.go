@@ -43,29 +43,15 @@ type OverviewResponse struct {
 }
 
 // OverviewHandler handles the /api/overview endpoint
-func OverviewHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
-	namespace := r.URL.Query().Get("namespace")
-
+var OverviewHandler = handleGet("Failed to fetch overview data", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
+		return nil, err
 	}
-
 	metricsClient := getMetricsClientSafe()
-
-	overview, err := getOverviewData(r.Context(), clientset, metricsClient, namespace)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch overview data")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, overview)
-}
+	namespace := r.URL.Query().Get("ns")
+	return getOverviewData(r.Context(), clientset, metricsClient, namespace)
+})
 
 // getOverviewData fetches overview data from Kubernetes
 func getOverviewData(ctx context.Context, clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset, namespace string) (*OverviewResponse, error) {
@@ -118,21 +104,11 @@ func getOverviewData(ctx context.Context, clientset *kubernetes.Clientset, metri
 	}, nil
 }
 
-// buildNodesList creates a list of NodeInfo from Kubernetes nodes
+// buildNodesList creates a list of NodeInfo from Kubernetes nodes.
 func buildNodesList(nodes []corev1.Node, metricsMap map[string]nodeMetricsUsage) []NodeInfo {
 	nodesList := make([]NodeInfo, 0, len(nodes))
-
 	for _, node := range nodes {
-		cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
-
-		nodesList = append(nodesList, NodeInfo{
-			Name:          node.Name,
-			Status:        nodeStatusString(node),
-			Role:          getNodeRole(node),
-			CpuPercent:    cpuPercent,
-			MemoryPercent: memoryPercent,
-		})
+		nodesList = append(nodesList, buildNodeInfo(node, metricsMap))
 	}
-
 	return nodesList
 }

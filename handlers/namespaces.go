@@ -8,21 +8,15 @@ import (
 )
 
 // NamespacesHandler handles the /api/namespaces endpoint
-func NamespacesHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
+var NamespacesHandler = handleGet("Failed to fetch namespaces", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
+		return nil, err
 	}
 
 	namespaceList, err := clientset.CoreV1().Namespaces().List(r.Context(), metav1.ListOptions{})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch namespaces")
-		return
+		return nil, err
 	}
 
 	namespaces := make([]string, 0, len(namespaceList.Items))
@@ -34,5 +28,5 @@ func NamespacesHandler(w http.ResponseWriter, r *http.Request) {
 
 	sort.Strings(namespaces)
 
-	writeJSON(w, http.StatusOK, namespaces)
-}
+	return namespaces, nil
+})
