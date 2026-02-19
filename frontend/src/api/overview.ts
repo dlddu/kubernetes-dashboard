@@ -27,6 +27,6 @@ export interface OverviewData {
 }
 
 export async function fetchOverview(namespace?: string): Promise<OverviewData> {
-  const url = buildURL('/api/overview', { namespace });
+  const url = buildURL('/api/overview', { ns: namespace });
   return fetchJSON<OverviewData>(url);
 }

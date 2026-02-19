@@ -20,27 +20,14 @@ type DeploymentInfo struct {
 }
 
 // DeploymentsHandler handles the GET /api/deployments endpoint
-func DeploymentsHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
-	namespace := r.URL.Query().Get("ns")
-
+var DeploymentsHandler = handleGet("Failed to fetch deployments data", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
+		return nil, err
 	}
-
-	deployments, err := getDeploymentsData(r.Context(), clientset, namespace)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch deployments data")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, deployments)
-}
+	namespace := r.URL.Query().Get("ns")
+	return getDeploymentsData(r.Context(), clientset, namespace)
+})
 
 // getDeploymentsData fetches deployments data from Kubernetes
 func getDeploymentsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]DeploymentInfo, error) {

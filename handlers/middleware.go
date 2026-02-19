@@ -26,3 +26,22 @@ func requireMethod(w http.ResponseWriter, r *http.Request, method string) bool {
 	}
 	return true
 }
+
+// handleGet creates a GET handler that obtains the Kubernetes client, calls the
+// provided fetch function, and writes the result as JSON. This eliminates repeated
+// boilerplate across simple GET endpoints.
+func handleGet(errMsg string, fetch func(r *http.Request) (interface{}, error)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !requireMethod(w, r, http.MethodGet) {
+			return
+		}
+
+		result, err := fetch(r)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, errMsg)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, result)
+	}
+}

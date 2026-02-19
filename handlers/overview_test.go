@@ -262,7 +262,7 @@ func TestOverviewHandler(t *testing.T) {
 func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 	t.Run("should accept namespace query parameter", func(t *testing.T) {
 		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/overview?namespace=default", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=default", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -282,7 +282,7 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 		skipIfNoCluster(t)
 
 		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/overview?namespace=kube-system", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=kube-system", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -330,7 +330,7 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 
 	t.Run("should handle empty namespace parameter", func(t *testing.T) {
 		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/overview?namespace=", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -350,7 +350,7 @@ func TestOverviewHandlerWithNamespaceFilter(t *testing.T) {
 		skipIfNoCluster(t)
 
 		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/overview?namespace=non-existent-namespace", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/overview?ns=non-existent-namespace", nil)
 		w := httptest.NewRecorder()
 
 		// Act

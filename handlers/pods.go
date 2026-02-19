@@ -25,52 +25,26 @@ type PodDetails struct {
 type podFilter func(corev1.Pod) bool
 
 // UnhealthyPodsHandler handles the GET /api/pods/unhealthy endpoint
-func UnhealthyPodsHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
-	namespace := r.URL.Query().Get("ns")
-
+var UnhealthyPodsHandler = handleGet("Failed to fetch pods data", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
+		return nil, err
 	}
-
-	unhealthyPods, err := listPods(r.Context(), clientset, namespace, func(pod corev1.Pod) bool {
+	namespace := r.URL.Query().Get("ns")
+	return listPods(r.Context(), clientset, namespace, func(pod corev1.Pod) bool {
 		return !isPodHealthy(pod)
 	})
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, unhealthyPods)
-}
+})
 
 // AllPodsHandler handles the GET /api/pods/all endpoint
-func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
-	if !requireMethod(w, r, http.MethodGet) {
-		return
-	}
-
-	namespace := r.URL.Query().Get("ns")
-
+var AllPodsHandler = handleGet("Failed to fetch pods data", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
+		return nil, err
 	}
-
-	allPods, err := listPods(r.Context(), clientset, namespace, nil)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, allPods)
-}
+	namespace := r.URL.Query().Get("ns")
+	return listPods(r.Context(), clientset, namespace, nil)
+})
 
 // listPods fetches pods from Kubernetes and converts them to PodDetails.
 // If filter is non-nil, only pods matching the filter are included.
