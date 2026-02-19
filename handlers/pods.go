@@ -62,7 +62,7 @@ func listPods(ctx context.Context, clientset *kubernetes.Clientset, namespace st
 
 		nodeName := pod.Spec.NodeName
 		if nodeName == "" {
-			nodeName = "Pending"
+			nodeName = podNodePending
 		}
 
 		pods = append(pods, PodDetails{

@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -61,25 +61,11 @@ func DeploymentRestartHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse URL path to extract namespace and deployment name
-	path := strings.TrimPrefix(r.URL.Path, "/api/deployments/")
-	path = strings.TrimSuffix(path, "/restart")
+	r = withTimeout(r)
 
-	parts := strings.Split(path, "/")
-	if len(parts) != 2 {
-		writeError(w, http.StatusBadRequest, "Invalid path format")
-		return
-	}
-
-	namespace := parts[0]
-	deploymentName := parts[1]
-
-	if namespace == "" {
-		writeError(w, http.StatusBadRequest, "Namespace is required")
-		return
-	}
-	if deploymentName == "" {
-		writeError(w, http.StatusBadRequest, "Deployment name is required")
+	namespace, deploymentName, err := parseResourcePath(r.URL.Path, deploymentsPathPrefix, restartPathSuffix)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid path format. Expected /api/deployments/{namespace}/{name}/restart")
 		return
 	}
 
@@ -91,7 +77,7 @@ func DeploymentRestartHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = restartDeployment(r.Context(), clientset, namespace, deploymentName)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if errors.IsNotFound(err) {
 			writeError(w, http.StatusNotFound, "Deployment not found")
 			return
 		}
@@ -115,7 +101,7 @@ func restartDeployment(ctx context.Context, clientset *kubernetes.Clientset, nam
 		deployment.Spec.Template.Annotations = make(map[string]string)
 	}
 
-	deployment.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+	deployment.Spec.Template.Annotations[annotationRestartedAt] = time.Now().Format(time.RFC3339)
 
 	_, err = clientset.AppsV1().Deployments(namespace).Update(ctx, deployment, metav1.UpdateOptions{})
 	return err
