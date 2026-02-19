@@ -14,8 +14,13 @@ export async function enableDebugAndGenerateLogs(page: Page): Promise<void> {
   const debugToggle = page.getByTestId('debug-toggle');
   await debugToggle.click();
 
-  // Navigate to /debug - this triggers API calls that get captured by the interceptor
-  // The toBeVisible assertion retries automatically, so networkidle is not needed here
+  // Reload the page to trigger /api/overview call with debug interception active.
+  // The initial page load's API calls happen before debug mode is enabled,
+  // so a reload is needed to capture them in the debug log.
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+
+  // Navigate to /debug and wait for captured log entries to appear
   await page.goto('/debug');
   await expect(page.getByTestId('endpoint-item').first()).toBeVisible({ timeout: 5000 });
 }
