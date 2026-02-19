@@ -1,20 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchSecrets, deleteSecret, SecretInfo } from '../api/secrets';
 import { SecretAccordion } from './SecretAccordion';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
-import { usePolling } from '../hooks/usePolling';
+import { useDataFetch } from '../hooks/useDataFetch';
 
 interface SecretsTabProps {
   namespace?: string;
 }
 
 export function SecretsTab({ namespace }: SecretsTabProps = {}) {
-  const [secrets, setSecrets] = useState<SecretInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: secrets, isLoading, error, refresh } = useDataFetch<SecretInfo>(
+    () => fetchSecrets(namespace),
+    'Failed to fetch secrets',
+    [namespace],
+  );
+
   const [openAccordionIndex, setOpenAccordionIndex] = useState<number | null>(null);
   const [deletingSecret, setDeletingSecret] = useState<{
     name: string;
@@ -24,25 +27,9 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const loadSecrets = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await fetchSecrets(namespace);
-      setSecrets(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch secrets');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [namespace]);
-
-  const { refresh } = usePolling(loadSecrets);
-
-  // Re-fetch immediately when namespace changes and reset accordion
+  // Reset accordion when namespace changes
   useEffect(() => {
     setOpenAccordionIndex(null);
-    loadSecrets();
   }, [namespace]);
 
   const handleAccordionToggle = (index: number) => {
@@ -65,7 +52,7 @@ export function SecretsTab({ namespace }: SecretsTabProps = {}) {
       setShowDeleteDialog(false);
       setDeletingSecret(null);
       setOpenAccordionIndex(null);
-      await loadSecrets();
+      refresh();
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'Failed to delete secret');
     } finally {

@@ -11,8 +11,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// UnhealthyPodDetails represents detailed information about an unhealthy pod
-type UnhealthyPodDetails struct {
+// PodDetails represents detailed information about a pod
+type PodDetails struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
 	Status    string `json:"status"`
@@ -20,6 +20,9 @@ type UnhealthyPodDetails struct {
 	Node      string `json:"node"`
 	Age       string `json:"age"`
 }
+
+// podFilter is a predicate used to select which pods to include in results.
+type podFilter func(corev1.Pod) bool
 
 // UnhealthyPodsHandler handles the GET /api/pods/unhealthy endpoint
 func UnhealthyPodsHandler(w http.ResponseWriter, r *http.Request) {
@@ -35,42 +38,15 @@ func UnhealthyPodsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unhealthyPods, err := getUnhealthyPodsData(r.Context(), clientset, namespace)
+	unhealthyPods, err := listPods(r.Context(), clientset, namespace, func(pod corev1.Pod) bool {
+		return !isPodHealthy(pod)
+	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
 		return
 	}
 
 	writeJSON(w, http.StatusOK, unhealthyPods)
-}
-
-// getUnhealthyPodsData fetches unhealthy pods data from Kubernetes
-func getUnhealthyPodsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
-	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	unhealthyPods := make([]UnhealthyPodDetails, 0, len(podList.Items))
-	for _, pod := range podList.Items {
-		if !isPodHealthy(pod) {
-			nodeName := pod.Spec.NodeName
-			if nodeName == "" {
-				nodeName = "Pending"
-			}
-
-			unhealthyPods = append(unhealthyPods, UnhealthyPodDetails{
-				Name:      pod.Name,
-				Namespace: pod.Namespace,
-				Status:    getPodStatus(pod),
-				Restarts:  getPodRestartCount(pod),
-				Node:      nodeName,
-				Age:       formatPodAge(pod.CreationTimestamp.Time),
-			})
-		}
-	}
-
-	return unhealthyPods, nil
 }
 
 // AllPodsHandler handles the GET /api/pods/all endpoint
@@ -87,7 +63,7 @@ func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allPods, err := getAllPodsData(r.Context(), clientset, namespace)
+	allPods, err := listPods(r.Context(), clientset, namespace, nil)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch pods data")
 		return
@@ -96,21 +72,26 @@ func AllPodsHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, allPods)
 }
 
-// getAllPodsData fetches all pods data from Kubernetes
-func getAllPodsData(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]UnhealthyPodDetails, error) {
+// listPods fetches pods from Kubernetes and converts them to PodDetails.
+// If filter is non-nil, only pods matching the filter are included.
+func listPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, filter podFilter) ([]PodDetails, error) {
 	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	allPods := make([]UnhealthyPodDetails, 0, len(podList.Items))
+	pods := make([]PodDetails, 0, len(podList.Items))
 	for _, pod := range podList.Items {
+		if filter != nil && !filter(pod) {
+			continue
+		}
+
 		nodeName := pod.Spec.NodeName
 		if nodeName == "" {
 			nodeName = "Pending"
 		}
 
-		allPods = append(allPods, UnhealthyPodDetails{
+		pods = append(pods, PodDetails{
 			Name:      pod.Name,
 			Namespace: pod.Namespace,
 			Status:    getPodStatus(pod),
@@ -120,7 +101,7 @@ func getAllPodsData(ctx context.Context, clientset *kubernetes.Clientset, namesp
 		})
 	}
 
-	return allPods, nil
+	return pods, nil
 }
 
 // getPodRestartCount calculates the total restart count for all containers in a pod
@@ -137,26 +118,15 @@ func formatPodAge(creationTime time.Time) string {
 	age := time.Since(creationTime)
 
 	days := int(age.Hours() / 24)
-	if days > 0 {
-		return formatDuration(days, int(age.Hours())%24, int(age.Minutes())%60)
-	}
+	hours := int(age.Hours()) % 24
+	minutes := int(age.Minutes()) % 60
+	seconds := int(age.Seconds()) % 60
 
-	hours := int(age.Hours())
-	if hours > 0 {
-		return formatDuration(0, hours, int(age.Minutes())%60)
-	}
-
-	minutes := int(age.Minutes())
-	if minutes > 0 {
-		return formatDuration(0, 0, minutes)
-	}
-
-	seconds := int(age.Seconds())
-	return formatDuration(0, 0, 0, seconds)
+	return formatDuration(days, hours, minutes, seconds)
 }
 
-// formatDuration formats duration components into a string
-func formatDuration(days, hours, minutes int, seconds ...int) string {
+// formatDuration formats duration components into a human-readable string.
+func formatDuration(days, hours, minutes, seconds int) string {
 	if days > 0 {
 		if hours > 0 {
 			return fmt.Sprintf("%dd%dh", days, hours)
@@ -175,8 +145,8 @@ func formatDuration(days, hours, minutes int, seconds ...int) string {
 		return fmt.Sprintf("%dm", minutes)
 	}
 
-	if len(seconds) > 0 && seconds[0] > 0 {
-		return fmt.Sprintf("%ds", seconds[0])
+	if seconds > 0 {
+		return fmt.Sprintf("%ds", seconds)
 	}
 
 	return "0s"

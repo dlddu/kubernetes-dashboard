@@ -1,20 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { fetchDeployments, restartDeployment, DeploymentInfo } from '../api/deployments';
 import { DeploymentCard } from './DeploymentCard';
 import { RestartConfirmDialog } from './RestartConfirmDialog';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
-import { usePolling } from '../hooks/usePolling';
+import { useDataFetch } from '../hooks/useDataFetch';
 
 interface WorkloadsTabProps {
   namespace?: string;
 }
 
 export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
-  const [deployments, setDeployments] = useState<DeploymentInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: deployments, isLoading, error, refresh } = useDataFetch<DeploymentInfo>(
+    () => fetchDeployments(namespace),
+    'Failed to fetch deployments',
+    [namespace],
+  );
+
   const [restartingDeployment, setRestartingDeployment] = useState<{
     name: string;
     namespace: string;
@@ -22,26 +25,6 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
   const [restartError, setRestartError] = useState<string | null>(null);
-
-  const loadDeployments = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await fetchDeployments(namespace);
-      setDeployments(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch deployments');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [namespace]);
-
-  const { refresh } = usePolling(loadDeployments);
-
-  // Re-fetch immediately when namespace changes
-  useEffect(() => {
-    loadDeployments();
-  }, [namespace]);
 
   const handleRestartClick = (deployment: { name: string; namespace: string }) => {
     setRestartingDeployment(deployment);
@@ -59,7 +42,7 @@ export function WorkloadsTab({ namespace }: WorkloadsTabProps) {
       // Success - close dialog and reload deployments
       setShowConfirmDialog(false);
       setRestartingDeployment(null);
-      await loadDeployments();
+      refresh();
     } catch (err) {
       setRestartError(err instanceof Error ? err.message : 'Failed to restart deployment');
     } finally {

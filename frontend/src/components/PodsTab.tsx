@@ -1,39 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
 import { fetchAllPods, PodDetails } from '../api/pods';
 import { UnhealthyPodCard } from './UnhealthyPodCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
-import { usePolling } from '../hooks/usePolling';
+import { useDataFetch } from '../hooks/useDataFetch';
 
 interface PodsTabProps {
   namespace?: string;
 }
 
 export function PodsTab({ namespace }: PodsTabProps = {}) {
-  const [pods, setPods] = useState<PodDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadPods = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await fetchAllPods(namespace);
-      setPods(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch pods');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [namespace]);
-
-  const { refresh } = usePolling(loadPods);
-
-  // Re-fetch immediately when namespace changes
-  useEffect(() => {
-    loadPods();
-  }, [namespace]);
+  const { data: pods, isLoading, error, refresh } = useDataFetch<PodDetails>(
+    () => fetchAllPods(namespace),
+    'Failed to fetch pods',
+    [namespace],
+  );
 
   return (
     <div data-testid="pods-page" className="space-y-6">
