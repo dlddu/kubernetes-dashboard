@@ -58,7 +58,10 @@ func OverviewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metricsClient, _ := getMetricsClient()
+	metricsClient, err := getMetricsClient()
+	if err != nil {
+		log.Printf("metrics client unavailable, falling back to capacity-allocatable: %v", err)
+	}
 
 	overview, err := getOverviewData(r.Context(), clientset, metricsClient, namespace)
 	if err != nil {
@@ -250,9 +253,17 @@ func clamp(val, min, max float64) float64 {
 	return val
 }
 
-// calculateNodeResourceUsage calculates CPU and memory usage for a single node.
-// Uses real metrics from metrics-server when available, falls back to capacity-allocatable.
-func calculateNodeResourceUsage(node corev1.Node, metricsMap map[string]nodeMetricsUsage) (float64, float64) {
+// nodeResourceUsage holds raw CPU (millicores) and memory (bytes) usage and capacity for a node.
+type nodeResourceUsage struct {
+	cpuUsedMilli      int64
+	cpuCapacityMilli  int64
+	memUsedBytes      int64
+	memCapacityBytes  int64
+}
+
+// getNodeResourceUsage resolves the raw CPU and memory usage for a single node.
+// Uses real metrics from metrics-server when available, falls back to capacity minus allocatable.
+func getNodeResourceUsage(node corev1.Node, metricsMap map[string]nodeMetricsUsage) nodeResourceUsage {
 	cpuCapacity := node.Status.Capacity[corev1.ResourceCPU]
 	memCapacity := node.Status.Capacity[corev1.ResourceMemory]
 
@@ -273,48 +284,47 @@ func calculateNodeResourceUsage(node corev1.Node, metricsMap map[string]nodeMetr
 		memUsedBytes = memUsed.Value()
 	}
 
-	var cpuPercent, memoryPercent float64
-	if cpuCapacity.MilliValue() > 0 {
-		cpuPercent = float64(cpuUsedMilli) / float64(cpuCapacity.MilliValue()) * 100
+	return nodeResourceUsage{
+		cpuUsedMilli:     cpuUsedMilli,
+		cpuCapacityMilli: cpuCapacity.MilliValue(),
+		memUsedBytes:     memUsedBytes,
+		memCapacityBytes: memCapacity.Value(),
 	}
-	if memCapacity.Value() > 0 {
-		memoryPercent = float64(memUsedBytes) / float64(memCapacity.Value()) * 100
+}
+
+// calculateNodeResourceUsage calculates CPU and memory usage percentages for a single node.
+// Uses real metrics from metrics-server when available, falls back to capacity-allocatable.
+func calculateNodeResourceUsage(node corev1.Node, metricsMap map[string]nodeMetricsUsage) (float64, float64) {
+	usage := getNodeResourceUsage(node, metricsMap)
+
+	var cpuPercent, memoryPercent float64
+	if usage.cpuCapacityMilli > 0 {
+		cpuPercent = float64(usage.cpuUsedMilli) / float64(usage.cpuCapacityMilli) * 100
+	}
+	if usage.memCapacityBytes > 0 {
+		memoryPercent = float64(usage.memUsedBytes) / float64(usage.memCapacityBytes) * 100
 	}
 
 	return clamp(cpuPercent, 0, 100), clamp(memoryPercent, 0, 100)
 }
 
-// calculateResourceUsage calculates average CPU and memory usage across all nodes.
-// Uses real metrics from metrics-server when available, falls back to capacity-allocatable.
+// calculateResourceUsage calculates average CPU and memory usage across all nodes,
+// weighted by each node's capacity. Uses real metrics from metrics-server when
+// available, falls back to capacity-allocatable.
 func calculateResourceUsage(nodes []corev1.Node, metricsMap map[string]nodeMetricsUsage) (float64, float64) {
 	if len(nodes) == 0 {
 		return 0, 0
 	}
 
-	var totalCpuUsedMilli int64
-	var totalCpuCapacityMilli int64
-	var totalMemUsedBytes int64
-	var totalMemCapacityBytes int64
+	var totalCpuUsedMilli, totalCpuCapacityMilli int64
+	var totalMemUsedBytes, totalMemCapacityBytes int64
 
 	for _, node := range nodes {
-		cpuCapacity := node.Status.Capacity[corev1.ResourceCPU]
-		memCapacity := node.Status.Capacity[corev1.ResourceMemory]
-		totalCpuCapacityMilli += cpuCapacity.MilliValue()
-		totalMemCapacityBytes += memCapacity.Value()
-
-		if usage, ok := metricsMap[node.Name]; metricsMap != nil && ok {
-			totalCpuUsedMilli += usage.cpuMillis
-			totalMemUsedBytes += usage.memoryBytes
-		} else {
-			cpuAllocatable := node.Status.Allocatable[corev1.ResourceCPU]
-			memAllocatable := node.Status.Allocatable[corev1.ResourceMemory]
-			cpuUsed := cpuCapacity.DeepCopy()
-			cpuUsed.Sub(cpuAllocatable)
-			totalCpuUsedMilli += cpuUsed.MilliValue()
-			memUsed := memCapacity.DeepCopy()
-			memUsed.Sub(memAllocatable)
-			totalMemUsedBytes += memUsed.Value()
-		}
+		usage := getNodeResourceUsage(node, metricsMap)
+		totalCpuUsedMilli += usage.cpuUsedMilli
+		totalCpuCapacityMilli += usage.cpuCapacityMilli
+		totalMemUsedBytes += usage.memUsedBytes
+		totalMemCapacityBytes += usage.memCapacityBytes
 	}
 
 	var cpuPercent, memoryPercent float64
@@ -328,23 +338,25 @@ func calculateResourceUsage(nodes []corev1.Node, metricsMap map[string]nodeMetri
 	return clamp(cpuPercent, 0, 100), clamp(memoryPercent, 0, 100)
 }
 
+// nodeStatusString returns "Ready" or "NotReady" based on node condition.
+func nodeStatusString(node corev1.Node) string {
+	if isNodeReady(node) {
+		return "Ready"
+	}
+	return "NotReady"
+}
+
 // buildNodesList creates a list of NodeInfo from Kubernetes nodes
 func buildNodesList(nodes []corev1.Node, metricsMap map[string]nodeMetricsUsage) []NodeInfo {
 	nodesList := make([]NodeInfo, 0, len(nodes))
 
 	for _, node := range nodes {
-		status := "NotReady"
-		if isNodeReady(node) {
-			status = "Ready"
-		}
-
 		cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
-		role := getNodeRole(node)
 
 		nodesList = append(nodesList, NodeInfo{
 			Name:          node.Name,
-			Status:        status,
-			Role:          role,
+			Status:        nodeStatusString(node),
+			Role:          getNodeRole(node),
 			CpuPercent:    cpuPercent,
 			MemoryPercent: memoryPercent,
 		})

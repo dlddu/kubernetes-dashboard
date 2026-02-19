@@ -6,7 +6,7 @@ export interface UnhealthyPodInfo {
   status: string;
 }
 
-export interface NodeInfo {
+export interface OverviewNodeInfo {
   name: string;
   status: string;
   role: string;
@@ -23,7 +23,7 @@ export interface OverviewData {
   unhealthyPodsList?: UnhealthyPodInfo[];
   avgCpuPercent: number;
   avgMemoryPercent: number;
-  nodesList?: NodeInfo[];
+  nodesList?: OverviewNodeInfo[];
 }
 
 export async function fetchOverview(namespace?: string): Promise<OverviewData> {

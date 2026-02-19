@@ -113,7 +113,7 @@ func handleDeleteSecret(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = deleteSecret(clientset, namespace, name)
+	err = deleteSecret(r.Context(), clientset, namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			writeError(w, http.StatusNotFound, "Secret not found")
@@ -174,7 +174,6 @@ func getSecretDetail(ctx context.Context, clientset *kubernetes.Clientset, names
 }
 
 // deleteSecret deletes a specific secret from Kubernetes
-func deleteSecret(clientset *kubernetes.Clientset, namespace, name string) error {
-	ctx := context.Background()
+func deleteSecret(ctx context.Context, clientset *kubernetes.Clientset, namespace, name string) error {
 	return clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 }

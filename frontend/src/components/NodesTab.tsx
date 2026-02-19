@@ -1,35 +1,15 @@
-import { useState, useCallback, useEffect } from 'react';
 import { fetchNodes, NodeInfo } from '../api/nodes';
 import { NodeCard } from './NodeCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
-import { usePolling } from '../hooks/usePolling';
+import { useDataFetch } from '../hooks/useDataFetch';
 
 export function NodesTab() {
-  const [nodes, setNodes] = useState<NodeInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadNodes = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await fetchNodes();
-      setNodes(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch nodes');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const { refresh } = usePolling(loadNodes);
-
-  // Initial load
-  useEffect(() => {
-    loadNodes();
-  }, []);
+  const { data: nodes, isLoading, error, refresh } = useDataFetch<NodeInfo>(
+    () => fetchNodes(),
+    'Failed to fetch nodes',
+  );
 
   return (
     <div data-testid="nodes-page" className="space-y-6">

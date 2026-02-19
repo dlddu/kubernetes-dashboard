@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +32,10 @@ func NodesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metricsClient, _ := getMetricsClient()
+	metricsClient, err := getMetricsClient()
+	if err != nil {
+		log.Printf("metrics client unavailable, falling back to capacity-allocatable: %v", err)
+	}
 
 	nodes, err := getNodesData(r.Context(), clientset, metricsClient)
 	if err != nil {
@@ -65,18 +69,12 @@ func getNodesData(ctx context.Context, clientset *kubernetes.Clientset, metricsC
 
 	nodesData := make([]NodeDetailInfo, 0, len(nodeList.Items))
 	for _, node := range nodeList.Items {
-		status := "NotReady"
-		if isNodeReady(node) {
-			status = "Ready"
-		}
-
 		cpuPercent, memoryPercent := calculateNodeResourceUsage(node, metricsMap)
-		role := getNodeRole(node)
 
 		nodesData = append(nodesData, NodeDetailInfo{
 			Name:          node.Name,
-			Status:        status,
-			Role:          role,
+			Status:        nodeStatusString(node),
+			Role:          getNodeRole(node),
 			CPUPercent:    cpuPercent,
 			MemoryPercent: memoryPercent,
 			PodCount:      nodePodCount[node.Name],
