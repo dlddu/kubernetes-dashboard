@@ -26,3 +26,14 @@ const (
 
 // Pod node assignment placeholder.
 const podNodePending = "Pending"
+
+// Common error messages used across handlers.
+const (
+	errMsgClientCreate = "Failed to create Kubernetes client"
+
+	errMsgSecretNotFound  = "Secret not found"
+	errMsgSecretFetch     = "Failed to fetch secret detail"
+	errMsgSecretDelete    = "Failed to delete secret"
+
+	errMsgDeploymentNotFound = "Deployment not found"
+)

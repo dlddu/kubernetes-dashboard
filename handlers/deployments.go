@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -63,25 +62,14 @@ func DeploymentRestartHandler(w http.ResponseWriter, r *http.Request) {
 
 	r = withTimeout(r)
 
-	namespace, deploymentName, err := parseResourcePath(r.URL.Path, deploymentsPathPrefix, restartPathSuffix)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid path format. Expected /api/deployments/{namespace}/{name}/restart")
+	rc := withParsedResource(w, r, deploymentsPathPrefix, restartPathSuffix)
+	if rc == nil {
 		return
 	}
 
-	clientset, err := getKubernetesClient()
+	err := restartDeployment(r.Context(), rc.clientset, rc.namespace, rc.name)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create Kubernetes client")
-		return
-	}
-
-	err = restartDeployment(r.Context(), clientset, namespace, deploymentName)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			writeError(w, http.StatusNotFound, "Deployment not found")
-			return
-		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeResourceError(w, err, errMsgDeploymentNotFound, err.Error())
 		return
 	}
 

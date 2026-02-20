@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/kubernetes"
 )
 
 // apiTimeout is the default timeout for Kubernetes API calls.
@@ -81,4 +84,41 @@ func handleGet(errMsg string, fetch func(r *http.Request) (interface{}, error)) 
 
 		writeJSON(w, http.StatusOK, result)
 	}
+}
+
+// resourceContext holds the parsed namespace, name, and Kubernetes client for a resource request.
+type resourceContext struct {
+	namespace string
+	name      string
+	clientset *kubernetes.Clientset
+}
+
+// withParsedResource extracts the common pattern of parsing a resource path and
+// obtaining the Kubernetes client. It writes appropriate error responses on failure
+// and returns nil if the request was already handled.
+func withParsedResource(w http.ResponseWriter, r *http.Request, pathPrefix, pathSuffix string) *resourceContext {
+	namespace, name, err := parseResourcePath(r.URL.Path, pathPrefix, pathSuffix)
+	if err != nil {
+		writeError(w, http.StatusBadRequest,
+			fmt.Sprintf("Invalid path format. Expected %s{namespace}/{name}%s", pathPrefix, pathSuffix))
+		return nil
+	}
+
+	clientset, err := getKubernetesClient()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, errMsgClientCreate)
+		return nil
+	}
+
+	return &resourceContext{namespace: namespace, name: name, clientset: clientset}
+}
+
+// writeResourceError writes an appropriate error response for Kubernetes API errors,
+// handling NotFound as 404 and everything else as 500.
+func writeResourceError(w http.ResponseWriter, err error, notFoundMsg, internalMsg string) {
+	if errors.IsNotFound(err) {
+		writeError(w, http.StatusNotFound, notFoundMsg)
+		return
+	}
+	writeError(w, http.StatusInternalServerError, internalMsg)
 }

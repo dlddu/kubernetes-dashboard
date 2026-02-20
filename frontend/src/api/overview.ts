@@ -1,4 +1,5 @@
 import { fetchJSON, buildURL } from './client';
+import type { NodeInfo } from './nodes';
 
 export interface UnhealthyPodInfo {
   name: string;
@@ -6,13 +7,8 @@ export interface UnhealthyPodInfo {
   status: string;
 }
 
-export interface OverviewNodeInfo {
-  name: string;
-  status: string;
-  role: string;
-  cpuPercent: number;
-  memoryPercent: number;
-}
+/** Node info as returned by the overview endpoint (without podCount). */
+export type OverviewNodeInfo = Omit<NodeInfo, 'podCount'>;
 
 export interface OverviewData {
   nodes: {
