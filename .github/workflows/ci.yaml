@@ -326,3 +326,37 @@ jobs:
             echo "ERROR: ClusterRoleBinding not found in RBAC manifest"
             exit 1
           fi
+
+  # DLD-437: Argo Workflows CRD 설치 및 e2e 테스트 환경 구성
+  argo-fixture-validation:
+    name: Argo Fixture Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Ensure go.mod is tidy
+        run: go mod tidy
+
+      # Shell-level static analysis: checks kind-cluster.sh and apply-all.sh structure
+      - name: Run Argo cluster script tests (shell)
+        run: |
+          chmod +x ./test/argo_cluster_script_test.sh
+          ./test/argo_cluster_script_test.sh
+
+      # Go-level YAML structural validation of all Argo fixture CRs
+      - name: Run Argo fixture YAML validation (Go)
+        run: |
+          go test -v -run TestArgoFixture ./test/...
+          go test -v -run TestWorkflow ./test/...
+          go test -v -run TestApplyAllSh ./test/...
+          go test -v -run TestKindClusterSh ./test/...

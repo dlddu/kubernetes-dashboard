@@ -76,5 +76,13 @@ echo ""
 log_info "Pod status details:"
 kubectl get pods -n dashboard-test -o wide
 
+# 6. Apply Argo Workflows fixtures
+log_info "Applying Argo Workflows fixtures..."
+kubectl apply -f "$SCRIPT_DIR/workflow-template-with-params.yaml"
+kubectl apply -f "$SCRIPT_DIR/workflow-template-no-params.yaml"
+kubectl apply -f "$SCRIPT_DIR/workflow-running.yaml"
+kubectl apply -f "$SCRIPT_DIR/workflow-succeeded.yaml"
+kubectl apply -f "$SCRIPT_DIR/workflow-failed.yaml"
+
 echo ""
 log_info "To clean up, run: kubectl delete namespace dashboard-test"

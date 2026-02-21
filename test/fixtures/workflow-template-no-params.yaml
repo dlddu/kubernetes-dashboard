@@ -1,0 +1,11 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: simple-template
+  namespace: dashboard-test
+spec:
+  templates:
+    - name: main
+      container:
+        image: busybox
+        command: [echo, "hello"]

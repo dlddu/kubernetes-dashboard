@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: data-processing-with-params
+  namespace: dashboard-test
+spec:
+  arguments:
+    parameters:
+      - name: input-path
+        value: /data/input
+      - name: output-path
+        value: /data/output
+      - name: batch-size
+        value: "100"
+      - name: env
+        value: dev
+        enum:
+          - dev
+          - staging
+          - prod
+  templates:
+    - name: main
+      container:
+        image: busybox
+        command: [echo, "processing"]

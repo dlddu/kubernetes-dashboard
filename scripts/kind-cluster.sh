@@ -87,6 +87,9 @@ create_cluster() {
 
     # Install metrics-server
     install_metrics_server
+
+    # Install Argo Workflows CRDs
+    install_argo_crds
 }
 
 # Install metrics-server for real CPU/Memory metrics
@@ -114,6 +117,18 @@ install_metrics_server() {
         sleep 5
     done
     log_warn "metrics-server deployed but metrics data may not be available yet"
+}
+
+# Install Argo Workflows CRDs for e2e test environment
+install_argo_crds() {
+    log_info "Installing Argo Workflows CRDs..."
+    kubectl apply -k "https://github.com/argoproj/argo-workflows/manifests/base/crds/minimal?ref=v3.6.4"
+
+    log_info "Waiting for Argo Workflows CRDs to be established..."
+    kubectl wait --for=condition=Established crd/workflows.argoproj.io --timeout=60s || true
+    kubectl wait --for=condition=Established crd/workflowtemplates.argoproj.io --timeout=60s || true
+
+    log_info "Argo Workflows CRDs installed successfully"
 }
 
 # Delete kind cluster

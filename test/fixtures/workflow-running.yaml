@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: data-processing-running
+  namespace: dashboard-test
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: step-one
+            template: process
+        - - name: step-two
+            template: process
+        - - name: step-three
+            template: process
+    - name: process
+      container:
+        image: busybox
+        command: [echo, "processing"]
+status:
+  phase: Running
+  nodes:
+    data-processing-running:
+      id: data-processing-running
+      name: data-processing-running
+      type: Steps
+      phase: Running
+      inputs:
+        parameters:
+          - name: input-path
+            value: /data/input
+        artifacts: []
+      outputs:
+        parameters: []
+        artifacts: []
+    data-processing-running-step-one:
+      id: data-processing-running-step-one
+      name: data-processing-running[0].step-one
+      type: Pod
+      phase: Succeeded
+      inputs:
+        parameters:
+          - name: input-path
+            value: /data/input
+        artifacts: []
+      outputs:
+        parameters:
+          - name: result
+            value: done
+        artifacts: []
+    data-processing-running-step-two:
+      id: data-processing-running-step-two
+      name: data-processing-running[1].step-two
+      type: Pod
+      phase: Running
+      inputs:
+        parameters:
+          - name: input-path
+            value: /data/output
+        artifacts: []
+      outputs:
+        parameters: []
+        artifacts: []
+    data-processing-running-step-three:
+      id: data-processing-running-step-three
+      name: data-processing-running[2].step-three
+      type: Pod
+      phase: Pending
+      inputs:
+        parameters: []
+        artifacts: []
+      outputs:
+        parameters: []
+        artifacts: []
