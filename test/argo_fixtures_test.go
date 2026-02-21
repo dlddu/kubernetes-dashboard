@@ -16,6 +16,7 @@ package test
 //   - workflow-failed.yaml                (Failed 상태 Workflow)
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -41,7 +42,7 @@ type byteReader []byte
 
 func (b *byteReader) Read(p []byte) (int, error) {
 	if len(*b) == 0 {
-		return 0, nil
+		return 0, io.EOF
 	}
 	n := copy(p, *b)
 	*b = (*b)[n:]
