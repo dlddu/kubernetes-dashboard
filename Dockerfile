@@ -20,8 +20,9 @@ FROM golang:1.23-alpine AS backend-builder
 
 WORKDIR /app
 
-# Copy go mod files
+# Copy go mod files and local replace targets
 COPY go.mod go.sum* ./
+COPY internal/argoversioned/go.mod internal/argoversioned/go.sum* ./internal/argoversioned/
 
 # Download dependencies
 RUN go mod download
