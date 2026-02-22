@@ -129,8 +129,8 @@ test.describe('Namespace Favorites - Edge Cases', () => {
     await clearFavorites(page);
   });
 
-  test('should not display favorites section when no namespaces are favorited', async ({ page }) => {
-    // Tests that the favorites section is hidden when the favorites list is empty
+  test('should display favorites section with hint message when no namespaces are favorited', async ({ page }) => {
+    // Tests that the favorites section is always rendered and shows a hint when empty
 
     // Arrange: Ensure no favorites are set
     // (clearFavorites is called in beforeEach)
@@ -139,9 +139,17 @@ test.describe('Namespace Favorites - Edge Cases', () => {
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
-    // Assert: Favorites section should not be visible
+    // Assert: Favorites section is visible (always rendered)
     const favoritesSection = page.getByTestId('namespace-favorites-section');
-    await expect(favoritesSection).not.toBeVisible();
+    await expect(favoritesSection).toBeVisible();
+
+    // Assert: Hint message is displayed inside the section
+    const hintMessage = favoritesSection.getByTestId('namespace-favorites-hint');
+    await expect(hintMessage).toBeVisible();
+
+    // Assert: No favorite items are rendered
+    const favoriteItems = favoritesSection.getByTestId(/^namespace-favorite-item-/);
+    await expect(favoriteItems).toHaveCount(0);
   });
 
   test('should handle corrupted localStorage value gracefully without crashing', async ({ page }) => {
@@ -313,17 +321,19 @@ test.describe('Namespace Favorites - Toggle Behavior', () => {
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
-    // Assert: Favorites section is not yet visible before toggling
+    // Assert: Favorites section is visible but shows hint (no favorite items yet)
     const favoritesSection = page.getByTestId('namespace-favorites-section');
-    await expect(favoritesSection).not.toBeVisible();
+    await expect(favoritesSection).toBeVisible();
+    await expect(favoritesSection.getByTestId('namespace-favorites-hint')).toBeVisible();
 
     // Act: Click the favorite toggle on the "default" namespace option
     const defaultOption = page.getByTestId('namespace-option-default');
     const favoriteToggle = defaultOption.getByTestId('namespace-favorite-toggle');
     await favoriteToggle.click();
 
-    // Assert: Favorites section is now visible
+    // Assert: Favorites section still visible, hint is gone
     await expect(favoritesSection).toBeVisible();
+    await expect(favoritesSection.getByTestId('namespace-favorites-hint')).not.toBeVisible();
 
     // Assert: "default" namespace appears in the Favorites section
     await expect(favoritesSection.getByTestId('namespace-favorite-item-default')).toBeVisible();
@@ -457,10 +467,10 @@ test.describe('Namespace Favorites - Toggle Behavior', () => {
 });
 
 // ---------------------------------------------------------------------------
-// TODO: Activate when DLD-457 (빈 즐겨찾기 힌트 메시지) is implemented
+// DLD-457: 빈 즐겨찾기 힌트 메시지
 // ---------------------------------------------------------------------------
 
-test.describe.skip('Namespace Favorites - Empty State Hint', () => {
+test.describe('Namespace Favorites - Empty State Hint', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -556,10 +566,10 @@ test.describe.skip('Namespace Favorites - Empty State Hint', () => {
 });
 
 // ---------------------------------------------------------------------------
-// TODO: Activate when DLD-457 (빈 즐겨찾기 힌트 메시지 - 모바일 뷰포트) is implemented
+// DLD-457: 빈 즐겨찾기 힌트 메시지 - 모바일 뷰포트
 // ---------------------------------------------------------------------------
 
-test.describe.skip('Namespace Favorites - Empty State Hint (Mobile)', () => {
+test.describe('Namespace Favorites - Empty State Hint (Mobile)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');

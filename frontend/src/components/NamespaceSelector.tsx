@@ -187,15 +187,27 @@ export function NamespaceSelector() {
           )}
 
           {/* Favorites section */}
-          {hasFavorites && (
-            <div data-testid="namespace-favorites-section">
+          <div data-testid="namespace-favorites-section">
+            <div
+              data-testid="namespace-favorites-header"
+              className="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-t border-gray-200"
+            >
+              Favorites
+            </div>
+            {!hasFavorites ? (
               <div
-                data-testid="namespace-favorites-header"
-                className="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-t border-gray-200"
+                data-testid="namespace-favorites-hint"
+                className="px-4 py-2 text-sm text-gray-400 italic"
               >
-                Favorites
+                <span className="hidden sm:inline">
+                  Hover over a namespace and click ⭐ to add favorites
+                </span>
+                <span className="sm:hidden">
+                  Tap ⭐ next to a namespace to add favorites
+                </span>
               </div>
-              {favoriteNamespaces.slice(0, 5).map((ns) => (
+            ) : (
+              favoriteNamespaces.slice(0, 5).map((ns) => (
                 <div
                   key={`favorite-${ns}`}
                   data-testid={`namespace-option-${ns}`}
@@ -232,9 +244,9 @@ export function NamespaceSelector() {
                     </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
 
           {/* All section */}
           {namespaces.length > 0 && (
