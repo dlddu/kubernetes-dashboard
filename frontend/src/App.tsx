@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { NamespaceProvider, useNamespace } from './contexts/NamespaceContext';
 import { DebugProvider } from './contexts/DebugContext';
+import { FavoritesProvider } from './contexts/FavoritesContext';
 import { PollingProvider } from './contexts/PollingContext';
 import { DashboardProvider, useDashboard } from './contexts/DashboardContext';
 import { TopBar } from './components/TopBar';
@@ -43,11 +44,13 @@ function App() {
     <BrowserRouter>
       <DebugProvider>
         <NamespaceProvider>
-          <PollingProvider>
-            <DashboardProvider>
-              <AppContent />
-            </DashboardProvider>
-          </PollingProvider>
+          <FavoritesProvider>
+            <PollingProvider>
+              <DashboardProvider>
+                <AppContent />
+              </DashboardProvider>
+            </PollingProvider>
+          </FavoritesProvider>
         </NamespaceProvider>
       </DebugProvider>
     </BrowserRouter>
