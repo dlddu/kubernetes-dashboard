@@ -289,7 +289,7 @@ export function NamespaceSelector() {
                       e.stopPropagation();
                       toggleFavorite(ns);
                     }}
-                    className="mr-2 text-gray-300 hover:text-yellow-400 focus:outline-none opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                    className="mr-2 text-gray-300 hover:text-yellow-400 focus:outline-none opacity-100 md:opacity-0 md:group-hover:opacity-100"
                   >
                     <span aria-hidden="true">☆</span>
                   </button>
