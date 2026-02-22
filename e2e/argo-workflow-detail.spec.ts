@@ -156,7 +156,11 @@ const WORKFLOWS_FIXTURE = [
 ];
 
 // Single-workflow detail fixture (data-processing-running) used for detail-view tests
-const WORKFLOW_DETAIL_FIXTURE = WORKFLOWS_FIXTURE[0];
+// Extends WORKFLOWS_FIXTURE[0] with top-level parameters (required by WorkflowDetailInfo type)
+const WORKFLOW_DETAIL_FIXTURE = {
+  ...WORKFLOWS_FIXTURE[0],
+  parameters: [{ name: 'input-path', value: '/data/input' }],
+};
 
 // ---------------------------------------------------------------------------
 // Helpers

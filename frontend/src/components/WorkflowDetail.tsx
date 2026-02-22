@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { WorkflowDetailInfo } from '../api/argo';
+import { WorkflowDetailInfo, WorkflowIODetailInfo } from '../api/argo';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 
@@ -33,9 +33,17 @@ function formatTime(isoString: string): string {
   }
 }
 
-type IOInfo = WorkflowDetailInfo['nodes'][0]['inputs'];
+const EMPTY_IO: WorkflowIODetailInfo = { parameters: [], artifacts: [] };
 
-function hasIO(inputs: IOInfo, outputs: IOInfo): boolean {
+function safeIO(io: WorkflowIODetailInfo | undefined | null): WorkflowIODetailInfo {
+  if (!io) return EMPTY_IO;
+  return {
+    parameters: io.parameters || [],
+    artifacts: io.artifacts || [],
+  };
+}
+
+function hasIO(inputs: WorkflowIODetailInfo, outputs: WorkflowIODetailInfo): boolean {
   return (
     inputs.parameters.length > 0 ||
     inputs.artifacts.length > 0 ||
@@ -46,8 +54,8 @@ function hasIO(inputs: IOInfo, outputs: IOInfo): boolean {
 
 interface StepIOPanelProps {
   nodeIndex: number;
-  inputs: IOInfo;
-  outputs: IOInfo;
+  inputs: WorkflowIODetailInfo;
+  outputs: WorkflowIODetailInfo;
 }
 
 function StepIOPanel({ nodeIndex, inputs, outputs }: StepIOPanelProps) {
@@ -176,6 +184,7 @@ export function WorkflowDetail({ workflowName, namespace, onBack }: WorkflowDeta
   }
 
   const phaseColorClass = getPhaseColorClass(data.phase);
+  const parameters = data.parameters || [];
 
   return (
     <div data-testid="workflow-detail-page" className="space-y-6">
@@ -215,37 +224,41 @@ export function WorkflowDetail({ workflowName, namespace, onBack }: WorkflowDeta
       </div>
 
       {/* Parameters section */}
-      <div>
-        <button
-          data-testid="workflow-detail-params-toggle"
-          onClick={() => setParamsOpen(prev => !prev)}
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
-          aria-expanded={paramsOpen}
-        >
-          {paramsOpen ? 'Hide' : 'Show'} Parameters ({data.parameters.length})
-        </button>
-        <div
-          data-testid="workflow-detail-params-list"
-          className="mt-2 space-y-1"
-          style={paramsOpen ? undefined : { display: 'none' }}
-        >
-          {data.parameters.map((param, i) => (
-            <div
-              key={`param-${i}`}
-              data-testid="workflow-detail-param-item"
-              className="text-sm text-gray-700"
-            >
-              <span className="font-medium">{param.name}</span>: {param.value}
-            </div>
-          ))}
+      {parameters.length > 0 && (
+        <div>
+          <button
+            data-testid="workflow-detail-params-toggle"
+            onClick={() => setParamsOpen(prev => !prev)}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            aria-expanded={paramsOpen}
+          >
+            {paramsOpen ? 'Hide' : 'Show'} Parameters ({parameters.length})
+          </button>
+          <div
+            data-testid="workflow-detail-params-list"
+            className="mt-2 space-y-1"
+            style={paramsOpen ? undefined : { display: 'none' }}
+          >
+            {parameters.map((param, i) => (
+              <div
+                key={`param-${i}`}
+                data-testid="workflow-detail-param-item"
+                className="text-sm text-gray-700"
+              >
+                <span className="font-medium">{param.name}</span>: {param.value}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Steps timeline */}
       <div data-testid="workflow-detail-steps-timeline" className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">Steps</h3>
-        {data.nodes.map((node, index) => {
+        {(data.nodes || []).map((node, index) => {
           const stepPhaseClass = getPhaseColorClass(node.phase);
+          const nodeInputs = safeIO(node.inputs);
+          const nodeOutputs = safeIO(node.outputs);
           return (
             <div
               key={`step-${index}`}
@@ -285,8 +298,8 @@ export function WorkflowDetail({ workflowName, namespace, onBack }: WorkflowDeta
 
               <StepIOPanel
                 nodeIndex={index}
-                inputs={node.inputs}
-                outputs={node.outputs}
+                inputs={nodeInputs}
+                outputs={nodeOutputs}
               />
             </div>
           );
