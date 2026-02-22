@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -14,8 +15,13 @@ import (
 // skipIfNoCluster skips the test if no Kubernetes cluster is available.
 func skipIfNoCluster(t *testing.T) {
 	t.Helper()
-	if _, err := getKubernetesClient(); err != nil {
+	client, err := getKubernetesClient()
+	if err != nil {
 		t.Skipf("skipping: no k8s cluster available (%v)", err)
+	}
+	_, err = client.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{Limit: 1})
+	if err != nil {
+		t.Skipf("skipping: k8s API server unreachable (%v)", err)
 	}
 }
 

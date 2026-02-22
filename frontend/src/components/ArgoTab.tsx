@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { fetchWorkflowTemplates, WorkflowTemplateInfo } from '../api/argo';
 import { WorkflowTemplateCard } from './WorkflowTemplateCard';
+import { SubmitModal } from './SubmitModal';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { EmptyState } from './EmptyState';
 import { ErrorRetry } from './ErrorRetry';
@@ -15,6 +17,18 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
     'Failed to fetch workflow templates',
     [namespace],
   );
+
+  const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplateInfo | null>(null);
+  const [showWorkflowRuns, setShowWorkflowRuns] = useState(false);
+
+  const handleNavigateToWorkflows = () => {
+    setSelectedTemplate(null);
+    setShowWorkflowRuns(true);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTemplate(null);
+  };
 
   return (
     <div data-testid="argo-page" className="space-y-6">
@@ -48,11 +62,27 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
               <WorkflowTemplateCard
                 key={`${template.namespace}-${template.name}`}
                 {...template}
+                onSubmit={setSelectedTemplate}
               />
             ))}
           </div>
         )}
       </div>
+
+      {showWorkflowRuns && (
+        <section data-testid="workflow-runs-page" className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">Workflow Runs</h2>
+        </section>
+      )}
+
+      {selectedTemplate !== null && (
+        <SubmitModal
+          isOpen={true}
+          onClose={handleCloseModal}
+          template={selectedTemplate}
+          onNavigateToWorkflows={handleNavigateToWorkflows}
+        />
+      )}
     </div>
   );
 }

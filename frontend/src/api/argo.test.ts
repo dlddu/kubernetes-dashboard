@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchWorkflowTemplates } from './argo';
+import { fetchWorkflowTemplates, submitWorkflow } from './argo';
 
 // Mock fetch globally with proper typing
 const mockFetch = vi.fn();
@@ -260,6 +260,231 @@ describe('Argo API', () => {
 
       // Act & Assert
       await expect(fetchWorkflowTemplates()).rejects.toThrow('Invalid JSON');
+    });
+  });
+
+  describe('submitWorkflow - happy path', () => {
+    it('should submit workflow and return created workflow name and namespace', async () => {
+      // Arrange
+      const mockResponse = {
+        name: 'data-processing-with-params-abc12',
+        namespace: 'dashboard-test',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      // Act
+      const result = await submitWorkflow('data-processing-with-params', 'dashboard-test', {
+        'input-path': '/data/input',
+        'output-path': '/data/output',
+        'batch-size': '100',
+        env: 'dev',
+      });
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflow-templates/data-processing-with-params/submit',
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(result.name).toBe('data-processing-with-params-abc12');
+      expect(result.namespace).toBe('dashboard-test');
+    });
+
+    it('should send parameters in request body as JSON', async () => {
+      // Arrange
+      const parameters = { env: 'staging', 'batch-size': '50' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'wf-xyz', namespace: 'default' }),
+      });
+
+      // Act
+      await submitWorkflow('my-template', 'default', parameters);
+
+      // Assert
+      const [, options] = mockFetch.mock.calls[0];
+      const body = JSON.parse((options as RequestInit).body as string);
+      expect(body).toEqual({ parameters });
+    });
+
+    it('should set Content-Type to application/json', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'wf-abc', namespace: 'default' }),
+      });
+
+      // Act
+      await submitWorkflow('my-template', 'default', {});
+
+      // Assert
+      const [, options] = mockFetch.mock.calls[0];
+      expect((options as RequestInit).headers).toMatchObject({
+        'Content-Type': 'application/json',
+      });
+    });
+
+    it('should accept empty parameters object', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'wf-123', namespace: 'default' }),
+      });
+
+      // Act
+      const result = await submitWorkflow('simple-template', 'default', {});
+
+      // Assert
+      expect(result.name).toBe('wf-123');
+      expect(result.namespace).toBe('default');
+    });
+
+    it('should include namespace in the URL path', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'wf-ns', namespace: 'my-namespace' }),
+      });
+
+      // Act
+      await submitWorkflow('my-template', 'my-namespace', {});
+
+      // Assert — namespace is not part of the URL but passed separately; URL uses templateName only
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflow-templates/my-template/submit',
+        expect.anything()
+      );
+    });
+
+    it('should return type-safe SubmittedWorkflow object', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'wf-typed', namespace: 'prod' }),
+      });
+
+      // Act
+      const result = await submitWorkflow('ml-training', 'prod', { 'model-type': 'resnet' });
+
+      // Assert — TypeScript compile-time check
+      const name: string = result.name;
+      const namespace: string = result.namespace;
+      expect(name).toBe('wf-typed');
+      expect(namespace).toBe('prod');
+    });
+  });
+
+  describe('submitWorkflow - error cases', () => {
+    it('should throw when template does not exist (404)', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'WorkflowTemplate not found' }),
+      });
+
+      // Act & Assert
+      await expect(
+        submitWorkflow('non-existent-template', 'default', {})
+      ).rejects.toThrow();
+    });
+
+    it('should propagate error message from 404 response', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'WorkflowTemplate not found' }),
+      });
+
+      // Act & Assert
+      await expect(
+        submitWorkflow('missing-template', 'default', {})
+      ).rejects.toThrow('WorkflowTemplate not found');
+    });
+
+    it('should throw when workflow creation fails (500)', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Internal Server Error' }),
+      });
+
+      // Act & Assert
+      await expect(
+        submitWorkflow('my-template', 'default', {})
+      ).rejects.toThrow();
+    });
+
+    it('should handle network errors gracefully', async () => {
+      // Arrange
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      // Act & Assert
+      await expect(
+        submitWorkflow('my-template', 'default', {})
+      ).rejects.toThrow('Network error');
+    });
+
+    it('should handle invalid JSON response', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => {
+          throw new Error('Invalid JSON');
+        },
+      });
+
+      // Act & Assert
+      await expect(
+        submitWorkflow('my-template', 'default', {})
+      ).rejects.toThrow('Invalid JSON');
+    });
+  });
+
+  describe('submitWorkflow - edge cases', () => {
+    it('should handle template name with hyphens', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'data-processing-abc', namespace: 'default' }),
+      });
+
+      // Act
+      await submitWorkflow('data-processing-with-params', 'default', {});
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflow-templates/data-processing-with-params/submit',
+        expect.anything()
+      );
+    });
+
+    it('should handle many parameters', async () => {
+      // Arrange
+      const manyParams: Record<string, string> = {};
+      for (let i = 0; i < 10; i++) {
+        manyParams[`param-${i}`] = `value-${i}`;
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'wf-many', namespace: 'default' }),
+      });
+
+      // Act
+      const result = await submitWorkflow('complex-template', 'default', manyParams);
+
+      // Assert
+      expect(result.name).toBe('wf-many');
+      const [, options] = mockFetch.mock.calls[0];
+      const body = JSON.parse((options as RequestInit).body as string);
+      expect(Object.keys(body.parameters)).toHaveLength(10);
     });
   });
 

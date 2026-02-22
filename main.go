@@ -39,6 +39,7 @@ func setupRouter() http.Handler {
 	mux.HandleFunc("/api/secrets/", handlers.SecretDetailHandler)
 	mux.HandleFunc("/api/secrets", handlers.SecretsHandler)
 	mux.HandleFunc("/api/argo/workflow-templates", handlers.WorkflowTemplatesHandler)
+	mux.HandleFunc("/api/argo/workflow-templates/", handlers.WorkflowSubmitHandler)
 
 	// Serve frontend static files
 	frontendHandler := createFrontendHandler()

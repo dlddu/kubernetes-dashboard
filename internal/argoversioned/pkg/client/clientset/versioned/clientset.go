@@ -130,9 +130,114 @@ func (c *workflowTemplateClient) List(ctx context.Context, _ metav1.ListOptions)
 	return &WorkflowTemplateList{Items: items}, nil
 }
 
+// Workflow represents a submitted Argo Workflow instance.
+type Workflow struct {
+	Name      string
+	Namespace string
+}
+
+// workflowAPIResponse is used to parse the raw Kubernetes API JSON response for a Workflow.
+type workflowAPIResponse struct {
+	Metadata workflowTemplateMetadata `json:"metadata"`
+}
+
+// WorkflowInterface defines the operations on Workflows.
+type WorkflowInterface interface {
+	Create(ctx context.Context, templateName string, parameters []map[string]string) (*Workflow, error)
+}
+
+// workflowClient implements WorkflowInterface using a REST client.
+type workflowClient struct {
+	restClient rest.Interface
+	namespace  string
+}
+
+// workflowCreateBody represents the JSON body for creating a Workflow from a WorkflowTemplate.
+type workflowCreateBody struct {
+	APIVersion string       `json:"apiVersion"`
+	Kind       string       `json:"kind"`
+	Metadata   wfMetadata   `json:"metadata"`
+	Spec       wfCreateSpec `json:"spec"`
+}
+
+type wfMetadata struct {
+	GenerateName string `json:"generateName"`
+	Namespace    string `json:"namespace"`
+}
+
+type wfCreateSpec struct {
+	WorkflowTemplateRef wfTemplateRef `json:"workflowTemplateRef"`
+	Arguments           wfArguments   `json:"arguments,omitempty"`
+}
+
+type wfTemplateRef struct {
+	Name string `json:"name"`
+}
+
+type wfArguments struct {
+	Parameters []wfParameter `json:"parameters,omitempty"`
+}
+
+type wfParameter struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// Create creates a new Workflow from a WorkflowTemplate.
+func (c *workflowClient) Create(ctx context.Context, templateName string, parameters []map[string]string) (*Workflow, error) {
+	path := fmt.Sprintf("/apis/argoproj.io/v1alpha1/namespaces/%s/workflows", c.namespace)
+
+	params := make([]wfParameter, 0, len(parameters))
+	for _, p := range parameters {
+		params = append(params, wfParameter{
+			Name:  p["name"],
+			Value: p["value"],
+		})
+	}
+
+	body := workflowCreateBody{
+		APIVersion: "argoproj.io/v1alpha1",
+		Kind:       "Workflow",
+		Metadata: wfMetadata{
+			GenerateName: templateName + "-",
+			Namespace:    c.namespace,
+		},
+		Spec: wfCreateSpec{
+			WorkflowTemplateRef: wfTemplateRef{
+				Name: templateName,
+			},
+			Arguments: wfArguments{
+				Parameters: params,
+			},
+		},
+	}
+
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal workflow create request: %w", err)
+	}
+
+	result := c.restClient.Post().AbsPath(path).Body(bodyBytes).Do(ctx)
+	raw, err := result.Raw()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Workflow: %w", err)
+	}
+
+	var apiResponse workflowAPIResponse
+	if err := json.Unmarshal(raw, &apiResponse); err != nil {
+		return nil, fmt.Errorf("failed to parse Workflow create response: %w", err)
+	}
+
+	return &Workflow{
+		Name:      apiResponse.Metadata.Name,
+		Namespace: apiResponse.Metadata.Namespace,
+	}, nil
+}
+
 // ArgoprojV1alpha1Interface defines the Argo Proj V1alpha1 API group.
 type ArgoprojV1alpha1Interface interface {
 	WorkflowTemplates(namespace string) WorkflowTemplateInterface
+	Workflows(namespace string) WorkflowInterface
 }
 
 // argoprojV1alpha1Client implements ArgoprojV1alpha1Interface.
@@ -143,6 +248,11 @@ type argoprojV1alpha1Client struct {
 // WorkflowTemplates returns a WorkflowTemplateInterface for the given namespace.
 func (c *argoprojV1alpha1Client) WorkflowTemplates(namespace string) WorkflowTemplateInterface {
 	return &workflowTemplateClient{restClient: c.restClient, namespace: namespace}
+}
+
+// Workflows returns a WorkflowInterface for the given namespace.
+func (c *argoprojV1alpha1Client) Workflows(namespace string) WorkflowInterface {
+	return &workflowClient{restClient: c.restClient, namespace: namespace}
 }
 
 // Clientset implements a minimal Argo Workflows clientset.
