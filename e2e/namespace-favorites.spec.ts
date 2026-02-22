@@ -261,3 +261,194 @@ test.describe.skip('Namespace Favorites - Accessibility', () => {
     await expect(favoriteToggle).toHaveAttribute('aria-pressed', 'true');
   });
 });
+
+// TODO: Activate when favorites toggle UI is implemented (DLD-455)
+test.describe.skip('Namespace Favorites - Toggle Behavior', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await clearFavorites(page);
+  });
+
+  test.afterEach(async ({ page }) => {
+    await clearFavorites(page);
+  });
+
+  test('should display Favorites section header and All section header when favorites exist', async ({ page }) => {
+    // Tests that opening the dropdown with existing favorites renders both section headers
+
+    // Arrange: Seed a favorite and reload so the UI reads from localStorage
+    await setFavorites(page, ['default']);
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Act: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: The listbox is visible
+    const listbox = page.getByRole('listbox');
+    await expect(listbox).toBeVisible();
+
+    // Assert: Favorites section header is visible
+    const favoritesHeader = page.getByTestId('namespace-favorites-header').or(
+      listbox.getByText(/⭐\s*Favorites/i)
+    );
+    await expect(favoritesHeader).toBeVisible();
+
+    // Assert: All section header is visible
+    const allHeader = page.getByTestId('namespace-all-header').or(
+      listbox.getByText(/^All$/i)
+    );
+    await expect(allHeader).toBeVisible();
+  });
+
+  test('should move namespace to Favorites section when star icon is clicked', async ({ page }) => {
+    // Tests that clicking ⭐ on a namespace with no existing favorites adds it to the Favorites section
+
+    // Arrange: Ensure no favorites exist and open the dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: Favorites section is not yet visible before toggling
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    await expect(favoritesSection).not.toBeVisible();
+
+    // Act: Click the favorite toggle on the "default" namespace option
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const favoriteToggle = defaultOption.getByTestId('namespace-favorite-toggle');
+    await favoriteToggle.click();
+
+    // Assert: Favorites section is now visible
+    await expect(favoritesSection).toBeVisible();
+
+    // Assert: "default" namespace appears in the Favorites section
+    await expect(favoritesSection.getByTestId('namespace-favorite-item-default')).toBeVisible();
+  });
+
+  test('should remove namespace from Favorites section and restore it to All section when star is clicked again', async ({ page }) => {
+    // Tests that clicking ⭐ on an already-favorited namespace removes it from Favorites and it reappears in All
+
+    // Arrange: Seed "default" as an existing favorite and reload
+    await setFavorites(page, ['default']);
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Act: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: "default" is currently in the Favorites section
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    await expect(favoritesSection.getByTestId('namespace-favorite-item-default')).toBeVisible();
+
+    // Act: Click the active favorite toggle to remove it
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const favoriteToggle = defaultOption.getByTestId('namespace-favorite-toggle');
+    await favoriteToggle.click();
+
+    // Assert: "default" is no longer in the Favorites section
+    await expect(favoritesSection.getByTestId('namespace-favorite-item-default')).not.toBeVisible();
+
+    // Assert: "default" namespace option is still visible in the All section
+    await expect(defaultOption).toBeVisible();
+  });
+
+  test('should keep dropdown open after clicking the star icon', async ({ page }) => {
+    // Tests that clicking ⭐ does not close the dropdown (favorite toggle is independent of namespace selection)
+
+    // Arrange: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    const listbox = page.getByRole('listbox');
+    await expect(listbox).toBeVisible();
+
+    // Act: Click the favorite toggle on the "default" namespace option
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const favoriteToggle = defaultOption.getByTestId('namespace-favorite-toggle');
+    await favoriteToggle.click();
+
+    // Assert: Dropdown listbox is still visible after clicking ⭐
+    await expect(listbox).toBeVisible();
+  });
+
+  test('should select namespace and close dropdown when namespace text is clicked', async ({ page }) => {
+    // Tests that clicking the namespace label/text selects the namespace and closes the dropdown (existing behavior unchanged)
+
+    // Arrange: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    const listbox = page.getByRole('listbox');
+    await expect(listbox).toBeVisible();
+
+    // Act: Click the text/label area of the "default" namespace option (not the star icon)
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const optionLabel = defaultOption.getByTestId('namespace-option-label-default').or(
+      defaultOption.getByText(/^default$/i)
+    );
+    await optionLabel.click();
+
+    // Assert: The namespace selector now shows "default" as selected
+    await expect(namespaceSelector).toContainText(/^default$/i);
+
+    // Assert: Dropdown listbox is closed after selection
+    await expect(listbox).not.toBeVisible();
+  });
+
+  test('should persist favorites in localStorage and restore them after page reload', async ({ page }) => {
+    // Tests that favorites written via the UI are stored in localStorage and survive a full page reload
+
+    // Arrange: Open the dropdown and click ⭐ on "default" to add it as a favorite
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const favoriteToggle = defaultOption.getByTestId('namespace-favorite-toggle');
+    await favoriteToggle.click();
+
+    // Assert: localStorage contains "default" in favorites before reload
+    const storedBefore = await page.evaluate(() => localStorage.getItem('namespace-favorites'));
+    expect(JSON.parse(storedBefore ?? '[]')).toContain('default');
+
+    // Act: Reload the page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: localStorage still contains "default" after reload
+    const storedAfter = await page.evaluate(() => localStorage.getItem('namespace-favorites'));
+    expect(JSON.parse(storedAfter ?? '[]')).toContain('default');
+
+    // Assert: Favorites section is visible with "default" after reload
+    const namespaceSelector2 = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector2.click();
+
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    await expect(favoritesSection).toBeVisible();
+    await expect(favoritesSection.getByTestId('namespace-favorite-item-default')).toBeVisible();
+  });
+
+  test('should not display favorites that do not exist in the actual namespace list', async ({ page }) => {
+    // Tests that a namespace stored in localStorage favorites but absent from the cluster is not shown in the UI
+
+    // Arrange: Seed a non-existent namespace into favorites and reload
+    await setFavorites(page, ['non-existent-namespace-xyz']);
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Act: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: The stale/non-existent namespace is not rendered in the Favorites section
+    const staleItem = page.getByTestId('namespace-favorite-item-non-existent-namespace-xyz');
+    await expect(staleItem).not.toBeVisible();
+
+    // Assert: No broken/empty favorite entry is displayed
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    const favoriteItems = favoritesSection.getByTestId(/^namespace-favorite-item-/);
+    const renderedCount = await favoriteItems.count();
+    expect(renderedCount).toBe(0);
+  });
+});
