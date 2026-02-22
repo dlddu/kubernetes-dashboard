@@ -638,7 +638,28 @@ describe('NamespaceSelector', () => {
       });
     });
 
-    it('should not render Favorites section when no favorites are set', async () => {
+    it('should render Favorites section even when no favorites are set', async () => {
+      // Arrange - The section is always rendered (shows hint when empty)
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - section is always present in the DOM
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorites-section')).toBeInTheDocument();
+      });
+    });
+
+    it('should render Favorites section header even when no favorites are set', async () => {
       // Arrange
       localStorage.removeItem('namespace-favorites');
       vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
@@ -653,9 +674,9 @@ describe('NamespaceSelector', () => {
       const selector = screen.getByRole('combobox');
       fireEvent.click(selector);
 
-      // Assert
+      // Assert - header is visible inside the always-rendered favorites section
       await waitFor(() => {
-        expect(screen.queryByTestId('namespace-favorites-section')).not.toBeInTheDocument();
+        expect(screen.getByTestId('namespace-favorites-header')).toBeInTheDocument();
       });
     });
 
@@ -1095,9 +1116,9 @@ describe('NamespaceSelector', () => {
       const selector = screen.getByRole('combobox');
       fireEvent.click(selector);
 
-      // Assert - no favorites section, standard empty message shown
+      // Assert - favorites section is still rendered (shows hint), standard empty message also shown
       await waitFor(() => {
-        expect(screen.queryByTestId('namespace-favorites-section')).not.toBeInTheDocument();
+        expect(screen.getByTestId('namespace-favorites-section')).toBeInTheDocument();
         expect(screen.getByText(/no namespaces available/i)).toBeInTheDocument();
       });
     });
@@ -1160,6 +1181,211 @@ describe('NamespaceSelector', () => {
           .find((el) => allSection.contains(el));
         expect(allSectionOptionDefault).toBeUndefined();
         expect(allSectionOptionProduction).toBeUndefined();
+      });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Empty state hint tests (TDD Red Phase – DLD-457)
+  // ---------------------------------------------------------------------------
+
+  describe('favorites - empty state hint', () => {
+    it('should render the hint element when favorites list is empty', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
+      });
+    });
+
+    it('should not render the hint element when favorites list has items', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - hint must be absent when there is at least one favorite
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-favorites-hint')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should place the hint inside the namespace-favorites-section element', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - hint is a descendant of the favorites section
+      await waitFor(() => {
+        const section = screen.getByTestId('namespace-favorites-section');
+        const hint = screen.getByTestId('namespace-favorites-hint');
+        expect(section).toContainElement(hint);
+      });
+    });
+
+    it('should apply text-sm, text-gray-400, and italic style classes to the hint', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        const hint = screen.getByTestId('namespace-favorites-hint');
+        expect(hint).toHaveClass('text-sm');
+        expect(hint).toHaveClass('text-gray-400');
+        expect(hint).toHaveClass('italic');
+      });
+    });
+
+    it('should contain the star emoji ⭐ (U+2B50) in the hint text', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - hint must mention the ⭐ icon so users know what to click
+      await waitFor(() => {
+        const hint = screen.getByTestId('namespace-favorites-hint');
+        expect(hint.textContent?.includes('\u2B50')).toBe(true);
+      });
+    });
+
+    it('should hide the hint after the first namespace is added to favorites', async () => {
+      // Arrange - no favorites initially
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Confirm hint is visible before toggling
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
+      });
+
+      // Act - toggle 'default' as favorite
+      const defaultOption = screen.getByTestId('namespace-option-default');
+      const toggle = defaultOption.querySelector(
+        '[data-testid="namespace-favorite-toggle"]'
+      ) as HTMLElement;
+      fireEvent.click(toggle);
+
+      // Assert - hint disappears once a favorite exists
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-favorites-hint')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should show the hint again after the last favorite is removed', async () => {
+      // Arrange - one favorite already set
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Confirm hint is absent while favorites exist
+      await waitFor(() => {
+        expect(screen.queryAllByTestId('namespace-favorites-hint')).toHaveLength(0);
+      });
+
+      // Act - remove the only favorite by clicking its toggle in the favorites section
+      const favItem = screen.getByTestId('namespace-favorite-item-default');
+      const toggle = favItem.querySelector(
+        '[data-testid="namespace-favorite-toggle"]'
+      ) as HTMLElement;
+      fireEvent.click(toggle);
+
+      // Assert - hint reappears when the list becomes empty again
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
+      });
+    });
+
+    it('should render the Favorites section header alongside the hint when no favorites exist', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - both the section header and the hint are present at the same time
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorites-header')).toBeInTheDocument();
+        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
       });
     });
   });
