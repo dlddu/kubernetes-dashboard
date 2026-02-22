@@ -121,9 +121,9 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
             >
               <div className="relative">
                 {tab.icon}
-                {tab.id === 'pods' && shouldShowBadge && (
+                {tab.id === 'overview' && shouldShowBadge && (
                   <span
-                    data-testid="pods-badge"
+                    data-testid="overview-badge"
                     aria-label={`${unhealthyPodCount} unhealthy pods`}
                     className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"
                   >
