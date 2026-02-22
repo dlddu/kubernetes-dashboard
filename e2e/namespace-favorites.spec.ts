@@ -597,11 +597,7 @@ test.describe('Namespace Favorites - Empty State Hint (Mobile)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// TODO: Activate when DLD-459 (반응형 ⭐ 아이콘) is implemented
-// ---------------------------------------------------------------------------
-
-test.describe.skip('Namespace Favorites - Responsive Star Icon (Desktop)', () => {
+test.describe('Namespace Favorites - Responsive Star Icon (Desktop)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
@@ -681,7 +677,7 @@ test.describe.skip('Namespace Favorites - Responsive Star Icon (Desktop)', () =>
   });
 });
 
-test.describe.skip('Namespace Favorites - Responsive Star Icon (Mobile)', () => {
+test.describe('Namespace Favorites - Responsive Star Icon (Mobile)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
     await page.goto('/');

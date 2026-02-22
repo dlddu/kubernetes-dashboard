@@ -242,7 +242,7 @@ export function NamespaceSelector() {
                         e.stopPropagation();
                         toggleFavorite(ns);
                       }}
-                      className="mr-2 text-yellow-400 hover:text-yellow-500 focus:outline-none"
+                      className="mr-2 text-yellow-400 hover:text-yellow-500 focus:outline-none opacity-100"
                     >
                       <span aria-hidden="true">★</span>
                     </button>
@@ -276,7 +276,7 @@ export function NamespaceSelector() {
                   aria-selected={selectedNamespace === ns}
                   aria-label={ns}
                   onClick={() => handleSelect(ns)}
-                  className={`flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                  className={`group flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
                     selectedNamespace === ns ? 'bg-blue-50' : ''
                   }`}
                 >
@@ -289,7 +289,7 @@ export function NamespaceSelector() {
                       e.stopPropagation();
                       toggleFavorite(ns);
                     }}
-                    className="mr-2 text-gray-300 hover:text-yellow-400 focus:outline-none"
+                    className="mr-2 text-gray-300 hover:text-yellow-400 focus:outline-none opacity-100 md:opacity-0 md:group-hover:opacity-100"
                   >
                     <span aria-hidden="true">☆</span>
                   </button>
