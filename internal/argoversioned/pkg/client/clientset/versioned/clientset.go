@@ -136,14 +136,68 @@ type Workflow struct {
 	Namespace string
 }
 
+// WorkflowNode represents a single node (step) in a Workflow execution.
+type WorkflowNode struct {
+	Name  string
+	Phase string
+}
+
+// WorkflowFull represents a full Argo Workflow with execution details.
+type WorkflowFull struct {
+	Name         string
+	Namespace    string
+	TemplateName string
+	Phase        string
+	StartedAt    string
+	FinishedAt   string
+	Nodes        []WorkflowNode
+}
+
+// WorkflowList represents a list of WorkflowFull objects.
+type WorkflowList struct {
+	Items []WorkflowFull
+}
+
 // workflowAPIResponse is used to parse the raw Kubernetes API JSON response for a Workflow.
 type workflowAPIResponse struct {
 	Metadata workflowTemplateMetadata `json:"metadata"`
 }
 
+// workflowListAPIResponse is used to parse the raw Kubernetes API JSON response for a Workflow list.
+type workflowListAPIResponse struct {
+	Items []workflowListAPIItem `json:"items"`
+}
+
+type workflowListAPIItem struct {
+	Metadata workflowTemplateMetadata `json:"metadata"`
+	Spec     workflowListSpecAPI      `json:"spec"`
+	Status   workflowListStatusAPI    `json:"status"`
+}
+
+type workflowListSpecAPI struct {
+	WorkflowTemplateRef workflowListTemplateRef `json:"workflowTemplateRef"`
+}
+
+type workflowListTemplateRef struct {
+	Name string `json:"name"`
+}
+
+type workflowListStatusAPI struct {
+	Phase      string                        `json:"phase"`
+	StartedAt  string                        `json:"startedAt"`
+	FinishedAt string                        `json:"finishedAt"`
+	Nodes      map[string]workflowNodeAPI    `json:"nodes"`
+}
+
+type workflowNodeAPI struct {
+	DisplayName string `json:"displayName"`
+	Phase       string `json:"phase"`
+}
+
 // WorkflowInterface defines the operations on Workflows.
 type WorkflowInterface interface {
 	Create(ctx context.Context, templateName string, parameters []map[string]string) (*Workflow, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*WorkflowList, error)
 }
 
 // workflowClient implements WorkflowInterface using a REST client.
@@ -181,6 +235,50 @@ type wfArguments struct {
 type wfParameter struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
+}
+
+// List retrieves Workflows from the Kubernetes API.
+func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*WorkflowList, error) {
+	var path string
+	if c.namespace != "" {
+		path = fmt.Sprintf("/apis/argoproj.io/v1alpha1/namespaces/%s/workflows", c.namespace)
+	} else {
+		path = "/apis/argoproj.io/v1alpha1/workflows"
+	}
+
+	result := c.restClient.Get().AbsPath(path).Do(ctx)
+	raw, err := result.Raw()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list Workflows: %w", err)
+	}
+
+	var apiResponse workflowListAPIResponse
+	if err := json.Unmarshal(raw, &apiResponse); err != nil {
+		return nil, fmt.Errorf("failed to parse Workflows response: %w", err)
+	}
+
+	items := make([]WorkflowFull, 0, len(apiResponse.Items))
+	for _, item := range apiResponse.Items {
+		nodes := make([]WorkflowNode, 0, len(item.Status.Nodes))
+		for _, node := range item.Status.Nodes {
+			nodes = append(nodes, WorkflowNode{
+				Name:  node.DisplayName,
+				Phase: node.Phase,
+			})
+		}
+
+		items = append(items, WorkflowFull{
+			Name:         item.Metadata.Name,
+			Namespace:    item.Metadata.Namespace,
+			TemplateName: item.Spec.WorkflowTemplateRef.Name,
+			Phase:        item.Status.Phase,
+			StartedAt:    item.Status.StartedAt,
+			FinishedAt:   item.Status.FinishedAt,
+			Nodes:        nodes,
+		})
+	}
+
+	return &WorkflowList{Items: items}, nil
 }
 
 // Create creates a new Workflow from a WorkflowTemplate.

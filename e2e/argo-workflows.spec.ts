@@ -35,7 +35,8 @@ const WORKFLOWS_FIXTURE = [
     phase: 'Running',
     templateName: 'data-processing',
     startedAt: '2026-02-22T07:00:00Z',
-    steps: [
+    finishedAt: '',
+    nodes: [
       { name: 'step-one', phase: 'Succeeded' },
       { name: 'step-two', phase: 'Running' },
       { name: 'step-three', phase: 'Pending' },
@@ -47,7 +48,8 @@ const WORKFLOWS_FIXTURE = [
     phase: 'Succeeded',
     templateName: 'data-processing',
     startedAt: '2026-02-22T06:00:00Z',
-    steps: [
+    finishedAt: '2026-02-22T06:30:00Z',
+    nodes: [
       { name: 'step-one', phase: 'Succeeded' },
       { name: 'step-two', phase: 'Succeeded' },
     ],
@@ -58,7 +60,8 @@ const WORKFLOWS_FIXTURE = [
     phase: 'Failed',
     templateName: 'data-processing',
     startedAt: '2026-02-22T05:00:00Z',
-    steps: [
+    finishedAt: '2026-02-22T05:45:00Z',
+    nodes: [
       { name: 'step-one', phase: 'Succeeded' },
       { name: 'step-two', phase: 'Failed' },
       { name: 'step-three', phase: 'Omitted' },
@@ -112,8 +115,7 @@ async function findWorkflowCardByName(
 // Group 1: Basic Rendering (테스트 1, 2)
 // ---------------------------------------------------------------------------
 
-// TODO: Activate when DLD-442 (Workflow 목록 조회) is implemented
-test.describe.skip('Argo Tab - Workflow List - Basic Rendering', () => {
+test.describe('Argo Tab - Workflow List - Basic Rendering', () => {
   test.beforeEach(async ({ page }) => {
     // Mock the workflows API so tests are not reliant on cluster state
     await page.route('**/api/argo/workflows**', async route => {
@@ -181,8 +183,7 @@ test.describe.skip('Argo Tab - Workflow List - Basic Rendering', () => {
 // Group 2: Phase Badge & Step Preview (테스트 3, 4)
 // ---------------------------------------------------------------------------
 
-// TODO: Activate when DLD-442 (Workflow 목록 조회) is implemented
-test.describe.skip('Argo Tab - Workflow List - Phase Badge & Step Preview', () => {
+test.describe('Argo Tab - Workflow List - Phase Badge & Step Preview', () => {
   test.beforeEach(async ({ page }) => {
     // Mock the workflows API so tests are not reliant on cluster state
     await page.route('**/api/argo/workflows**', async route => {
@@ -275,8 +276,7 @@ test.describe.skip('Argo Tab - Workflow List - Phase Badge & Step Preview', () =
 // Group 3: Namespace Filtering (테스트 5)
 // ---------------------------------------------------------------------------
 
-// TODO: Activate when DLD-442 (Workflow 목록 조회) is implemented
-test.describe.skip('Argo Tab - Workflow List - Namespace Filtering', () => {
+test.describe('Argo Tab - Workflow List - Namespace Filtering', () => {
   test('should display only workflows for the selected namespace when namespace filter is applied', async ({ page }) => {
     // Tests that the namespace selector filters the displayed workflow runs
 
@@ -327,8 +327,7 @@ test.describe.skip('Argo Tab - Workflow List - Namespace Filtering', () => {
 // Group 4: Loading, Empty & Error States (테스트 6, 7, 8)
 // ---------------------------------------------------------------------------
 
-// TODO: Activate when DLD-442 (Workflow 목록 조회) is implemented
-test.describe.skip('Argo Tab - Workflow List - Loading, Empty & Error States', () => {
+test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => {
   test('should display LoadingSkeleton while workflows are being fetched', async ({ page }) => {
     // Tests that LoadingSkeleton with aria-busy="true" is shown during the API request
 
