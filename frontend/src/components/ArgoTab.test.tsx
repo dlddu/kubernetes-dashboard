@@ -734,12 +734,9 @@ describe('ArgoTab Component', () => {
 
       // Assert: loading skeleton should appear inside the runs page
       await waitFor(() => {
-        const workflowRunsPage = screen.getByTestId('workflow-runs-page');
-        expect(workflowRunsPage).toBeInTheDocument();
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+        expect(screen.getByTestId('loading-skeleton')).toBeInTheDocument();
       });
-
-      const loadingSkeleton = screen.getByTestId('loading-skeleton');
-      expect(loadingSkeleton).toBeInTheDocument();
     });
   });
 });
