@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: data-processing-succeeded
+  namespace: dashboard-test
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: step-one
+            template: process
+        - - name: step-two
+            template: process
+    - name: process
+      container:
+        image: busybox
+        command: [echo, "processing"]
+status:
+  phase: Succeeded
+  nodes:
+    data-processing-succeeded:
+      id: data-processing-succeeded
+      name: data-processing-succeeded
+      type: Steps
+      phase: Succeeded
+      inputs:
+        parameters:
+          - name: input-path
+            value: /data/input
+        artifacts: []
+      outputs:
+        parameters:
+          - name: result
+            value: completed
+        artifacts: []
+    data-processing-succeeded-step-one:
+      id: data-processing-succeeded-step-one
+      name: data-processing-succeeded[0].step-one
+      type: Pod
+      phase: Succeeded
+      inputs:
+        parameters:
+          - name: input-path
+            value: /data/input
+        artifacts: []
+      outputs:
+        parameters:
+          - name: result
+            value: done
+        artifacts: []
+    data-processing-succeeded-step-two:
+      id: data-processing-succeeded-step-two
+      name: data-processing-succeeded[1].step-two
+      type: Pod
+      phase: Succeeded
+      inputs:
+        parameters:
+          - name: input-path
+            value: /data/output
+        artifacts: []
+      outputs:
+        parameters:
+          - name: result
+            value: done
+        artifacts: []

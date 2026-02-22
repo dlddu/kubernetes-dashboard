@@ -46,7 +46,11 @@ test.describe('LoadingSkeleton Component - Overview Tab', () => {
     // Arrange: Delay API responses so loading skeleton stays visible long enough to test
     await page.route('**/api/**', async (route) => {
       await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.continue();
+      try {
+        await route.continue();
+      } catch {
+        // Route may have been already handled by navigation or page close
+      }
     });
 
     // Act: Navigate to the Overview page
