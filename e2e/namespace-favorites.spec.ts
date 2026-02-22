@@ -16,8 +16,7 @@ import { setFavorites, clearFavorites } from './helpers/favorites-setup';
  * Related Issue: DLD-453 - e2e 테스트 환경 준비
  */
 
-// TODO: Activate when FavoritesContext and favorites UI are implemented
-test.describe.skip('Namespace Favorites - Happy Path', () => {
+test.describe('Namespace Favorites - Happy Path', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -119,8 +118,7 @@ test.describe.skip('Namespace Favorites - Happy Path', () => {
   });
 });
 
-// TODO: Activate when FavoritesContext and favorites UI are implemented
-test.describe.skip('Namespace Favorites - Edge Cases', () => {
+test.describe('Namespace Favorites - Edge Cases', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -213,8 +211,7 @@ test.describe.skip('Namespace Favorites - Edge Cases', () => {
   });
 });
 
-// TODO: Activate when FavoritesContext and favorites UI are implemented
-test.describe.skip('Namespace Favorites - Accessibility', () => {
+test.describe('Namespace Favorites - Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -262,8 +259,7 @@ test.describe.skip('Namespace Favorites - Accessibility', () => {
   });
 });
 
-// TODO: Activate when favorites toggle UI is implemented (DLD-455)
-test.describe.skip('Namespace Favorites - Toggle Behavior', () => {
+test.describe('Namespace Favorites - Toggle Behavior', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');

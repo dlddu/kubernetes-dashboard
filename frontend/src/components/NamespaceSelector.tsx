@@ -1,14 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { fetchNamespaces } from '../api/namespaces';
 import { useNamespace } from '../contexts/NamespaceContext';
+import { FavoritesContext } from '../contexts/FavoritesContext';
 
 export function NamespaceSelector() {
   const { selectedNamespace, setSelectedNamespace } = useNamespace();
+  const favoritesCtx = useContext(FavoritesContext);
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const favorites: string[] = favoritesCtx?.favorites ?? [];
+  const isFavorite = (ns: string) => favoritesCtx?.isFavorite(ns) ?? false;
+  const toggleFavorite = (ns: string) => favoritesCtx?.toggleFavorite(ns);
+
+  // favorites ∩ namespaces
+  const favoriteNamespaces = favorites.filter((f) => namespaces.includes(f));
+  // namespaces - favorites
+  const nonFavoriteNamespaces = namespaces.filter((ns) => !favorites.includes(ns));
 
   const loadNamespaces = async () => {
     setIsLoading(true);
@@ -115,6 +126,8 @@ export function NamespaceSelector() {
     );
   }
 
+  const hasFavorites = favoriteNamespaces.length > 0;
+
   return (
     <div data-testid="namespace-selector" className="relative" ref={dropdownRef}>
       <div className="relative">
@@ -153,6 +166,7 @@ export function NamespaceSelector() {
           data-testid="namespace-dropdown-menu"
           className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-auto"
         >
+          {/* All Namespaces option */}
           <div
             role="option"
             data-testid="namespace-option-all"
@@ -162,6 +176,7 @@ export function NamespaceSelector() {
           >
             All Namespaces
           </div>
+
           {namespaces.length === 0 && (
             <div
               data-testid="namespace-empty-message"
@@ -170,20 +185,96 @@ export function NamespaceSelector() {
               No namespaces available
             </div>
           )}
-          {namespaces.map((ns) => (
-            <div
-              key={ns}
-              role="option"
-              data-testid={`namespace-option-${ns}`}
-              aria-selected={selectedNamespace === ns}
-              onClick={() => handleSelect(ns)}
-              className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
-                selectedNamespace === ns ? 'bg-blue-50' : ''
-              }`}
-            >
-              {ns}
+
+          {/* Favorites section */}
+          {hasFavorites && (
+            <div data-testid="namespace-favorites-section">
+              <div
+                data-testid="namespace-favorites-header"
+                className="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-t border-gray-200"
+              >
+                Favorites
+              </div>
+              {favoriteNamespaces.map((ns) => (
+                <div
+                  key={`favorite-${ns}`}
+                  data-testid={`namespace-favorite-item-${ns}`}
+                  role="option"
+                  aria-selected={selectedNamespace === ns}
+                  aria-label={ns}
+                  className={`flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                    selectedNamespace === ns ? 'bg-blue-50' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    data-testid="namespace-favorite-toggle"
+                    aria-pressed={isFavorite(ns)}
+                    aria-label={`Toggle favorite ${ns}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(ns);
+                    }}
+                    className="mr-2 text-yellow-400 hover:text-yellow-500 focus:outline-none"
+                  >
+                    <span aria-hidden="true">★</span>
+                  </button>
+                  <span
+                    data-testid={`namespace-option-label-${ns}`}
+                    className="flex-1 cursor-pointer"
+                    onClick={() => handleSelect(ns)}
+                  >
+                    {ns}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {/* All section */}
+          {namespaces.length > 0 && (
+            <div>
+              <div
+                data-testid="namespace-all-header"
+                className="px-4 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-t border-gray-200"
+              >
+                All
+              </div>
+              {nonFavoriteNamespaces.map((ns) => (
+                <div
+                  key={ns}
+                  role="option"
+                  data-testid={`namespace-option-${ns}`}
+                  aria-selected={selectedNamespace === ns}
+                  aria-label={ns}
+                  className={`flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                    selectedNamespace === ns ? 'bg-blue-50' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    data-testid="namespace-favorite-toggle"
+                    aria-pressed={isFavorite(ns)}
+                    aria-label={`Toggle favorite ${ns}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(ns);
+                    }}
+                    className="mr-2 text-gray-300 hover:text-yellow-400 focus:outline-none"
+                  >
+                    <span aria-hidden="true">☆</span>
+                  </button>
+                  <span
+                    data-testid={`namespace-option-label-${ns}`}
+                    className="flex-1 cursor-pointer"
+                    onClick={() => handleSelect(ns)}
+                  >
+                    {ns}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -2,19 +2,30 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NamespaceSelector } from './NamespaceSelector';
 import { NamespaceProvider } from '../contexts/NamespaceContext';
+import { FavoritesProvider } from '../contexts/FavoritesContext';
 import * as namespacesApi from '../api/namespaces';
 
 // Mock the namespaces API
 vi.mock('../api/namespaces');
 
-// Helper to render with NamespaceProvider
+// Helper to render with NamespaceProvider only
 const renderWithProvider = (ui: React.ReactElement) => {
   return render(<NamespaceProvider>{ui}</NamespaceProvider>);
+};
+
+// Helper to render with both NamespaceProvider and FavoritesProvider
+const renderWithFavoritesProvider = (ui: React.ReactElement) => {
+  return render(
+    <FavoritesProvider>
+      <NamespaceProvider>{ui}</NamespaceProvider>
+    </FavoritesProvider>
+  );
 };
 
 describe('NamespaceSelector', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    localStorage.clear();
   });
 
   describe('rendering - happy path', () => {
@@ -596,6 +607,551 @@ describe('NamespaceSelector', () => {
       await waitFor(() => {
         const dropdown = screen.getByRole('listbox');
         expect(dropdown).toBeVisible();
+      });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Favorites feature tests (TDD Red Phase)
+  // ---------------------------------------------------------------------------
+
+  describe('favorites - dropdown section structure', () => {
+    it('should render Favorites section and All section headers when favorites exist', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorites-header')).toBeInTheDocument();
+        expect(screen.getByTestId('namespace-all-header')).toBeInTheDocument();
+      });
+    });
+
+    it('should not render Favorites section when no favorites are set', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-favorites-section')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should render "All Namespaces" option at the top of the dropdown', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-option-all')).toBeInTheDocument();
+      });
+    });
+
+    it('should apply bg-gray-50 style class to section label headers', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        const favoritesHeader = screen.getByTestId('namespace-favorites-header');
+        const allHeader = screen.getByTestId('namespace-all-header');
+        expect(favoritesHeader).toHaveClass('bg-gray-50');
+        expect(allHeader).toHaveClass('bg-gray-50');
+      });
+    });
+  });
+
+  describe('favorites - section content', () => {
+    it('should display only favorites that actually exist in the namespace list', async () => {
+      // Arrange - 'ghost-ns' does not exist in the fetched namespaces
+      localStorage.setItem(
+        'namespace-favorites',
+        JSON.stringify(['default', 'ghost-ns'])
+      );
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - existing favorite is shown, non-existent one is not
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorite-item-default')).toBeInTheDocument();
+        expect(screen.queryByTestId('namespace-favorite-item-ghost-ns')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should display non-favorited namespaces in the All section', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production', 'staging']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - 'production' and 'staging' appear in All section; 'default' does not
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-option-production')).toBeInTheDocument();
+        expect(screen.getByTestId('namespace-option-staging')).toBeInTheDocument();
+      });
+    });
+
+    it('should not show a favorited namespace in the All section', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - 'default' is favorited so it must not appear in the All section
+      await waitFor(() => {
+        const allSection = screen.getByTestId('namespace-all-header').parentElement;
+        expect(allSection).not.toBeNull();
+        // namespace-option-default should either not be in the document or be inside favorites section only
+        const allSectionOption = screen
+          .queryAllByTestId('namespace-option-default')
+          .find((el) => allSection!.contains(el));
+        expect(allSectionOption).toBeUndefined();
+      });
+    });
+
+    it('should render favorite items with correct data-testid pattern', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default', 'kube-system']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue([
+        'default',
+        'kube-system',
+        'production',
+      ]);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorite-item-default')).toBeInTheDocument();
+        expect(screen.getByTestId('namespace-favorite-item-kube-system')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('favorites - star toggle button', () => {
+    it('should render a star toggle button for each namespace option in the All section', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - each namespace option contains a favorite toggle button
+      await waitFor(() => {
+        const defaultOption = screen.getByTestId('namespace-option-default');
+        const productionOption = screen.getByTestId('namespace-option-production');
+        expect(
+          defaultOption.querySelector('[data-testid="namespace-favorite-toggle"]')
+        ).toBeInTheDocument();
+        expect(
+          productionOption.querySelector('[data-testid="namespace-favorite-toggle"]')
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('should set aria-pressed="false" on toggle when namespace is not favorited', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        const defaultOption = screen.getByTestId('namespace-option-default');
+        const toggle = defaultOption.querySelector('[data-testid="namespace-favorite-toggle"]');
+        expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      });
+    });
+
+    it('should set aria-pressed="true" on toggle when namespace is already favorited', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown; 'default' lives in the Favorites section so we check there
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - the toggle inside the favorites-section item for 'default' is pressed
+      await waitFor(() => {
+        const favItem = screen.getByTestId('namespace-favorite-item-default');
+        const toggle = favItem.querySelector('[data-testid="namespace-favorite-toggle"]');
+        expect(toggle).toHaveAttribute('aria-pressed', 'true');
+      });
+    });
+
+    it('should have an aria-label containing "favorite" on the toggle button', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert
+      await waitFor(() => {
+        const defaultOption = screen.getByTestId('namespace-option-default');
+        const toggle = defaultOption.querySelector('[data-testid="namespace-favorite-toggle"]');
+        expect(toggle).toHaveAttribute('aria-label', expect.stringMatching(/favorite/i));
+      });
+    });
+  });
+
+  describe('favorites - toggle interaction', () => {
+    it('should call toggleFavorite and add namespace to favorites when star button is clicked', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown and click the toggle for 'default'
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-option-default')).toBeInTheDocument();
+      });
+
+      const defaultOption = screen.getByTestId('namespace-option-default');
+      const toggle = defaultOption.querySelector(
+        '[data-testid="namespace-favorite-toggle"]'
+      ) as HTMLElement;
+      fireEvent.click(toggle);
+
+      // Assert - localStorage is updated
+      await waitFor(() => {
+        const stored = JSON.parse(localStorage.getItem('namespace-favorites') ?? '[]');
+        expect(stored).toContain('default');
+      });
+    });
+
+    it('should remove namespace from favorites when star is clicked on an already-favorited item', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['default']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown and click the toggle inside the favorites section item
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorite-item-default')).toBeInTheDocument();
+      });
+
+      const favItem = screen.getByTestId('namespace-favorite-item-default');
+      const toggle = favItem.querySelector(
+        '[data-testid="namespace-favorite-toggle"]'
+      ) as HTMLElement;
+      fireEvent.click(toggle);
+
+      // Assert - localStorage no longer contains 'default'
+      await waitFor(() => {
+        const stored = JSON.parse(localStorage.getItem('namespace-favorites') ?? '[]');
+        expect(stored).not.toContain('default');
+      });
+    });
+
+    it('should keep the dropdown open after clicking the star toggle (stopPropagation)', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      await waitFor(() => {
+        expect(screen.getByRole('listbox')).toBeVisible();
+      });
+
+      const defaultOption = screen.getByTestId('namespace-option-default');
+      const toggle = defaultOption.querySelector(
+        '[data-testid="namespace-favorite-toggle"]'
+      ) as HTMLElement;
+
+      // Act - click star toggle
+      fireEvent.click(toggle);
+
+      // Assert - listbox is still visible
+      await waitFor(() => {
+        expect(screen.getByRole('listbox')).toBeVisible();
+      });
+    });
+
+    it('should select namespace and close dropdown when the option label text is clicked', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-option-label-default')).toBeInTheDocument();
+      });
+
+      // Click the label (text area) not the star button
+      const optionLabel = screen.getByTestId('namespace-option-label-default');
+      fireEvent.click(optionLabel);
+
+      // Assert - namespace is selected and dropdown closes
+      await waitFor(() => {
+        expect(selector).toHaveTextContent(/default/i);
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should update aria-pressed to true after adding to favorites', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-option-default')).toBeInTheDocument();
+      });
+
+      const defaultOption = screen.getByTestId('namespace-option-default');
+      const toggle = defaultOption.querySelector(
+        '[data-testid="namespace-favorite-toggle"]'
+      ) as HTMLElement;
+
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+      // Act - click toggle to add favorite
+      fireEvent.click(toggle);
+
+      // Assert - the item moved to favorites section; toggle in that section is now pressed
+      await waitFor(() => {
+        const favItem = screen.getByTestId('namespace-favorite-item-default');
+        const favToggle = favItem.querySelector(
+          '[data-testid="namespace-favorite-toggle"]'
+        );
+        expect(favToggle).toHaveAttribute('aria-pressed', 'true');
+      });
+    });
+  });
+
+  describe('favorites - edge cases', () => {
+    it('should handle empty namespace list gracefully with no favorites', async () => {
+      // Arrange
+      localStorage.removeItem('namespace-favorites');
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue([]);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(namespacesApi.fetchNamespaces).toHaveBeenCalled();
+      });
+
+      await waitFor(() => {
+        const selector = screen.getByRole('combobox');
+        expect(selector).toBeEnabled();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - no favorites section, standard empty message shown
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-favorites-section')).not.toBeInTheDocument();
+        expect(screen.getByText(/no namespaces available/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should ignore a stored favorite that does not exist in the fetched namespace list', async () => {
+      // Arrange
+      localStorage.setItem('namespace-favorites', JSON.stringify(['ghost-ns']));
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - the ghost namespace does not appear as a favorites item
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId('namespace-favorite-item-ghost-ns')
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it('should render both sections correctly when all namespaces are favorited', async () => {
+      // Arrange
+      localStorage.setItem(
+        'namespace-favorites',
+        JSON.stringify(['default', 'production'])
+      );
+      vi.mocked(namespacesApi.fetchNamespaces).mockResolvedValue(['default', 'production']);
+
+      renderWithFavoritesProvider(<NamespaceSelector />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('namespace-loading')).not.toBeInTheDocument();
+      });
+
+      // Act - open dropdown
+      const selector = screen.getByRole('combobox');
+      fireEvent.click(selector);
+
+      // Assert - favorites section shows both, All section has no namespace options
+      await waitFor(() => {
+        expect(screen.getByTestId('namespace-favorite-item-default')).toBeInTheDocument();
+        expect(screen.getByTestId('namespace-favorite-item-production')).toBeInTheDocument();
+        // All section header still present
+        expect(screen.getByTestId('namespace-all-header')).toBeInTheDocument();
+        // No namespace options in the All section
+        expect(screen.queryByTestId('namespace-option-default')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('namespace-option-production')).not.toBeInTheDocument();
       });
     });
   });
