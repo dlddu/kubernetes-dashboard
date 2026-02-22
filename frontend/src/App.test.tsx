@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
 // Mock the overview API to prevent actual fetch calls from OverviewProvider
