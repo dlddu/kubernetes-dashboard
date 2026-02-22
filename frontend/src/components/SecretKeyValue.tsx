@@ -13,14 +13,36 @@ export function SecretKeyValue({ secretKey, value }: SecretKeyValueProps) {
     setIsRevealed(!isRevealed);
   };
 
+  const copyToClipboardFallback = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  };
+
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(value);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        copyToClipboardFallback(value);
+      }
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      // Handle copy failure silently
-      console.error('Failed to copy:', err);
+    } catch {
+      try {
+        copyToClipboardFallback(value);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
     }
   };
 

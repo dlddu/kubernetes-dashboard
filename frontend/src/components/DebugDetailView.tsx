@@ -31,6 +31,19 @@ export function DebugDetailView({ entry }: Props) {
     );
   }
 
+  const copyToClipboardFallback = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  };
+
   const handleCopy = async () => {
     try {
       let content = '';
@@ -46,13 +59,36 @@ export function DebugDetailView({ entry }: Props) {
         content = `Status: ${entry.status}\nTimestamp: ${new Date(entry.timestamp).toISOString()}\nDuration: ${Math.round(entry.duration)} ms\nResponse Size: ${entry.responseSize} bytes\nContent-Type: application/json`;
       }
 
-      await navigator.clipboard.writeText(content);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(content);
+      } else {
+        copyToClipboardFallback(content);
+      }
       setCopied(true);
       setTimeout(() => {
         setCopied(false);
       }, 1500);
     } catch {
-      // Handle clipboard errors gracefully
+      try {
+        let content = '';
+        if (activeTab === 'response') {
+          content = JSON.stringify(entry.responseBody, null, 2);
+        } else if (activeTab === 'request') {
+          content = `Method: ${entry.method}\nURL: ${entry.url}`;
+          if (entry.params) {
+            content += `\nParams: ${JSON.stringify(entry.params, null, 2)}`;
+          }
+        } else {
+          content = `Status: ${entry.status}\nTimestamp: ${new Date(entry.timestamp).toISOString()}\nDuration: ${Math.round(entry.duration)} ms\nResponse Size: ${entry.responseSize} bytes\nContent-Type: application/json`;
+        }
+        copyToClipboardFallback(content);
+        setCopied(true);
+        setTimeout(() => {
+          setCopied(false);
+        }, 1500);
+      } catch {
+        // Handle clipboard errors gracefully
+      }
     }
   };
 
