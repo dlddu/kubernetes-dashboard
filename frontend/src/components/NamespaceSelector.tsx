@@ -195,17 +195,20 @@ export function NamespaceSelector() {
               Favorites
             </div>
             {!hasFavorites ? (
-              <div
-                data-testid="namespace-favorites-hint"
-                className="px-4 py-2 text-sm text-gray-400 italic"
-              >
-                <span className="hidden sm:inline">
+              <>
+                <div
+                  data-testid="namespace-favorites-hint"
+                  className="hidden sm:block px-4 py-2 text-sm text-gray-400 italic"
+                >
                   Hover over a namespace and click ⭐ to add favorites
-                </span>
-                <span className="sm:hidden">
+                </div>
+                <div
+                  data-testid="namespace-favorites-hint"
+                  className="sm:hidden px-4 py-2 text-sm text-gray-400 italic"
+                >
                   Tap ⭐ next to a namespace to add favorites
-                </span>
-              </div>
+                </div>
+              </>
             ) : (
               favoriteNamespaces.slice(0, 5).map((ns) => (
                 <div

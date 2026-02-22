@@ -1207,7 +1207,7 @@ describe('NamespaceSelector', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
+        expect(screen.getAllByTestId('namespace-favorites-hint')[0]).toBeInTheDocument();
       });
     });
 
@@ -1228,7 +1228,7 @@ describe('NamespaceSelector', () => {
 
       // Assert - hint must be absent when there is at least one favorite
       await waitFor(() => {
-        expect(screen.queryByTestId('namespace-favorites-hint')).not.toBeInTheDocument();
+        expect(screen.queryAllByTestId('namespace-favorites-hint')).toHaveLength(0);
       });
     });
 
@@ -1250,7 +1250,7 @@ describe('NamespaceSelector', () => {
       // Assert - hint is a descendant of the favorites section
       await waitFor(() => {
         const section = screen.getByTestId('namespace-favorites-section');
-        const hint = screen.getByTestId('namespace-favorites-hint');
+        const hint = screen.getAllByTestId('namespace-favorites-hint')[0];
         expect(section).toContainElement(hint);
       });
     });
@@ -1272,7 +1272,7 @@ describe('NamespaceSelector', () => {
 
       // Assert
       await waitFor(() => {
-        const hint = screen.getByTestId('namespace-favorites-hint');
+        const hint = screen.getAllByTestId('namespace-favorites-hint')[0];
         expect(hint).toHaveClass('text-sm');
         expect(hint).toHaveClass('text-gray-400');
         expect(hint).toHaveClass('italic');
@@ -1296,8 +1296,8 @@ describe('NamespaceSelector', () => {
 
       // Assert - hint must mention the ⭐ icon so users know what to click
       await waitFor(() => {
-        const hint = screen.getByTestId('namespace-favorites-hint');
-        expect(hint.textContent).toContain('\u2B50');
+        const hints = screen.getAllByTestId('namespace-favorites-hint');
+        expect(hints.some((hint) => hint.textContent?.includes('\u2B50'))).toBe(true);
       });
     });
 
@@ -1318,7 +1318,7 @@ describe('NamespaceSelector', () => {
 
       // Confirm hint is visible before toggling
       await waitFor(() => {
-        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
+        expect(screen.getAllByTestId('namespace-favorites-hint')[0]).toBeInTheDocument();
       });
 
       // Act - toggle 'default' as favorite
@@ -1330,7 +1330,7 @@ describe('NamespaceSelector', () => {
 
       // Assert - hint disappears once a favorite exists
       await waitFor(() => {
-        expect(screen.queryByTestId('namespace-favorites-hint')).not.toBeInTheDocument();
+        expect(screen.queryAllByTestId('namespace-favorites-hint')).toHaveLength(0);
       });
     });
 
@@ -1351,7 +1351,7 @@ describe('NamespaceSelector', () => {
 
       // Confirm hint is absent while favorites exist
       await waitFor(() => {
-        expect(screen.queryByTestId('namespace-favorites-hint')).not.toBeInTheDocument();
+        expect(screen.queryAllByTestId('namespace-favorites-hint')).toHaveLength(0);
       });
 
       // Act - remove the only favorite by clicking its toggle in the favorites section
@@ -1363,7 +1363,7 @@ describe('NamespaceSelector', () => {
 
       // Assert - hint reappears when the list becomes empty again
       await waitFor(() => {
-        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
+        expect(screen.getAllByTestId('namespace-favorites-hint')[0]).toBeInTheDocument();
       });
     });
 
@@ -1385,7 +1385,7 @@ describe('NamespaceSelector', () => {
       // Assert - both the section header and the hint are present at the same time
       await waitFor(() => {
         expect(screen.getByTestId('namespace-favorites-header')).toBeInTheDocument();
-        expect(screen.getByTestId('namespace-favorites-hint')).toBeInTheDocument();
+        expect(screen.getAllByTestId('namespace-favorites-hint')[0]).toBeInTheDocument();
       });
     });
   });
