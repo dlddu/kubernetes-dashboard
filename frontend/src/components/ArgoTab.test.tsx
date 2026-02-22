@@ -834,7 +834,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act: click the back button inside the detail view
-      const backButton = screen.getByTestId('workflow-detail-back');
+      const backButton = screen.getByTestId('workflow-detail-back-button');
       fireEvent.click(backButton);
 
       // Assert: workflow-runs-page should be visible again
