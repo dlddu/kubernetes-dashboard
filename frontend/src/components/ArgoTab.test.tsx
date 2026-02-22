@@ -870,7 +870,7 @@ describe('ArgoTab Component', () => {
       // The detail page should render the selected workflow's name
       // (WorkflowDetail component will display it after fetching)
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/argo/workflows/dashboard-test/data-processing-abc12')
+        expect.stringContaining('/api/argo/workflows/data-processing-abc12')
       );
     });
 

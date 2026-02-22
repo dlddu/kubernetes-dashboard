@@ -71,7 +71,7 @@ export interface WorkflowDetailInfo {
 }
 
 export async function fetchWorkflowDetail(
-  namespace: string,
+  _namespace: string,
   name: string
 ): Promise<WorkflowDetailInfo> {
   const url = `/api/argo/workflows/${name}`;
