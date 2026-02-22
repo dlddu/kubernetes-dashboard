@@ -76,10 +76,8 @@ async function findCardByName(
 }
 
 // ---------------------------------------------------------------------------
-// TODO: Activate when DLD-440 (WorkflowTemplate Submit) is implemented
-// ---------------------------------------------------------------------------
 
-test.describe.skip('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
+test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
   test.beforeEach(async ({ page }) => {
     // Mock the workflow templates list API so tests are not reliant on cluster state
     await page.route('**/api/argo/workflow-templates**', async route => {
@@ -283,10 +281,8 @@ test.describe.skip('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 });
 
 // ---------------------------------------------------------------------------
-// TODO: Activate when DLD-440 (WorkflowTemplate Submit) is implemented
-// ---------------------------------------------------------------------------
 
-test.describe.skip('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () => {
+test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () => {
   test.beforeEach(async ({ page }) => {
     // Mock the workflow templates list API
     await page.route('**/api/argo/workflow-templates**', async route => {
@@ -397,10 +393,8 @@ test.describe.skip('Argo Tab - WorkflowTemplate Submit - Error & Loading States'
 });
 
 // ---------------------------------------------------------------------------
-// TODO: Activate when DLD-440 (WorkflowTemplate Submit) is implemented
-// ---------------------------------------------------------------------------
 
-test.describe.skip('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
+test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
   test.beforeEach(async ({ page }) => {
     // Mock the workflow templates list API
     await page.route('**/api/argo/workflow-templates**', async route => {
