@@ -182,16 +182,23 @@ test.describe('Namespace Favorites - Edge Cases', () => {
 
   test('should limit the number of displayed favorites to a maximum', async ({ page }) => {
     // Tests that the UI caps the visible favorites list at a reasonable maximum (e.g. 5)
+    //
+    // E2E environment namespaces (kind cluster + fixtures):
+    //   default, kube-system, kube-public, kube-node-lease, local-path-storage, dashboard-test
+    // Seeding all 6 as favorites ensures that:
+    //   - The favorites section is rendered (intersection with real namespaces is non-empty)
+    //   - The rendered count can be verified against the cap of 5
+    // If the cluster happens to have fewer than 6 of the expected namespaces available,
+    // the test gracefully falls back: it still asserts that rendered count <= 5.
 
-    // Arrange: Seed more favorites than the expected maximum
+    // Arrange: Seed all known E2E namespaces as favorites (6 real namespaces, exceeds the cap of 5)
     await setFavorites(page, [
-      'namespace-1',
-      'namespace-2',
-      'namespace-3',
-      'namespace-4',
-      'namespace-5',
-      'namespace-6',
-      'namespace-7',
+      'default',
+      'kube-system',
+      'kube-public',
+      'kube-node-lease',
+      'local-path-storage',
+      'dashboard-test',
     ]);
     await page.reload();
     await page.waitForLoadState('networkidle');
@@ -200,7 +207,7 @@ test.describe('Namespace Favorites - Edge Cases', () => {
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
-    // Assert: Favorites section exists
+    // Assert: Favorites section exists (at least one of the seeded namespaces must exist in the cluster)
     const favoritesSection = page.getByTestId('namespace-favorites-section');
     await expect(favoritesSection).toBeVisible();
 
