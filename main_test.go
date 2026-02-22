@@ -133,6 +133,90 @@ func TestAPIRouting(t *testing.T) {
 	})
 }
 
+// TestArgoWorkflowDetailRoute tests that the workflow detail route is registered.
+func TestArgoWorkflowDetailRoute(t *testing.T) {
+	t.Run("should route GET /api/argo/workflows/{name} to WorkflowDetailHandler", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/my-workflow", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Should be routed (200, 404, or 500), never a generic Go 404
+		if res.StatusCode == http.StatusNotFound && !strings.Contains(w.Body.String(), "application/json") {
+			t.Error("expected /api/argo/workflows/{name} to be routed, got generic 404")
+		}
+	})
+
+	t.Run("should return JSON content-type for workflow detail route", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/any-workflow", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		contentType := res.Header.Get("Content-Type")
+		if !strings.Contains(contentType, "application/json") {
+			t.Errorf("workflow detail API should return JSON, got Content-Type: %s", contentType)
+		}
+	})
+
+	t.Run("should return 400 for /api/argo/workflows/ with no name", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// The detail handler should return 400 for incomplete paths
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected 400 for missing path parameters, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should reject non-GET methods on workflow detail route", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				req := httptest.NewRequest(method, "/api/argo/workflows/my-workflow", nil)
+				w := httptest.NewRecorder()
+
+				// Act
+				router.ServeHTTP(w, req)
+
+				// Assert
+				res := w.Result()
+				defer res.Body.Close()
+
+				if res.StatusCode != http.StatusMethodNotAllowed {
+					t.Errorf("expected status 405 for %s on workflow detail route, got %d", method, res.StatusCode)
+				}
+			})
+		}
+	})
+}
+
 // TestArgoWorkflowTemplatesRoute tests that the Argo workflow templates route is registered
 func TestArgoWorkflowTemplatesRoute(t *testing.T) {
 	t.Run("should route GET /api/argo/workflow-templates to WorkflowTemplatesHandler", func(t *testing.T) {

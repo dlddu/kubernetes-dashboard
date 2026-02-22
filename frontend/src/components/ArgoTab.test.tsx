@@ -739,4 +739,154 @@ describe('ArgoTab Component', () => {
       });
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // WorkflowDetail view swap (selectedWorkflow state)
+  // ---------------------------------------------------------------------------
+
+  describe('WorkflowDetail View Swap', () => {
+    it('should not show workflow-detail-page by default', () => {
+      // Arrange
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      // Act
+      render(<ArgoTab />);
+
+      // Assert: detail view should not be mounted initially
+      const detailPage = screen.queryByTestId('workflow-detail-page');
+      expect(detailPage).not.toBeInTheDocument();
+    });
+
+    it('should show workflow-detail-page when a WorkflowCard is clicked', async () => {
+      // Arrange: templates → empty, workflows → mockWorkflows
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })             // templates
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })  // workflows
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] }); // detail
+
+      render(<ArgoTab />);
+
+      // Switch to Workflow Runs tab
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Act: click the first workflow card
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      // Assert
+      await waitFor(() => {
+        const detailPage = screen.getByTestId('workflow-detail-page');
+        expect(detailPage).toBeInTheDocument();
+      });
+    });
+
+    it('should hide workflow-runs-page when workflow-detail-page is shown', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
+
+      render(<ArgoTab />);
+
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Act
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      // Assert: workflow-runs-page should no longer be rendered
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-detail-page')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('workflow-runs-page')).not.toBeInTheDocument();
+    });
+
+    it('should return to workflow-runs-page when back button is clicked', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
+
+      render(<ArgoTab />);
+
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-detail-page')).toBeInTheDocument();
+      });
+
+      // Act: click the back button inside the detail view
+      const backButton = screen.getByTestId('workflow-detail-back-button');
+      fireEvent.click(backButton);
+
+      // Assert: workflow-runs-page should be visible again
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId('workflow-detail-page')).not.toBeInTheDocument();
+    });
+
+    it('should pass correct namespace and name to workflow detail page', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
+
+      render(<ArgoTab />);
+
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Act: click first workflow (data-processing-abc12, dashboard-test)
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      // Assert: the detail page should receive the correct namespace/name as data
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-detail-page')).toBeInTheDocument();
+      });
+
+      // The detail page should render the selected workflow's name
+      // (WorkflowDetail component will display it after fetching)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/argo/workflows/data-processing-abc12')
+      );
+    });
+
+    it('should not show workflow-detail-page when on templates tab', () => {
+      // Arrange
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      // Act
+      render(<ArgoTab />);
+
+      // Assert: templates tab is default; no detail view
+      expect(screen.queryByTestId('workflow-detail-page')).not.toBeInTheDocument();
+      expect(screen.getByTestId('workflow-templates-page')).toBeInTheDocument();
+    });
+  });
 });
