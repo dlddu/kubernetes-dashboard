@@ -195,38 +195,42 @@ export function NamespaceSelector() {
               >
                 Favorites
               </div>
-              {favoriteNamespaces.map((ns) => (
+              {favoriteNamespaces.slice(0, 5).map((ns) => (
                 <div
                   key={`favorite-${ns}`}
-                  data-testid={`namespace-favorite-item-${ns}`}
-                  role="option"
-                  aria-selected={selectedNamespace === ns}
-                  aria-label={ns}
-                  onClick={() => handleSelect(ns)}
-                  className={`flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
-                    selectedNamespace === ns ? 'bg-blue-50' : ''
-                  }`}
+                  data-testid={`namespace-option-${ns}`}
                 >
-                  <button
-                    type="button"
-                    data-testid="namespace-favorite-toggle"
-                    aria-pressed={isFavorite(ns)}
-                    aria-label={`Toggle favorite ${ns}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(ns);
-                    }}
-                    className="mr-2 text-yellow-400 hover:text-yellow-500 focus:outline-none"
-                  >
-                    <span aria-hidden="true">★</span>
-                  </button>
-                  <span
-                    data-testid={`namespace-option-label-${ns}`}
-                    className="flex-1 cursor-pointer"
+                  <div
+                    data-testid={`namespace-favorite-item-${ns}`}
+                    role="option"
+                    aria-selected={selectedNamespace === ns}
+                    aria-label={ns}
                     onClick={() => handleSelect(ns)}
+                    className={`flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                      selectedNamespace === ns ? 'bg-blue-50' : ''
+                    }`}
                   >
-                    {ns}
-                  </span>
+                    <button
+                      type="button"
+                      data-testid="namespace-favorite-toggle"
+                      aria-pressed={isFavorite(ns)}
+                      aria-label={`Toggle favorite ${ns}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(ns);
+                      }}
+                      className="mr-2 text-yellow-400 hover:text-yellow-500 focus:outline-none"
+                    >
+                      <span aria-hidden="true">★</span>
+                    </button>
+                    <span
+                      data-testid={`namespace-option-label-${ns}`}
+                      className="flex-1 cursor-pointer"
+                      onClick={() => handleSelect(ns)}
+                    >
+                      {ns}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

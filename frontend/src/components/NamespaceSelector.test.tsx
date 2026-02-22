@@ -1148,10 +1148,18 @@ describe('NamespaceSelector', () => {
         expect(screen.getByTestId('namespace-favorite-item-default')).toBeInTheDocument();
         expect(screen.getByTestId('namespace-favorite-item-production')).toBeInTheDocument();
         // All section header still present
-        expect(screen.getByTestId('namespace-all-header')).toBeInTheDocument();
-        // No namespace options in the All section
-        expect(screen.queryByTestId('namespace-option-default')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('namespace-option-production')).not.toBeInTheDocument();
+        const allHeader = screen.getByTestId('namespace-all-header');
+        expect(allHeader).toBeInTheDocument();
+        // No namespace options in the All section (they are only in favorites section)
+        const allSection = allHeader.parentElement!;
+        const allSectionOptionDefault = screen
+          .queryAllByTestId('namespace-option-default')
+          .find((el) => allSection.contains(el));
+        const allSectionOptionProduction = screen
+          .queryAllByTestId('namespace-option-production')
+          .find((el) => allSection.contains(el));
+        expect(allSectionOptionDefault).toBeUndefined();
+        expect(allSectionOptionProduction).toBeUndefined();
       });
     });
   });
