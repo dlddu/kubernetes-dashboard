@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { fetchWorkflowTemplates, fetchWorkflows, WorkflowTemplateInfo, WorkflowInfo } from '../api/argo';
 import { WorkflowTemplateCard } from './WorkflowTemplateCard';
 import { WorkflowCard } from './WorkflowCard';
+import { WorkflowDetail } from './WorkflowDetail';
 import { SubmitModal } from './SubmitModal';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { EmptyState } from './EmptyState';
@@ -21,6 +22,7 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
 
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplateInfo | null>(null);
   const [showWorkflowRuns, setShowWorkflowRuns] = useState(false);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowInfo | null>(null);
 
   const {
     data: workflows,
@@ -44,6 +46,15 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
 
   const handleWorkflowsTabClick = () => {
     setShowWorkflowRuns(true);
+    setSelectedWorkflow(null);
+  };
+
+  const handleWorkflowSelect = (workflow: WorkflowInfo) => {
+    setSelectedWorkflow(workflow);
+  };
+
+  const handleWorkflowDetailBack = () => {
+    setSelectedWorkflow(null);
   };
 
   return (
@@ -97,7 +108,7 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
         </div>
       )}
 
-      {showWorkflowRuns && (
+      {showWorkflowRuns && !selectedWorkflow && (
         <section data-testid="workflow-runs-page" className="space-y-4">
           <h2 className="text-xl font-bold text-gray-900">Workflow Runs</h2>
 
@@ -128,11 +139,20 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
                 <WorkflowCard
                   key={`${workflow.namespace}-${workflow.name}`}
                   {...workflow}
+                  onSelect={handleWorkflowSelect}
                 />
               ))}
             </div>
           )}
         </section>
+      )}
+
+      {showWorkflowRuns && selectedWorkflow && (
+        <WorkflowDetail
+          namespace={selectedWorkflow.namespace}
+          name={selectedWorkflow.name}
+          onBack={handleWorkflowDetailBack}
+        />
       )}
 
       {selectedTemplate !== null && (

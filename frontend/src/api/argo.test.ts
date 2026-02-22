@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchWorkflowTemplates, submitWorkflow, fetchWorkflows } from './argo';
+import { fetchWorkflowTemplates, submitWorkflow, fetchWorkflows, fetchWorkflowDetail } from './argo';
 
 // Mock fetch globally with proper typing
 const mockFetch = vi.fn();
@@ -875,6 +875,328 @@ describe('Argo API', () => {
       expect(name).toBe('my-template');
       expect(namespace).toBe('default');
       expect(Array.isArray(parameters)).toBe(true);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // fetchWorkflowDetail
+  // ---------------------------------------------------------------------------
+
+  describe('fetchWorkflowDetail - happy path', () => {
+    it('should fetch workflow detail from correct URL', async () => {
+      // Arrange
+      const mockDetail = {
+        name: 'data-processing-abc12',
+        namespace: 'dashboard-test',
+        phase: 'Succeeded',
+        templateName: 'data-processing-with-params',
+        startedAt: '2026-02-22T08:00:00Z',
+        finishedAt: '2026-02-22T09:00:00Z',
+        nodes: [],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockDetail,
+      });
+
+      // Act
+      const result = await fetchWorkflowDetail('dashboard-test', 'data-processing-abc12');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflows/dashboard-test/data-processing-abc12'
+      );
+      expect(result).toEqual(mockDetail);
+    });
+
+    it('should return detail with nodes containing inputs and outputs', async () => {
+      // Arrange
+      const mockDetail = {
+        name: 'wf-with-io',
+        namespace: 'default',
+        phase: 'Succeeded',
+        templateName: 'my-template',
+        startedAt: '2026-02-22T08:00:00Z',
+        finishedAt: '2026-02-22T09:00:00Z',
+        nodes: [
+          {
+            name: 'step-1',
+            phase: 'Succeeded',
+            startedAt: '2026-02-22T08:00:00Z',
+            finishedAt: '2026-02-22T08:30:00Z',
+            message: '',
+            inputs: {
+              parameters: [{ name: 'input-path', value: '/data/input' }],
+              artifacts: [],
+            },
+            outputs: {
+              parameters: [],
+              artifacts: [{ name: 'result', path: '/data/output' }],
+            },
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockDetail,
+      });
+
+      // Act
+      const result = await fetchWorkflowDetail('default', 'wf-with-io');
+
+      // Assert
+      expect(result.nodes).toHaveLength(1);
+      expect(result.nodes[0].inputs).toBeDefined();
+      expect(result.nodes[0].inputs?.parameters).toHaveLength(1);
+      expect(result.nodes[0].outputs).toBeDefined();
+      expect(result.nodes[0].outputs?.artifacts).toHaveLength(1);
+    });
+
+    it('should return detail with empty nodes array', async () => {
+      // Arrange
+      const mockDetail = {
+        name: 'wf-no-nodes',
+        namespace: 'default',
+        phase: 'Pending',
+        templateName: 'simple-template',
+        startedAt: '',
+        finishedAt: '',
+        nodes: [],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockDetail,
+      });
+
+      // Act
+      const result = await fetchWorkflowDetail('default', 'wf-no-nodes');
+
+      // Assert
+      expect(result.nodes).toEqual([]);
+    });
+
+    it('should build URL with namespace and name correctly', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'x', namespace: 'y', phase: '', templateName: '', startedAt: '', finishedAt: '', nodes: [] }),
+      });
+
+      // Act
+      await fetchWorkflowDetail('my-namespace', 'my-workflow-name');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflows/my-namespace/my-workflow-name'
+      );
+    });
+
+    it('should handle namespace and name with hyphens', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          name: 'data-processing-abc12',
+          namespace: 'dashboard-test',
+          phase: 'Running',
+          templateName: 'data-processing-with-params',
+          startedAt: '2026-02-22T10:00:00Z',
+          finishedAt: '',
+          nodes: [],
+        }),
+      });
+
+      // Act
+      const result = await fetchWorkflowDetail('dashboard-test', 'data-processing-abc12');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflows/dashboard-test/data-processing-abc12'
+      );
+      expect(result.name).toBe('data-processing-abc12');
+    });
+
+    it('should return type-safe WorkflowDetailInfo object', async () => {
+      // Arrange
+      const mockDetail = {
+        name: 'typed-wf',
+        namespace: 'production',
+        phase: 'Succeeded',
+        templateName: 'ml-training',
+        startedAt: '2026-02-22T08:00:00Z',
+        finishedAt: '2026-02-22T09:00:00Z',
+        nodes: [
+          {
+            name: 'train',
+            phase: 'Succeeded',
+            startedAt: '2026-02-22T08:00:00Z',
+            finishedAt: '2026-02-22T09:00:00Z',
+            message: 'completed successfully',
+            inputs: { parameters: [], artifacts: [] },
+            outputs: { parameters: [], artifacts: [] },
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockDetail,
+      });
+
+      // Act
+      const result = await fetchWorkflowDetail('production', 'typed-wf');
+
+      // Assert — TypeScript compile-time field checks
+      const name: string = result.name;
+      const namespace: string = result.namespace;
+      const phase: string = result.phase;
+      const templateName: string = result.templateName;
+      const nodes = result.nodes;
+
+      expect(name).toBe('typed-wf');
+      expect(namespace).toBe('production');
+      expect(phase).toBe('Succeeded');
+      expect(templateName).toBe('ml-training');
+      expect(Array.isArray(nodes)).toBe(true);
+    });
+  });
+
+  describe('fetchWorkflowDetail - error cases', () => {
+    it('should throw when workflow does not exist (404)', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'Workflow not found' }),
+      });
+
+      // Act & Assert
+      await expect(
+        fetchWorkflowDetail('default', 'non-existent-workflow')
+      ).rejects.toThrow('Workflow not found');
+    });
+
+    it('should throw on network error', async () => {
+      // Arrange
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      // Act & Assert
+      await expect(
+        fetchWorkflowDetail('default', 'my-workflow')
+      ).rejects.toThrow('Network error');
+    });
+
+    it('should throw on HTTP 500', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Internal Server Error' }),
+      });
+
+      // Act & Assert
+      await expect(
+        fetchWorkflowDetail('default', 'my-workflow')
+      ).rejects.toThrow();
+    });
+
+    it('should throw on invalid JSON response', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => {
+          throw new Error('Invalid JSON');
+        },
+      });
+
+      // Act & Assert
+      await expect(
+        fetchWorkflowDetail('default', 'my-workflow')
+      ).rejects.toThrow('Invalid JSON');
+    });
+  });
+
+  describe('fetchWorkflowDetail - edge cases', () => {
+    it('should handle workflow with many nodes', async () => {
+      // Arrange
+      const mockDetail = {
+        name: 'complex-wf',
+        namespace: 'default',
+        phase: 'Succeeded',
+        templateName: 'complex-template',
+        startedAt: '2026-02-22T08:00:00Z',
+        finishedAt: '2026-02-22T10:00:00Z',
+        nodes: Array.from({ length: 5 }, (_, i) => ({
+          name: `step-${i}`,
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T08:30:00Z',
+          message: '',
+          inputs: { parameters: [], artifacts: [] },
+          outputs: { parameters: [], artifacts: [] },
+        })),
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockDetail,
+      });
+
+      // Act
+      const result = await fetchWorkflowDetail('default', 'complex-wf');
+
+      // Assert
+      expect(result.nodes).toHaveLength(5);
+    });
+
+    it('should handle node with multiple input parameters', async () => {
+      // Arrange
+      const mockDetail = {
+        name: 'param-wf',
+        namespace: 'default',
+        phase: 'Succeeded',
+        templateName: 'data-processing-with-params',
+        startedAt: '2026-02-22T08:00:00Z',
+        finishedAt: '2026-02-22T09:00:00Z',
+        nodes: [
+          {
+            name: 'process',
+            phase: 'Succeeded',
+            startedAt: '2026-02-22T08:00:00Z',
+            finishedAt: '2026-02-22T08:30:00Z',
+            message: '',
+            inputs: {
+              parameters: [
+                { name: 'input-path', value: '/data/input' },
+                { name: 'batch-size', value: '100' },
+                { name: 'env', value: 'prod' },
+              ],
+              artifacts: [],
+            },
+            outputs: {
+              parameters: [{ name: 'record-count', value: '42' }],
+              artifacts: [{ name: 'result-file', path: '/data/output/result.csv' }],
+            },
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockDetail,
+      });
+
+      // Act
+      const result = await fetchWorkflowDetail('default', 'param-wf');
+
+      // Assert
+      const node = result.nodes[0];
+      expect(node.inputs?.parameters).toHaveLength(3);
+      expect(node.outputs?.parameters).toHaveLength(1);
+      expect(node.outputs?.artifacts).toHaveLength(1);
     });
   });
 });
