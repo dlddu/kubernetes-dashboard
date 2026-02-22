@@ -29,8 +29,7 @@ test.describe('BottomTabBar - Tab Navigation', () => {
       .or(page.getByRole('button', { name: /nodes/i }));
     const workloadsTab = page.getByTestId('tab-workloads')
       .or(page.getByRole('button', { name: /workloads/i }));
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('button', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     const secretsTab = page.getByTestId('tab-secrets')
       .or(page.getByRole('button', { name: /secrets/i }));
 
@@ -127,8 +126,7 @@ test.describe('BottomTabBar - Tab Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click Pods tab
-    const podsTab = page.getByTestId('tab-pods')
-      .or(page.getByRole('button', { name: /pods/i }));
+    const podsTab = page.getByTestId('tab-pods');
     await podsTab.click();
     await page.waitForLoadState('networkidle');
 
