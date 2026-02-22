@@ -8,7 +8,7 @@ interface FavoritesContextType {
   isFavorite: (namespace: string) => boolean;
 }
 
-const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
+export const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
 function loadFavorites(): string[] {
   try {
