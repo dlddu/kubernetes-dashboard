@@ -905,7 +905,7 @@ describe('Argo API', () => {
 
       // Assert
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/argo/workflows/dashboard-test/data-processing-abc12'
+        '/api/argo/workflows/data-processing-abc12'
       );
       expect(result).toEqual(mockDetail);
     });
@@ -990,7 +990,7 @@ describe('Argo API', () => {
 
       // Assert
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/argo/workflows/my-namespace/my-workflow-name'
+        '/api/argo/workflows/my-workflow-name'
       );
     });
 
@@ -1014,7 +1014,7 @@ describe('Argo API', () => {
 
       // Assert
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/argo/workflows/dashboard-test/data-processing-abc12'
+        '/api/argo/workflows/data-processing-abc12'
       );
       expect(result.name).toBe('data-processing-abc12');
     });

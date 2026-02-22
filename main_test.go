@@ -135,10 +135,10 @@ func TestAPIRouting(t *testing.T) {
 
 // TestArgoWorkflowDetailRoute tests that the workflow detail route is registered.
 func TestArgoWorkflowDetailRoute(t *testing.T) {
-	t.Run("should route GET /api/argo/workflows/{namespace}/{name} to WorkflowDetailHandler", func(t *testing.T) {
+	t.Run("should route GET /api/argo/workflows/{name} to WorkflowDetailHandler", func(t *testing.T) {
 		// Arrange
 		router := setupRouter()
-		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/default/my-workflow", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/my-workflow", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -150,14 +150,14 @@ func TestArgoWorkflowDetailRoute(t *testing.T) {
 
 		// Should be routed (200, 404, or 500), never a generic Go 404
 		if res.StatusCode == http.StatusNotFound && !strings.Contains(w.Body.String(), "application/json") {
-			t.Error("expected /api/argo/workflows/{namespace}/{name} to be routed, got generic 404")
+			t.Error("expected /api/argo/workflows/{name} to be routed, got generic 404")
 		}
 	})
 
 	t.Run("should return JSON content-type for workflow detail route", func(t *testing.T) {
 		// Arrange
 		router := setupRouter()
-		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/default/any-workflow", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/any-workflow", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -173,7 +173,7 @@ func TestArgoWorkflowDetailRoute(t *testing.T) {
 		}
 	})
 
-	t.Run("should return 400 for /api/argo/workflows/ with no namespace or name", func(t *testing.T) {
+	t.Run("should return 400 for /api/argo/workflows/ with no name", func(t *testing.T) {
 		// Arrange
 		router := setupRouter()
 		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/", nil)
@@ -199,7 +199,7 @@ func TestArgoWorkflowDetailRoute(t *testing.T) {
 
 		for _, method := range methods {
 			t.Run(method, func(t *testing.T) {
-				req := httptest.NewRequest(method, "/api/argo/workflows/default/my-workflow", nil)
+				req := httptest.NewRequest(method, "/api/argo/workflows/my-workflow", nil)
 				w := httptest.NewRecorder()
 
 				// Act

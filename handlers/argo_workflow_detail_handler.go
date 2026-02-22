@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	versioned "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // workflowDetailPathPrefix is the URL prefix for the workflow detail endpoint.
@@ -52,7 +53,7 @@ type WorkflowDetailInfo struct {
 	Nodes        []WorkflowDetailStepInfo `json:"nodes"`
 }
 
-// WorkflowDetailHandler handles GET /api/argo/workflows/{namespace}/{name}.
+// WorkflowDetailHandler handles GET /api/argo/workflows/{name}.
 var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
 	// Content-Type is always JSON
 	w.Header().Set("Content-Type", "application/json")
@@ -61,11 +62,12 @@ var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http
 		return
 	}
 
-	// Parse namespace and name from the path
-	namespace, name, err := parseResourcePath(r.URL.Path, workflowDetailPathPrefix, "")
-	if err != nil {
+	// Parse name from the path: strip prefix, remainder is the name
+	name := strings.TrimPrefix(r.URL.Path, workflowDetailPathPrefix)
+	name = strings.TrimRight(name, "/")
+	if name == "" || strings.Contains(name, "/") {
 		writeError(w, http.StatusBadRequest,
-			fmt.Sprintf("invalid path format, expected %s{namespace}/{name}", workflowDetailPathPrefix))
+			fmt.Sprintf("invalid path format, expected %s{name}", workflowDetailPathPrefix))
 		return
 	}
 
@@ -77,11 +79,11 @@ var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http
 		return
 	}
 
-	detail, err := getWorkflowDetailData(r.Context(), clientset, namespace, name)
+	detail, err := getWorkflowDetailData(r.Context(), clientset, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") ||
 			strings.Contains(err.Error(), "404") {
-			writeError(w, http.StatusNotFound, fmt.Sprintf("workflow %q not found in namespace %q", name, namespace))
+			writeError(w, http.StatusNotFound, fmt.Sprintf("workflow %q not found", name))
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "Failed to fetch workflow detail")
@@ -91,8 +93,28 @@ var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http
 	writeJSON(w, http.StatusOK, detail)
 }
 
-// getWorkflowDetailData fetches the detailed workflow data from Argo.
-func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, namespace, name string) (*WorkflowDetailInfo, error) {
+// getWorkflowDetailData fetches the detailed workflow data from Argo by name,
+// searching across all namespaces.
+func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, name string) (*WorkflowDetailInfo, error) {
+	// Step 1: List all workflows to find the namespace for the given name.
+	workflowList, err := clientset.ArgoprojV1alpha1().Workflows("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Find the workflow's namespace by matching the name.
+	namespace := ""
+	for _, wf := range workflowList.Items {
+		if wf.Name == name {
+			namespace = wf.Namespace
+			break
+		}
+	}
+	if namespace == "" {
+		return nil, fmt.Errorf("workflow %q not found", name)
+	}
+
+	// Step 3: Get the detailed workflow using the resolved namespace.
 	wfDetail, err := clientset.ArgoprojV1alpha1().Workflows(namespace).Get(ctx, name)
 	if err != nil {
 		return nil, err

@@ -9,11 +9,11 @@ import (
 	"testing"
 )
 
-// TestWorkflowDetailHandler tests the GET /api/argo/workflows/{namespace}/{name} endpoint.
+// TestWorkflowDetailHandler tests the GET /api/argo/workflows/{name} endpoint.
 func TestWorkflowDetailHandler(t *testing.T) {
 	t.Run("should return 200 OK or 500 when cluster is unavailable", func(t *testing.T) {
 		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/default/my-workflow", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/my-workflow", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -34,7 +34,7 @@ func TestWorkflowDetailHandler(t *testing.T) {
 
 	t.Run("should set Content-Type to application/json", func(t *testing.T) {
 		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/default/my-workflow", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/my-workflow", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -58,7 +58,7 @@ func TestWorkflowDetailHandler(t *testing.T) {
 
 		for _, method := range methods {
 			t.Run(method, func(t *testing.T) {
-				req := httptest.NewRequest(method, "/api/argo/workflows/default/my-workflow", nil)
+				req := httptest.NewRequest(method, "/api/argo/workflows/my-workflow", nil)
 				w := httptest.NewRecorder()
 
 				// Act
@@ -75,8 +75,8 @@ func TestWorkflowDetailHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("should return 400 when namespace is missing from path", func(t *testing.T) {
-		// Arrange: path without namespace/name segments
+	t.Run("should return 400 when name is missing from path", func(t *testing.T) {
+		// Arrange: path without name segment
 		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/", nil)
 		w := httptest.NewRecorder()
 
@@ -92,9 +92,9 @@ func TestWorkflowDetailHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("should return 400 when name is missing from path", func(t *testing.T) {
-		// Arrange: path with namespace but without name
-		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/default/", nil)
+	t.Run("should return 400 when path contains a slash after name", func(t *testing.T) {
+		// Arrange: path with extra slash segment (namespace/name style is invalid now)
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/default/my-workflow", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -105,13 +105,13 @@ func TestWorkflowDetailHandler(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("expected status 400 for missing name in path, got %d", res.StatusCode)
+			t.Errorf("expected status 400 for path with slash in name, got %d", res.StatusCode)
 		}
 	})
 
 	t.Run("should return valid JSON on any response", func(t *testing.T) {
 		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/default/my-workflow", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows/my-workflow", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -133,7 +133,7 @@ func TestWorkflowDetailHandler(t *testing.T) {
 		// Arrange
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/non-existent-workflow-xyz",
+			"/api/argo/workflows/non-existent-workflow-xyz",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -154,11 +154,11 @@ func TestWorkflowDetailHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("should accept namespace with hyphens in path", func(t *testing.T) {
+	t.Run("should accept name with hyphens in path", func(t *testing.T) {
 		// Arrange
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/my-workflow-abc12",
+			"/api/argo/workflows/my-workflow-abc12",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -172,21 +172,21 @@ func TestWorkflowDetailHandler(t *testing.T) {
 
 		// Should route correctly — not 400
 		if res.StatusCode == http.StatusBadRequest {
-			t.Error("expected handler to parse namespace with hyphens correctly")
+			t.Error("expected handler to parse name with hyphens correctly")
 		}
 	})
 }
 
 // TestWorkflowDetailHandlerResponseStructure tests the response schema of the
-// GET /api/argo/workflows/{namespace}/{name} endpoint.
+// GET /api/argo/workflows/{name} endpoint.
 func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 	t.Run("should return workflow detail object with required top-level fields", func(t *testing.T) {
 		skipIfNoCluster(t)
 
-		// Arrange: relies on fixture workflow-succeeded existing in dashboard-test namespace.
+		// Arrange: relies on fixture data-processing-succeeded existing in dashboard-test namespace.
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/workflow-succeeded",
+			"/api/argo/workflows/data-processing-succeeded",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -199,7 +199,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode == http.StatusNotFound {
-			t.Skip("workflow-succeeded fixture not found; skipping field validation")
+			t.Skip("data-processing-succeeded fixture not found; skipping field validation")
 		}
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
@@ -224,7 +224,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		// Arrange
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/workflow-succeeded",
+			"/api/argo/workflows/data-processing-succeeded",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -237,7 +237,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode == http.StatusNotFound {
-			t.Skip("workflow-succeeded fixture not found; skipping nodes validation")
+			t.Skip("data-processing-succeeded fixture not found; skipping nodes validation")
 		}
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
@@ -287,7 +287,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		// Arrange
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/workflow-succeeded",
+			"/api/argo/workflows/data-processing-succeeded",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -300,7 +300,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		defer res.Body.Close()
 
 		if res.StatusCode == http.StatusNotFound {
-			t.Skip("workflow-succeeded fixture not found; skipping pod filter validation")
+			t.Skip("data-processing-succeeded fixture not found; skipping pod filter validation")
 		}
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
@@ -329,7 +329,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		// Arrange
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/workflow-succeeded",
+			"/api/argo/workflows/data-processing-succeeded",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -379,7 +379,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		// Arrange
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/workflow-succeeded",
+			"/api/argo/workflows/data-processing-succeeded",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -478,7 +478,7 @@ func TestWorkflowDetailHandlerErrorResponse(t *testing.T) {
 		// Arrange
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/dashboard-test/non-existent-xyz",
+			"/api/argo/workflows/non-existent-xyz",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -508,73 +508,70 @@ func TestWorkflowDetailHandlerErrorResponse(t *testing.T) {
 	})
 }
 
-// TestParseWorkflowDetailPath tests the path parsing logic for the detail endpoint.
+// TestParseWorkflowDetailPath tests the name-only path parsing logic for the detail endpoint.
 func TestParseWorkflowDetailPath(t *testing.T) {
 	const prefix = "/api/argo/workflows/"
 
-	t.Run("should parse namespace and name correctly", func(t *testing.T) {
+	t.Run("should parse name correctly", func(t *testing.T) {
 		// Arrange
-		namespace, name, err := parseResourcePath("/api/argo/workflows/dashboard-test/my-workflow", prefix, "")
+		path := "/api/argo/workflows/my-workflow"
+		name := strings.TrimPrefix(path, prefix)
+		name = strings.TrimRight(name, "/")
 
 		// Assert
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if namespace != "dashboard-test" {
-			t.Errorf("expected namespace 'dashboard-test', got '%s'", namespace)
-		}
 		if name != "my-workflow" {
 			t.Errorf("expected name 'my-workflow', got '%s'", name)
 		}
+		if strings.Contains(name, "/") {
+			t.Error("name should not contain a slash")
+		}
 	})
 
-	t.Run("should parse namespace and name with hyphens", func(t *testing.T) {
+	t.Run("should parse name with hyphens", func(t *testing.T) {
 		// Arrange
-		namespace, name, err := parseResourcePath(
-			"/api/argo/workflows/my-namespace/data-processing-abc12",
-			prefix,
-			"",
-		)
+		path := "/api/argo/workflows/data-processing-abc12"
+		name := strings.TrimPrefix(path, prefix)
+		name = strings.TrimRight(name, "/")
 
 		// Assert
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if namespace != "my-namespace" {
-			t.Errorf("expected namespace 'my-namespace', got '%s'", namespace)
-		}
 		if name != "data-processing-abc12" {
 			t.Errorf("expected name 'data-processing-abc12', got '%s'", name)
 		}
 	})
 
-	t.Run("should return error when only prefix is provided", func(t *testing.T) {
+	t.Run("should return empty string when only prefix is provided", func(t *testing.T) {
 		// Arrange
-		_, _, err := parseResourcePath("/api/argo/workflows/", prefix, "")
+		path := "/api/argo/workflows/"
+		name := strings.TrimPrefix(path, prefix)
+		name = strings.TrimRight(name, "/")
 
-		// Assert
-		if err == nil {
-			t.Error("expected error when path has no namespace/name, got nil")
+		// Assert: name should be empty, indicating a bad request
+		if name != "" {
+			t.Errorf("expected empty name for prefix-only path, got '%s'", name)
 		}
 	})
 
-	t.Run("should return error when name segment is missing", func(t *testing.T) {
-		// Arrange — only namespace provided
-		_, _, err := parseResourcePath("/api/argo/workflows/default", prefix, "")
+	t.Run("should detect slash in name segment as invalid", func(t *testing.T) {
+		// Arrange: namespace/name style path is invalid for name-only parsing
+		path := "/api/argo/workflows/default/my-workflow"
+		name := strings.TrimPrefix(path, prefix)
+		name = strings.TrimRight(name, "/")
 
-		// Assert
-		if err == nil {
-			t.Error("expected error when name is missing from path, got nil")
+		// Assert: name contains a slash, indicating a bad request
+		if !strings.Contains(name, "/") {
+			t.Error("expected name to contain slash for namespace/name path (should be rejected)")
 		}
 	})
 
-	t.Run("should return error when both segments are empty", func(t *testing.T) {
+	t.Run("should detect double-slash as invalid", func(t *testing.T) {
 		// Arrange
-		_, _, err := parseResourcePath("/api/argo/workflows//", prefix, "")
+		path := "/api/argo/workflows//"
+		name := strings.TrimPrefix(path, prefix)
+		name = strings.TrimRight(name, "/")
 
-		// Assert
-		if err == nil {
-			t.Error("expected error for double-slash path (empty namespace and name), got nil")
+		// Assert: either empty or contains slash — both are invalid
+		if name != "" && !strings.Contains(name, "/") {
+			t.Errorf("expected invalid name for double-slash path, got '%s'", name)
 		}
 	})
 }
@@ -582,11 +579,11 @@ func TestParseWorkflowDetailPath(t *testing.T) {
 // TestWorkflowDetailHandlerRouting tests that the handler is reachable through
 // the router registered in main.go.
 func TestWorkflowDetailHandlerRouting(t *testing.T) {
-	t.Run("should not return 404 for valid namespace/name path", func(t *testing.T) {
+	t.Run("should not return 404 for valid name path", func(t *testing.T) {
 		// Arrange: directly call the handler — router registration is tested in main_test.go.
 		req := httptest.NewRequest(
 			http.MethodGet,
-			"/api/argo/workflows/default/my-workflow",
+			"/api/argo/workflows/my-workflow",
 			nil,
 		)
 		w := httptest.NewRecorder()
@@ -625,13 +622,13 @@ func TestGetWorkflowDetailData(t *testing.T) {
 			t.Skipf("skipping: Argo client unavailable: %v", err)
 		}
 
-		// Act: call the internal helper directly
-		detail, err := getWorkflowDetailData(context.Background(), client, "dashboard-test", "workflow-succeeded")
+		// Act: call the internal helper directly with name only
+		detail, err := getWorkflowDetailData(context.Background(), client, "data-processing-succeeded")
 
 		// Assert: either it succeeds or 404-style not-found is returned
 		if err != nil {
 			if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "404") {
-				t.Skip("workflow-succeeded fixture not applied; skipping")
+				t.Skip("data-processing-succeeded fixture not applied; skipping")
 			}
 			if strings.Contains(err.Error(), "could not find the requested resource") {
 				t.Skip("Argo CRD not installed; skipping")
