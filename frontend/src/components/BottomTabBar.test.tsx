@@ -38,7 +38,7 @@ describe('BottomTabBar Component', () => {
       expect(tabBar).toBeInTheDocument();
     });
 
-    it('should render all 5 tabs', () => {
+    it('should render all 6 tabs including Argo', () => {
       // Arrange
       vi.mocked(useLocation).mockReturnValue({
         pathname: '/',
@@ -57,9 +57,10 @@ describe('BottomTabBar Component', () => {
       expect(screen.getByTestId('tab-workloads')).toBeInTheDocument();
       expect(screen.getByTestId('tab-pods')).toBeInTheDocument();
       expect(screen.getByTestId('tab-secrets')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-argo')).toBeInTheDocument();
     });
 
-    it('should display tab labels', () => {
+    it('should display tab labels including Argo', () => {
       // Arrange
       vi.mocked(useLocation).mockReturnValue({
         pathname: '/',
@@ -78,9 +79,10 @@ describe('BottomTabBar Component', () => {
       expect(screen.getByText('Workloads')).toBeInTheDocument();
       expect(screen.getByText('Pods')).toBeInTheDocument();
       expect(screen.getByText('Secrets')).toBeInTheDocument();
+      expect(screen.getByText('Argo')).toBeInTheDocument();
     });
 
-    it('should display tab icons', () => {
+    it('should display tab icons including Argo icon', () => {
       // Arrange
       vi.mocked(useLocation).mockReturnValue({
         pathname: '/',
@@ -100,6 +102,7 @@ describe('BottomTabBar Component', () => {
       expect(screen.getByTestId('tab-workloads').querySelector('svg, [class*="icon"]')).toBeTruthy();
       expect(screen.getByTestId('tab-pods').querySelector('svg, [class*="icon"]')).toBeTruthy();
       expect(screen.getByTestId('tab-secrets').querySelector('svg, [class*="icon"]')).toBeTruthy();
+      expect(screen.getByTestId('tab-argo').querySelector('svg, [class*="icon"]')).toBeTruthy();
     });
   });
 
@@ -192,6 +195,24 @@ describe('BottomTabBar Component', () => {
       // Assert
       const secretsTab = screen.getByTestId('tab-secrets');
       expect(secretsTab).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('should highlight Argo tab when pathname is /argo', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/argo',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Assert
+      const argoTab = screen.getByTestId('tab-argo');
+      expect(argoTab).toHaveAttribute('aria-current', 'page');
     });
 
     it('should apply active styling to active tab', () => {
@@ -461,6 +482,25 @@ describe('BottomTabBar Component', () => {
 
       // Assert
       expect(mockNavigate).toHaveBeenCalledWith('/secrets');
+    });
+
+    it('should navigate to /argo when Argo tab is clicked', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+      const argoTab = screen.getByTestId('tab-argo');
+      fireEvent.click(argoTab);
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith('/argo');
     });
 
     it('should call onTabChange prop if provided when tab is clicked', () => {
@@ -763,6 +803,7 @@ describe('BottomTabBar Component', () => {
         screen.getByTestId('tab-workloads'),
         screen.getByTestId('tab-pods'),
         screen.getByTestId('tab-secrets'),
+        screen.getByTestId('tab-argo'),
       ];
       tabs.forEach(tab => {
         expect(tab).not.toHaveAttribute('aria-current', 'page');
