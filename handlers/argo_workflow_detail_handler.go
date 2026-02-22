@@ -44,12 +44,12 @@ type WorkflowDetailStepInfo struct {
 
 // WorkflowDetailInfo represents a full workflow detail response.
 type WorkflowDetailInfo struct {
-	Name         string                   `json:"name"`
-	Namespace    string                   `json:"namespace"`
-	Phase        string                   `json:"phase"`
-	StartedAt    string                   `json:"startedAt"`
-	FinishedAt   string                   `json:"finishedAt"`
-	Nodes        []WorkflowDetailStepInfo `json:"nodes"`
+	Name      string                   `json:"name"`
+	Namespace string                   `json:"namespace"`
+	Phase     string                   `json:"phase"`
+	StartedAt string                   `json:"startedAt"`
+	FinishedAt string                   `json:"finishedAt"`
+	Nodes     []WorkflowDetailStepInfo `json:"nodes"`
 }
 
 // WorkflowDetailHandler handles GET /api/argo/workflows/{name}.
@@ -119,8 +119,8 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 		return nil, err
 	}
 
-	nodes := make([]WorkflowDetailStepInfo, 0, len(wfDetail.Nodes))
-	for _, node := range wfDetail.Nodes {
+	nodes := make([]WorkflowDetailStepInfo, 0, len(wfDetail.Status.Nodes))
+	for _, node := range wfDetail.Status.Nodes {
 		var inputs *IOData
 		if node.Inputs != nil {
 			params := make([]WorkflowDetailParamInfo, 0, len(node.Inputs.Parameters))
@@ -147,23 +147,41 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 			outputs = &IOData{Parameters: params, Artifacts: artifacts}
 		}
 
+		startedAt := ""
+		if node.StartedAt != nil {
+			startedAt = node.StartedAt.String()
+		}
+		finishedAt := ""
+		if node.FinishedAt != nil {
+			finishedAt = node.FinishedAt.String()
+		}
+
 		nodes = append(nodes, WorkflowDetailStepInfo{
 			Name:       node.Name,
-			Phase:      node.Phase,
-			StartedAt:  node.StartedAt,
-			FinishedAt: node.FinishedAt,
+			Phase:      string(node.Phase),
+			StartedAt:  startedAt,
+			FinishedAt: finishedAt,
 			Message:    node.Message,
 			Inputs:     inputs,
 			Outputs:    outputs,
 		})
 	}
 
+	startedAt := ""
+	if wfDetail.Status.StartedAt != nil {
+		startedAt = wfDetail.Status.StartedAt.String()
+	}
+	finishedAt := ""
+	if wfDetail.Status.FinishedAt != nil {
+		finishedAt = wfDetail.Status.FinishedAt.String()
+	}
+
 	return &WorkflowDetailInfo{
-		Name:         wfDetail.Name,
-		Namespace:    wfDetail.Namespace,
-		Phase:        wfDetail.Phase,
-		StartedAt:    wfDetail.StartedAt,
-		FinishedAt:   wfDetail.FinishedAt,
-		Nodes:        nodes,
+		Name:      wfDetail.Name,
+		Namespace: wfDetail.Namespace,
+		Phase:     string(wfDetail.Status.Phase),
+		StartedAt:  startedAt,
+		FinishedAt: finishedAt,
+		Nodes:      nodes,
 	}, nil
 }
