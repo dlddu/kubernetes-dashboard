@@ -11,6 +11,11 @@ export function NamespaceSelector() {
   const [error, setError] = useState<Error | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? (window.matchMedia('(min-width: 640px)')?.matches ?? true)
+      : true
+  );
 
   const favorites: string[] = favoritesCtx?.favorites ?? [];
   const isFavorite = (ns: string) => favoritesCtx?.isFavorite(ns) ?? false;
@@ -36,6 +41,15 @@ export function NamespaceSelector() {
 
   useEffect(() => {
     loadNamespaces();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mediaQuery = window.matchMedia('(min-width: 640px)');
+    if (!mediaQuery) return;
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
@@ -195,20 +209,14 @@ export function NamespaceSelector() {
               Favorites
             </div>
             {!hasFavorites ? (
-              <>
-                <div
-                  data-testid="namespace-favorites-hint"
-                  className="hidden sm:block px-4 py-2 text-sm text-gray-400 italic"
-                >
-                  Hover over a namespace and click ⭐ to add favorites
-                </div>
-                <div
-                  data-testid="namespace-favorites-hint"
-                  className="sm:hidden px-4 py-2 text-sm text-gray-400 italic"
-                >
-                  Tap ⭐ next to a namespace to add favorites
-                </div>
-              </>
+              <div
+                data-testid="namespace-favorites-hint"
+                className="px-4 py-2 text-sm text-gray-400 italic"
+              >
+                {isDesktop
+                  ? 'Hover over a namespace and click ⭐ to add favorites'
+                  : 'Tap ⭐ next to a namespace to add favorites'}
+              </div>
             ) : (
               favoriteNamespaces.slice(0, 5).map((ns) => (
                 <div
