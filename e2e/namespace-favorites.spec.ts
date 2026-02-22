@@ -455,3 +455,134 @@ test.describe('Namespace Favorites - Toggle Behavior', () => {
     expect(renderedCount).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// TODO: Activate when DLD-457 (빈 즐겨찾기 힌트 메시지) is implemented
+// ---------------------------------------------------------------------------
+
+test.describe.skip('Namespace Favorites - Empty State Hint', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await clearFavorites(page);
+  });
+
+  test.afterEach(async ({ page }) => {
+    await clearFavorites(page);
+  });
+
+  test('should display a hint message in the Favorites section when no namespaces are favorited', async ({ page }) => {
+    // Tests that a hint message is rendered inside the Favorites section when the favorites list is empty
+
+    // Arrange: No favorites are set (clearFavorites called in beforeEach)
+
+    // Act: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: Favorites section is visible (it should be rendered even when empty to show the hint)
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    await expect(favoritesSection).toBeVisible();
+
+    // Assert: Hint message is displayed inside the Favorites section
+    const hintMessage = favoritesSection.getByTestId('namespace-favorites-hint');
+    await expect(hintMessage).toBeVisible();
+  });
+
+  test('should show desktop hint text on default viewport', async ({ page }) => {
+    // Tests that the hint message displays the desktop-specific instruction on a default (desktop) viewport
+
+    // Arrange: No favorites are set; default viewport is used (Desktop Chrome per Playwright config)
+
+    // Act: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: Hint message contains the desktop-specific copy
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    const hintMessage = favoritesSection.getByTestId('namespace-favorites-hint');
+    await expect(hintMessage).toHaveText('Hover over a namespace and click ⭐ to add favorites');
+  });
+
+  test('should add first favorite, hide hint message, and display the namespace in Favorites section', async ({ page }) => {
+    // Tests that adding the first favorite causes the hint to disappear and the namespace to appear in Favorites
+
+    // Arrange: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: Hint message is visible before any favorite is added
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    const hintMessage = favoritesSection.getByTestId('namespace-favorites-hint');
+    await expect(hintMessage).toBeVisible();
+
+    // Act: Click the favorite toggle on the "default" namespace option
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const favoriteToggle = defaultOption.getByTestId('namespace-favorite-toggle');
+    await favoriteToggle.click();
+
+    // Assert: Hint message is no longer visible after the first favorite is added
+    await expect(hintMessage).not.toBeVisible();
+
+    // Assert: The "default" namespace now appears in the Favorites section
+    await expect(favoritesSection.getByTestId('namespace-favorite-item-default')).toBeVisible();
+  });
+
+  test('should show hint message again when all favorites are removed', async ({ page }) => {
+    // Tests that removing the last favorite causes the hint message to reappear
+
+    // Arrange: Seed "default" as an existing favorite and reload so the UI reflects it
+    await setFavorites(page, ['default']);
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Act: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: No hint is shown while a favorite exists
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    const hintMessage = favoritesSection.getByTestId('namespace-favorites-hint');
+    await expect(hintMessage).not.toBeVisible();
+
+    // Act: Remove the only favorite by clicking its active toggle
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const favoriteToggle = defaultOption.getByTestId('namespace-favorite-toggle');
+    await favoriteToggle.click();
+
+    // Assert: Hint message reappears now that the favorites list is empty again
+    await expect(hintMessage).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TODO: Activate when DLD-457 (빈 즐겨찾기 힌트 메시지 - 모바일 뷰포트) is implemented
+// ---------------------------------------------------------------------------
+
+test.describe.skip('Namespace Favorites - Empty State Hint (Mobile)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await clearFavorites(page);
+  });
+
+  test.afterEach(async ({ page }) => {
+    await clearFavorites(page);
+  });
+
+  test('should show mobile hint text on 375x667 viewport', async ({ page }) => {
+    // Tests that the hint message displays the mobile-specific instruction on a 375x667 viewport
+
+    // Arrange: No favorites are set; mobile viewport is set in beforeEach
+
+    // Act: Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Assert: Hint message contains the mobile-specific copy
+    const favoritesSection = page.getByTestId('namespace-favorites-section');
+    const hintMessage = favoritesSection.getByTestId('namespace-favorites-hint');
+    await expect(hintMessage).toHaveText('Tap ⭐ next to a namespace to add favorites');
+  });
+});
