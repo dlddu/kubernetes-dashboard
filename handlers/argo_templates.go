@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	versioned "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +38,12 @@ var WorkflowTemplatesHandler = handleGet("Failed to fetch workflow templates dat
 func getWorkflowTemplatesData(ctx context.Context, clientset *versioned.Clientset, namespace string) ([]WorkflowTemplateInfo, error) {
 	templateList, err := clientset.ArgoprojV1alpha1().WorkflowTemplates(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
+		// Argo CRD가 설치되지 않은 클러스터에서는 빈 목록을 반환합니다.
+		// REST client는 CRD 미설치 시 "the server could not find the requested resource" 메시지를 포함한 에러를 반환합니다.
+		if strings.Contains(err.Error(), "the server could not find the requested resource") ||
+			strings.Contains(strings.ToLower(err.Error()), "not found") {
+			return []WorkflowTemplateInfo{}, nil
+		}
 		return nil, err
 	}
 
