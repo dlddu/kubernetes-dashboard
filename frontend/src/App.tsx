@@ -10,6 +10,7 @@ import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
 import { SecretsTab } from './components/SecretsTab';
+import { ArgoTab } from './components/ArgoTab';
 import { DebugPage } from './components/DebugPage';
 
 function AppContent() {
@@ -30,6 +31,7 @@ function AppContent() {
           <Route path="/pods" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/pods/*" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/secrets" element={<SecretsTab namespace={namespaceParam} />} />
+          <Route path="/argo" element={<ArgoTab namespace={namespaceParam} />} />
           <Route path="/debug" element={<DebugPage />} />
         </Routes>
       </main>

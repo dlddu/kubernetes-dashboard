@@ -132,3 +132,107 @@ func TestAPIRouting(t *testing.T) {
 		}
 	})
 }
+
+// TestArgoWorkflowTemplatesRoute tests that the Argo workflow templates route is registered
+func TestArgoWorkflowTemplatesRoute(t *testing.T) {
+	t.Run("should route GET /api/argo/workflow-templates to WorkflowTemplatesHandler", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflow-templates", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Should be routed (200 or 500), never 404
+		if res.StatusCode == http.StatusNotFound {
+			t.Error("expected /api/argo/workflow-templates to be routed, got 404")
+		}
+	})
+
+	t.Run("should return JSON content-type for /api/argo/workflow-templates", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflow-templates", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		contentType := res.Header.Get("Content-Type")
+		if !strings.Contains(contentType, "application/json") {
+			t.Errorf("Argo API endpoint should return JSON, got Content-Type: %s", contentType)
+		}
+	})
+
+	t.Run("should route GET /api/argo/workflow-templates with ns query parameter", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflow-templates?ns=dashboard-test", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Should be routed (200 or 500), never 404
+		if res.StatusCode == http.StatusNotFound {
+			t.Error("expected /api/argo/workflow-templates?ns=dashboard-test to be routed, got 404")
+		}
+	})
+
+	t.Run("should reject non-GET methods on /api/argo/workflow-templates", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				req := httptest.NewRequest(method, "/api/argo/workflow-templates", nil)
+				w := httptest.NewRecorder()
+
+				// Act
+				router.ServeHTTP(w, req)
+
+				// Assert
+				res := w.Result()
+				defer res.Body.Close()
+
+				if res.StatusCode != http.StatusMethodNotAllowed {
+					t.Errorf("expected status 405 for %s /api/argo/workflow-templates, got %d", method, res.StatusCode)
+				}
+			})
+		}
+	})
+
+	t.Run("should serve /argo SPA route via frontend handler", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/argo", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Should serve index.html (200) or 404 if frontend not built yet
+		// The /argo route is a SPA route - it should NOT return a Go API 404
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
+			t.Errorf("expected status 200 or 404 for SPA /argo route, got %d", res.StatusCode)
+		}
+	})
+}

@@ -18,8 +18,8 @@ import { test, expect } from '@playwright/test';
  * Parent Issue: DLD-435 - Argo WorkflowTemplate Submit 기능 추가
  */
 
-// TODO: Activate when DLD-438 is implemented
-test.describe.skip('Argo Tab - WorkflowTemplate List', () => {
+// Activated: DLD-439 - WorkflowTemplate 목록 조회 구현 완료
+test.describe('Argo Tab - WorkflowTemplate List', () => {
   test('should display Templates section by default when navigating to Argo tab', async ({ page }) => {
     // Tests that the Argo tab renders with the Templates section visible by default
 
