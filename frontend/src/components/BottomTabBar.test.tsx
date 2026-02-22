@@ -249,7 +249,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={0} />);
 
       // Assert
-      const badge = screen.queryByTestId('pods-badge');
+      const badge = screen.queryByTestId('overview-badge');
       expect(badge).not.toBeInTheDocument();
     });
 
@@ -267,7 +267,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={3} />);
 
       // Assert
-      const badge = screen.getByTestId('pods-badge');
+      const badge = screen.getByTestId('overview-badge');
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveTextContent('3');
     });
@@ -286,7 +286,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={15} />);
 
       // Assert
-      const badge = screen.getByTestId('pods-badge');
+      const badge = screen.getByTestId('overview-badge');
       expect(badge).toHaveTextContent('15');
     });
 
@@ -304,7 +304,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={1} />);
 
       // Assert
-      const badge = screen.getByTestId('pods-badge');
+      const badge = screen.getByTestId('overview-badge');
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveTextContent('1');
     });
@@ -323,11 +323,11 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={999} />);
 
       // Assert
-      const badge = screen.getByTestId('pods-badge');
+      const badge = screen.getByTestId('overview-badge');
       expect(badge).toHaveTextContent('999');
     });
 
-    it('should position badge on Pods tab', () => {
+    it('should position badge on Overview tab', () => {
       // Arrange
       vi.mocked(useLocation).mockReturnValue({
         pathname: '/',
@@ -341,10 +341,10 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={5} />);
 
       // Assert
-      const podsTab = screen.getByTestId('tab-pods');
-      const badge = screen.getByTestId('pods-badge');
-      // Badge should be a child or sibling of pods tab
-      expect(podsTab.contains(badge) || podsTab.parentElement?.contains(badge)).toBe(true);
+      const overviewTab = screen.getByTestId('tab-overview');
+      const badge = screen.getByTestId('overview-badge');
+      // Badge should be a child or sibling of overview tab
+      expect(overviewTab.contains(badge) || overviewTab.parentElement?.contains(badge)).toBe(true);
     });
 
     it('should style badge with error/warning color', () => {
@@ -361,7 +361,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={5} />);
 
       // Assert
-      const badge = screen.getByTestId('pods-badge');
+      const badge = screen.getByTestId('overview-badge');
       // Badge should have red/error styling
       expect(badge.className).toMatch(/bg-red|bg-error|text-red|text-white/i);
     });
@@ -698,7 +698,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={7} />);
 
       // Assert
-      const badge = screen.getByTestId('pods-badge');
+      const badge = screen.getByTestId('overview-badge');
       expect(badge).toHaveAttribute('aria-label', expect.stringMatching(/unhealthy|pod|7/i));
     });
   });
@@ -718,7 +718,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={0} />);
 
       // Assert
-      const badge = screen.queryByTestId('pods-badge');
+      const badge = screen.queryByTestId('overview-badge');
       expect(badge).not.toBeInTheDocument();
     });
 
@@ -736,7 +736,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={-5} />);
 
       // Assert
-      const badge = screen.queryByTestId('pods-badge');
+      const badge = screen.queryByTestId('overview-badge');
       expect(badge).not.toBeInTheDocument();
     });
 
@@ -901,7 +901,7 @@ describe('BottomTabBar Component', () => {
       render(<BottomTabBar unhealthyPodCount={count} />);
 
       // Assert
-      const badge = screen.getByTestId('pods-badge');
+      const badge = screen.getByTestId('overview-badge');
       expect(badge).toHaveTextContent(count.toString());
     });
 
@@ -917,13 +917,13 @@ describe('BottomTabBar Component', () => {
 
       // Act
       const { rerender } = render(<BottomTabBar unhealthyPodCount={5} />);
-      expect(screen.getByTestId('pods-badge')).toHaveTextContent('5');
+      expect(screen.getByTestId('overview-badge')).toHaveTextContent('5');
 
       // Update count
       rerender(<BottomTabBar unhealthyPodCount={10} />);
 
       // Assert
-      expect(screen.getByTestId('pods-badge')).toHaveTextContent('10');
+      expect(screen.getByTestId('overview-badge')).toHaveTextContent('10');
     });
 
     it('should hide badge when count changes to 0', () => {
@@ -938,13 +938,13 @@ describe('BottomTabBar Component', () => {
 
       // Act
       const { rerender } = render(<BottomTabBar unhealthyPodCount={5} />);
-      expect(screen.getByTestId('pods-badge')).toBeInTheDocument();
+      expect(screen.getByTestId('overview-badge')).toBeInTheDocument();
 
       // Update to 0
       rerender(<BottomTabBar unhealthyPodCount={0} />);
 
       // Assert
-      expect(screen.queryByTestId('pods-badge')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('overview-badge')).not.toBeInTheDocument();
     });
   });
 });
