@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchWorkflowTemplates, submitWorkflow } from './argo';
+import { fetchWorkflowTemplates, submitWorkflow, fetchWorkflows } from './argo';
 
 // Mock fetch globally with proper typing
 const mockFetch = vi.fn();
@@ -485,6 +485,303 @@ describe('Argo API', () => {
       const [, options] = mockFetch.mock.calls[0];
       const body = JSON.parse((options as RequestInit).body as string);
       expect(Object.keys(body.parameters)).toHaveLength(10);
+    });
+  });
+
+  describe('fetchWorkflows - happy path', () => {
+    it('should fetch workflow runs list from backend', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'data-processing-abc12',
+          namespace: 'dashboard-test',
+          templateName: 'data-processing-with-params',
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T09:00:00Z',
+          nodes: [
+            { name: 'step-1', phase: 'Succeeded' },
+            { name: 'step-2', phase: 'Succeeded' },
+          ],
+        },
+        {
+          name: 'ml-training-xyz99',
+          namespace: 'production',
+          templateName: 'ml-training',
+          phase: 'Running',
+          startedAt: '2026-02-22T10:00:00Z',
+          finishedAt: '',
+          nodes: [{ name: 'train', phase: 'Running' }],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockWorkflows,
+      });
+
+      // Act
+      const result = await fetchWorkflows();
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows');
+      expect(result).toEqual(mockWorkflows);
+      expect(Array.isArray(result)).toBe(true);
+    });
+
+    it('should fetch workflow runs with namespace filter', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'data-processing-abc12',
+          namespace: 'dashboard-test',
+          templateName: 'data-processing-with-params',
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T09:00:00Z',
+          nodes: [],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockWorkflows,
+      });
+
+      // Act
+      const result = await fetchWorkflows('dashboard-test');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows?ns=dashboard-test');
+      expect(result).toEqual(mockWorkflows);
+    });
+
+    it('should not include ns query param when namespace is undefined', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      await fetchWorkflows(undefined);
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows');
+    });
+
+    it('should not include ns query param when namespace is empty string', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      await fetchWorkflows('');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows');
+    });
+
+    it('should return empty array when no workflows exist', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      const result = await fetchWorkflows();
+
+      // Assert
+      expect(result).toEqual([]);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should return workflow with nodes array', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'wf-with-nodes',
+          namespace: 'default',
+          templateName: 'my-template',
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T08:30:00Z',
+          nodes: [
+            { name: 'step-a', phase: 'Succeeded' },
+            { name: 'step-b', phase: 'Succeeded' },
+            { name: 'step-c', phase: 'Succeeded' },
+          ],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
+
+      // Act
+      const result = await fetchWorkflows();
+
+      // Assert
+      expect(result[0].nodes).toHaveLength(3);
+      expect(result[0].nodes[0].name).toBe('step-a');
+      expect(result[0].nodes[0].phase).toBe('Succeeded');
+    });
+
+    it('should return workflow with empty nodes array', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'wf-no-nodes',
+          namespace: 'default',
+          templateName: 'simple-template',
+          phase: 'Pending',
+          startedAt: '',
+          finishedAt: '',
+          nodes: [],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
+
+      // Act
+      const result = await fetchWorkflows();
+
+      // Assert
+      expect(result[0].nodes).toEqual([]);
+    });
+
+    it('should return type-safe WorkflowInfo objects', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'typed-wf',
+          namespace: 'default',
+          templateName: 'my-template',
+          phase: 'Running',
+          startedAt: '2026-02-22T10:00:00Z',
+          finishedAt: '',
+          nodes: [{ name: 'step-1', phase: 'Running' }],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
+
+      // Act
+      const result = await fetchWorkflows();
+
+      // Assert — TypeScript compile-time check
+      const name: string = result[0].name;
+      const namespace: string = result[0].namespace;
+      const templateName: string = result[0].templateName;
+      const phase: string = result[0].phase;
+      const nodes = result[0].nodes;
+
+      expect(name).toBe('typed-wf');
+      expect(namespace).toBe('default');
+      expect(templateName).toBe('my-template');
+      expect(phase).toBe('Running');
+      expect(Array.isArray(nodes)).toBe(true);
+    });
+  });
+
+  describe('fetchWorkflows - error cases', () => {
+    it('should handle network errors gracefully', async () => {
+      // Arrange
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      // Act & Assert
+      await expect(fetchWorkflows()).rejects.toThrow('Network error');
+    });
+
+    it('should handle HTTP 500 response', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+      // Act & Assert
+      await expect(fetchWorkflows()).rejects.toThrow();
+    });
+
+    it('should handle HTTP 403 forbidden', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+      });
+
+      // Act & Assert
+      await expect(fetchWorkflows()).rejects.toThrow();
+    });
+
+    it('should handle invalid JSON response', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => {
+          throw new Error('Invalid JSON');
+        },
+      });
+
+      // Act & Assert
+      await expect(fetchWorkflows()).rejects.toThrow('Invalid JSON');
+    });
+  });
+
+  describe('fetchWorkflows - edge cases', () => {
+    it('should handle large workflow list', async () => {
+      // Arrange
+      const mockWorkflows = Array.from({ length: 50 }, (_, i) => ({
+        name: `workflow-${i}`,
+        namespace: 'default',
+        templateName: 'my-template',
+        phase: 'Succeeded',
+        startedAt: '2026-02-22T08:00:00Z',
+        finishedAt: '2026-02-22T09:00:00Z',
+        nodes: [],
+      }));
+
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
+
+      // Act
+      const result = await fetchWorkflows();
+
+      // Assert
+      expect(result).toHaveLength(50);
+      expect(result[0].name).toBe('workflow-0');
+      expect(result[49].name).toBe('workflow-49');
+    });
+
+    it('should handle namespace with hyphens', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      await fetchWorkflows('dashboard-test');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows?ns=dashboard-test');
+    });
+
+    it('should handle workflow with many nodes', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'complex-wf',
+          namespace: 'default',
+          templateName: 'complex-template',
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T10:00:00Z',
+          nodes: Array.from({ length: 10 }, (_, i) => ({
+            name: `step-${i}`,
+            phase: 'Succeeded',
+          })),
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
+
+      // Act
+      const result = await fetchWorkflows();
+
+      // Assert
+      expect(result[0].nodes).toHaveLength(10);
     });
   });
 

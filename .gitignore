@@ -61,3 +61,4 @@ playwright/.cache/
 # Kubernetes
 kubeconfig
 *.kubeconfig
+go1.23.6.linux-amd64.tar.gz

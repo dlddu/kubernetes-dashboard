@@ -18,9 +18,29 @@ export interface SubmitWorkflowResult {
   namespace: string;
 }
 
+export interface WorkflowStepInfo {
+  name: string;
+  phase: string;
+}
+
+export interface WorkflowInfo {
+  name: string;
+  namespace: string;
+  phase: string;
+  templateName: string;
+  startedAt: string;
+  finishedAt: string;
+  nodes: WorkflowStepInfo[];
+}
+
 export async function fetchWorkflowTemplates(namespace?: string): Promise<WorkflowTemplateInfo[]> {
   const url = buildURL('/api/argo/workflow-templates', { ns: namespace });
   return fetchJSON<WorkflowTemplateInfo[]>(url);
+}
+
+export async function fetchWorkflows(namespace?: string): Promise<WorkflowInfo[]> {
+  const url = buildURL('/api/argo/workflows', { ns: namespace });
+  return fetchJSON<WorkflowInfo[]>(url);
 }
 
 export async function submitWorkflow(
