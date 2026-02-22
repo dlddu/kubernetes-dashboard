@@ -596,3 +596,149 @@ test.describe('Namespace Favorites - Empty State Hint (Mobile)', () => {
     await expect(hintMessage).toHaveText('Tap ⭐ next to a namespace to add favorites');
   });
 });
+
+// ---------------------------------------------------------------------------
+// TODO: Activate when DLD-459 (반응형 ⭐ 아이콘) is implemented
+// ---------------------------------------------------------------------------
+
+test.describe.skip('Namespace Favorites - Responsive Star Icon (Desktop)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await clearFavorites(page);
+
+    // Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await clearFavorites(page);
+  });
+
+  test('should hide star icon (opacity: 0) on an unfavorited namespace before hover', async ({ page }) => {
+    // Tests that on desktop, the star icon of an unfavorited namespace is invisible (opacity: 0)
+    // before the user hovers over the namespace option.
+    // TDD Red Phase: Responsive opacity behavior is not yet implemented (DLD-459).
+
+    // Arrange: "default" namespace is not favorited (clearFavorites called in beforeEach)
+
+    // Act: Locate the favorite toggle for the "default" namespace option (no hover applied yet)
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const starIcon = defaultOption.getByTestId('namespace-favorite-toggle');
+
+    // Assert: Star icon is present in the DOM but visually hidden (opacity: 0)
+    const computedOpacity = await starIcon.evaluate((el) => {
+      return window.getComputedStyle(el).opacity;
+    });
+    expect(parseFloat(computedOpacity)).toBe(0);
+  });
+
+  test('should reveal star icon (opacity: 1) on an unfavorited namespace when hovered', async ({ page }) => {
+    // Tests that on desktop, hovering over an unfavorited namespace option makes the star icon
+    // visible (opacity: 1) via the responsive hover effect.
+    // TDD Red Phase: Responsive opacity behavior is not yet implemented (DLD-459).
+
+    // Arrange: "default" namespace is not favorited (clearFavorites called in beforeEach)
+
+    // Act: Hover over the "default" namespace option to trigger the hover state
+    const defaultOption = page.getByTestId('namespace-option-default');
+    await defaultOption.hover();
+
+    // Assert: Star icon becomes visible after hover (opacity: 1)
+    const starIcon = defaultOption.getByTestId('namespace-favorite-toggle');
+    const computedOpacity = await starIcon.evaluate((el) => {
+      return window.getComputedStyle(el).opacity;
+    });
+    expect(parseFloat(computedOpacity)).toBe(1);
+  });
+
+  test('should always show star icon (opacity: 1) on a favorited namespace regardless of hover state', async ({ page }) => {
+    // Tests that on desktop, the star icon of an already-favorited namespace is always visible
+    // (opacity: 1) without requiring hover — it indicates the active/favorited state.
+    // TDD Red Phase: Responsive opacity behavior is not yet implemented (DLD-459).
+
+    // Arrange: Seed "default" as an existing favorite and reload so the UI reflects it
+    await clearFavorites(page);
+    await setFavorites(page, ['default']);
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Re-open the namespace selector after reload
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Act: Locate the favorite toggle for "default" in the All section (no hover applied)
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const starIcon = defaultOption.getByTestId('namespace-favorite-toggle');
+
+    // Assert: Star icon is visible without hover (opacity: 1) because the namespace is favorited
+    const computedOpacity = await starIcon.evaluate((el) => {
+      return window.getComputedStyle(el).opacity;
+    });
+    expect(parseFloat(computedOpacity)).toBe(1);
+  });
+});
+
+test.describe.skip('Namespace Favorites - Responsive Star Icon (Mobile)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await clearFavorites(page);
+
+    // Open the namespace selector dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await clearFavorites(page);
+  });
+
+  test('should always show star icon (opacity: 1) on an unfavorited namespace on mobile viewport', async ({ page }) => {
+    // Tests that on mobile (375x667), the star icon of an unfavorited namespace is always visible
+    // (opacity: 1) without requiring hover — touch devices do not support hover interactions,
+    // so the icon must be permanently visible to remain accessible.
+    // TDD Red Phase: Responsive opacity behavior is not yet implemented (DLD-459).
+
+    // Arrange: "default" namespace is not favorited (clearFavorites called in beforeEach)
+
+    // Act: Locate the favorite toggle for the "default" namespace option (no hover applied)
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const starIcon = defaultOption.getByTestId('namespace-favorite-toggle');
+
+    // Assert: Star icon is visible without hover on mobile (opacity: 1)
+    const computedOpacity = await starIcon.evaluate((el) => {
+      return window.getComputedStyle(el).opacity;
+    });
+    expect(parseFloat(computedOpacity)).toBe(1);
+  });
+
+  test('should always show star icon (opacity: 1) on a favorited namespace on mobile viewport', async ({ page }) => {
+    // Tests that on mobile (375x667), the star icon of an already-favorited namespace is always
+    // visible (opacity: 1). Favorited state must be clearly indicated on touch devices.
+    // TDD Red Phase: Responsive opacity behavior is not yet implemented (DLD-459).
+
+    // Arrange: Seed "default" as an existing favorite and reload so the UI reflects it
+    await clearFavorites(page);
+    await setFavorites(page, ['default']);
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Re-open the namespace selector after reload (viewport is still 375x667 from beforeEach)
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    // Act: Locate the favorite toggle for "default" in the All section
+    const defaultOption = page.getByTestId('namespace-option-default');
+    const starIcon = defaultOption.getByTestId('namespace-favorite-toggle');
+
+    // Assert: Star icon is visible without hover on mobile (opacity: 1) for a favorited namespace
+    const computedOpacity = await starIcon.evaluate((el) => {
+      return window.getComputedStyle(el).opacity;
+    });
+    expect(parseFloat(computedOpacity)).toBe(1);
+  });
+});
