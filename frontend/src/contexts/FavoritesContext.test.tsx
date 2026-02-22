@@ -266,12 +266,6 @@ describe('FavoritesContext', () => {
 
   describe('useFavorites - Provider 외부에서 호출 시 에러', () => {
     it('should throw an error when used outside FavoritesProvider', () => {
-      // Arrange
-      const TestComponentWithoutProvider = () => {
-        useFavorites();
-        return null;
-      };
-
       // Act & Assert
       expect(() => {
         renderHook(() => useFavorites());
