@@ -184,6 +184,17 @@ jobs:
           kind create cluster --name integration-test
           kubectl cluster-info
 
+      - name: Install Argo Workflows CRDs
+        run: |
+          kubectl apply -k "https://github.com/argoproj/argo-workflows/manifests/base/crds/minimal?ref=v3.6.4"
+          kubectl wait --for=condition=Established crd/workflows.argoproj.io --timeout=60s
+          kubectl wait --for=condition=Established crd/workflowtemplates.argoproj.io --timeout=60s
+
+      - name: Apply test fixtures
+        run: |
+          chmod +x ./test/fixtures/apply-all.sh
+          ./test/fixtures/apply-all.sh
+
       - name: Run Go handler tests with cluster
         run: go test -v -race ./handlers/
 

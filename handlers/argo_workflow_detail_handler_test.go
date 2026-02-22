@@ -201,9 +201,6 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 		if res.StatusCode == http.StatusNotFound {
 			t.Skip("data-processing-succeeded fixture not found; skipping field validation")
 		}
-		if res.StatusCode == http.StatusInternalServerError {
-			t.Skip("skipping: Argo CRD may not be installed (got 500)")
-		}
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
 		}
@@ -241,9 +238,6 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 
 		if res.StatusCode == http.StatusNotFound {
 			t.Skip("data-processing-succeeded fixture not found; skipping nodes validation")
-		}
-		if res.StatusCode == http.StatusInternalServerError {
-			t.Skip("skipping: Argo CRD may not be installed (got 500)")
 		}
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
@@ -307,9 +301,6 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 
 		if res.StatusCode == http.StatusNotFound {
 			t.Skip("data-processing-succeeded fixture not found; skipping pod filter validation")
-		}
-		if res.StatusCode == http.StatusInternalServerError {
-			t.Skip("skipping: Argo CRD may not be installed (got 500)")
 		}
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", res.StatusCode)
