@@ -239,9 +239,6 @@ test.describe('Argo Tab - Workflow Detail - Navigation', () => {
   });
 
   test('should navigate to WorkflowDetail when a WorkflowCard is clicked', async ({ page }) => {
-    // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
-
     // Tests that clicking a WorkflowCard in the Workflow list transitions to the detail view.
 
     // Arrange: Navigate to the Workflows section
@@ -292,9 +289,6 @@ test.describe('Argo Tab - Workflow Detail - Header', () => {
   });
 
   test('should display workflow name, phase badge, and start/end times in the header', async ({ page }) => {
-    // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
-
     // Tests that the WorkflowDetail header shows the workflow name, phase badge,
     // started time, and finished time (or dash when not finished).
 
@@ -359,7 +353,6 @@ test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
 
   test('should expand and collapse the Parameters section when the toggle is clicked', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that the Parameters toggle button shows/hides the parameter list.
     // The initial state is collapsed; clicking once expands it; clicking again collapses it.
@@ -430,7 +423,6 @@ test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
 
   test('should display each step with name, phase badge, and time in the Steps timeline', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that the Steps timeline renders each step entry with:
     // - step name (data-testid="workflow-detail-step-name")
@@ -519,7 +511,6 @@ test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
 
   test("should display 'Inputs / Outputs' toggle button for steps that have inputs or outputs", async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that the IO toggle button (data-testid="workflow-detail-step-io-toggle")
     // is rendered only for steps that have at least one input or output parameter/artifact.
@@ -557,7 +548,6 @@ test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
 
   test('should NOT display IO toggle button for steps that have no inputs and no outputs', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that step-three (Pending, no inputs, no outputs) does not render
     // the IO toggle button at all.
@@ -610,7 +600,6 @@ test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
 
   test('should display purple Inputs panel with parameters (key=value) and artifacts (name, path, from)', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that clicking the IO toggle on step-one of data-processing-failed reveals
     // the Inputs panel with:
@@ -660,7 +649,6 @@ test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
 
   test('should display green Outputs panel with parameters (key=value) and artifacts (name, path, size)', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that the Outputs panel shows:
     //   - green color class (data-testid="workflow-detail-step-outputs-panel")
@@ -746,7 +734,6 @@ test.describe('Argo Tab - Workflow Detail - Step Message', () => {
 
   test('should display step message when the step has a non-empty message', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that a step with a non-empty message field renders the message text
     // below the step header. Two fixtures are verified:
@@ -837,7 +824,6 @@ test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
 
   test("should return to the Workflow list when 'Back to Workflows' is clicked", async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that clicking the "Back to Workflows" button in the detail view
     // dismisses the detail and re-renders the workflow-runs-page list.
@@ -900,7 +886,6 @@ test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
 
   test('should display LoadingSkeleton while the workflow detail is being fetched', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that a LoadingSkeleton with aria-busy="true" is shown while the
     // detail API request is in-flight (simulated with a 3-second delay).
@@ -936,7 +921,6 @@ test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
 
   test('should display ErrorRetry with functional retry when the workflow detail API returns an error', async ({ page }) => {
     // TODO: Remove skip when DLD-445 is implemented
-    test.skip(true, 'Pending implementation: DLD-445');
 
     // Tests that when the detail API returns 500 the ErrorRetry component is shown,
     // and clicking Retry re-fetches and shows the detail on success.

@@ -739,4 +739,203 @@ describe('ArgoTab Component', () => {
       });
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // WorkflowDetail View Swap
+  //
+  // TDD Red Phase: these tests define the expected behavior of the view-swap
+  // from the workflow runs list to the WorkflowDetail page.
+  // ArgoTab.tsx currently does not have a selectedWorkflow state or WorkflowDetail
+  // rendering; these tests will fail until the implementation is added.
+  // ---------------------------------------------------------------------------
+
+  describe('WorkflowDetail View Swap', () => {
+    it('should switch to workflow-detail-page when a WorkflowCard is clicked', async () => {
+      // Arrange: templates (empty) + workflow list + detail API responses
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })             // templates
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })  // workflow list
+        .mockResolvedValueOnce({                                                // workflow detail
+          ok: true,
+          json: async () => ({
+            name: 'data-processing-abc12',
+            namespace: 'dashboard-test',
+            templateName: 'data-processing-with-params',
+            phase: 'Succeeded',
+            startedAt: '2026-02-22T08:00:00Z',
+            finishedAt: '2026-02-22T09:00:00Z',
+            parameters: [],
+            nodes: [
+              {
+                name: 'step-1',
+                phase: 'Succeeded',
+                startedAt: '2026-02-22T08:00:05Z',
+                finishedAt: '2026-02-22T09:00:00Z',
+                message: '',
+                inputs: { parameters: [], artifacts: [] },
+                outputs: { parameters: [], artifacts: [] },
+              },
+            ],
+          }),
+        });
+
+      render(<ArgoTab />);
+
+      // Navigate to workflow runs list
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Act: click the first WorkflowCard
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      // Assert: workflow-detail-page is now visible
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-detail-page')).toBeInTheDocument();
+      });
+
+      // Assert: workflow-runs-page is no longer visible (view swap)
+      expect(screen.queryByTestId('workflow-runs-page')).not.toBeInTheDocument();
+    });
+
+    it('should display the detail of the clicked workflow', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            name: 'data-processing-abc12',
+            namespace: 'dashboard-test',
+            templateName: 'data-processing-with-params',
+            phase: 'Succeeded',
+            startedAt: '2026-02-22T08:00:00Z',
+            finishedAt: '2026-02-22T09:00:00Z',
+            parameters: [],
+            nodes: [],
+          }),
+        });
+
+      render(<ArgoTab />);
+
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Act
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      // Assert: the detail page shows the correct workflow name
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-detail-name')).toHaveTextContent('data-processing-abc12');
+      });
+    });
+
+    it('should return to workflow-runs-page when the back button is clicked', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            name: 'data-processing-abc12',
+            namespace: 'dashboard-test',
+            templateName: 'data-processing-with-params',
+            phase: 'Succeeded',
+            startedAt: '2026-02-22T08:00:00Z',
+            finishedAt: '2026-02-22T09:00:00Z',
+            parameters: [],
+            nodes: [],
+          }),
+        });
+
+      render(<ArgoTab />);
+
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Navigate to detail view
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-detail-page')).toBeInTheDocument();
+      });
+
+      // Act: click back button
+      fireEvent.click(screen.getByTestId('workflow-detail-back-button'));
+
+      // Assert: workflow runs list is restored
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      // Assert: detail page is gone
+      expect(screen.queryByTestId('workflow-detail-page')).not.toBeInTheDocument();
+    });
+
+    it('should NOT render workflow-detail-page by default (without clicking a card)', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
+
+      render(<ArgoTab />);
+
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Assert: detail page should not be rendered
+      expect(screen.queryByTestId('workflow-detail-page')).not.toBeInTheDocument();
+    });
+
+    it('should fetch the workflow detail from /api/argo/workflows/{name} when a card is clicked', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            name: 'data-processing-abc12',
+            namespace: 'dashboard-test',
+            templateName: 'data-processing-with-params',
+            phase: 'Succeeded',
+            startedAt: '2026-02-22T08:00:00Z',
+            finishedAt: '2026-02-22T09:00:00Z',
+            parameters: [],
+            nodes: [],
+          }),
+        });
+
+      render(<ArgoTab />);
+
+      fireEvent.click(screen.getByTestId('workflows-tab'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
+      });
+
+      // Act
+      fireEvent.click(screen.getAllByTestId('workflow-run-card')[0]);
+
+      // Assert: detail endpoint was called with the correct workflow name
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/argo/workflows/data-processing-abc12')
+        );
+      });
+    });
+  });
 });

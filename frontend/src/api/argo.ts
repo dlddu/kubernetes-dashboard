@@ -43,6 +43,49 @@ export async function fetchWorkflows(namespace?: string): Promise<WorkflowInfo[]
   return fetchJSON<WorkflowInfo[]>(url);
 }
 
+export interface WorkflowArtifactDetailInfo {
+  name: string;
+  path: string;
+  from: string;
+  size: string;
+}
+
+export interface WorkflowParameterDetailInfo {
+  name: string;
+  value: string;
+}
+
+export interface WorkflowIODetailInfo {
+  parameters: WorkflowParameterDetailInfo[];
+  artifacts: WorkflowArtifactDetailInfo[];
+}
+
+export interface WorkflowNodeDetailInfo {
+  name: string;
+  phase: string;
+  startedAt: string;
+  finishedAt: string;
+  message: string;
+  inputs: WorkflowIODetailInfo;
+  outputs: WorkflowIODetailInfo;
+}
+
+export interface WorkflowDetailInfo {
+  name: string;
+  namespace: string;
+  templateName: string;
+  phase: string;
+  startedAt: string;
+  finishedAt: string;
+  parameters: WorkflowParameterDetailInfo[];
+  nodes: WorkflowNodeDetailInfo[];
+}
+
+export async function fetchWorkflowDetail(name: string, namespace?: string): Promise<WorkflowDetailInfo> {
+  const url = buildURL(`/api/argo/workflows/${name}`, { ns: namespace });
+  return fetchJSON<WorkflowDetailInfo>(url);
+}
+
 export async function submitWorkflow(
   templateName: string,
   _namespace: string,

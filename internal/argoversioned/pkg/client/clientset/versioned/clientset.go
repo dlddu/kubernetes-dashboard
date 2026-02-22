@@ -142,6 +142,37 @@ type WorkflowNode struct {
 	Phase string
 }
 
+// WorkflowParameterDetail represents a parameter in a workflow node's inputs/outputs.
+type WorkflowParameterDetail struct {
+	Name  string
+	Value string
+}
+
+// WorkflowArtifactDetail represents an artifact in a workflow node's inputs/outputs.
+type WorkflowArtifactDetail struct {
+	Name string
+	Path string
+	From string
+	Size string
+}
+
+// WorkflowIODetail represents the inputs or outputs of a workflow node.
+type WorkflowIODetail struct {
+	Parameters []WorkflowParameterDetail
+	Artifacts  []WorkflowArtifactDetail
+}
+
+// WorkflowNodeDetail represents a detailed node (step) in a Workflow execution.
+type WorkflowNodeDetail struct {
+	Name       string
+	Phase      string
+	StartedAt  string
+	FinishedAt string
+	Message    string
+	Inputs     WorkflowIODetail
+	Outputs    WorkflowIODetail
+}
+
 // WorkflowFull represents a full Argo Workflow with execution details.
 type WorkflowFull struct {
 	Name         string
@@ -151,6 +182,18 @@ type WorkflowFull struct {
 	StartedAt    string
 	FinishedAt   string
 	Nodes        []WorkflowNode
+}
+
+// WorkflowDetail represents a detailed Argo Workflow with enriched node data.
+type WorkflowDetail struct {
+	Name         string
+	Namespace    string
+	TemplateName string
+	Phase        string
+	StartedAt    string
+	FinishedAt   string
+	Parameters   []WorkflowParameterDetail
+	Nodes        []WorkflowNodeDetail
 }
 
 // WorkflowList represents a list of WorkflowFull objects.
@@ -183,10 +226,10 @@ type workflowListTemplateRef struct {
 }
 
 type workflowListStatusAPI struct {
-	Phase      string                        `json:"phase"`
-	StartedAt  string                        `json:"startedAt"`
-	FinishedAt string                        `json:"finishedAt"`
-	Nodes      map[string]workflowNodeAPI    `json:"nodes"`
+	Phase      string                     `json:"phase"`
+	StartedAt  string                     `json:"startedAt"`
+	FinishedAt string                     `json:"finishedAt"`
+	Nodes      map[string]workflowNodeAPI `json:"nodes"`
 }
 
 type workflowNodeAPI struct {
@@ -194,10 +237,62 @@ type workflowNodeAPI struct {
 	Phase       string `json:"phase"`
 }
 
+// workflowDetailAPIResponse is used to parse the raw Kubernetes API JSON response for a single Workflow.
+type workflowDetailAPIResponse struct {
+	Metadata workflowTemplateMetadata   `json:"metadata"`
+	Spec     workflowDetailSpecAPI      `json:"spec"`
+	Status   workflowDetailStatusAPI    `json:"status"`
+}
+
+type workflowDetailSpecAPI struct {
+	WorkflowTemplateRef workflowListTemplateRef `json:"workflowTemplateRef"`
+	Arguments           workflowDetailArgsAPI   `json:"arguments"`
+}
+
+type workflowDetailArgsAPI struct {
+	Parameters []workflowDetailParamAPI `json:"parameters"`
+}
+
+type workflowDetailParamAPI struct {
+	Name  string  `json:"name"`
+	Value *string `json:"value,omitempty"`
+}
+
+type workflowDetailStatusAPI struct {
+	Phase      string                            `json:"phase"`
+	StartedAt  string                            `json:"startedAt"`
+	FinishedAt string                            `json:"finishedAt"`
+	Nodes      map[string]workflowDetailNodeAPI  `json:"nodes"`
+}
+
+type workflowDetailNodeAPI struct {
+	DisplayName string                   `json:"displayName"`
+	Phase       string                   `json:"phase"`
+	StartedAt   string                   `json:"startedAt"`
+	FinishedAt  string                   `json:"finishedAt"`
+	Message     string                   `json:"message"`
+	Inputs      *workflowDetailIOAPI     `json:"inputs,omitempty"`
+	Outputs     *workflowDetailIOAPI     `json:"outputs,omitempty"`
+}
+
+type workflowDetailIOAPI struct {
+	Parameters []workflowDetailParamAPI    `json:"parameters"`
+	Artifacts  []workflowDetailArtifactAPI `json:"artifacts"`
+}
+
+type workflowDetailArtifactAPI struct {
+	Name string `json:"name"`
+	Path string `json:"path,omitempty"`
+	From string `json:"from,omitempty"`
+	// Size is stored as bytes but we surface it as string
+	Size interface{} `json:"size,omitempty"`
+}
+
 // WorkflowInterface defines the operations on Workflows.
 type WorkflowInterface interface {
 	Create(ctx context.Context, templateName string, parameters []map[string]string) (*Workflow, error)
 	List(ctx context.Context, opts metav1.ListOptions) (*WorkflowList, error)
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*WorkflowDetail, error)
 }
 
 // workflowClient implements WorkflowInterface using a REST client.
@@ -279,6 +374,105 @@ func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*Workf
 	}
 
 	return &WorkflowList{Items: items}, nil
+}
+
+// Get retrieves a single Workflow by name from the Kubernetes API.
+func (c *workflowClient) Get(ctx context.Context, name string, _ metav1.GetOptions) (*WorkflowDetail, error) {
+	var path string
+	if c.namespace != "" {
+		path = fmt.Sprintf("/apis/argoproj.io/v1alpha1/namespaces/%s/workflows/%s", c.namespace, name)
+	} else {
+		path = fmt.Sprintf("/apis/argoproj.io/v1alpha1/workflows/%s", name)
+	}
+
+	result := c.restClient.Get().AbsPath(path).Do(ctx)
+	raw, err := result.Raw()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Workflow: %w", err)
+	}
+
+	var apiResponse workflowDetailAPIResponse
+	if err := json.Unmarshal(raw, &apiResponse); err != nil {
+		return nil, fmt.Errorf("failed to parse Workflow response: %w", err)
+	}
+
+	// Build top-level parameters
+	params := make([]WorkflowParameterDetail, 0, len(apiResponse.Spec.Arguments.Parameters))
+	for _, p := range apiResponse.Spec.Arguments.Parameters {
+		val := ""
+		if p.Value != nil {
+			val = *p.Value
+		}
+		params = append(params, WorkflowParameterDetail{
+			Name:  p.Name,
+			Value: val,
+		})
+	}
+
+	// Build nodes
+	nodes := make([]WorkflowNodeDetail, 0, len(apiResponse.Status.Nodes))
+	for _, node := range apiResponse.Status.Nodes {
+		inputs := buildIODetail(node.Inputs)
+		outputs := buildIODetail(node.Outputs)
+
+		nodes = append(nodes, WorkflowNodeDetail{
+			Name:       node.DisplayName,
+			Phase:      node.Phase,
+			StartedAt:  node.StartedAt,
+			FinishedAt: node.FinishedAt,
+			Message:    node.Message,
+			Inputs:     inputs,
+			Outputs:    outputs,
+		})
+	}
+
+	return &WorkflowDetail{
+		Name:         apiResponse.Metadata.Name,
+		Namespace:    apiResponse.Metadata.Namespace,
+		TemplateName: apiResponse.Spec.WorkflowTemplateRef.Name,
+		Phase:        apiResponse.Status.Phase,
+		StartedAt:    apiResponse.Status.StartedAt,
+		FinishedAt:   apiResponse.Status.FinishedAt,
+		Parameters:   params,
+		Nodes:        nodes,
+	}, nil
+}
+
+// buildIODetail converts a workflowDetailIOAPI pointer to a WorkflowIODetail value.
+func buildIODetail(io *workflowDetailIOAPI) WorkflowIODetail {
+	detail := WorkflowIODetail{
+		Parameters: []WorkflowParameterDetail{},
+		Artifacts:  []WorkflowArtifactDetail{},
+	}
+	if io == nil {
+		return detail
+	}
+
+	for _, p := range io.Parameters {
+		val := ""
+		if p.Value != nil {
+			val = *p.Value
+		}
+		detail.Parameters = append(detail.Parameters, WorkflowParameterDetail{
+			Name:  p.Name,
+			Value: val,
+		})
+	}
+
+	for _, a := range io.Artifacts {
+		sizeStr := ""
+		if a.Size != nil {
+			sizeStr = fmt.Sprintf("%v", a.Size)
+		}
+		detail.Artifacts = append(detail.Artifacts, WorkflowArtifactDetail{
+			Name: a.Name,
+			Path: a.Path,
+			From: a.From,
+			Size: sizeStr,
+		})
+	}
+
+	return detail
 }
 
 // Create creates a new Workflow from a WorkflowTemplate.
