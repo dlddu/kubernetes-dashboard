@@ -46,7 +46,6 @@ type WorkflowDetailStepInfo struct {
 type WorkflowDetailInfo struct {
 	Name         string                   `json:"name"`
 	Namespace    string                   `json:"namespace"`
-	TemplateName string                   `json:"templateName"`
 	Phase        string                   `json:"phase"`
 	StartedAt    string                   `json:"startedAt"`
 	FinishedAt   string                   `json:"finishedAt"`
@@ -162,7 +161,6 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 	return &WorkflowDetailInfo{
 		Name:         wfDetail.Name,
 		Namespace:    wfDetail.Namespace,
-		TemplateName: wfDetail.TemplateName,
 		Phase:        wfDetail.Phase,
 		StartedAt:    wfDetail.StartedAt,
 		FinishedAt:   wfDetail.FinishedAt,
