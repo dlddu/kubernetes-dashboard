@@ -202,6 +202,7 @@ export function NamespaceSelector() {
                   role="option"
                   aria-selected={selectedNamespace === ns}
                   aria-label={ns}
+                  onClick={() => handleSelect(ns)}
                   className={`flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
                     selectedNamespace === ns ? 'bg-blue-50' : ''
                   }`}
@@ -247,6 +248,7 @@ export function NamespaceSelector() {
                   data-testid={`namespace-option-${ns}`}
                   aria-selected={selectedNamespace === ns}
                   aria-label={ns}
+                  onClick={() => handleSelect(ns)}
                   className={`flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 ${
                     selectedNamespace === ns ? 'bg-blue-50' : ''
                   }`}
