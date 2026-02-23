@@ -22,11 +22,56 @@ import { test, expect } from '@playwright/test';
  *
  * Related Issue: DLD-442 - 작업 4-1: Workflow 목록 조회 — e2e 테스트 작성 (skipped)
  * Parent Issue: DLD-435 - Argo WorkflowTemplate Submit 기능 추가
+ *
+ * Group 5 (skipped):
+ * - GET /api/argo/workflows?templateName=xxx filters by templateName (DLD-528)
+ * - Related Issue: DLD-528 - e2e 테스트: 백엔드 templateName 필터 API
+ * - Parent Issue: DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
  */
 
 // ---------------------------------------------------------------------------
 // Shared fixture data
 // ---------------------------------------------------------------------------
+
+// Fixture for templateName filter tests (Group 5).
+// Extends WORKFLOWS_FIXTURE with a workflow from a different template
+// so that filtering by templateName can produce a non-trivial subset.
+const MIXED_TEMPLATE_WORKFLOWS_FIXTURE = [
+  {
+    name: 'data-processing-running',
+    namespace: 'dashboard-test',
+    phase: 'Running',
+    templateName: 'data-processing',
+    startedAt: '2026-02-22T07:00:00Z',
+    finishedAt: '',
+    nodes: [
+      { name: 'step-one', phase: 'Succeeded' },
+      { name: 'step-two', phase: 'Running' },
+      { name: 'step-three', phase: 'Pending' },
+    ],
+  },
+  {
+    name: 'data-processing-succeeded',
+    namespace: 'dashboard-test',
+    phase: 'Succeeded',
+    templateName: 'data-processing',
+    startedAt: '2026-02-22T06:00:00Z',
+    finishedAt: '2026-02-22T06:30:00Z',
+    nodes: [
+      { name: 'step-one', phase: 'Succeeded' },
+      { name: 'step-two', phase: 'Succeeded' },
+    ],
+  },
+  {
+    name: 'ml-pipeline-running',
+    namespace: 'dashboard-test',
+    phase: 'Running',
+    templateName: 'ml-pipeline',
+    startedAt: '2026-02-22T08:00:00Z',
+    finishedAt: '',
+    nodes: [{ name: 'train', phase: 'Running' }],
+  },
+];
 
 const WORKFLOWS_FIXTURE = [
   {
@@ -433,5 +478,119 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
 
     // Assert: ErrorRetry is no longer visible
     await expect(errorRetry).not.toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 5: TemplateName Filtering (테스트 9, 10, 11) — SKIPPED
+//
+// TODO: Activate when DLD-527 is implemented.
+// Backend templateName query parameter support is not yet available.
+// Related Issue: DLD-528 - e2e 테스트: 백엔드 templateName 필터 API
+// Parent Issue:  DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
+// ---------------------------------------------------------------------------
+
+test.describe.skip('Argo Tab - Workflow List - TemplateName Filtering', () => {
+  test.beforeEach(async ({ page }) => {
+    // Mock the workflows API with conditional response based on the templateName query parameter.
+    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
+    //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)
+    //   - 'ml-pipeline'     (1 workflow:  ml-pipeline-running)
+    await page.route('**/api/argo/workflows**', async route => {
+      const url = new URL(route.request().url());
+      const templateName = url.searchParams.get('templateName');
+
+      const body = templateName
+        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
+        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+  });
+
+  test('should display only workflows matching the given templateName when templateName filter is applied', async ({ page }) => {
+    // Tests that GET /api/argo/workflows?templateName=data-processing returns only
+    // workflows whose templateName is 'data-processing', and that the UI renders
+    // exactly those cards.
+
+    // Arrange: Navigate to the Workflows section
+    await gotoArgoWorkflows(page);
+
+    // Act: The UI applies the templateName filter by clicking a template card.
+    // Clicking the template card named 'data-processing' should cause the page to
+    // fetch /api/argo/workflows?templateName=data-processing.
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Only 'data-processing' workflow cards are rendered (2 out of 3 in fixture)
+    const workflowCards = page.getByTestId('workflow-run-card');
+    expect(await workflowCards.count()).toBe(2);
+
+    // Assert: Every visible card belongs to the 'data-processing' template
+    const cardCount = await workflowCards.count();
+    for (let i = 0; i < cardCount; i++) {
+      const card = workflowCards.nth(i);
+      const templateElement = card.getByTestId('workflow-run-template');
+      await expect(templateElement).toContainText('data-processing');
+    }
+
+    // Assert: The 'ml-pipeline' workflow is NOT shown
+    const mlPipelineCard = await findWorkflowCardByName(page, 'ml-pipeline-running');
+    expect(mlPipelineCard).toBeNull();
+  });
+
+  test('should display EmptyState when the requested templateName has no matching workflows', async ({ page }) => {
+    // Tests that GET /api/argo/workflows?templateName=nonexistent returns an empty array
+    // and that the UI renders the EmptyState component.
+
+    // Arrange: Navigate to the Workflows section
+    await gotoArgoWorkflows(page);
+
+    // Act: The UI requests a templateName that does not exist in the backend.
+    // Clicking a template card named 'nonexistent-template' should fetch
+    // /api/argo/workflows?templateName=nonexistent-template, which returns [].
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'nonexistent-template' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: EmptyState component is visible
+    const emptyState = page.getByTestId('empty-state');
+    await expect(emptyState).toBeVisible();
+
+    // Assert: EmptyState displays the correct message
+    await expect(emptyState).toContainText('No workflows found');
+
+    // Assert: No workflow run cards are shown
+    const workflowCards = page.getByTestId('workflow-run-card');
+    expect(await workflowCards.count()).toBe(0);
+  });
+
+  test('should display all workflows when no templateName filter is active', async ({ page }) => {
+    // Tests that GET /api/argo/workflows (without templateName parameter) returns the full
+    // workflow list and the UI renders all cards — preserving the existing behavior.
+
+    // Arrange: Navigate to the Workflows section without selecting any template card
+    await gotoArgoWorkflows(page);
+
+    // Assert: All 3 workflows from MIXED_TEMPLATE_WORKFLOWS_FIXTURE are shown
+    const workflowCards = page.getByTestId('workflow-run-card');
+    expect(await workflowCards.count()).toBe(3);
+
+    // Assert: Both 'data-processing' and 'ml-pipeline' cards are present
+    const dataProcessingRunningCard = await findWorkflowCardByName(page, 'data-processing-running');
+    expect(dataProcessingRunningCard).toBeTruthy();
+
+    const dataProcessingSucceededCard = await findWorkflowCardByName(page, 'data-processing-succeeded');
+    expect(dataProcessingSucceededCard).toBeTruthy();
+
+    const mlPipelineCard = await findWorkflowCardByName(page, 'ml-pipeline-running');
+    expect(mlPipelineCard).toBeTruthy();
   });
 });
