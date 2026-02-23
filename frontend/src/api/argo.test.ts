@@ -785,6 +785,160 @@ describe('Argo API', () => {
     });
   });
 
+  describe('fetchWorkflows - templateName filter', () => {
+    it('should fetch workflows with templateName filter', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'data-processing-abc12',
+          namespace: 'dashboard-test',
+          templateName: 'data-processing-with-params',
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T09:00:00Z',
+          nodes: [],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockWorkflows,
+      });
+
+      // Act
+      const result = await fetchWorkflows(undefined, 'data-processing-with-params');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflows?templateName=data-processing-with-params'
+      );
+      expect(result).toEqual(mockWorkflows);
+    });
+
+    it('should fetch workflows with both namespace and templateName filters', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'data-processing-abc12',
+          namespace: 'dashboard-test',
+          templateName: 'data-processing-with-params',
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T09:00:00Z',
+          nodes: [],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockWorkflows,
+      });
+
+      // Act
+      const result = await fetchWorkflows('dashboard-test', 'data-processing-with-params');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflows?ns=dashboard-test&templateName=data-processing-with-params'
+      );
+      expect(result).toEqual(mockWorkflows);
+    });
+
+    it('should not include templateName query param when templateName is undefined', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      await fetchWorkflows(undefined, undefined);
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows');
+    });
+
+    it('should not include templateName query param when templateName is empty string', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      await fetchWorkflows(undefined, '');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows');
+    });
+
+    it('should return empty array when no workflows match the templateName', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      const result = await fetchWorkflows(undefined, 'non-existent-template');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflows?templateName=non-existent-template'
+      );
+      expect(result).toEqual([]);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should include only namespace param when templateName is not provided', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      await fetchWorkflows('dashboard-test');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows?ns=dashboard-test');
+    });
+
+    it('should handle templateName with hyphens', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      // Act
+      await fetchWorkflows(undefined, 'data-processing-with-params');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/argo/workflows?templateName=data-processing-with-params'
+      );
+    });
+
+    it('should return multiple workflows all matching the given templateName', async () => {
+      // Arrange
+      const mockWorkflows = [
+        {
+          name: 'data-processing-aaa',
+          namespace: 'dashboard-test',
+          templateName: 'data-processing-with-params',
+          phase: 'Succeeded',
+          startedAt: '2026-02-22T08:00:00Z',
+          finishedAt: '2026-02-22T09:00:00Z',
+          nodes: [],
+        },
+        {
+          name: 'data-processing-bbb',
+          namespace: 'dashboard-test',
+          templateName: 'data-processing-with-params',
+          phase: 'Running',
+          startedAt: '2026-02-22T10:00:00Z',
+          finishedAt: '',
+          nodes: [],
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
+
+      // Act
+      const result = await fetchWorkflows('dashboard-test', 'data-processing-with-params');
+
+      // Assert
+      expect(result).toHaveLength(2);
+      expect(result.every((wf) => wf.templateName === 'data-processing-with-params')).toBe(true);
+    });
+  });
+
   describe('fetchWorkflowTemplates - edge cases', () => {
     it('should handle large templates list', async () => {
       // Arrange
