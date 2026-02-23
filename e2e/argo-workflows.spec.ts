@@ -23,7 +23,7 @@ import { test, expect } from '@playwright/test';
  * Related Issue: DLD-442 - 작업 4-1: Workflow 목록 조회 — e2e 테스트 작성 (skipped)
  * Parent Issue: DLD-435 - Argo WorkflowTemplate Submit 기능 추가
  *
- * Group 5 (skipped):
+ * Group 5 (activated in DLD-529):
  * - GET /api/argo/workflows?templateName=xxx filters by templateName (DLD-528)
  * - Related Issue: DLD-528 - e2e 테스트: 백엔드 templateName 필터 API
  * - Parent Issue: DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
@@ -482,16 +482,34 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
 });
 
 // ---------------------------------------------------------------------------
-// Group 5: TemplateName Filtering (테스트 9, 10, 11) — SKIPPED
+// Group 5: TemplateName Filtering (테스트 9, 10, 11)
 //
-// TODO: Activate when DLD-527 is implemented.
-// Backend templateName query parameter support is not yet available.
+// Activated in DLD-529.
+// Backend templateName query parameter support is implemented in
+//   handlers/argo_workflows_handler.go (WorkflowsHandler reads ?templateName=).
+// Frontend fetchWorkflows(namespace?, templateName?) is updated in
+//   frontend/src/api/argo.ts.
 // Related Issue: DLD-528 - e2e 테스트: 백엔드 templateName 필터 API
 // Parent Issue:  DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
 // ---------------------------------------------------------------------------
 
-test.describe.skip('Argo Tab - Workflow List - TemplateName Filtering', () => {
+test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Includes 'data-processing', 'ml-pipeline', and 'nonexistent-template' to cover
+    // all test scenarios (filter match, no-match empty state, no-filter full list).
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
+          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
+          { name: 'nonexistent-template', namespace: 'dashboard-test', parameters: [] },
+        ]),
+      });
+    });
+
     // Mock the workflows API with conditional response based on the templateName query parameter.
     // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
     //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)

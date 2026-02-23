@@ -33,11 +33,12 @@ var WorkflowsHandler = handleGet("Failed to fetch workflow runs data", func(r *h
 		return nil, err
 	}
 	namespace := r.URL.Query().Get("ns")
-	return getWorkflowsData(r.Context(), clientset, namespace)
+	templateName := r.URL.Query().Get("templateName")
+	return getWorkflowsData(r.Context(), clientset, namespace, templateName)
 })
 
 // getWorkflowsData fetches Workflow data from Argo.
-func getWorkflowsData(ctx context.Context, clientset *versioned.Clientset, namespace string) ([]WorkflowInfo, error) {
+func getWorkflowsData(ctx context.Context, clientset *versioned.Clientset, namespace string, templateName string) ([]WorkflowInfo, error) {
 	workflowList, err := clientset.ArgoprojV1alpha1().Workflows(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		// Argo CRD가 설치되지 않은 클러스터에서는 빈 목록을 반환합니다.
@@ -50,6 +51,10 @@ func getWorkflowsData(ctx context.Context, clientset *versioned.Clientset, names
 
 	result := make([]WorkflowInfo, 0, len(workflowList.Items))
 	for _, wf := range workflowList.Items {
+		if templateName != "" && wf.TemplateName != templateName {
+			continue
+		}
+
 		nodes := make([]WorkflowStepInfo, 0, len(wf.Nodes))
 		for _, node := range wf.Nodes {
 			nodes = append(nodes, WorkflowStepInfo{

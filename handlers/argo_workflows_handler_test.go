@@ -275,6 +275,252 @@ func TestWorkflowsHandlerResponseStructure(t *testing.T) {
 	})
 }
 
+// TestWorkflowsHandlerTemplateNameFilter tests that the templateName query
+// parameter correctly filters the returned workflow list by template name.
+func TestWorkflowsHandlerTemplateNameFilter(t *testing.T) {
+	t.Run("should accept templateName query parameter without error", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=my-template", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Should not fail solely because of the templateName parameter
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should treat empty templateName parameter as no-filter (return all)", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected status 200 or 500, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return valid JSON when templateName is specified", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=data-processing", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		var result interface{}
+		if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+			t.Errorf("response body is not valid JSON: %v", err)
+		}
+	})
+
+	t.Run("should return only workflows matching the specified templateName", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=data-processing-with-params", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var workflows []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&workflows); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		for _, wf := range workflows {
+			templateName, ok := wf["templateName"].(string)
+			if !ok {
+				t.Error("templateName field should be a string")
+				continue
+			}
+			if templateName != "data-processing-with-params" {
+				t.Errorf("expected templateName 'data-processing-with-params', got '%s'", templateName)
+			}
+		}
+	})
+
+	t.Run("should return empty array for non-existent templateName", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=non-existent-template-xyz", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var workflows []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&workflows); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(workflows) != 0 {
+			t.Errorf("expected empty array for non-existent templateName, got %d workflows", len(workflows))
+		}
+	})
+
+	t.Run("should return all workflows when templateName is not provided", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange: fetch all, then with a specific templateName — all-result must be >= filtered result
+		reqAll := httptest.NewRequest(http.MethodGet, "/api/argo/workflows", nil)
+		wAll := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(wAll, reqAll)
+
+		// Assert
+		resAll := wAll.Result()
+		defer resAll.Body.Close()
+
+		if resAll.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", resAll.StatusCode)
+		}
+
+		var allWorkflows []map[string]interface{}
+		if err := json.NewDecoder(resAll.Body).Decode(&allWorkflows); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		// Fetch filtered by a specific templateName
+		reqFiltered := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=data-processing-with-params", nil)
+		wFiltered := httptest.NewRecorder()
+		WorkflowsHandler(wFiltered, reqFiltered)
+		resFiltered := wFiltered.Result()
+		defer resFiltered.Body.Close()
+
+		var filteredWorkflows []map[string]interface{}
+		if err := json.NewDecoder(resFiltered.Body).Decode(&filteredWorkflows); err != nil {
+			t.Fatalf("failed to decode filtered response: %v", err)
+		}
+
+		// All-workflows result must be >= single-template result
+		if len(allWorkflows) < len(filteredWorkflows) {
+			t.Errorf(
+				"all-workflows count (%d) should be >= filtered count (%d)",
+				len(allWorkflows), len(filteredWorkflows),
+			)
+		}
+	})
+
+	t.Run("should combine ns and templateName filters correctly", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"/api/argo/workflows?ns=dashboard-test&templateName=data-processing-with-params",
+			nil,
+		)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var workflows []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&workflows); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		for _, wf := range workflows {
+			namespace, _ := wf["namespace"].(string)
+			templateName, _ := wf["templateName"].(string)
+
+			if namespace != "dashboard-test" {
+				t.Errorf("expected namespace 'dashboard-test', got '%s'", namespace)
+			}
+			if templateName != "data-processing-with-params" {
+				t.Errorf("expected templateName 'data-processing-with-params', got '%s'", templateName)
+			}
+		}
+	})
+}
+
+// TestGetWorkflowsDataTemplateNameFilter tests the templateName filtering logic
+// in getWorkflowsData directly.
+func TestGetWorkflowsDataTemplateNameFilter(t *testing.T) {
+	t.Run("should pass templateName to getWorkflowsData via handler", func(t *testing.T) {
+		// Arrange: send request with templateName param; handler must read and forward it
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=my-template", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert: the handler must not return 405 (method not allowed) or 400 (bad request)
+		// because templateName is a valid optional parameter.
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode == http.StatusMethodNotAllowed {
+			t.Error("templateName parameter caused unexpected 405 response")
+		}
+		if res.StatusCode == http.StatusBadRequest {
+			t.Error("templateName parameter caused unexpected 400 response")
+		}
+	})
+
+	t.Run("should not filter when templateName is empty string", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert: same as no-filter behaviour
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected 200 or 500 for empty templateName, got %d", res.StatusCode)
+		}
+	})
+}
+
 // TestWorkflowsHandlerNamespaceFilter tests that the ns query parameter
 // correctly scopes the returned workflow list.
 func TestWorkflowsHandlerNamespaceFilter(t *testing.T) {

@@ -83,8 +83,8 @@ export async function fetchWorkflowTemplates(namespace?: string): Promise<Workfl
   return fetchJSON<WorkflowTemplateInfo[]>(url);
 }
 
-export async function fetchWorkflows(namespace?: string): Promise<WorkflowInfo[]> {
-  const url = buildURL('/api/argo/workflows', { ns: namespace });
+export async function fetchWorkflows(namespace?: string, templateName?: string): Promise<WorkflowInfo[]> {
+  const url = buildURL('/api/argo/workflows', { ns: namespace, templateName });
   return fetchJSON<WorkflowInfo[]>(url);
 }
 
