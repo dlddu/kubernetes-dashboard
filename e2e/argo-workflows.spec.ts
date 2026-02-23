@@ -27,6 +27,15 @@ import { test, expect } from '@playwright/test';
  * - GET /api/argo/workflows?templateName=xxx filters by templateName (DLD-528)
  * - Related Issue: DLD-528 - e2e 테스트: 백엔드 templateName 필터 API
  * - Parent Issue: DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
+ *
+ * Group 6 (skipped, pending DLD-530):
+ * - Template 카드 클릭 → Runs 뷰로 전환되고 해당 template의 runs만 표시 (DLD-530)
+ * - Runs 뷰 헤더에 선택한 template 이름 포함 (DLD-530)
+ * - Runs 뷰의 뒤로가기 버튼 클릭 시 Templates 뷰로 복귀 (DLD-530)
+ * - workflows-tab 독립 버튼이 DOM에서 제거됨 (DLD-530)
+ * - Submit 버튼 클릭 시 이벤트 버블링 차단으로 Runs 뷰 미전환 (DLD-530)
+ * - Related Issue: DLD-530 - e2e 테스트: Template 카드 클릭 → 해당 Runs 조회
+ * - Parent Issue: DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
  */
 
 // ---------------------------------------------------------------------------
@@ -610,5 +619,192 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
 
     const mlPipelineCard = await findWorkflowCardByName(page, 'ml-pipeline-running');
     expect(mlPipelineCard).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 6: Template 카드 클릭 → 해당 Runs 조회 (테스트 12, 13, 14, 15, 16)
+//
+// TODO: Activate when DLD-530 is implemented.
+// Skipped: pending DLD-530 - e2e 테스트: Template 카드 클릭 → 해당 Runs 조회
+// Parent Issue: DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
+//
+// These tests cover the full ArgoTab UI behavior introduced in DLD-527:
+//   - Template 카드 클릭 시 workflow-runs-page로 전환 및 해당 template의 runs만 표시
+//   - Runs 뷰 헤더에 선택한 template 이름 포함
+//   - 뒤로가기 버튼(back-button)으로 workflow-templates-page 복귀
+//   - workflows-tab 독립 버튼이 DOM에 존재하지 않음 (DLD-527 구현 후 제거됨)
+//   - submit-button 클릭 시 e.stopPropagation()으로 runs 뷰 미전환
+// ---------------------------------------------------------------------------
+
+// TODO: Activate when DLD-530 is implemented
+test.describe.skip('Argo Tab - Template Card Click → Runs View (DLD-530)', () => {
+  test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are rendered on the page.
+    // Includes 'data-processing' and 'ml-pipeline' which correspond to entries in
+    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
+          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
+        ]),
+      });
+    });
+
+    // Mock the workflows API with conditional response based on the templateName query parameter.
+    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
+    //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)
+    //   - 'ml-pipeline'     (1 workflow:  ml-pipeline-running)
+    await page.route('**/api/argo/workflows**', async route => {
+      const url = new URL(route.request().url());
+      const templateName = url.searchParams.get('templateName');
+
+      const body = templateName
+        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
+        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+  });
+
+  test('should switch to workflow-runs-page and display only matching runs when a template card is clicked', async ({ page }) => {
+    // Tests that clicking a template card transitions the view to workflow-runs-page
+    // and renders only the runs whose templateName matches the clicked template.
+
+    // Arrange: Navigate to /argo (Templates view is the default entry point in DLD-527)
+    await gotoArgo(page);
+
+    // Arrange: Confirm the templates page is visible before clicking
+    const templatesPage = page.getByTestId('workflow-templates-page');
+    await expect(templatesPage).toBeVisible();
+
+    // Act: Click the 'data-processing' template card
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: workflow-runs-page is now visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: workflow-templates-page is no longer visible
+    await expect(templatesPage).not.toBeVisible();
+
+    // Assert: Exactly 2 run cards are rendered (only 'data-processing' runs)
+    const workflowCards = page.getByTestId('workflow-run-card');
+    expect(await workflowCards.count()).toBe(2);
+
+    // Assert: Every visible card belongs to the 'data-processing' template
+    const cardCount = await workflowCards.count();
+    for (let i = 0; i < cardCount; i++) {
+      const card = workflowCards.nth(i);
+      const templateElement = card.getByTestId('workflow-run-template');
+      await expect(templateElement).toContainText('data-processing');
+    }
+  });
+
+  test('should show the selected template name in the Runs view header', async ({ page }) => {
+    // Tests that after clicking a template card the Runs view header text includes
+    // the name of the selected template (e.g. "data-processing").
+
+    // Arrange: Navigate to /argo
+    await gotoArgo(page);
+
+    // Act: Click the 'data-processing' template card
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: workflow-runs-page is visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: The header inside the runs page contains 'data-processing'
+    const runsHeader = workflowRunsPage.locator('h2');
+    await expect(runsHeader).toBeVisible();
+    await expect(runsHeader).toContainText('data-processing');
+  });
+
+  test('should return to workflow-templates-page when the back button is clicked from the Runs view', async ({ page }) => {
+    // Tests that the back button in the Runs view navigates back to the Templates view,
+    // hiding the runs page and showing the templates page again.
+
+    // Arrange: Navigate to /argo and click a template card to enter the Runs view
+    await gotoArgo(page);
+
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
+
+    // Arrange: Confirm we are now on the runs view
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Act: Click the back button to return to the Templates view
+    const backButton = page.getByTestId('back-button');
+    await expect(backButton).toBeVisible();
+    await backButton.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: workflow-templates-page is visible again
+    const templatesPage = page.getByTestId('workflow-templates-page');
+    await expect(templatesPage).toBeVisible();
+
+    // Assert: workflow-runs-page is no longer visible
+    await expect(workflowRunsPage).not.toBeVisible();
+  });
+
+  test('should not have a standalone workflows-tab button in the DOM after DLD-527 is implemented', async ({ page }) => {
+    // Tests that the independent "Workflow Runs" tab button (workflows-tab) has been
+    // removed from the DOM as part of the DLD-527 implementation. Navigation to the
+    // Runs view is now exclusively via template card clicks.
+
+    // Arrange: Navigate to /argo
+    await gotoArgo(page);
+
+    // Assert: workflows-tab button is not attached to the DOM at all
+    const workflowsTab = page.getByTestId('workflows-tab');
+    await expect(workflowsTab).not.toBeAttached();
+  });
+
+  test('should open SubmitModal and not switch to Runs view when the submit button inside a template card is clicked', async ({ page }) => {
+    // Tests that clicking the submit-button inside a template card opens the
+    // submit-workflow-dialog (SubmitModal) without triggering the card's onClick handler,
+    // verifying that e.stopPropagation() correctly prevents the Runs view transition.
+
+    // Arrange: Navigate to /argo
+    await gotoArgo(page);
+
+    // Arrange: Confirm the templates page is visible before interaction
+    const templatesPage = page.getByTestId('workflow-templates-page');
+    await expect(templatesPage).toBeVisible();
+
+    // Act: Click the submit-button inside the 'data-processing' template card
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    await expect(templateCard).toBeVisible();
+    const submitButton = templateCard.getByTestId('submit-button');
+    await expect(submitButton).toBeVisible();
+    await submitButton.click();
+
+    // Assert: SubmitModal dialog is opened
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    // Assert: workflow-runs-page is NOT shown (card click event was not triggered)
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).not.toBeVisible();
+
+    // Assert: workflow-templates-page is still visible (view did not transition)
+    await expect(templatesPage).toBeVisible();
   });
 });
