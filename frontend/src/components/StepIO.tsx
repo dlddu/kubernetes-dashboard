@@ -43,7 +43,7 @@ export function StepIO({ stepName, inputs, outputs }: StepIOProps) {
       </button>
 
       {isOpen && (
-        <div id={`step-io-panels-${stepName}`} className="mt-2 grid grid-cols-2 gap-2">
+        <div id={`step-io-panels-${stepName}`} className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
           {/* Inputs panel */}
           <div
             data-testid="workflow-detail-step-inputs-panel"
