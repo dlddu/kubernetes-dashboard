@@ -2,13 +2,18 @@ import { WorkflowTemplateInfo } from '../api/argo';
 
 export interface WorkflowTemplateCardProps extends WorkflowTemplateInfo {
   onSubmit?: (template: WorkflowTemplateInfo) => void;
+  onClick?: (template: WorkflowTemplateInfo) => void;
 }
 
-export function WorkflowTemplateCard({ name, namespace, parameters, onSubmit }: WorkflowTemplateCardProps) {
+export function WorkflowTemplateCard({ name, namespace, parameters, onSubmit, onClick }: WorkflowTemplateCardProps) {
   const template: WorkflowTemplateInfo = { name, namespace, parameters };
 
   return (
-    <div data-testid="workflow-template-card" className="bg-white rounded-lg shadow p-6 space-y-4">
+    <div
+      data-testid="workflow-template-card"
+      className="bg-white rounded-lg shadow p-6 space-y-4 cursor-pointer"
+      onClick={() => onClick?.(template)}
+    >
       {/* Template Name */}
       <div className="flex items-center justify-between">
         <h3 data-testid="workflow-template-name" className="text-lg font-semibold text-gray-900 truncate">
@@ -16,7 +21,7 @@ export function WorkflowTemplateCard({ name, namespace, parameters, onSubmit }: 
         </h3>
         <button
           data-testid="submit-button"
-          onClick={() => onSubmit?.(template)}
+          onClick={(e) => { e.stopPropagation(); onSubmit?.(template); }}
           className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
           Submit

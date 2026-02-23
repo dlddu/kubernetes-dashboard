@@ -23,6 +23,7 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplateInfo | null>(null);
   const [showWorkflowRuns, setShowWorkflowRuns] = useState(false);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowInfo | null>(null);
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
 
   const {
     data: workflows,
@@ -30,10 +31,16 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
     error: workflowsError,
     refresh: workflowsRefresh,
   } = useDataFetch<WorkflowInfo>(
-    () => showWorkflowRuns ? fetchWorkflows(namespace) : Promise.resolve([]),
+    () => showWorkflowRuns ? fetchWorkflows(namespace, selectedTemplateName ?? undefined) : Promise.resolve([]),
     'Failed to fetch workflow runs',
-    [namespace, showWorkflowRuns],
+    [namespace, showWorkflowRuns, selectedTemplateName],
   );
+
+  const handleTemplateCardClick = (template: WorkflowTemplateInfo) => {
+    setShowWorkflowRuns(true);
+    setSelectedTemplateName(template.name);
+    setSelectedWorkflow(null);
+  };
 
   const handleNavigateToWorkflows = () => {
     setSelectedTemplate(null);
@@ -47,6 +54,7 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
   const handleWorkflowsTabClick = () => {
     setShowWorkflowRuns(true);
     setSelectedWorkflow(null);
+    setSelectedTemplateName(null);
   };
 
   const handleWorkflowSelect = (workflow: WorkflowInfo) => {
@@ -101,6 +109,7 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
                   key={`${template.namespace}-${template.name}`}
                   {...template}
                   onSubmit={setSelectedTemplate}
+                  onClick={handleTemplateCardClick}
                 />
               ))}
             </div>
@@ -111,6 +120,19 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
       {showWorkflowRuns && !selectedWorkflow && (
         <section data-testid="workflow-runs-page" className="space-y-4">
           <h2 className="text-xl font-bold text-gray-900">Workflow Runs</h2>
+
+          {templates.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates.map((template) => (
+                <WorkflowTemplateCard
+                  key={`${template.namespace}-${template.name}`}
+                  {...template}
+                  onSubmit={setSelectedTemplate}
+                  onClick={handleTemplateCardClick}
+                />
+              ))}
+            </div>
+          )}
 
           {workflowsLoading && workflows.length === 0 && (
             <LoadingSkeleton

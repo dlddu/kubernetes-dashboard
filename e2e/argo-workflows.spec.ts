@@ -495,6 +495,21 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
 
 test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Includes 'data-processing', 'ml-pipeline', and 'nonexistent-template' to cover
+    // all test scenarios (filter match, no-match empty state, no-filter full list).
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
+          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
+          { name: 'nonexistent-template', namespace: 'dashboard-test', parameters: [] },
+        ]),
+      });
+    });
+
     // Mock the workflows API with conditional response based on the templateName query parameter.
     // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
     //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)
