@@ -41,8 +41,10 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
   };
 
   const handleNavigateToWorkflows = () => {
+    if (selectedTemplate) {
+      setSelectedTemplateName(selectedTemplate.name);
+    }
     setSelectedTemplate(null);
-    setSelectedTemplateName(null);
   };
 
   const handleCloseModal = () => {
