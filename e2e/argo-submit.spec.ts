@@ -438,14 +438,29 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
 
 // ---------------------------------------------------------------------------
 
-// TODO: Activate when DLD-532 is implemented
 // Related Issue: DLD-532 (parent: DLD-527) - Submit 성공 후 View Workflow 클릭 시 해당 template의 Runs 뷰 전환 검증
 test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', () => {
   // Fixture: workflow runs returned by the API, belonging to different templates.
   // Tests use this to verify that the Runs view shows only the submitted template's runs.
   const WORKFLOW_RUNS_FIXTURE_SIMPLE = [
-    { name: 'simple-template-xyz99', namespace: 'dashboard-test', templateName: 'simple-template' },
-    { name: 'simple-template-abc11', namespace: 'dashboard-test', templateName: 'simple-template' },
+    {
+      name: 'simple-template-xyz99',
+      namespace: 'dashboard-test',
+      templateName: 'simple-template',
+      phase: 'Succeeded',
+      startedAt: '2026-02-24T00:00:00Z',
+      finishedAt: '2026-02-24T00:01:00Z',
+      nodes: [{ name: 'main', phase: 'Succeeded' }],
+    },
+    {
+      name: 'simple-template-abc11',
+      namespace: 'dashboard-test',
+      templateName: 'simple-template',
+      phase: 'Running',
+      startedAt: '2026-02-24T00:02:00Z',
+      finishedAt: '',
+      nodes: [{ name: 'main', phase: 'Running' }],
+    },
   ];
 
   const WORKFLOW_RUNS_FIXTURE_OTHER = [
@@ -453,6 +468,10 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
       name: 'data-processing-with-params-def22',
       namespace: 'dashboard-test',
       templateName: 'data-processing-with-params',
+      phase: 'Succeeded',
+      startedAt: '2026-02-24T00:03:00Z',
+      finishedAt: '2026-02-24T00:04:00Z',
+      nodes: [{ name: 'main', phase: 'Succeeded' }],
     },
   ];
 
@@ -471,8 +490,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     });
   });
 
-  // TODO: Activate when DLD-532 is implemented
-  test.skip('should close SubmitModal when "View Workflow" button is clicked after successful submit', async ({
+  test('should close SubmitModal when "View Workflow" button is clicked after successful submit', async ({
     page,
   }) => {
     // Tests that the SubmitModal (submit-workflow-dialog) is no longer visible
@@ -521,8 +539,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     await expect(submitDialog).not.toBeVisible();
   });
 
-  // TODO: Activate when DLD-532 is implemented
-  test.skip('should show workflow-runs-page after "View Workflow" is clicked', async ({ page }) => {
+  test('should show workflow-runs-page after "View Workflow" is clicked', async ({ page }) => {
     // Tests that the workflow-runs-page element becomes visible after the user
     // clicks "View Workflow", confirming the UI has transitioned to the Runs view.
 
@@ -572,8 +589,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     await expect(workflowTemplatesPage).not.toBeVisible();
   });
 
-  // TODO: Activate when DLD-532 is implemented
-  test.skip('should display the submitted template name in the Runs view header', async ({ page }) => {
+  test('should display the submitted template name in the Runs view header', async ({ page }) => {
     // Tests that the Runs view header shows the name of the template that was submitted,
     // so the user knows which template's runs they are viewing.
 
@@ -620,8 +636,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     await expect(workflowRunsPage).toContainText('simple-template');
   });
 
-  // TODO: Activate when DLD-532 is implemented
-  test.skip('should show only the submitted template runs and not runs from other templates', async ({ page }) => {
+  test('should show only the submitted template runs and not runs from other templates', async ({ page }) => {
     // Tests that the Runs view is filtered to the submitted template:
     // runs from "simple-template" are visible, while runs from
     // "data-processing-with-params" are not present in the list.

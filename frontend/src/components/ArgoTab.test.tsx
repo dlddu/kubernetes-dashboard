@@ -946,6 +946,237 @@ describe('ArgoTab Component', () => {
   // WorkflowDetail view swap (selectedWorkflow state)
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // handleNavigateToWorkflows: SubmitModal "View Workflow" click → runs view
+  // ---------------------------------------------------------------------------
+
+  describe('handleNavigateToWorkflows - SubmitModal View Workflow Navigation', () => {
+    it('should open SubmitModal when Submit button on a template card is clicked', async () => {
+      // Arrange
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTemplates,
+      });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act: click the Submit button on the first template card
+      const submitButtons = screen.getAllByTestId('submit-button');
+      fireEvent.click(submitButtons[0]);
+
+      // Assert: SubmitModal dialog must be open
+      expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument();
+    });
+
+    it('should close SubmitModal and show workflow-runs-page when "View Workflow" is clicked after successful submit', async () => {
+      // Arrange: templates load, then POST submit succeeds
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ name: 'data-processing-with-params-abc12', namespace: 'dashboard-test' }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] }); // workflow runs fetch
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Open SubmitModal by clicking Submit on first template card
+      const submitButtons = screen.getAllByTestId('submit-button');
+      fireEvent.click(submitButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument();
+      });
+
+      // Submit the workflow
+      fireEvent.click(screen.getByTestId('confirm-button'));
+
+      // Wait for the success state with "View Workflow" button
+      await waitFor(() => {
+        expect(screen.getByTestId('view-workflow-link')).toBeInTheDocument();
+      });
+
+      // Act: click "View Workflow"
+      fireEvent.click(screen.getByTestId('view-workflow-link'));
+
+      // Assert: SubmitModal is closed (dialog gone) and runs view is shown
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('submit-workflow-dialog')).not.toBeInTheDocument();
+    });
+
+    it('should hide workflow-templates-page when navigating to runs view via "View Workflow"', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ name: 'data-processing-with-params-abc12', namespace: 'dashboard-test' }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Open modal and submit
+      fireEvent.click(screen.getAllByTestId('submit-button')[0]);
+      await waitFor(() => expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('confirm-button'));
+      await waitFor(() => expect(screen.getByTestId('view-workflow-link')).toBeInTheDocument());
+
+      // Act: navigate to workflows
+      fireEvent.click(screen.getByTestId('view-workflow-link'));
+
+      // Assert: templates page is no longer rendered
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('workflow-templates-page')).not.toBeInTheDocument();
+    });
+
+    it('should display submitted template name in runs view header after "View Workflow" click', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ name: 'data-processing-with-params-abc12', namespace: 'dashboard-test' }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Open modal for 'data-processing-with-params' (first card's Submit button)
+      fireEvent.click(screen.getAllByTestId('submit-button')[0]);
+      await waitFor(() => expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('confirm-button'));
+      await waitFor(() => expect(screen.getByTestId('view-workflow-link')).toBeInTheDocument());
+
+      // Act
+      fireEvent.click(screen.getByTestId('view-workflow-link'));
+
+      // Assert: runs view header must contain the submitted template name
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      const runsHeader = screen.getByTestId('workflow-runs-page').querySelector('h2');
+      expect(runsHeader).toBeInTheDocument();
+      expect(runsHeader).toHaveTextContent('data-processing-with-params');
+      expect(runsHeader).toHaveTextContent('Runs');
+    });
+
+    it('should fetch workflows filtered by submitted template name after "View Workflow" click', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ name: 'data-processing-with-params-abc12', namespace: 'dashboard-test' }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      fireEvent.click(screen.getAllByTestId('submit-button')[0]);
+      await waitFor(() => expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('confirm-button'));
+      await waitFor(() => expect(screen.getByTestId('view-workflow-link')).toBeInTheDocument());
+
+      // Act
+      fireEvent.click(screen.getByTestId('view-workflow-link'));
+
+      // Assert: workflow runs fetch must use the submitted template name as query param
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('templateName=data-processing-with-params')
+        );
+      });
+    });
+
+    it('should keep workflow-templates-page visible when SubmitModal is cancelled', async () => {
+      // Arrange
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTemplates,
+      });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Open modal
+      fireEvent.click(screen.getAllByTestId('submit-button')[0]);
+      await waitFor(() => expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument());
+
+      // Act: cancel the modal
+      fireEvent.click(screen.getByTestId('cancel-button'));
+
+      // Assert: templates page is still shown, no runs page
+      expect(screen.getByTestId('workflow-templates-page')).toBeInTheDocument();
+      expect(screen.queryByTestId('workflow-runs-page')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('submit-workflow-dialog')).not.toBeInTheDocument();
+    });
+
+    it('should not navigate to runs view when submit fails and "View Workflow" is never shown', async () => {
+      // Arrange: templates load, then POST submit fails
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: async () => ({ error: 'Internal Server Error' }),
+        });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Open modal and submit
+      fireEvent.click(screen.getAllByTestId('submit-button')[0]);
+      await waitFor(() => expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('confirm-button'));
+
+      // Wait for error state
+      await waitFor(() => {
+        expect(screen.getByTestId('submit-error-view')).toBeInTheDocument();
+      });
+
+      // Assert: "View Workflow" button does not appear
+      expect(screen.queryByTestId('view-workflow-link')).not.toBeInTheDocument();
+
+      // Assert: runs page is not shown; modal is still open with error
+      expect(screen.queryByTestId('workflow-runs-page')).not.toBeInTheDocument();
+      expect(screen.getByTestId('submit-workflow-dialog')).toBeInTheDocument();
+    });
+  });
+
   describe('WorkflowDetail View Swap', () => {
     it('should not show workflow-detail-page by default', () => {
       // Arrange
