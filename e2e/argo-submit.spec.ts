@@ -443,8 +443,24 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   // Fixture: workflow runs returned by the API, belonging to different templates.
   // Tests use this to verify that the Runs view shows only the submitted template's runs.
   const WORKFLOW_RUNS_FIXTURE_SIMPLE = [
-    { name: 'simple-template-xyz99', namespace: 'dashboard-test', templateName: 'simple-template' },
-    { name: 'simple-template-abc11', namespace: 'dashboard-test', templateName: 'simple-template' },
+    {
+      name: 'simple-template-xyz99',
+      namespace: 'dashboard-test',
+      templateName: 'simple-template',
+      phase: 'Succeeded',
+      startedAt: '2026-02-24T00:00:00Z',
+      finishedAt: '2026-02-24T00:01:00Z',
+      nodes: [{ name: 'main', phase: 'Succeeded' }],
+    },
+    {
+      name: 'simple-template-abc11',
+      namespace: 'dashboard-test',
+      templateName: 'simple-template',
+      phase: 'Running',
+      startedAt: '2026-02-24T00:02:00Z',
+      finishedAt: '',
+      nodes: [{ name: 'main', phase: 'Running' }],
+    },
   ];
 
   const WORKFLOW_RUNS_FIXTURE_OTHER = [
@@ -452,6 +468,10 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
       name: 'data-processing-with-params-def22',
       namespace: 'dashboard-test',
       templateName: 'data-processing-with-params',
+      phase: 'Succeeded',
+      startedAt: '2026-02-24T00:03:00Z',
+      finishedAt: '2026-02-24T00:04:00Z',
+      nodes: [{ name: 'main', phase: 'Succeeded' }],
     },
   ];
 
