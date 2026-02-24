@@ -435,3 +435,260 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
     await expect(submitDialog).not.toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+
+// TODO: Activate when DLD-532 is implemented
+// Related Issue: DLD-532 (parent: DLD-527) - Submit 성공 후 View Workflow 클릭 시 해당 template의 Runs 뷰 전환 검증
+test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', () => {
+  // Fixture: workflow runs returned by the API, belonging to different templates.
+  // Tests use this to verify that the Runs view shows only the submitted template's runs.
+  const WORKFLOW_RUNS_FIXTURE_SIMPLE = [
+    { name: 'simple-template-xyz99', namespace: 'dashboard-test', templateName: 'simple-template' },
+    { name: 'simple-template-abc11', namespace: 'dashboard-test', templateName: 'simple-template' },
+  ];
+
+  const WORKFLOW_RUNS_FIXTURE_OTHER = [
+    {
+      name: 'data-processing-with-params-def22',
+      namespace: 'dashboard-test',
+      templateName: 'data-processing-with-params',
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    // Mock the workflow templates list API
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+  });
+
+  // TODO: Activate when DLD-532 is implemented
+  test.skip('should close SubmitModal when "View Workflow" button is clicked after successful submit', async ({
+    page,
+  }) => {
+    // Tests that the SubmitModal (submit-workflow-dialog) is no longer visible
+    // after the user clicks the "View Workflow" button in the success view.
+
+    // Arrange: Mock the submit API to return a successfully created workflow
+    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
+      });
+    });
+
+    // Arrange: Mock the workflow runs API for the submitted template
+    await page.route('**/api/argo/workflows**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
+      });
+    });
+
+    await gotoArgo(page);
+
+    const card = await findCardByName(page, 'simple-template');
+    expect(card).toBeTruthy();
+    if (!card) return;
+
+    await card.getByTestId('submit-button').click();
+
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    await submitDialog.getByTestId('confirm-button').click();
+
+    const successView = submitDialog.getByTestId('submit-success-view');
+    await expect(successView).toBeVisible();
+
+    // Act: Click the "View Workflow" button in the success view
+    const viewWorkflowLink = successView.getByTestId('view-workflow-link');
+    await expect(viewWorkflowLink).toBeVisible();
+    await viewWorkflowLink.click();
+
+    // Assert: The SubmitModal is no longer visible
+    await expect(submitDialog).not.toBeVisible();
+  });
+
+  // TODO: Activate when DLD-532 is implemented
+  test.skip('should show workflow-runs-page after "View Workflow" is clicked', async ({ page }) => {
+    // Tests that the workflow-runs-page element becomes visible after the user
+    // clicks "View Workflow", confirming the UI has transitioned to the Runs view.
+
+    // Arrange: Mock the submit API
+    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
+      });
+    });
+
+    // Arrange: Mock the workflow runs API
+    await page.route('**/api/argo/workflows**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
+      });
+    });
+
+    await gotoArgo(page);
+
+    const card = await findCardByName(page, 'simple-template');
+    expect(card).toBeTruthy();
+    if (!card) return;
+
+    await card.getByTestId('submit-button').click();
+
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    await submitDialog.getByTestId('confirm-button').click();
+
+    const successView = submitDialog.getByTestId('submit-success-view');
+    await expect(successView).toBeVisible();
+
+    // Act: Click "View Workflow"
+    await successView.getByTestId('view-workflow-link').click();
+
+    // Assert: The Runs view is now displayed
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: The templates list is no longer shown (we have switched away from it)
+    const workflowTemplatesPage = page.getByTestId('workflow-templates-page');
+    await expect(workflowTemplatesPage).not.toBeVisible();
+  });
+
+  // TODO: Activate when DLD-532 is implemented
+  test.skip('should display the submitted template name in the Runs view header', async ({ page }) => {
+    // Tests that the Runs view header shows the name of the template that was submitted,
+    // so the user knows which template's runs they are viewing.
+
+    // Arrange: Mock the submit API
+    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
+      });
+    });
+
+    // Arrange: Mock the workflow runs API (templateName query param will be simple-template)
+    await page.route('**/api/argo/workflows**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
+      });
+    });
+
+    await gotoArgo(page);
+
+    const card = await findCardByName(page, 'simple-template');
+    expect(card).toBeTruthy();
+    if (!card) return;
+
+    await card.getByTestId('submit-button').click();
+
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    await submitDialog.getByTestId('confirm-button').click();
+
+    const successView = submitDialog.getByTestId('submit-success-view');
+    await expect(successView).toBeVisible();
+
+    // Act: Click "View Workflow"
+    await successView.getByTestId('view-workflow-link').click();
+
+    // Assert: The Runs view header contains the submitted template name
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+    await expect(workflowRunsPage).toContainText('simple-template');
+  });
+
+  // TODO: Activate when DLD-532 is implemented
+  test.skip('should show only the submitted template runs and not runs from other templates', async ({ page }) => {
+    // Tests that the Runs view is filtered to the submitted template:
+    // runs from "simple-template" are visible, while runs from
+    // "data-processing-with-params" are not present in the list.
+    // This verifies that the API is called with the correct templateName filter
+    // and that the UI does not mix runs from unrelated templates.
+
+    // Arrange: Mock the submit API for simple-template
+    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
+      });
+    });
+
+    // Arrange: Mock the workflow runs API to verify it is called with the correct
+    // templateName and return only simple-template runs.
+    // A request for a different templateName (or no filter) would return the "other" fixture,
+    // making the assertion below fail — this catches incorrect API call arguments.
+    await page.route('**/api/argo/workflows**', async route => {
+      const url = new URL(route.request().url());
+      const templateNameParam = url.searchParams.get('templateName');
+
+      if (templateNameParam === 'simple-template') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
+        });
+      } else {
+        // Return other-template runs to surface a filtering bug in assertions
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_OTHER),
+        });
+      }
+    });
+
+    await gotoArgo(page);
+
+    const card = await findCardByName(page, 'simple-template');
+    expect(card).toBeTruthy();
+    if (!card) return;
+
+    await card.getByTestId('submit-button').click();
+
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    await submitDialog.getByTestId('confirm-button').click();
+
+    const successView = submitDialog.getByTestId('submit-success-view');
+    await expect(successView).toBeVisible();
+
+    // Act: Click "View Workflow"
+    await successView.getByTestId('view-workflow-link').click();
+
+    // Assert: The Runs view is visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: simple-template runs are shown
+    await expect(workflowRunsPage).toContainText('simple-template-xyz99');
+    await expect(workflowRunsPage).toContainText('simple-template-abc11');
+
+    // Assert: runs from the other template are not shown
+    await expect(workflowRunsPage).not.toContainText('data-processing-with-params-def22');
+  });
+});
