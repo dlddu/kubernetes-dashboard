@@ -21,7 +21,6 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
   );
 
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplateInfo | null>(null);
-  const [showWorkflowRuns, setShowWorkflowRuns] = useState(false);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowInfo | null>(null);
   const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
 
@@ -31,30 +30,23 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
     error: workflowsError,
     refresh: workflowsRefresh,
   } = useDataFetch<WorkflowInfo>(
-    () => showWorkflowRuns ? fetchWorkflows(namespace, selectedTemplateName ?? undefined) : Promise.resolve([]),
+    () => selectedTemplateName !== null ? fetchWorkflows(namespace, selectedTemplateName) : Promise.resolve([]),
     'Failed to fetch workflow runs',
-    [namespace, showWorkflowRuns, selectedTemplateName],
+    [namespace, selectedTemplateName],
   );
 
   const handleTemplateCardClick = (template: WorkflowTemplateInfo) => {
-    setShowWorkflowRuns(true);
     setSelectedTemplateName(template.name);
     setSelectedWorkflow(null);
   };
 
   const handleNavigateToWorkflows = () => {
     setSelectedTemplate(null);
-    setShowWorkflowRuns(true);
+    setSelectedTemplateName(null);
   };
 
   const handleCloseModal = () => {
     setSelectedTemplate(null);
-  };
-
-  const handleWorkflowsTabClick = () => {
-    setShowWorkflowRuns(true);
-    setSelectedWorkflow(null);
-    setSelectedTemplateName(null);
   };
 
   const handleWorkflowSelect = (workflow: WorkflowInfo) => {
@@ -65,21 +57,16 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
     setSelectedWorkflow(null);
   };
 
+  const handleBackToTemplates = () => {
+    setSelectedTemplateName(null);
+    setSelectedWorkflow(null);
+  };
+
   return (
     <div data-testid="argo-page" className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Argo Workflows</h1>
 
-      <div className="flex gap-2">
-        <button
-          data-testid="workflows-tab"
-          onClick={handleWorkflowsTabClick}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-        >
-          Workflow Runs
-        </button>
-      </div>
-
-      {!showWorkflowRuns && (
+      {selectedTemplateName === null && (
         <div data-testid="workflow-templates-page">
           {isLoading && templates.length === 0 && (
             <LoadingSkeleton
@@ -117,22 +104,18 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
         </div>
       )}
 
-      {showWorkflowRuns && !selectedWorkflow && (
+      {selectedTemplateName !== null && !selectedWorkflow && (
         <section data-testid="workflow-runs-page" className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900">Workflow Runs</h2>
-
-          {templates.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates.map((template) => (
-                <WorkflowTemplateCard
-                  key={`${template.namespace}-${template.name}`}
-                  {...template}
-                  onSubmit={setSelectedTemplate}
-                  onClick={handleTemplateCardClick}
-                />
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            <button
+              data-testid="back-to-templates"
+              onClick={handleBackToTemplates}
+              className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            >
+              Back to Templates
+            </button>
+            <h2 className="text-xl font-bold text-gray-900">{selectedTemplateName} Runs</h2>
+          </div>
 
           {workflowsLoading && workflows.length === 0 && (
             <LoadingSkeleton
@@ -169,7 +152,7 @@ export function ArgoTab({ namespace }: ArgoTabProps) {
         </section>
       )}
 
-      {showWorkflowRuns && selectedWorkflow && (
+      {selectedTemplateName !== null && selectedWorkflow && (
         <WorkflowDetail
           namespace={selectedWorkflow.namespace}
           name={selectedWorkflow.name}

@@ -532,11 +532,11 @@ describe('ArgoTab Component', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // WorkflowsSection: tab navigation and workflow run list
+  // WorkflowsSection: template card click → runs view navigation (DLD-531)
   // ---------------------------------------------------------------------------
 
-  describe('WorkflowsSection - Tab Navigation', () => {
-    it('should render a workflows tab button', () => {
+  describe('WorkflowsSection - Template Card Click Navigation', () => {
+    it('should NOT render a standalone workflows-tab button in the DOM', () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -546,12 +546,12 @@ describe('ArgoTab Component', () => {
       // Act
       render(<ArgoTab />);
 
-      // Assert
-      const workflowsTabButton = screen.getByTestId('workflows-tab');
-      expect(workflowsTabButton).toBeInTheDocument();
+      // Assert: independent "Workflow Runs" tab button must not exist after DLD-531
+      const workflowsTabButton = screen.queryByTestId('workflows-tab');
+      expect(workflowsTabButton).not.toBeInTheDocument();
     });
 
-    it('should not show workflow-runs-page section by default', () => {
+    it('should not show workflow-runs-page by default', () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -561,31 +561,206 @@ describe('ArgoTab Component', () => {
       // Act
       render(<ArgoTab />);
 
-      // Assert: workflow-runs-page should not be rendered before clicking the tab
+      // Assert: runs view must not be visible until a template card is clicked
       const workflowRunsPage = screen.queryByTestId('workflow-runs-page');
       expect(workflowRunsPage).not.toBeInTheDocument();
     });
 
-    it('should show workflow-runs-page section after clicking workflows tab', async () => {
+    it('should show workflow-runs-page after clicking a template card', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })   // templates fetch
-        .mockResolvedValueOnce({ ok: true, json: async () => [] });  // workflows fetch
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       render(<ArgoTab />);
 
-      // Act
-      const workflowsTabButton = screen.getByTestId('workflows-tab');
-      fireEvent.click(workflowsTabButton);
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act: click the first template card
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert
       await waitFor(() => {
-        const workflowRunsPage = screen.getByTestId('workflow-runs-page');
-        expect(workflowRunsPage).toBeInTheDocument();
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
       });
     });
 
-    it('should display workflow templates section by default (not workflow runs)', () => {
+    it('should hide workflow-templates-page when workflow-runs-page is shown', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
+
+      // Assert: templates page must be hidden
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('workflow-templates-page')).not.toBeInTheDocument();
+    });
+
+    it('should display "{templateName} Runs" in the runs view header', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act: click the first template ('data-processing-with-params')
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
+
+      // Assert: header must contain the selected template name
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      const runsHeader = screen.getByTestId('workflow-runs-page').querySelector('h2');
+      expect(runsHeader).toBeInTheDocument();
+      expect(runsHeader).toHaveTextContent('data-processing-with-params');
+      expect(runsHeader).toHaveTextContent('Runs');
+    });
+
+    it('should pass selectedTemplateName to fetchWorkflows when a template card is clicked', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act: click the first template card ('data-processing-with-params')
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
+
+      // Assert: fetchWorkflows must be called with the template name as a query param
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('templateName=data-processing-with-params')
+        );
+      });
+    });
+
+    it('should pass selectedTemplateName and namespace to fetchWorkflows when namespace prop is set', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab namespace="dashboard-test" />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act: click the first template card
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
+
+      // Assert: both ns and templateName query params must be present
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('ns=dashboard-test')
+        );
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('templateName=data-processing-with-params')
+        );
+      });
+    });
+
+    it('should return to workflow-templates-page when back-to-templates button is clicked', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      // Act: click the back button
+      const backButton = screen.getByTestId('back-to-templates');
+      fireEvent.click(backButton);
+
+      // Assert: templates page is visible again
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-templates-page')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('workflow-runs-page')).not.toBeInTheDocument();
+    });
+
+    it('should render back-to-templates button in the runs view header', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
+
+      // Assert: back button must be present inside runs page
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-runs-page')).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('back-to-templates')).toBeInTheDocument();
+    });
+
+    it('should NOT switch to runs view when Submit button inside a template card is clicked', async () => {
+      // Arrange
+      (global.fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates });
+
+      render(<ArgoTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act: click the Submit button (not the card itself)
+      const submitButtons = screen.getAllByTestId('submit-button');
+      fireEvent.click(submitButtons[0]);
+
+      // Assert: runs page must NOT appear — submit opens a modal, not the runs view
+      expect(screen.queryByTestId('workflow-runs-page')).not.toBeInTheDocument();
+
+      // Assert: templates page is still visible
+      expect(screen.getByTestId('workflow-templates-page')).toBeInTheDocument();
+    });
+
+    it('should display workflow templates section by default', () => {
       // Arrange
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
@@ -595,23 +770,26 @@ describe('ArgoTab Component', () => {
       // Act
       render(<ArgoTab />);
 
-      // Assert: templates page should be visible
+      // Assert
       expect(screen.getByTestId('workflow-templates-page')).toBeInTheDocument();
     });
   });
 
   describe('WorkflowsSection - Workflow Run List Rendering', () => {
-    it('should render WorkflowCard items in workflow-runs-page after tab switch', async () => {
+    it('should render WorkflowCard items in workflow-runs-page after template card click', async () => {
       // Arrange: first call returns templates, second call returns workflow runs
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
       render(<ArgoTab />);
 
-      // Act: click the workflows tab
-      const workflowsTabButton = screen.getByTestId('workflows-tab');
-      fireEvent.click(workflowsTabButton);
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
+      // Act: click the first template card to enter the runs view
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert
       await waitFor(() => {
@@ -620,16 +798,20 @@ describe('ArgoTab Component', () => {
       });
     });
 
-    it('should display workflow run names after tab switch', async () => {
+    it('should display workflow run names after template card click', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
       render(<ArgoTab />);
 
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
       // Act
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert
       await waitFor(() => {
@@ -641,13 +823,17 @@ describe('ArgoTab Component', () => {
     it('should show empty state in workflow-runs-page when no workflows exist', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       render(<ArgoTab />);
 
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
       // Act
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert
       await waitFor(() => {
@@ -660,16 +846,20 @@ describe('ArgoTab Component', () => {
       expect(cards).toHaveLength(0);
     });
 
-    it('should fetch from /api/argo/workflows endpoint when workflows tab is active', async () => {
+    it('should fetch from /api/argo/workflows endpoint when a template card is clicked', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
       render(<ArgoTab />);
 
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
       // Act
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert
       await waitFor(() => {
@@ -682,18 +872,22 @@ describe('ArgoTab Component', () => {
     it('should fetch workflows with namespace filter when namespace prop is provided', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
       render(<ArgoTab namespace="dashboard-test" />);
 
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
       // Act
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/argo/workflows?ns=dashboard-test')
+          expect.stringContaining('ns=dashboard-test')
         );
       });
     });
@@ -701,13 +895,17 @@ describe('ArgoTab Component', () => {
     it('should show error retry when workflow fetch fails', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockRejectedValueOnce(new Error('Network error'));
 
       render(<ArgoTab />);
 
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
       // Act
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert
       await waitFor(() => {
@@ -722,15 +920,19 @@ describe('ArgoTab Component', () => {
     it('should show loading skeleton while workflow runs are being fetched', async () => {
       // Arrange: templates resolve immediately; workflows never resolve
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockImplementationOnce(
           () => new Promise(() => {}) // Never resolves
         );
 
       render(<ArgoTab />);
 
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+
       // Act
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       // Assert: loading skeleton should appear inside the runs page
       await waitFor(() => {
@@ -761,16 +963,19 @@ describe('ArgoTab Component', () => {
     });
 
     it('should show workflow-detail-page when a WorkflowCard is clicked', async () => {
-      // Arrange: templates → empty, workflows → mockWorkflows
+      // Arrange: templates → mockTemplates, workflows → mockWorkflows, detail → mockWorkflows[0]
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })             // templates
-        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })  // workflows
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })    // templates
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })    // workflows
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] }); // detail
 
       render(<ArgoTab />);
 
-      // Switch to Workflow Runs tab
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      // Navigate to Runs view via template card click
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
@@ -789,13 +994,16 @@ describe('ArgoTab Component', () => {
     it('should hide workflow-runs-page when workflow-detail-page is shown', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
 
       render(<ArgoTab />);
 
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
@@ -815,13 +1023,16 @@ describe('ArgoTab Component', () => {
     it('should return to workflow-runs-page when back button is clicked', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
 
       render(<ArgoTab />);
 
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
@@ -847,13 +1058,16 @@ describe('ArgoTab Component', () => {
     it('should pass correct namespace and name to workflow detail page', async () => {
       // Arrange
       (global.fetch as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
 
       render(<ArgoTab />);
 
-      fireEvent.click(screen.getByTestId('workflows-tab'));
+      await waitFor(() => {
+        expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
+      });
+      fireEvent.click(screen.getAllByTestId('workflow-template-card')[0]);
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-run-card')).toHaveLength(2);
