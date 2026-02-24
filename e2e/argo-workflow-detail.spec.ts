@@ -38,6 +38,14 @@ import { test, expect } from '@playwright/test';
 // Shared fixture data
 // ---------------------------------------------------------------------------
 
+const WORKFLOW_TEMPLATES_FIXTURE = [
+  {
+    name: 'data-processing',
+    namespace: 'dashboard-test',
+    parameters: [],
+  },
+];
+
 const WORKFLOWS_FIXTURE = [
   {
     name: 'data-processing-running',
@@ -166,13 +174,17 @@ type PageParam = Parameters<typeof test>[1] extends (...args: infer A) => unknow
 
 /**
  * Navigate to /argo, switch to the Workflows section, and wait for cards to appear.
+ *
+ * DLD-531: The standalone 'workflows-tab' button has been removed.
+ * To navigate to the runs view, click the first template card instead.
  */
 async function gotoArgoWorkflows(page: PageParam) {
   await page.goto('/argo');
   await page.waitForLoadState('networkidle');
-  const workflowsTab = page.getByTestId('workflows-tab');
-  await expect(workflowsTab).toBeVisible();
-  await workflowsTab.click();
+  // Click the first workflow template card to navigate to its runs view
+  const templateCards = page.getByTestId('workflow-template-card');
+  await expect(templateCards.first()).toBeVisible();
+  await templateCards.first().click();
   await page.waitForLoadState('networkidle');
 }
 
@@ -219,6 +231,20 @@ async function findDetailStepByName(page: PageParam, stepName: string) {
 test.describe('Argo Tab - Workflow Detail - Navigation', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     // Mock the workflow list API
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
@@ -271,6 +297,20 @@ test.describe('Argo Tab - Workflow Detail - Navigation', () => {
 test.describe('Argo Tab - Workflow Detail - Header', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
         status: 200,
@@ -334,6 +374,20 @@ test.describe('Argo Tab - Workflow Detail - Header', () => {
 test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
         status: 200,
@@ -402,6 +456,20 @@ test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
 test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
         status: 200,
@@ -488,6 +556,20 @@ test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
 test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
         status: 200,
@@ -572,6 +654,20 @@ test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
 test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
         status: 200,
@@ -695,6 +791,20 @@ test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
 test.describe('Argo Tab - Workflow Detail - Step Message', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
         status: 200,
@@ -791,6 +901,20 @@ test.describe('Argo Tab - Workflow Detail - Step Message', () => {
 test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     await page.route('**/api/argo/workflows**', async route => {
       await route.fulfill({
         status: 200,
@@ -853,6 +977,20 @@ test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
 test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
   // TODO: Activate when DLD-445 is implemented
   test.beforeEach(async ({ page }) => {
+    // Mock the workflow-templates API so that template cards are available for clicking.
+    // Must be registered before the workflows API mock to avoid URL pattern overlap.
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
     // Always provide the workflow list for navigation
     await page.route('**/api/argo/workflows**', async route => {
       // Only mock the list endpoint, not individual workflow detail endpoints
@@ -883,11 +1021,7 @@ test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
     });
 
     // Act: Navigate to the list and click the card (do NOT wait for networkidle)
-    await page.goto('/argo');
-    await page.waitForLoadState('networkidle');
-    const workflowsTab = page.getByTestId('workflows-tab');
-    await workflowsTab.click();
-    await page.waitForLoadState('networkidle');
+    await gotoArgoWorkflows(page);
 
     const card = await findWorkflowCardByName(page, 'data-processing-running');
     expect(card).toBeTruthy();

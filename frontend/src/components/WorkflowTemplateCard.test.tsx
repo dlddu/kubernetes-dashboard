@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { WorkflowTemplateCard } from './WorkflowTemplateCard';
 
 // Sample template data matching the API response shape
@@ -254,6 +254,100 @@ describe('WorkflowTemplateCard Component', () => {
       // Assert: namespace should be visible/accessible
       const namespace = screen.getByTestId('workflow-template-namespace');
       expect(namespace).toBeVisible();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // onSelect / onClick interaction (DLD-531)
+  // ---------------------------------------------------------------------------
+
+  describe('Card Click Interaction', () => {
+    it('should call onClick with the template object when the card is clicked', () => {
+      // Arrange
+      const handleClick = vi.fn();
+
+      render(<WorkflowTemplateCard {...mockTemplateWithParams} onClick={handleClick} />);
+
+      // Act
+      const card = screen.getByTestId('workflow-template-card');
+      fireEvent.click(card);
+
+      // Assert
+      expect(handleClick).toHaveBeenCalledTimes(1);
+      expect(handleClick).toHaveBeenCalledWith({
+        name: 'data-processing-with-params',
+        namespace: 'dashboard-test',
+        parameters: mockTemplateWithParams.parameters,
+      });
+    });
+
+    it('should NOT call onClick when the Submit button inside the card is clicked', () => {
+      // Arrange
+      const handleClick = vi.fn();
+      const handleSubmit = vi.fn();
+
+      render(
+        <WorkflowTemplateCard
+          {...mockTemplateWithParams}
+          onClick={handleClick}
+          onSubmit={handleSubmit}
+        />
+      );
+
+      // Act: click the Submit button — stopPropagation must prevent card click
+      const submitButton = screen.getByTestId('submit-button');
+      fireEvent.click(submitButton);
+
+      // Assert: card onClick must NOT have been triggered
+      expect(handleClick).not.toHaveBeenCalled();
+
+      // Assert: onSubmit must have been triggered
+      expect(handleSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onSubmit with the template object when Submit button is clicked', () => {
+      // Arrange
+      const handleSubmit = vi.fn();
+
+      render(<WorkflowTemplateCard {...mockTemplateNoParams} onSubmit={handleSubmit} />);
+
+      // Act
+      const submitButton = screen.getByTestId('submit-button');
+      fireEvent.click(submitButton);
+
+      // Assert
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: 'simple-template',
+        namespace: 'dashboard-test',
+        parameters: [],
+      });
+    });
+
+    it('should not throw when onClick is not provided and the card is clicked', () => {
+      // Arrange: render without onClick prop
+      render(<WorkflowTemplateCard {...mockTemplateWithParams} />);
+
+      // Act & Assert: clicking should not throw
+      const card = screen.getByTestId('workflow-template-card');
+      expect(() => fireEvent.click(card)).not.toThrow();
+    });
+
+    it('should not throw when onSubmit is not provided and Submit button is clicked', () => {
+      // Arrange: render without onSubmit prop
+      render(<WorkflowTemplateCard {...mockTemplateWithParams} />);
+
+      // Act & Assert: clicking should not throw
+      const submitButton = screen.getByTestId('submit-button');
+      expect(() => fireEvent.click(submitButton)).not.toThrow();
+    });
+
+    it('should have cursor-pointer class on the card element', () => {
+      // Arrange & Act
+      render(<WorkflowTemplateCard {...mockTemplateWithParams} />);
+
+      // Assert: card must be styled as clickable
+      const card = screen.getByTestId('workflow-template-card');
+      expect(card).toHaveClass('cursor-pointer');
     });
   });
 });
