@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"sort"
 	"strings"
 
 	versioned "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
@@ -73,6 +74,11 @@ func getWorkflowsData(ctx context.Context, clientset *versioned.Clientset, names
 			Nodes:        nodes,
 		})
 	}
+
+	// Sort by startedAt descending (most recent first).
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].StartedAt > result[j].StartedAt
+	})
 
 	return result, nil
 }

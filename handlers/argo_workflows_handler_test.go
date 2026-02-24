@@ -521,6 +521,84 @@ func TestGetWorkflowsDataTemplateNameFilter(t *testing.T) {
 	})
 }
 
+// TestWorkflowsHandlerSorting tests that workflow runs are sorted by
+// startedAt in descending order (most recent first).
+func TestWorkflowsHandlerSorting(t *testing.T) {
+	t.Run("should return workflows sorted by startedAt descending", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var workflows []WorkflowInfo
+		if err := json.NewDecoder(res.Body).Decode(&workflows); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(workflows) < 2 {
+			t.Skip("need at least 2 workflows to verify sort order")
+		}
+
+		for i := 1; i < len(workflows); i++ {
+			if workflows[i-1].StartedAt < workflows[i].StartedAt {
+				t.Errorf(
+					"workflows not sorted by startedAt descending: workflow[%d].startedAt=%q < workflow[%d].startedAt=%q",
+					i-1, workflows[i-1].StartedAt, i, workflows[i].StartedAt,
+				)
+			}
+		}
+	})
+
+	t.Run("should return workflows sorted by startedAt descending with templateName filter", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/argo/workflows?templateName=data-processing-with-params", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var workflows []WorkflowInfo
+		if err := json.NewDecoder(res.Body).Decode(&workflows); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(workflows) < 2 {
+			t.Skip("need at least 2 workflows to verify sort order")
+		}
+
+		for i := 1; i < len(workflows); i++ {
+			if workflows[i-1].StartedAt < workflows[i].StartedAt {
+				t.Errorf(
+					"workflows not sorted by startedAt descending: workflow[%d].startedAt=%q < workflow[%d].startedAt=%q",
+					i-1, workflows[i-1].StartedAt, i, workflows[i].StartedAt,
+				)
+			}
+		}
+	})
+}
+
 // TestWorkflowsHandlerNamespaceFilter tests that the ns query parameter
 // correctly scopes the returned workflow list.
 func TestWorkflowsHandlerNamespaceFilter(t *testing.T) {
