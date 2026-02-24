@@ -4,28 +4,19 @@ metadata:
   name: data-processing-running
   namespace: dashboard-test
 spec:
-  entrypoint: main
-  templates:
-    - name: main
-      steps:
-        - - name: step-one
-            template: process
-        - - name: step-two
-            template: process
-        - - name: step-three
-            template: process
-    - name: process
-      container:
-        image: busybox
-        command: [echo, "processing"]
+  workflowTemplateRef:
+    name: data-processing-with-params
 status:
   phase: Running
+  startedAt: "2026-02-22T07:00:00Z"
   nodes:
     data-processing-running:
       id: data-processing-running
       name: data-processing-running
+      displayName: data-processing-running
       type: Steps
       phase: Running
+      startedAt: "2026-02-22T07:00:00Z"
       inputs:
         parameters:
           - name: input-path
@@ -37,8 +28,11 @@ status:
     data-processing-running-step-one:
       id: data-processing-running-step-one
       name: data-processing-running[0].step-one
+      displayName: step-one
       type: Pod
       phase: Succeeded
+      startedAt: "2026-02-22T07:00:10Z"
+      finishedAt: "2026-02-22T07:05:00Z"
       inputs:
         parameters:
           - name: input-path
@@ -52,8 +46,11 @@ status:
     data-processing-running-step-two:
       id: data-processing-running-step-two
       name: data-processing-running[1].step-two
+      displayName: step-two
       type: Pod
       phase: Running
+      startedAt: "2026-02-22T07:05:10Z"
+      message: "Processing batch 42/100"
       inputs:
         parameters:
           - name: input-path
@@ -65,6 +62,7 @@ status:
     data-processing-running-step-three:
       id: data-processing-running-step-three
       name: data-processing-running[2].step-three
+      displayName: step-three
       type: Pod
       phase: Pending
       inputs:
