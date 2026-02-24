@@ -13,9 +13,9 @@ import { test, expect } from '@playwright/test';
  * Outputs panel is green. A "Back to Workflows" button returns the user to the list.
  * Loading and error states are also tested.
  *
- * Test Fixtures (API mock — WorkflowDetail endpoint not yet implemented):
- * - GET /api/argo/workflows returns WORKFLOWS_FIXTURE (3 workflows)
- * - GET /api/argo/workflows/:name  returns WORKFLOW_DETAIL_FIXTURE (single workflow with IO)
+ * Test Fixtures (test/fixtures/):
+ * - GET /api/argo/workflows returns workflows from cluster
+ * - GET /api/argo/workflows/:name  returns single workflow detail with IO
  *   - data-processing-running  (namespace: dashboard-test, phase: Running)
  *     - step-one   Succeeded — has inputs (input-path=/data/input) and outputs (result=done)
  *     - step-two   Running   — has inputs only (input-path=/data/output), no outputs
@@ -33,138 +33,6 @@ import { test, expect } from '@playwright/test';
  * Related Issue: DLD-445 - 작업 5-1: Workflow 상세 (step IO) — e2e 테스트 작성 (skipped)
  * Parent Issue:  DLD-435 - Argo WorkflowTemplate Submit 기능 추가
  */
-
-// ---------------------------------------------------------------------------
-// Shared fixture data
-// ---------------------------------------------------------------------------
-
-const WORKFLOW_TEMPLATES_FIXTURE = [
-  {
-    name: 'data-processing',
-    namespace: 'dashboard-test',
-    parameters: [],
-  },
-];
-
-const WORKFLOWS_FIXTURE = [
-  {
-    name: 'data-processing-running',
-    namespace: 'dashboard-test',
-    phase: 'Running',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T07:00:00Z',
-    finishedAt: '',
-    nodes: [
-      {
-        name: 'step-one',
-        phase: 'Succeeded',
-        startedAt: '2026-02-22T07:00:10Z',
-        finishedAt: '2026-02-22T07:05:00Z',
-        message: '',
-        inputs: {
-          parameters: [{ name: 'input-path', value: '/data/input' }],
-          artifacts: [],
-        },
-        outputs: {
-          parameters: [{ name: 'result', value: 'done' }],
-          artifacts: [],
-        },
-      },
-      {
-        name: 'step-two',
-        phase: 'Running',
-        startedAt: '2026-02-22T07:05:10Z',
-        finishedAt: '',
-        message: 'Processing batch 42/100',
-        inputs: {
-          parameters: [{ name: 'input-path', value: '/data/output' }],
-          artifacts: [],
-        },
-        outputs: {
-          parameters: [],
-          artifacts: [],
-        },
-      },
-      {
-        name: 'step-three',
-        phase: 'Pending',
-        startedAt: '',
-        finishedAt: '',
-        message: '',
-        inputs: {
-          parameters: [],
-          artifacts: [],
-        },
-        outputs: {
-          parameters: [],
-          artifacts: [],
-        },
-      },
-    ],
-  },
-  {
-    name: 'data-processing-failed',
-    namespace: 'dashboard-test',
-    phase: 'Failed',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T05:00:00Z',
-    finishedAt: '2026-02-22T05:45:00Z',
-    nodes: [
-      {
-        name: 'step-one',
-        phase: 'Succeeded',
-        startedAt: '2026-02-22T05:00:10Z',
-        finishedAt: '2026-02-22T05:20:00Z',
-        message: '',
-        inputs: {
-          parameters: [{ name: 'input-path', value: '/data/input' }],
-          artifacts: [
-            { name: 'raw-data', path: '/data/raw', from: 's3://bucket/raw' },
-          ],
-        },
-        outputs: {
-          parameters: [{ name: 'result', value: 'done' }],
-          artifacts: [
-            { name: 'processed-data', path: '/data/processed', size: '1.2MB' },
-          ],
-        },
-      },
-      {
-        name: 'step-two',
-        phase: 'Failed',
-        startedAt: '2026-02-22T05:20:10Z',
-        finishedAt: '2026-02-22T05:45:00Z',
-        message: 'Health check failed...',
-        inputs: {
-          parameters: [{ name: 'input-path', value: '/data/output' }],
-          artifacts: [],
-        },
-        outputs: {
-          parameters: [],
-          artifacts: [],
-        },
-      },
-      {
-        name: 'step-three',
-        phase: 'Omitted',
-        startedAt: '',
-        finishedAt: '',
-        message: '',
-        inputs: {
-          parameters: [],
-          artifacts: [],
-        },
-        outputs: {
-          parameters: [],
-          artifacts: [],
-        },
-      },
-    ],
-  },
-];
-
-// Single-workflow detail fixture (data-processing-running) used for detail-view tests
-const WORKFLOW_DETAIL_FIXTURE = WORKFLOWS_FIXTURE[0];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -230,40 +98,6 @@ async function findDetailStepByName(page: PageParam, stepName: string) {
 
 test.describe('Argo Tab - Workflow Detail - Navigation', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Mock the workflow list API
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    // Mock the single workflow detail API
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
-  });
-
   test('should navigate to WorkflowDetail when a WorkflowCard is clicked', async ({ page }) => {
     // Tests that clicking a WorkflowCard in the Workflow list transitions to the detail view.
 
@@ -296,38 +130,6 @@ test.describe('Argo Tab - Workflow Detail - Navigation', () => {
 
 test.describe('Argo Tab - Workflow Detail - Header', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
-  });
-
   test('should display workflow name, phase badge, and start/end times in the header', async ({ page }) => {
     // Tests that the WorkflowDetail header shows the workflow name, phase badge,
     // started time, and finished time (or dash when not finished).
@@ -373,38 +175,6 @@ test.describe('Argo Tab - Workflow Detail - Header', () => {
 
 test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
-  });
-
   test('should expand and collapse the Parameters section when the toggle is clicked', async ({ page }) => {
     // Tests that the Parameters toggle button shows/hides the parameter list.
     // The initial state is collapsed; clicking once expands it; clicking again collapses it.
@@ -455,38 +225,6 @@ test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
 
 test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
-  });
-
   test('should display each step with name, phase badge, and time in the Steps timeline', async ({ page }) => {
     // Tests that the Steps timeline renders each step entry with:
     // - step name (data-testid="workflow-detail-step-name")
@@ -555,38 +293,6 @@ test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
 
 test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
-  });
-
   test("should display 'Inputs / Outputs' toggle button for steps that have inputs or outputs", async ({ page }) => {
     // Tests that the IO toggle button (data-testid="workflow-detail-step-io-toggle")
     // is rendered only for steps that have at least one input or output parameter/artifact.
@@ -653,39 +359,6 @@ test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
 
 test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    // Use the failed workflow detail for artifact tests (step-one has both input/output artifacts)
-    await page.route('**/api/argo/workflows/data-processing-failed**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE[1]),
-      });
-    });
-  });
-
   test('should display purple Inputs panel with parameters (key=value) and artifacts (name, path, from)', async ({ page }) => {
     // Tests that clicking the IO toggle on step-one of data-processing-failed reveals
     // the Inputs panel with:
@@ -790,46 +463,6 @@ test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
 
 test.describe('Argo Tab - Workflow Detail - Step Message', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
-
-    await page.route('**/api/argo/workflows/data-processing-failed**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE[1]),
-      });
-    });
-  });
-
   test('should display step message when the step has a non-empty message', async ({ page }) => {
     // Tests that a step with a non-empty message field renders the message text
     // below the step header. Two fixtures are verified:
@@ -900,38 +533,6 @@ test.describe('Argo Tab - Workflow Detail - Step Message', () => {
 
 test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
-  });
-
   test("should return to the Workflow list when 'Back to Workflows' is clicked", async ({ page }) => {
     // Tests that clicking the "Back to Workflows" button in the detail view
     // dismisses the detail and re-renders the workflow-runs-page list.
@@ -976,49 +577,9 @@ test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
 
 test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
   // TODO: Activate when DLD-445 is implemented
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Must be registered before the workflows API mock to avoid URL pattern overlap.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Always provide the workflow list for navigation
-    await page.route('**/api/argo/workflows**', async route => {
-      // Only mock the list endpoint, not individual workflow detail endpoints
-      if (!route.request().url().match(/\/api\/argo\/workflows\/[^?]+/)) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOWS_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
-
   test('should display LoadingSkeleton while the workflow detail is being fetched', async ({ page }) => {
     // Tests that a LoadingSkeleton with aria-busy="true" is shown while the
     // detail API request is in-flight (simulated with a 3-second delay).
-
-    // Arrange: Mock the detail API with a deliberate delay
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-      });
-    });
 
     // Act: Navigate to the list and click the card (do NOT wait for networkidle)
     await gotoArgoWorkflows(page);
@@ -1038,25 +599,6 @@ test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
   test('should display ErrorRetry with functional retry when the workflow detail API returns an error', async ({ page }) => {
     // Tests that when the detail API returns 500 the ErrorRetry component is shown,
     // and clicking Retry re-fetches and shows the detail on success.
-
-    // Arrange: First call fails with 500, second call succeeds
-    let detailCallCount = 0;
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      detailCallCount += 1;
-      if (detailCallCount === 1) {
-        await route.fulfill({
-          status: 500,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal Server Error' }),
-        });
-      } else {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_DETAIL_FIXTURE),
-        });
-      }
-    });
 
     // Act: Navigate to the list and open the detail
     await gotoArgoWorkflows(page);

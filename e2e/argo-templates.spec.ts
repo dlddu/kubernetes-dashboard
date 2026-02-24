@@ -175,16 +175,6 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
   test('should display LoadingSkeleton while workflow templates are being fetched', async ({ page }) => {
     // Tests that LoadingSkeleton is shown during the API request
 
-    // Arrange: Intercept the workflow templates API and delay the response
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
     // Act: Navigate to the Argo tab
     await page.goto('/argo');
 
@@ -198,15 +188,6 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
 
   test('should display EmptyState with "No workflow templates found" when no templates exist', async ({ page }) => {
     // Tests that EmptyState is rendered with the correct message when the API returns an empty list
-
-    // Arrange: Mock the workflow templates API to return an empty array
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
 
     // Act: Navigate to the Argo tab
     await page.goto('/argo');
@@ -226,15 +207,6 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
 
   test('should display ErrorRetry component when the workflow templates API returns an error', async ({ page }) => {
     // Tests that ErrorRetry is rendered and the retry button is functional on API failure
-
-    // Arrange: Mock the workflow templates API to return a 500 error
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Internal Server Error' }),
-      });
-    });
 
     // Act: Navigate to the Argo tab
     await page.goto('/argo');

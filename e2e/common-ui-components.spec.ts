@@ -43,16 +43,6 @@ test.describe('LoadingSkeleton Component - Overview Tab', () => {
   test('should show loading skeleton with proper accessibility attributes', async ({ page }) => {
     // Tests that LoadingSkeleton has appropriate ARIA attributes
 
-    // Arrange: Delay API responses so loading skeleton stays visible long enough to test
-    await page.route('**/api/**', async (route) => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      try {
-        await route.continue();
-      } catch {
-        // Route may have been already handled by navigation or page close
-      }
-    });
-
     // Act: Navigate to the Overview page
     await page.goto('/');
 
@@ -76,8 +66,6 @@ test.describe('LoadingSkeleton Component - Overview Tab', () => {
     // Assert: Should have aria-label or role for screen readers
     expect(attrs.ariaLabel || attrs.role).toBeTruthy();
 
-    // Cleanup: Remove route interception and wait for loading to complete
-    await page.unroute('**/api/**');
     await page.waitForLoadState('networkidle');
   });
 

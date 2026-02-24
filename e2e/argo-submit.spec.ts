@@ -24,28 +24,6 @@ import { test, expect } from '@playwright/test';
  */
 
 // ---------------------------------------------------------------------------
-// Shared fixture data
-// ---------------------------------------------------------------------------
-
-const WORKFLOW_TEMPLATES_FIXTURE = [
-  {
-    name: 'data-processing-with-params',
-    namespace: 'dashboard-test',
-    parameters: [
-      { name: 'input-path', value: '/data/input', description: 'Input data path' },
-      { name: 'output-path', value: '/data/output', description: 'Output data path' },
-      { name: 'batch-size', value: '100', description: 'Batch size' },
-      { name: 'env', enum: ['dev', 'staging', 'prod'] },
-    ],
-  },
-  {
-    name: 'simple-template',
-    namespace: 'dashboard-test',
-    parameters: [],
-  },
-];
-
-// ---------------------------------------------------------------------------
 // Helper: navigate to /argo and wait for the templates list to settle
 // ---------------------------------------------------------------------------
 
@@ -78,17 +56,6 @@ async function findCardByName(
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API so tests are not reliant on cluster state
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-      });
-    });
-  });
-
   test('should open SubmitModal when Submit button is clicked on a template card', async ({ page }) => {
     // Tests that clicking the Submit button on a WorkflowTemplate card opens the Submit modal
 
@@ -164,15 +131,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
   test('should show success view after editing parameters and submitting the form', async ({ page }) => {
     // Tests the full happy-path submit flow: change a parameter value → click confirm → success view appears
 
-    // Arrange: Mock the submit API to return a successful workflow reference
-    await page.route('**/api/argo/workflow-templates/data-processing-with-params/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'data-processing-with-params-abc12', namespace: 'dashboard-test' }),
-      });
-    });
-
     await gotoArgo(page);
 
     const card = await findCardByName(page, 'data-processing-with-params');
@@ -201,15 +159,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
   test('should allow submitting a template with no parameters without showing a form', async ({ page }) => {
     // Tests that simple-template (0 parameters) opens a modal with no parameter fields
     // and can be submitted immediately without filling in anything
-
-    // Arrange: Mock the submit API for simple-template
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
 
     await gotoArgo(page);
 
@@ -241,15 +190,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 
   test('should navigate to the Workflows section when "View Workflow" link is clicked', async ({ page }) => {
     // Tests that clicking the "View Workflow" link in the success view switches to the Workflows tab/section
-
-    // Arrange: Mock submit API to return a created workflow
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
 
     await gotoArgo(page);
 
@@ -283,44 +223,9 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      // Only intercept GET list requests, not submit POSTs
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
-
   test('should display error view and allow retry when the submit API returns an error', async ({ page }) => {
     // Tests that a failed submit shows an error view inside the modal,
     // and the Retry button re-triggers the API call (which succeeds on retry)
-
-    // Arrange: First call fails, second call succeeds
-    let submitCallCount = 0;
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      submitCallCount += 1;
-      if (submitCallCount === 1) {
-        await route.fulfill({
-          status: 500,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal Server Error' }),
-        });
-      } else {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-        });
-      }
-    });
 
     await gotoArgo(page);
 
@@ -358,16 +263,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
     // Tests that during the in-flight POST request the confirm button is disabled
     // and a loading spinner is visible, preventing duplicate submissions
 
-    // Arrange: Mock submit API with a deliberate delay to observe in-flight state
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
     await gotoArgo(page);
 
     const card = await findCardByName(page, 'simple-template');
@@ -395,21 +290,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
-
   test('should close the Submit modal when the Cancel button is clicked', async ({ page }) => {
     // Tests that clicking the Cancel button in the Submit modal dismisses it
     // without triggering an API call
@@ -440,79 +320,11 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
 
 // Related Issue: DLD-532 (parent: DLD-527) - Submit 성공 후 View Workflow 클릭 시 해당 template의 Runs 뷰 전환 검증
 test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', () => {
-  // Fixture: workflow runs returned by the API, belonging to different templates.
-  // Tests use this to verify that the Runs view shows only the submitted template's runs.
-  const WORKFLOW_RUNS_FIXTURE_SIMPLE = [
-    {
-      name: 'simple-template-xyz99',
-      namespace: 'dashboard-test',
-      templateName: 'simple-template',
-      phase: 'Succeeded',
-      startedAt: '2026-02-24T00:00:00Z',
-      finishedAt: '2026-02-24T00:01:00Z',
-      nodes: [{ name: 'main', phase: 'Succeeded' }],
-    },
-    {
-      name: 'simple-template-abc11',
-      namespace: 'dashboard-test',
-      templateName: 'simple-template',
-      phase: 'Running',
-      startedAt: '2026-02-24T00:02:00Z',
-      finishedAt: '',
-      nodes: [{ name: 'main', phase: 'Running' }],
-    },
-  ];
-
-  const WORKFLOW_RUNS_FIXTURE_OTHER = [
-    {
-      name: 'data-processing-with-params-def22',
-      namespace: 'dashboard-test',
-      templateName: 'data-processing-with-params',
-      phase: 'Succeeded',
-      startedAt: '2026-02-24T00:03:00Z',
-      finishedAt: '2026-02-24T00:04:00Z',
-      nodes: [{ name: 'main', phase: 'Succeeded' }],
-    },
-  ];
-
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
-
   test('should close SubmitModal when "View Workflow" button is clicked after successful submit', async ({
     page,
   }) => {
     // Tests that the SubmitModal (submit-workflow-dialog) is no longer visible
     // after the user clicks the "View Workflow" button in the success view.
-
-    // Arrange: Mock the submit API to return a successfully created workflow
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
-    // Arrange: Mock the workflow runs API for the submitted template
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
-      });
-    });
 
     await gotoArgo(page);
 
@@ -542,24 +354,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   test('should show workflow-runs-page after "View Workflow" is clicked', async ({ page }) => {
     // Tests that the workflow-runs-page element becomes visible after the user
     // clicks "View Workflow", confirming the UI has transitioned to the Runs view.
-
-    // Arrange: Mock the submit API
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
-    // Arrange: Mock the workflow runs API
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
-      });
-    });
 
     await gotoArgo(page);
 
@@ -593,24 +387,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     // Tests that the Runs view header shows the name of the template that was submitted,
     // so the user knows which template's runs they are viewing.
 
-    // Arrange: Mock the submit API
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
-    // Arrange: Mock the workflow runs API (templateName query param will be simple-template)
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
-      });
-    });
-
     await gotoArgo(page);
 
     const card = await findCardByName(page, 'simple-template');
@@ -642,39 +418,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     // "data-processing-with-params" are not present in the list.
     // This verifies that the API is called with the correct templateName filter
     // and that the UI does not mix runs from unrelated templates.
-
-    // Arrange: Mock the submit API for simple-template
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
-    // Arrange: Mock the workflow runs API to verify it is called with the correct
-    // templateName and return only simple-template runs.
-    // A request for a different templateName (or no filter) would return the "other" fixture,
-    // making the assertion below fail — this catches incorrect API call arguments.
-    await page.route('**/api/argo/workflows**', async route => {
-      const url = new URL(route.request().url());
-      const templateNameParam = url.searchParams.get('templateName');
-
-      if (templateNameParam === 'simple-template') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
-        });
-      } else {
-        // Return other-template runs to surface a filtering bug in assertions
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_OTHER),
-        });
-      }
-    });
 
     await gotoArgo(page);
 

@@ -11,7 +11,7 @@ import { test, expect } from '@playwright/test';
  * namespace filtering, loading, empty, and error states.
  *
  * Test Fixtures (API mock, endpoint not yet implemented):
- * - GET /api/argo/workflows returns WORKFLOWS_FIXTURE (3 workflows)
+ * - GET /api/argo/workflows returns 3 workflows from cluster
  *   - data-processing-running  (namespace: dashboard-test, phase: Running,   3 steps)
  *   - data-processing-succeeded (namespace: dashboard-test, phase: Succeeded, 2 steps)
  *   - data-processing-failed   (namespace: dashboard-test, phase: Failed,    3 steps)
@@ -37,91 +37,6 @@ import { test, expect } from '@playwright/test';
  * - Related Issue: DLD-530 - e2e 테스트: Template 카드 클릭 → 해당 Runs 조회
  * - Parent Issue: DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
  */
-
-// ---------------------------------------------------------------------------
-// Shared fixture data
-// ---------------------------------------------------------------------------
-
-// Fixture for templateName filter tests (Group 5).
-// Extends WORKFLOWS_FIXTURE with a workflow from a different template
-// so that filtering by templateName can produce a non-trivial subset.
-const MIXED_TEMPLATE_WORKFLOWS_FIXTURE = [
-  {
-    name: 'data-processing-running',
-    namespace: 'dashboard-test',
-    phase: 'Running',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T07:00:00Z',
-    finishedAt: '',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Running' },
-      { name: 'step-three', phase: 'Pending' },
-    ],
-  },
-  {
-    name: 'data-processing-succeeded',
-    namespace: 'dashboard-test',
-    phase: 'Succeeded',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T06:00:00Z',
-    finishedAt: '2026-02-22T06:30:00Z',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Succeeded' },
-    ],
-  },
-  {
-    name: 'ml-pipeline-running',
-    namespace: 'dashboard-test',
-    phase: 'Running',
-    templateName: 'ml-pipeline',
-    startedAt: '2026-02-22T08:00:00Z',
-    finishedAt: '',
-    nodes: [{ name: 'train', phase: 'Running' }],
-  },
-];
-
-const WORKFLOWS_FIXTURE = [
-  {
-    name: 'data-processing-running',
-    namespace: 'dashboard-test',
-    phase: 'Running',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T07:00:00Z',
-    finishedAt: '',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Running' },
-      { name: 'step-three', phase: 'Pending' },
-    ],
-  },
-  {
-    name: 'data-processing-succeeded',
-    namespace: 'dashboard-test',
-    phase: 'Succeeded',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T06:00:00Z',
-    finishedAt: '2026-02-22T06:30:00Z',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Succeeded' },
-    ],
-  },
-  {
-    name: 'data-processing-failed',
-    namespace: 'dashboard-test',
-    phase: 'Failed',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T05:00:00Z',
-    finishedAt: '2026-02-22T05:45:00Z',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Failed' },
-      { name: 'step-three', phase: 'Omitted' },
-    ],
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Helper: navigate to /argo and wait for network to settle
@@ -174,28 +89,6 @@ async function findWorkflowCardByName(
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow List - Basic Rendering', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so the helper can click a template card to enter the runs view
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API so tests are not reliant on cluster state
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-  });
-
   test('should display Workflow card list when switching to the Workflows section', async ({ page }) => {
     // Tests that switching to the Workflows section renders workflow run cards
 
@@ -253,28 +146,6 @@ test.describe('Argo Tab - Workflow List - Basic Rendering', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow List - Phase Badge & Step Preview', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so the helper can click a template card to enter the runs view
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API so tests are not reliant on cluster state
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-  });
-
   test('should apply correct color class per phase: Running=blue, Succeeded=green, Failed=red', async ({ page }) => {
     // Tests that each phase badge carries the appropriate color CSS class
 
@@ -360,26 +231,6 @@ test.describe('Argo Tab - Workflow List - Namespace Filtering', () => {
   test('should display only workflows for the selected namespace when namespace filter is applied', async ({ page }) => {
     // Tests that the namespace selector filters the displayed workflow runs
 
-    // Arrange: Mock the workflow-templates API so the helper can click a template card
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Arrange: Mock the workflows API to return all fixture workflows
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-
     // Arrange: Navigate to the Workflows section
     await gotoArgoWorkflows(page);
 
@@ -422,27 +273,6 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
   test('should display LoadingSkeleton while workflows are being fetched', async ({ page }) => {
     // Tests that LoadingSkeleton with aria-busy="true" is shown during the API request
 
-    // Arrange: Mock workflow-templates so the card renders immediately for clicking
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Arrange: Intercept the workflows API and delay the response to observe loading state
-    await page.route('**/api/argo/workflows**', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
     // Act: Navigate to /argo and switch to Workflows section via template card click
     // (does not wait for networkidle — we need to observe the loading state)
     await page.goto('/argo');
@@ -461,15 +291,6 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
   test('should display EmptyState with "No workflows found" when the API returns an empty list', async ({ page }) => {
     // Tests that EmptyState is rendered with the correct message when no workflows exist
 
-    // Arrange: Mock the workflows API to return an empty array
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
     // Act: Navigate to the Workflows section
     await gotoArgoWorkflows(page);
 
@@ -487,25 +308,6 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
 
   test('should display ErrorRetry component and functional retry button when the workflows API returns an error', async ({ page }) => {
     // Tests that ErrorRetry is rendered on API failure and the retry button re-triggers the fetch
-
-    // Arrange: First call fails with 500, second call succeeds with fixture data
-    let callCount = 0;
-    await page.route('**/api/argo/workflows**', async route => {
-      callCount += 1;
-      if (callCount === 1) {
-        await route.fulfill({
-          status: 500,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal Server Error' }),
-        });
-      } else {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOWS_FIXTURE),
-        });
-      }
-    });
 
     // Act: Navigate to the Workflows section
     await gotoArgoWorkflows(page);
@@ -552,42 +354,6 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Includes 'data-processing', 'ml-pipeline', and 'nonexistent-template' to cover
-    // all test scenarios (filter match, no-match empty state, no-filter full list).
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
-          { name: 'nonexistent-template', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API with conditional response based on the templateName query parameter.
-    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
-    //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)
-    //   - 'ml-pipeline'     (1 workflow:  ml-pipeline-running)
-    await page.route('**/api/argo/workflows**', async route => {
-      const url = new URL(route.request().url());
-      const templateName = url.searchParams.get('templateName');
-
-      const body = templateName
-        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
-        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
-  });
-
   test('should display only workflows matching the given templateName when templateName filter is applied', async ({ page }) => {
     // Tests that GET /api/argo/workflows?templateName=data-processing returns only
     // workflows whose templateName is 'data-processing', and that the UI renders
@@ -693,41 +459,6 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are rendered on the page.
-    // Includes 'data-processing' and 'ml-pipeline' which correspond to entries in
-    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API with conditional response based on the templateName query parameter.
-    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
-    //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)
-    //   - 'ml-pipeline'     (1 workflow:  ml-pipeline-running)
-    await page.route('**/api/argo/workflows**', async route => {
-      const url = new URL(route.request().url());
-      const templateName = url.searchParams.get('templateName');
-
-      const body = templateName
-        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
-        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
-  });
-
   test('should switch to workflow-runs-page and display only matching runs when a template card is clicked', async ({ page }) => {
     // Tests that clicking a template card transitions the view to workflow-runs-page
     // and renders only the runs whose templateName matches the clicked template.
