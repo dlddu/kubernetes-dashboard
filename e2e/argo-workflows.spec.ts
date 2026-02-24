@@ -862,3 +862,91 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     await expect(templatesPage).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Group 7: Sorting — startedAt descending (most recent first)
+//
+// The backend sorts workflow runs by startedAt in descending order so that
+// the most recently started run appears first. These tests verify that the
+// frontend renders cards in the order received from the API (i.e. preserves
+// the backend sort order).
+// ---------------------------------------------------------------------------
+
+test.describe('Argo Tab - Workflow List - Sorting', () => {
+  // Fixture deliberately ordered by startedAt descending (as the backend returns).
+  const SORTED_WORKFLOWS_FIXTURE = [
+    {
+      name: 'wf-newest',
+      namespace: 'dashboard-test',
+      phase: 'Running',
+      templateName: 'data-processing',
+      startedAt: '2026-02-22T10:00:00Z',
+      finishedAt: '',
+      nodes: [{ name: 'step-one', phase: 'Running' }],
+    },
+    {
+      name: 'wf-middle',
+      namespace: 'dashboard-test',
+      phase: 'Succeeded',
+      templateName: 'data-processing',
+      startedAt: '2026-02-22T08:00:00Z',
+      finishedAt: '2026-02-22T08:30:00Z',
+      nodes: [{ name: 'step-one', phase: 'Succeeded' }],
+    },
+    {
+      name: 'wf-oldest',
+      namespace: 'dashboard-test',
+      phase: 'Failed',
+      templateName: 'data-processing',
+      startedAt: '2026-02-22T06:00:00Z',
+      finishedAt: '2026-02-22T06:45:00Z',
+      nodes: [{ name: 'step-one', phase: 'Failed' }],
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
+        ]),
+      });
+    });
+
+    await page.route('**/api/argo/workflows**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(SORTED_WORKFLOWS_FIXTURE),
+      });
+    });
+  });
+
+  test('should render workflow cards in startedAt descending order (most recent first)', async ({ page }) => {
+    // Tests that the first card is the most recently started workflow and
+    // the last card is the oldest, matching the backend sort order.
+
+    // Arrange: Navigate to the Workflows section
+    await gotoArgoWorkflows(page);
+
+    // Assert: workflow-runs-page is visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: Three cards are rendered
+    const workflowCards = page.getByTestId('workflow-run-card');
+    expect(await workflowCards.count()).toBe(3);
+
+    // Assert: Cards appear in descending startedAt order
+    const firstCardName = workflowCards.nth(0).getByTestId('workflow-run-name');
+    await expect(firstCardName).toHaveText('wf-newest');
+
+    const secondCardName = workflowCards.nth(1).getByTestId('workflow-run-name');
+    await expect(secondCardName).toHaveText('wf-middle');
+
+    const thirdCardName = workflowCards.nth(2).getByTestId('workflow-run-name');
+    await expect(thirdCardName).toHaveText('wf-oldest');
+  });
+});
