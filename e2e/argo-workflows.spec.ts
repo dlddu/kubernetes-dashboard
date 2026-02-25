@@ -106,6 +106,8 @@ async function gotoArgoWorkflows(page: Parameters<typeof test>[1] extends (...ar
   await expect(templateCard).toBeVisible();
   await templateCard.click();
   await page.waitForLoadState('networkidle');
+  // Wait for the runs page container to render (present for all states: cards, error, empty, loading)
+  await expect(page.getByTestId('workflow-runs-page')).toBeVisible();
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +118,8 @@ async function findWorkflowCardByName(
   page: Parameters<typeof test>[1] extends (...args: infer A) => unknown ? A[0] : never,
   workflowName: string,
 ) {
+  // Wait for at least one card to be rendered before iterating
+  await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
   const workflowCards = page.getByTestId('workflow-run-card');
   const cardCount = await workflowCards.count();
 

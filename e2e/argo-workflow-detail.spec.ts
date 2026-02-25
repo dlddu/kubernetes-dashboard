@@ -59,6 +59,8 @@ async function gotoArgoWorkflows(page: PageParam) {
   await expect(templateCard).toBeVisible();
   await templateCard.click();
   await page.waitForLoadState('networkidle');
+  // Wait for the runs page container to render (present for all states: cards, error, empty, loading)
+  await expect(page.getByTestId('workflow-runs-page')).toBeVisible();
 }
 
 /**
@@ -66,6 +68,8 @@ async function gotoArgoWorkflows(page: PageParam) {
  * Returns the card locator or null if not found.
  */
 async function findWorkflowCardByName(page: PageParam, workflowName: string) {
+  // Wait for at least one card to be rendered before iterating
+  await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
   const workflowCards = page.getByTestId('workflow-run-card');
   const cardCount = await workflowCards.count();
 
@@ -84,6 +88,8 @@ async function findWorkflowCardByName(page: PageParam, workflowName: string) {
  * Returns the step locator or null if not found.
  */
 async function findDetailStepByName(page: PageParam, stepName: string) {
+  // Wait for at least one step to be rendered before iterating
+  await expect(page.getByTestId('workflow-detail-step').first()).toBeVisible();
   const steps = page.getByTestId('workflow-detail-step');
   const count = await steps.count();
 
