@@ -191,6 +191,7 @@ type workflowListStatusAPI struct {
 }
 
 type workflowNodeAPI struct {
+	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
 	Type        string `json:"type"`
 	Phase       string `json:"phase"`
@@ -211,6 +212,7 @@ type workflowDetailGetStatusAPI struct {
 }
 
 type workflowDetailNodeAPI struct {
+	Name        string                    `json:"name"`
 	DisplayName string                    `json:"displayName"`
 	Type        string                    `json:"type"`
 	Phase       string                    `json:"phase"`
@@ -345,21 +347,30 @@ func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*Workf
 		return nil, fmt.Errorf("failed to parse Workflows response: %w", err)
 	}
 
+	type nodeWithKey struct {
+		sortKey string
+		node    WorkflowNode
+	}
+
 	items := make([]WorkflowFull, 0, len(apiResponse.Items))
 	for _, item := range apiResponse.Items {
-		nodes := make([]WorkflowNode, 0, len(item.Status.Nodes))
+		entries := make([]nodeWithKey, 0, len(item.Status.Nodes))
 		for _, node := range item.Status.Nodes {
 			if node.Type != "Pod" {
 				continue
 			}
-			nodes = append(nodes, WorkflowNode{
-				Name:  node.DisplayName,
-				Phase: node.Phase,
+			entries = append(entries, nodeWithKey{
+				sortKey: node.Name,
+				node:    WorkflowNode{Name: node.DisplayName, Phase: node.Phase},
 			})
 		}
-		sort.Slice(nodes, func(i, j int) bool {
-			return nodes[i].Name < nodes[j].Name
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].sortKey < entries[j].sortKey
 		})
+		nodes := make([]WorkflowNode, 0, len(entries))
+		for _, e := range entries {
+			nodes = append(nodes, e.node)
+		}
 
 		items = append(items, WorkflowFull{
 			Name:         item.Metadata.Name,
@@ -395,7 +406,12 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 		return nil, fmt.Errorf("failed to parse Workflow response: %w", err)
 	}
 
-	nodes := make([]WorkflowDetailNode, 0)
+	type detailNodeWithKey struct {
+		sortKey string
+		node    WorkflowDetailNode
+	}
+
+	entries := make([]detailNodeWithKey, 0)
 	for _, node := range apiResponse.Status.Nodes {
 		// Only include Pod-type nodes in the detail view
 		if node.Type != "Pod" {
@@ -428,20 +444,27 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 			outputs = &WorkflowDetailIO{Parameters: params, Artifacts: artifacts}
 		}
 
-		nodes = append(nodes, WorkflowDetailNode{
-			Name:       node.DisplayName,
-			Type:       node.Type,
-			Phase:      node.Phase,
-			StartedAt:  node.StartedAt,
-			FinishedAt: node.FinishedAt,
-			Message:    node.Message,
-			Inputs:     inputs,
-			Outputs:    outputs,
+		entries = append(entries, detailNodeWithKey{
+			sortKey: node.Name,
+			node: WorkflowDetailNode{
+				Name:       node.DisplayName,
+				Type:       node.Type,
+				Phase:      node.Phase,
+				StartedAt:  node.StartedAt,
+				FinishedAt: node.FinishedAt,
+				Message:    node.Message,
+				Inputs:     inputs,
+				Outputs:    outputs,
+			},
 		})
 	}
-	sort.Slice(nodes, func(i, j int) bool {
-		return nodes[i].Name < nodes[j].Name
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].sortKey < entries[j].sortKey
 	})
+	nodes := make([]WorkflowDetailNode, 0, len(entries))
+	for _, e := range entries {
+		nodes = append(nodes, e.node)
+	}
 
 	return &WorkflowDetail{
 		Name:         apiResponse.Metadata.Name,
