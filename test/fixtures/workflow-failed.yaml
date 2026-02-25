@@ -55,6 +55,7 @@ status:
         artifacts:
           - name: raw-data
             path: /data/raw
+            from: s3://bucket/raw
       outputs:
         parameters:
           - name: result
@@ -62,6 +63,7 @@ status:
         artifacts:
           - name: processed-data
             path: /data/processed
+            size: 1.2MB
     data-processing-failed-step-two:
       id: data-processing-failed-step-two
       name: data-processing-failed[1].step-two

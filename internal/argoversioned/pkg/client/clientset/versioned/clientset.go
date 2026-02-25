@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -233,6 +234,8 @@ type workflowDetailParamAPI struct {
 type workflowDetailArtifactAPI struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
+	From string `json:"from,omitempty"`
+	Size string `json:"size,omitempty"`
 }
 
 // WorkflowDetailNode is a richly-typed workflow step node for the detail view.
@@ -263,6 +266,8 @@ type WorkflowDetailParam struct {
 type WorkflowDetailArtifact struct {
 	Name string
 	Path string
+	From string
+	Size string
 }
 
 // WorkflowDetail represents a full Argo Workflow with step-level IO details.
@@ -352,6 +357,9 @@ func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*Workf
 				Phase: node.Phase,
 			})
 		}
+		sort.Slice(nodes, func(i, j int) bool {
+			return nodes[i].Name < nodes[j].Name
+		})
 
 		items = append(items, WorkflowFull{
 			Name:         item.Metadata.Name,
@@ -402,7 +410,7 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 			}
 			artifacts := make([]WorkflowDetailArtifact, 0, len(node.Inputs.Artifacts))
 			for _, a := range node.Inputs.Artifacts {
-				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path})
+				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path, From: a.From, Size: a.Size})
 			}
 			inputs = &WorkflowDetailIO{Parameters: params, Artifacts: artifacts}
 		}
@@ -415,7 +423,7 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 			}
 			artifacts := make([]WorkflowDetailArtifact, 0, len(node.Outputs.Artifacts))
 			for _, a := range node.Outputs.Artifacts {
-				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path})
+				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path, From: a.From, Size: a.Size})
 			}
 			outputs = &WorkflowDetailIO{Parameters: params, Artifacts: artifacts}
 		}
@@ -431,6 +439,9 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 			Outputs:    outputs,
 		})
 	}
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Name < nodes[j].Name
+	})
 
 	return &WorkflowDetail{
 		Name:         apiResponse.Metadata.Name,
