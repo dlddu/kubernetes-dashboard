@@ -191,6 +191,7 @@ type workflowListStatusAPI struct {
 
 type workflowNodeAPI struct {
 	DisplayName string `json:"displayName"`
+	Type        string `json:"type"`
 	Phase       string `json:"phase"`
 }
 
@@ -343,6 +344,9 @@ func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*Workf
 	for _, item := range apiResponse.Items {
 		nodes := make([]WorkflowNode, 0, len(item.Status.Nodes))
 		for _, node := range item.Status.Nodes {
+			if node.Type != "Pod" {
+				continue
+			}
 			nodes = append(nodes, WorkflowNode{
 				Name:  node.DisplayName,
 				Phase: node.Phase,

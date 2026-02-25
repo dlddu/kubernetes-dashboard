@@ -24,28 +24,6 @@ import { test, expect } from '@playwright/test';
  */
 
 // ---------------------------------------------------------------------------
-// Shared fixture data
-// ---------------------------------------------------------------------------
-
-const WORKFLOW_TEMPLATES_FIXTURE = [
-  {
-    name: 'data-processing-with-params',
-    namespace: 'dashboard-test',
-    parameters: [
-      { name: 'input-path', value: '/data/input', description: 'Input data path' },
-      { name: 'output-path', value: '/data/output', description: 'Output data path' },
-      { name: 'batch-size', value: '100', description: 'Batch size' },
-      { name: 'env', enum: ['dev', 'staging', 'prod'] },
-    ],
-  },
-  {
-    name: 'simple-template',
-    namespace: 'dashboard-test',
-    parameters: [],
-  },
-];
-
-// ---------------------------------------------------------------------------
 // Helper: navigate to /argo and wait for the templates list to settle
 // ---------------------------------------------------------------------------
 
@@ -78,16 +56,7 @@ async function findCardByName(
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API so tests are not reliant on cluster state
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-      });
-    });
-  });
+  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
 
   test('should open SubmitModal when Submit button is clicked on a template card', async ({ page }) => {
     // Tests that clicking the Submit button on a WorkflowTemplate card opens the Submit modal
@@ -283,21 +252,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      // Only intercept GET list requests, not submit POSTs
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
+  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
 
   test('should display error view and allow retry when the submit API returns an error', async ({ page }) => {
     // Tests that a failed submit shows an error view inside the modal,
@@ -395,20 +350,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
+  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
 
   test('should close the Submit modal when the Cancel button is clicked', async ({ page }) => {
     // Tests that clicking the Cancel button in the Submit modal dismisses it
@@ -440,55 +382,9 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
 
 // Related Issue: DLD-532 (parent: DLD-527) - Submit 성공 후 View Workflow 클릭 시 해당 template의 Runs 뷰 전환 검증
 test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', () => {
-  // Fixture: workflow runs returned by the API, belonging to different templates.
-  // Tests use this to verify that the Runs view shows only the submitted template's runs.
-  const WORKFLOW_RUNS_FIXTURE_SIMPLE = [
-    {
-      name: 'simple-template-xyz99',
-      namespace: 'dashboard-test',
-      templateName: 'simple-template',
-      phase: 'Succeeded',
-      startedAt: '2026-02-24T00:00:00Z',
-      finishedAt: '2026-02-24T00:01:00Z',
-      nodes: [{ name: 'main', phase: 'Succeeded' }],
-    },
-    {
-      name: 'simple-template-abc11',
-      namespace: 'dashboard-test',
-      templateName: 'simple-template',
-      phase: 'Running',
-      startedAt: '2026-02-24T00:02:00Z',
-      finishedAt: '',
-      nodes: [{ name: 'main', phase: 'Running' }],
-    },
-  ];
-
-  const WORKFLOW_RUNS_FIXTURE_OTHER = [
-    {
-      name: 'data-processing-with-params-def22',
-      namespace: 'dashboard-test',
-      templateName: 'data-processing-with-params',
-      phase: 'Succeeded',
-      startedAt: '2026-02-24T00:03:00Z',
-      finishedAt: '2026-02-24T00:04:00Z',
-      nodes: [{ name: 'main', phase: 'Succeeded' }],
-    },
-  ];
-
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow templates list API
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_TEMPLATES_FIXTURE),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
+  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
+  // POST submit is always mocked because actual submit would modify cluster state.
+  // GET workflows is mocked only in the last test (templateName filtering verification).
 
   test('should close SubmitModal when "View Workflow" button is clicked after successful submit', async ({
     page,
@@ -502,15 +398,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
-    // Arrange: Mock the workflow runs API for the submitted template
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
       });
     });
 
@@ -549,15 +436,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
-    // Arrange: Mock the workflow runs API
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
       });
     });
 
@@ -602,15 +480,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
       });
     });
 
-    // Arrange: Mock the workflow runs API (templateName query param will be simple-template)
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
-      });
-    });
-
     await gotoArgo(page);
 
     const card = await findCardByName(page, 'simple-template');
@@ -642,6 +511,42 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     // "data-processing-with-params" are not present in the list.
     // This verifies that the API is called with the correct templateName filter
     // and that the UI does not mix runs from unrelated templates.
+    //
+    // This test requires workflow run mocking because simple-template has no
+    // real runs in the cluster (submit is also mocked).
+
+    const simpleTemplateRuns = [
+      {
+        name: 'simple-template-xyz99',
+        namespace: 'dashboard-test',
+        templateName: 'simple-template',
+        phase: 'Succeeded',
+        startedAt: '2026-02-24T00:00:00Z',
+        finishedAt: '2026-02-24T00:01:00Z',
+        nodes: [{ name: 'main', phase: 'Succeeded' }],
+      },
+      {
+        name: 'simple-template-abc11',
+        namespace: 'dashboard-test',
+        templateName: 'simple-template',
+        phase: 'Running',
+        startedAt: '2026-02-24T00:02:00Z',
+        finishedAt: '',
+        nodes: [{ name: 'main', phase: 'Running' }],
+      },
+    ];
+
+    const otherTemplateRuns = [
+      {
+        name: 'data-processing-with-params-def22',
+        namespace: 'dashboard-test',
+        templateName: 'data-processing-with-params',
+        phase: 'Succeeded',
+        startedAt: '2026-02-24T00:03:00Z',
+        finishedAt: '2026-02-24T00:04:00Z',
+        nodes: [{ name: 'main', phase: 'Succeeded' }],
+      },
+    ];
 
     // Arrange: Mock the submit API for simple-template
     await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
@@ -664,14 +569,14 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_SIMPLE),
+          body: JSON.stringify(simpleTemplateRuns),
         });
       } else {
         // Return other-template runs to surface a filtering bug in assertions
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify(WORKFLOW_RUNS_FIXTURE_OTHER),
+          body: JSON.stringify(otherTemplateRuns),
         });
       }
     });

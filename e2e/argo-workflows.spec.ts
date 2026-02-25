@@ -10,11 +10,11 @@ import { test, expect } from '@playwright/test';
  * Covers basic rendering, phase badge colors, step preview display,
  * namespace filtering, loading, empty, and error states.
  *
- * Test Fixtures (API mock, endpoint not yet implemented):
- * - GET /api/argo/workflows returns WORKFLOWS_FIXTURE (3 workflows)
- *   - data-processing-running  (namespace: dashboard-test, phase: Running,   3 steps)
- *   - data-processing-succeeded (namespace: dashboard-test, phase: Succeeded, 2 steps)
- *   - data-processing-failed   (namespace: dashboard-test, phase: Failed,    3 steps)
+ * Test Fixtures (test/fixtures/):
+ * - workflow-running.yaml:    data-processing-running   (phase: Running,   3 steps)
+ * - workflow-succeeded.yaml:  data-processing-succeeded  (phase: Succeeded, 2 steps)
+ * - workflow-failed.yaml:     data-processing-failed     (phase: Failed,    3 steps)
+ * All workflows reference workflowTemplateRef: data-processing-with-params.
  *
  * Workflow Runs section entry point:
  * - ArgoTab renders data-testid="workflow-runs-page" when showWorkflowRuns is true.
@@ -39,12 +39,13 @@ import { test, expect } from '@playwright/test';
  */
 
 // ---------------------------------------------------------------------------
-// Shared fixture data
+// Mock data (only for Group 5-6 tests that need templates not in the real cluster)
 // ---------------------------------------------------------------------------
 
-// Fixture for templateName filter tests (Group 5).
-// Extends WORKFLOWS_FIXTURE with a workflow from a different template
-// so that filtering by templateName can produce a non-trivial subset.
+// Fixture for templateName filter tests (Group 5-6).
+// Contains workflows from two distinct templates so that filtering by
+// templateName can produce a non-trivial subset.
+// This mock is needed because 'ml-pipeline' template does not exist in test/fixtures/.
 const MIXED_TEMPLATE_WORKFLOWS_FIXTURE = [
   {
     name: 'data-processing-running',
@@ -82,47 +83,6 @@ const MIXED_TEMPLATE_WORKFLOWS_FIXTURE = [
   },
 ];
 
-const WORKFLOWS_FIXTURE = [
-  {
-    name: 'data-processing-running',
-    namespace: 'dashboard-test',
-    phase: 'Running',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T07:00:00Z',
-    finishedAt: '',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Running' },
-      { name: 'step-three', phase: 'Pending' },
-    ],
-  },
-  {
-    name: 'data-processing-succeeded',
-    namespace: 'dashboard-test',
-    phase: 'Succeeded',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T06:00:00Z',
-    finishedAt: '2026-02-22T06:30:00Z',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Succeeded' },
-    ],
-  },
-  {
-    name: 'data-processing-failed',
-    namespace: 'dashboard-test',
-    phase: 'Failed',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T05:00:00Z',
-    finishedAt: '2026-02-22T05:45:00Z',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Failed' },
-      { name: 'step-three', phase: 'Omitted' },
-    ],
-  },
-];
-
 // ---------------------------------------------------------------------------
 // Helper: navigate to /argo and wait for network to settle
 // ---------------------------------------------------------------------------
@@ -137,14 +97,14 @@ async function gotoArgo(page: Parameters<typeof test>[1] extends (...args: infer
 //
 // DLD-531: The standalone 'workflows-tab' button has been removed.
 // Navigation to the Runs view is now triggered by clicking a template card.
-// This helper clicks the first visible template card to enter the Runs view.
+// This helper clicks the 'data-processing-with-params' template card to enter the Runs view.
 // ---------------------------------------------------------------------------
 
 async function gotoArgoWorkflows(page: Parameters<typeof test>[1] extends (...args: infer A) => unknown ? A[0] : never) {
   await gotoArgo(page);
-  const firstTemplateCard = page.getByTestId('workflow-template-card').first();
-  await expect(firstTemplateCard).toBeVisible();
-  await firstTemplateCard.click();
+  const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
+  await expect(templateCard).toBeVisible();
+  await templateCard.click();
   await page.waitForLoadState('networkidle');
 }
 
@@ -174,27 +134,7 @@ async function findWorkflowCardByName(
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow List - Basic Rendering', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so the helper can click a template card to enter the runs view
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API so tests are not reliant on cluster state
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-  });
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should display Workflow card list when switching to the Workflows section', async ({ page }) => {
     // Tests that switching to the Workflows section renders workflow run cards
@@ -253,27 +193,7 @@ test.describe('Argo Tab - Workflow List - Basic Rendering', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow List - Phase Badge & Step Preview', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so the helper can click a template card to enter the runs view
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API so tests are not reliant on cluster state
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
-  });
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should apply correct color class per phase: Running=blue, Succeeded=green, Failed=red', async ({ page }) => {
     // Tests that each phase badge carries the appropriate color CSS class
@@ -359,26 +279,7 @@ test.describe('Argo Tab - Workflow List - Phase Badge & Step Preview', () => {
 test.describe('Argo Tab - Workflow List - Namespace Filtering', () => {
   test('should display only workflows for the selected namespace when namespace filter is applied', async ({ page }) => {
     // Tests that the namespace selector filters the displayed workflow runs
-
-    // Arrange: Mock the workflow-templates API so the helper can click a template card
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Arrange: Mock the workflows API to return all fixture workflows
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(WORKFLOWS_FIXTURE),
-      });
-    });
+    // No API mocking — uses real cluster data from test/fixtures/ YAML resources.
 
     // Arrange: Navigate to the Workflows section
     await gotoArgoWorkflows(page);
@@ -422,17 +323,6 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
   test('should display LoadingSkeleton while workflows are being fetched', async ({ page }) => {
     // Tests that LoadingSkeleton with aria-busy="true" is shown during the API request
 
-    // Arrange: Mock workflow-templates so the card renders immediately for clicking
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
     // Arrange: Intercept the workflows API and delay the response to observe loading state
     await page.route('**/api/argo/workflows**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
@@ -446,9 +336,10 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
     // Act: Navigate to /argo and switch to Workflows section via template card click
     // (does not wait for networkidle — we need to observe the loading state)
     await page.goto('/argo');
-    const firstTemplateCard = page.getByTestId('workflow-template-card').first();
-    await expect(firstTemplateCard).toBeVisible();
-    await firstTemplateCard.click();
+    await page.waitForLoadState('networkidle');
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
 
     // Assert: LoadingSkeleton is visible before the response arrives
     const loadingSkeleton = page.getByTestId('loading-skeleton');
@@ -488,7 +379,7 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
   test('should display ErrorRetry component and functional retry button when the workflows API returns an error', async ({ page }) => {
     // Tests that ErrorRetry is rendered on API failure and the retry button re-triggers the fetch
 
-    // Arrange: First call fails with 500, second call succeeds with fixture data
+    // Arrange: First call fails with 500, second call passes through to real API
     let callCount = 0;
     await page.route('**/api/argo/workflows**', async route => {
       callCount += 1;
@@ -499,11 +390,7 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
           body: JSON.stringify({ error: 'Internal Server Error' }),
         });
       } else {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(WORKFLOWS_FIXTURE),
-        });
+        await route.continue();
       }
     });
 
@@ -552,84 +439,47 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are available for clicking.
-    // Includes 'data-processing', 'ml-pipeline', and 'nonexistent-template' to cover
-    // all test scenarios (filter match, no-match empty state, no-filter full list).
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
-          { name: 'nonexistent-template', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API with conditional response based on the templateName query parameter.
-    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
-    //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)
-    //   - 'ml-pipeline'     (1 workflow:  ml-pipeline-running)
-    await page.route('**/api/argo/workflows**', async route => {
-      const url = new URL(route.request().url());
-      const templateName = url.searchParams.get('templateName');
-
-      const body = templateName
-        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
-        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
-  });
+  // No shared beforeEach — tests use real API where possible and inline mocks only where needed.
 
   test('should display only workflows matching the given templateName when templateName filter is applied', async ({ page }) => {
-    // Tests that GET /api/argo/workflows?templateName=data-processing returns only
-    // workflows whose templateName is 'data-processing', and that the UI renders
-    // exactly those cards.
+    // Tests that GET /api/argo/workflows?templateName=data-processing-with-params returns only
+    // workflows whose templateName is 'data-processing-with-params', and that the UI renders
+    // exactly those cards. Uses real cluster data.
 
     // Arrange: Navigate to /argo (Templates view is default)
     await gotoArgo(page);
 
-    // Act: Click the 'data-processing' template card directly from the templates view.
-    // This fetches /api/argo/workflows?templateName=data-processing.
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    // Act: Click the 'data-processing-with-params' template card directly from the templates view.
+    // This fetches /api/argo/workflows?templateName=data-processing-with-params.
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
     await expect(templateCard).toBeVisible();
     await templateCard.click();
     await page.waitForLoadState('networkidle');
 
-    // Assert: Only 'data-processing' workflow cards are rendered (2 out of 3 in fixture)
+    // Assert: All 3 workflow fixture cards are rendered (all belong to data-processing-with-params)
     const workflowCards = page.getByTestId('workflow-run-card');
-    expect(await workflowCards.count()).toBe(2);
+    expect(await workflowCards.count()).toBe(3);
 
-    // Assert: Every visible card belongs to the 'data-processing' template
+    // Assert: Every visible card belongs to the 'data-processing-with-params' template
     const cardCount = await workflowCards.count();
     for (let i = 0; i < cardCount; i++) {
       const card = workflowCards.nth(i);
       const templateElement = card.getByTestId('workflow-run-template');
-      await expect(templateElement).toContainText('data-processing');
+      await expect(templateElement).toContainText('data-processing-with-params');
     }
-
-    // Assert: The 'ml-pipeline' workflow is NOT shown
-    const mlPipelineCard = await findWorkflowCardByName(page, 'ml-pipeline-running');
-    expect(mlPipelineCard).toBeNull();
   });
 
   test('should display EmptyState when the requested templateName has no matching workflows', async ({ page }) => {
-    // Tests that GET /api/argo/workflows?templateName=nonexistent returns an empty array
-    // and that the UI renders the EmptyState component.
+    // Tests that clicking the 'simple-template' card (which has no associated workflows)
+    // renders an empty array and the UI shows the EmptyState component.
+    // Uses real cluster data — simple-template exists but has no workflow runs.
 
     // Arrange: Navigate to /argo (Templates view is default)
     await gotoArgo(page);
 
-    // Act: Click a template card named 'nonexistent-template'.
-    // This fetches /api/argo/workflows?templateName=nonexistent-template, which returns [].
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'nonexistent-template' });
+    // Act: Click the 'simple-template' card.
+    // This fetches /api/argo/workflows?templateName=simple-template, which returns [].
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'simple-template' });
     await expect(templateCard).toBeVisible();
     await templateCard.click();
     await page.waitForLoadState('networkidle');
@@ -649,6 +499,31 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
   test('should display only the ml-pipeline workflow when ml-pipeline template card is clicked', async ({ page }) => {
     // Tests that clicking the 'ml-pipeline' card fetches and renders exactly 1 matching run,
     // preserving the per-template filtering behavior across all templates.
+    // This test requires mocking because 'ml-pipeline' template does not exist in test/fixtures/.
+
+    // Arrange: Mock both APIs to include ml-pipeline data
+    await page.route('**/api/argo/workflow-templates**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
+          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
+        ]),
+      });
+    });
+    await page.route('**/api/argo/workflows**', async route => {
+      const url = new URL(route.request().url());
+      const templateName = url.searchParams.get('templateName');
+      const body = templateName
+        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
+        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
 
     // Arrange: Navigate to /argo (Templates view is default)
     await gotoArgo(page);
@@ -693,44 +568,12 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock the workflow-templates API so that template cards are rendered on the page.
-    // Includes 'data-processing' and 'ml-pipeline' which correspond to entries in
-    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE.
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-
-    // Mock the workflows API with conditional response based on the templateName query parameter.
-    // MIXED_TEMPLATE_WORKFLOWS_FIXTURE contains two distinct templateNames:
-    //   - 'data-processing' (2 workflows: data-processing-running, data-processing-succeeded)
-    //   - 'ml-pipeline'     (1 workflow:  ml-pipeline-running)
-    await page.route('**/api/argo/workflows**', async route => {
-      const url = new URL(route.request().url());
-      const templateName = url.searchParams.get('templateName');
-
-      const body = templateName
-        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
-        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
-  });
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should switch to workflow-runs-page and display only matching runs when a template card is clicked', async ({ page }) => {
     // Tests that clicking a template card transitions the view to workflow-runs-page
     // and renders only the runs whose templateName matches the clicked template.
+    // Uses real cluster data — all 3 fixture workflows belong to 'data-processing-with-params'.
 
     // Arrange: Navigate to /argo (Templates view is the default entry point in DLD-527)
     await gotoArgo(page);
@@ -739,8 +582,8 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     const templatesPage = page.getByTestId('workflow-templates-page');
     await expect(templatesPage).toBeVisible();
 
-    // Act: Click the 'data-processing' template card
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    // Act: Click the 'data-processing-with-params' template card
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
     await expect(templateCard).toBeVisible();
     await templateCard.click();
     await page.waitForLoadState('networkidle');
@@ -752,28 +595,28 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     // Assert: workflow-templates-page is no longer visible
     await expect(templatesPage).not.toBeVisible();
 
-    // Assert: Exactly 2 run cards are rendered (only 'data-processing' runs)
+    // Assert: All 3 run cards are rendered (all belong to 'data-processing-with-params')
     const workflowCards = page.getByTestId('workflow-run-card');
-    expect(await workflowCards.count()).toBe(2);
+    expect(await workflowCards.count()).toBe(3);
 
-    // Assert: Every visible card belongs to the 'data-processing' template
+    // Assert: Every visible card belongs to the 'data-processing-with-params' template
     const cardCount = await workflowCards.count();
     for (let i = 0; i < cardCount; i++) {
       const card = workflowCards.nth(i);
       const templateElement = card.getByTestId('workflow-run-template');
-      await expect(templateElement).toContainText('data-processing');
+      await expect(templateElement).toContainText('data-processing-with-params');
     }
   });
 
   test('should show the selected template name in the Runs view header', async ({ page }) => {
     // Tests that after clicking a template card the Runs view header text includes
-    // the name of the selected template (e.g. "data-processing").
+    // the name of the selected template (e.g. "data-processing-with-params").
 
     // Arrange: Navigate to /argo
     await gotoArgo(page);
 
-    // Act: Click the 'data-processing' template card
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    // Act: Click the 'data-processing-with-params' template card
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
     await expect(templateCard).toBeVisible();
     await templateCard.click();
     await page.waitForLoadState('networkidle');
@@ -782,10 +625,10 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     const workflowRunsPage = page.getByTestId('workflow-runs-page');
     await expect(workflowRunsPage).toBeVisible();
 
-    // Assert: The header inside the runs page contains 'data-processing'
+    // Assert: The header inside the runs page contains 'data-processing-with-params'
     const runsHeader = workflowRunsPage.locator('h2');
     await expect(runsHeader).toBeVisible();
-    await expect(runsHeader).toContainText('data-processing');
+    await expect(runsHeader).toContainText('data-processing-with-params');
   });
 
   test('should return to workflow-templates-page when the back button is clicked from the Runs view', async ({ page }) => {
@@ -795,7 +638,7 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     // Arrange: Navigate to /argo and click a template card to enter the Runs view
     await gotoArgo(page);
 
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
     await expect(templateCard).toBeVisible();
     await templateCard.click();
     await page.waitForLoadState('networkidle');
@@ -843,8 +686,8 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     const templatesPage = page.getByTestId('workflow-templates-page');
     await expect(templatesPage).toBeVisible();
 
-    // Act: Click the submit-button inside the 'data-processing' template card
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing' });
+    // Act: Click the submit-button inside the 'data-processing-with-params' template card
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
     await expect(templateCard).toBeVisible();
     const submitButton = templateCard.getByTestId('submit-button');
     await expect(submitButton).toBeVisible();
