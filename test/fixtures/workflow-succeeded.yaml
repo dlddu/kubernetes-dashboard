@@ -4,6 +4,8 @@ metadata:
   name: data-processing-succeeded
   namespace: dashboard-test
 spec:
+  workflowTemplateRef:
+    name: data-processing-with-params
   entrypoint: main
   templates:
     - name: main
@@ -18,10 +20,13 @@ spec:
         command: [echo, "processing"]
 status:
   phase: Succeeded
+  startedAt: "2026-02-22T06:00:00Z"
+  finishedAt: "2026-02-22T06:30:00Z"
   nodes:
     data-processing-succeeded:
       id: data-processing-succeeded
       name: data-processing-succeeded
+      displayName: data-processing-succeeded
       type: Steps
       phase: Succeeded
       inputs:
@@ -37,8 +42,12 @@ status:
     data-processing-succeeded-step-one:
       id: data-processing-succeeded-step-one
       name: data-processing-succeeded[0].step-one
+      displayName: step-one
       type: Pod
       phase: Succeeded
+      startedAt: "2026-02-22T06:00:10Z"
+      finishedAt: "2026-02-22T06:15:00Z"
+      message: ""
       inputs:
         parameters:
           - name: input-path
@@ -52,8 +61,12 @@ status:
     data-processing-succeeded-step-two:
       id: data-processing-succeeded-step-two
       name: data-processing-succeeded[1].step-two
+      displayName: step-two
       type: Pod
       phase: Succeeded
+      startedAt: "2026-02-22T06:15:10Z"
+      finishedAt: "2026-02-22T06:30:00Z"
+      message: ""
       inputs:
         parameters:
           - name: input-path

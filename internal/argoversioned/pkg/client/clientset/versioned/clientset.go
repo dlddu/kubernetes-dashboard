@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -190,7 +191,9 @@ type workflowListStatusAPI struct {
 }
 
 type workflowNodeAPI struct {
+	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
+	Type        string `json:"type"`
 	Phase       string `json:"phase"`
 }
 
@@ -209,6 +212,7 @@ type workflowDetailGetStatusAPI struct {
 }
 
 type workflowDetailNodeAPI struct {
+	Name        string                    `json:"name"`
 	DisplayName string                    `json:"displayName"`
 	Type        string                    `json:"type"`
 	Phase       string                    `json:"phase"`
@@ -232,6 +236,8 @@ type workflowDetailParamAPI struct {
 type workflowDetailArtifactAPI struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
+	From string `json:"from,omitempty"`
+	Size string `json:"size,omitempty"`
 }
 
 // WorkflowDetailNode is a richly-typed workflow step node for the detail view.
@@ -262,6 +268,8 @@ type WorkflowDetailParam struct {
 type WorkflowDetailArtifact struct {
 	Name string
 	Path string
+	From string
+	Size string
 }
 
 // WorkflowDetail represents a full Argo Workflow with step-level IO details.
@@ -339,14 +347,29 @@ func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*Workf
 		return nil, fmt.Errorf("failed to parse Workflows response: %w", err)
 	}
 
+	type nodeWithKey struct {
+		sortKey string
+		node    WorkflowNode
+	}
+
 	items := make([]WorkflowFull, 0, len(apiResponse.Items))
 	for _, item := range apiResponse.Items {
-		nodes := make([]WorkflowNode, 0, len(item.Status.Nodes))
+		entries := make([]nodeWithKey, 0, len(item.Status.Nodes))
 		for _, node := range item.Status.Nodes {
-			nodes = append(nodes, WorkflowNode{
-				Name:  node.DisplayName,
-				Phase: node.Phase,
+			if node.Type != "Pod" {
+				continue
+			}
+			entries = append(entries, nodeWithKey{
+				sortKey: node.Name,
+				node:    WorkflowNode{Name: node.DisplayName, Phase: node.Phase},
 			})
+		}
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].sortKey < entries[j].sortKey
+		})
+		nodes := make([]WorkflowNode, 0, len(entries))
+		for _, e := range entries {
+			nodes = append(nodes, e.node)
 		}
 
 		items = append(items, WorkflowFull{
@@ -383,7 +406,12 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 		return nil, fmt.Errorf("failed to parse Workflow response: %w", err)
 	}
 
-	nodes := make([]WorkflowDetailNode, 0)
+	type detailNodeWithKey struct {
+		sortKey string
+		node    WorkflowDetailNode
+	}
+
+	entries := make([]detailNodeWithKey, 0)
 	for _, node := range apiResponse.Status.Nodes {
 		// Only include Pod-type nodes in the detail view
 		if node.Type != "Pod" {
@@ -398,7 +426,7 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 			}
 			artifacts := make([]WorkflowDetailArtifact, 0, len(node.Inputs.Artifacts))
 			for _, a := range node.Inputs.Artifacts {
-				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path})
+				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path, From: a.From, Size: a.Size})
 			}
 			inputs = &WorkflowDetailIO{Parameters: params, Artifacts: artifacts}
 		}
@@ -411,21 +439,31 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 			}
 			artifacts := make([]WorkflowDetailArtifact, 0, len(node.Outputs.Artifacts))
 			for _, a := range node.Outputs.Artifacts {
-				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path})
+				artifacts = append(artifacts, WorkflowDetailArtifact{Name: a.Name, Path: a.Path, From: a.From, Size: a.Size})
 			}
 			outputs = &WorkflowDetailIO{Parameters: params, Artifacts: artifacts}
 		}
 
-		nodes = append(nodes, WorkflowDetailNode{
-			Name:       node.DisplayName,
-			Type:       node.Type,
-			Phase:      node.Phase,
-			StartedAt:  node.StartedAt,
-			FinishedAt: node.FinishedAt,
-			Message:    node.Message,
-			Inputs:     inputs,
-			Outputs:    outputs,
+		entries = append(entries, detailNodeWithKey{
+			sortKey: node.Name,
+			node: WorkflowDetailNode{
+				Name:       node.DisplayName,
+				Type:       node.Type,
+				Phase:      node.Phase,
+				StartedAt:  node.StartedAt,
+				FinishedAt: node.FinishedAt,
+				Message:    node.Message,
+				Inputs:     inputs,
+				Outputs:    outputs,
+			},
 		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].sortKey < entries[j].sortKey
+	})
+	nodes := make([]WorkflowDetailNode, 0, len(entries))
+	for _, e := range entries {
+		nodes = append(nodes, e.node)
 	}
 
 	return &WorkflowDetail{

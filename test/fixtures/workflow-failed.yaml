@@ -4,6 +4,8 @@ metadata:
   name: data-processing-failed
   namespace: dashboard-test
 spec:
+  workflowTemplateRef:
+    name: data-processing-with-params
   entrypoint: main
   templates:
     - name: main
@@ -20,10 +22,13 @@ spec:
         command: [echo, "processing"]
 status:
   phase: Failed
+  startedAt: "2026-02-22T05:00:00Z"
+  finishedAt: "2026-02-22T05:45:00Z"
   nodes:
     data-processing-failed:
       id: data-processing-failed
       name: data-processing-failed
+      displayName: data-processing-failed
       type: Steps
       phase: Failed
       inputs:
@@ -37,23 +42,37 @@ status:
     data-processing-failed-step-one:
       id: data-processing-failed-step-one
       name: data-processing-failed[0].step-one
+      displayName: step-one
       type: Pod
       phase: Succeeded
+      startedAt: "2026-02-22T05:00:10Z"
+      finishedAt: "2026-02-22T05:20:00Z"
+      message: ""
       inputs:
         parameters:
           - name: input-path
             value: /data/input
-        artifacts: []
+        artifacts:
+          - name: raw-data
+            path: /data/raw
+            from: s3://bucket/raw
       outputs:
         parameters:
           - name: result
             value: done
-        artifacts: []
+        artifacts:
+          - name: processed-data
+            path: /data/processed
+            size: 1.2MB
     data-processing-failed-step-two:
       id: data-processing-failed-step-two
       name: data-processing-failed[1].step-two
+      displayName: step-two
       type: Pod
       phase: Failed
+      startedAt: "2026-02-22T05:20:10Z"
+      finishedAt: "2026-02-22T05:45:00Z"
+      message: "Health check failed..."
       inputs:
         parameters:
           - name: input-path
@@ -65,8 +84,12 @@ status:
     data-processing-failed-step-three:
       id: data-processing-failed-step-three
       name: data-processing-failed[2].step-three
+      displayName: step-three
       type: Pod
       phase: Omitted
+      startedAt: ""
+      finishedAt: ""
+      message: ""
       inputs:
         parameters: []
         artifacts: []
