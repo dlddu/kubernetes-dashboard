@@ -23,6 +23,8 @@ type WorkflowDetailParamInfo struct {
 type WorkflowDetailArtifactInfo struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
+	From string `json:"from,omitempty"`
+	Size string `json:"size,omitempty"`
 }
 
 // IOData holds the inputs or outputs for a workflow step.
@@ -46,6 +48,7 @@ type WorkflowDetailStepInfo struct {
 type WorkflowDetailInfo struct {
 	Name         string                   `json:"name"`
 	Namespace    string                   `json:"namespace"`
+	TemplateName string                   `json:"templateName"`
 	Phase        string                   `json:"phase"`
 	StartedAt    string                   `json:"startedAt"`
 	FinishedAt   string                   `json:"finishedAt"`
@@ -129,7 +132,7 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 			}
 			artifacts := make([]WorkflowDetailArtifactInfo, 0, len(node.Inputs.Artifacts))
 			for _, a := range node.Inputs.Artifacts {
-				artifacts = append(artifacts, WorkflowDetailArtifactInfo{Name: a.Name, Path: a.Path})
+				artifacts = append(artifacts, WorkflowDetailArtifactInfo{Name: a.Name, Path: a.Path, From: a.From, Size: a.Size})
 			}
 			inputs = &IOData{Parameters: params, Artifacts: artifacts}
 		}
@@ -142,7 +145,7 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 			}
 			artifacts := make([]WorkflowDetailArtifactInfo, 0, len(node.Outputs.Artifacts))
 			for _, a := range node.Outputs.Artifacts {
-				artifacts = append(artifacts, WorkflowDetailArtifactInfo{Name: a.Name, Path: a.Path})
+				artifacts = append(artifacts, WorkflowDetailArtifactInfo{Name: a.Name, Path: a.Path, From: a.From, Size: a.Size})
 			}
 			outputs = &IOData{Parameters: params, Artifacts: artifacts}
 		}
@@ -161,6 +164,7 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 	return &WorkflowDetailInfo{
 		Name:         wfDetail.Name,
 		Namespace:    wfDetail.Namespace,
+		TemplateName: wfDetail.TemplateName,
 		Phase:        wfDetail.Phase,
 		StartedAt:    wfDetail.StartedAt,
 		FinishedAt:   wfDetail.FinishedAt,
