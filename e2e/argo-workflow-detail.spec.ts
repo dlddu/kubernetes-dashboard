@@ -263,6 +263,7 @@ test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
     await expect(stepsTimeline).toBeVisible();
 
     // Assert: Three step entries are rendered
+    await expect(stepsTimeline.getByTestId('workflow-detail-step').first()).toBeVisible();
     const stepEntries = stepsTimeline.getByTestId('workflow-detail-step');
     expect(await stepEntries.count()).toBe(3);
 
@@ -585,6 +586,7 @@ test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
     await expect(detailPage).not.toBeVisible();
 
     // Assert: Workflow cards are still displayed (list is intact)
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const workflowCards = page.getByTestId('workflow-run-card');
     expect(await workflowCards.count()).toBeGreaterThanOrEqual(1);
   });
