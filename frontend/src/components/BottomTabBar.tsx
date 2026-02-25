@@ -100,7 +100,7 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
     }
   };
 
-  const shouldShowBadge = unhealthyPodCount && unhealthyPodCount > 0;
+  const shouldShowBadge = unhealthyPodCount > 0;
 
   return (
     <nav
