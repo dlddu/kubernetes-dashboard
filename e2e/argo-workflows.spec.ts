@@ -106,6 +106,8 @@ async function gotoArgoWorkflows(page: Parameters<typeof test>[1] extends (...ar
   await expect(templateCard).toBeVisible();
   await templateCard.click();
   await page.waitForLoadState('networkidle');
+  // Wait for the runs page container to render (present for all states: cards, error, empty, loading)
+  await expect(page.getByTestId('workflow-runs-page')).toBeVisible();
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +118,8 @@ async function findWorkflowCardByName(
   page: Parameters<typeof test>[1] extends (...args: infer A) => unknown ? A[0] : never,
   workflowName: string,
 ) {
+  // Wait for at least one card to be rendered before iterating
+  await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
   const workflowCards = page.getByTestId('workflow-run-card');
   const cardCount = await workflowCards.count();
 
@@ -245,6 +249,7 @@ test.describe('Argo Tab - Workflow List - Phase Badge & Step Preview', () => {
     await expect(stepsPreview).toBeVisible();
 
     // Assert: Three step items are rendered
+    await expect(stepsPreview.getByTestId('workflow-run-step').first()).toBeVisible();
     const stepItems = stepsPreview.getByTestId('workflow-run-step');
     expect(await stepItems.count()).toBe(3);
 
@@ -285,6 +290,8 @@ test.describe('Argo Tab - Workflow List - Namespace Filtering', () => {
     await gotoArgoWorkflows(page);
 
     // Act: Record total workflow count before filtering
+    // Wait for cards to render before counting
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const allWorkflowCards = page.getByTestId('workflow-run-card');
     const totalCount = await allWorkflowCards.count();
     expect(totalCount).toBeGreaterThanOrEqual(1);
@@ -299,6 +306,8 @@ test.describe('Argo Tab - Workflow List - Namespace Filtering', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: Only dashboard-test namespace workflows are shown
+    // Wait for cards to render after namespace filter change
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const filteredWorkflowCards = page.getByTestId('workflow-run-card');
     const filteredCount = await filteredWorkflowCards.count();
     expect(filteredCount).toBeLessThanOrEqual(totalCount);
@@ -418,6 +427,8 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
     await page.waitForLoadState('networkidle');
 
     // Assert: Workflow cards are now displayed after successful retry
+    // Wait for cards to render after retry before counting
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const workflowCardsAfterRetry = page.getByTestId('workflow-run-card');
     expect(await workflowCardsAfterRetry.count()).toBeGreaterThanOrEqual(1);
 
@@ -457,6 +468,7 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: All 3 workflow fixture cards are rendered (all belong to data-processing-with-params)
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const workflowCards = page.getByTestId('workflow-run-card');
     expect(await workflowCards.count()).toBe(3);
 
@@ -539,6 +551,7 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
     await expect(workflowRunsPage).toBeVisible();
 
     // Assert: Exactly 1 workflow card is rendered (only 'ml-pipeline' run)
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const workflowCards = page.getByTestId('workflow-run-card');
     expect(await workflowCards.count()).toBe(1);
 
@@ -596,6 +609,7 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     await expect(templatesPage).not.toBeVisible();
 
     // Assert: All 3 run cards are rendered (all belong to 'data-processing-with-params')
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const workflowCards = page.getByTestId('workflow-run-card');
     expect(await workflowCards.count()).toBe(3);
 

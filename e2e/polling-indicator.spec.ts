@@ -457,8 +457,9 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
     const initialText = await lastUpdateTime.innerText();
     expect(initialText).toMatch(/just now|0 seconds ago|seconds? ago/i);
 
-    // Act: Fast-forward time by 5 seconds instead of waiting in real-time
-    await page.clock.fastForward(5000);
+    // Act: Fast-forward time by 10 seconds instead of waiting in real-time
+    // Use 10s (well beyond the 5s "just now" threshold) to avoid boundary flakiness
+    await page.clock.fastForward(10000);
 
     // Assert: Time display should now show elapsed seconds
     await expect(lastUpdateTime).toHaveText(/\d+\s*seconds?\s*ago/i);
