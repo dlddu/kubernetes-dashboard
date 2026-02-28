@@ -27,7 +27,8 @@ export function StatusBadge({ status, testId = 'status-badge' }: StatusBadgeProp
     if (
       statusLower === 'pending' ||
       statusLower === 'unknown' ||
-      statusLower === 'containercreating'
+      statusLower === 'containercreating' ||
+      statusLower === 'ready,schedulingdisabled'
     ) {
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     }

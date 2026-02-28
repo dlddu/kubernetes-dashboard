@@ -55,9 +55,14 @@ func getNodeRole(node corev1.Node) string {
 	return ""
 }
 
-// nodeStatusString returns "Ready" or "NotReady" based on node condition.
+// nodeStatusString returns the node status string.
+// It returns "Ready,SchedulingDisabled" for cordoned/drained nodes,
+// "Ready" for healthy schedulable nodes, and "NotReady" otherwise.
 func nodeStatusString(node corev1.Node) string {
 	if isNodeReady(node) {
+		if node.Spec.Unschedulable {
+			return nodeStatusReadyScheduleDisabled
+		}
 		return nodeStatusReady
 	}
 	return nodeStatusNotReady

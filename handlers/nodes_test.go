@@ -176,13 +176,13 @@ func TestNodesHandlerResponseStructure(t *testing.T) {
 			t.Fatal("expected at least one node")
 		}
 
-		// Verify status is either "Ready" or "NotReady"
+		// Verify status is "Ready", "NotReady", or "Ready,SchedulingDisabled"
 		status, ok := nodes[0]["status"].(string)
 		if !ok {
 			t.Fatal("expected 'status' to be a string")
 		}
-		if status != "Ready" && status != "NotReady" {
-			t.Errorf("expected status to be 'Ready' or 'NotReady', got '%s'", status)
+		if status != "Ready" && status != "NotReady" && status != "Ready,SchedulingDisabled" {
+			t.Errorf("expected status to be 'Ready', 'NotReady', or 'Ready,SchedulingDisabled', got '%s'", status)
 		}
 	})
 
@@ -445,6 +445,79 @@ func TestNodesHandlerPodCountAccuracy(t *testing.T) {
 		// At least some pods should exist in the cluster (e.g., kube-system)
 		if totalPods == 0 {
 			t.Log("Warning: No pods found across all nodes (unexpected in most clusters)")
+		}
+	})
+}
+
+// TestNodeStatusString tests the nodeStatusString helper function
+func TestNodeStatusString(t *testing.T) {
+	t.Run("should return Ready for a schedulable ready node", func(t *testing.T) {
+		node := corev1.Node{
+			Status: corev1.NodeStatus{
+				Conditions: []corev1.NodeCondition{
+					{Type: corev1.NodeReady, Status: corev1.ConditionTrue},
+				},
+			},
+		}
+		status := nodeStatusString(node)
+		if status != "Ready" {
+			t.Errorf("expected 'Ready', got '%s'", status)
+		}
+	})
+
+	t.Run("should return Ready,SchedulingDisabled for a cordoned ready node", func(t *testing.T) {
+		node := corev1.Node{
+			Spec: corev1.NodeSpec{
+				Unschedulable: true,
+			},
+			Status: corev1.NodeStatus{
+				Conditions: []corev1.NodeCondition{
+					{Type: corev1.NodeReady, Status: corev1.ConditionTrue},
+				},
+			},
+		}
+		status := nodeStatusString(node)
+		if status != "Ready,SchedulingDisabled" {
+			t.Errorf("expected 'Ready,SchedulingDisabled', got '%s'", status)
+		}
+	})
+
+	t.Run("should return NotReady for a not-ready node", func(t *testing.T) {
+		node := corev1.Node{
+			Status: corev1.NodeStatus{
+				Conditions: []corev1.NodeCondition{
+					{Type: corev1.NodeReady, Status: corev1.ConditionFalse},
+				},
+			},
+		}
+		status := nodeStatusString(node)
+		if status != "NotReady" {
+			t.Errorf("expected 'NotReady', got '%s'", status)
+		}
+	})
+
+	t.Run("should return NotReady for a not-ready unschedulable node", func(t *testing.T) {
+		node := corev1.Node{
+			Spec: corev1.NodeSpec{
+				Unschedulable: true,
+			},
+			Status: corev1.NodeStatus{
+				Conditions: []corev1.NodeCondition{
+					{Type: corev1.NodeReady, Status: corev1.ConditionFalse},
+				},
+			},
+		}
+		status := nodeStatusString(node)
+		if status != "NotReady" {
+			t.Errorf("expected 'NotReady', got '%s'", status)
+		}
+	})
+
+	t.Run("should return NotReady when no conditions exist", func(t *testing.T) {
+		node := corev1.Node{}
+		status := nodeStatusString(node)
+		if status != "NotReady" {
+			t.Errorf("expected 'NotReady', got '%s'", status)
 		}
 	})
 }

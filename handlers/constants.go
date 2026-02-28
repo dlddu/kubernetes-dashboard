@@ -20,8 +20,9 @@ const (
 
 // Node status strings.
 const (
-	nodeStatusReady    = "Ready"
-	nodeStatusNotReady = "NotReady"
+	nodeStatusReady                 = "Ready"
+	nodeStatusNotReady              = "NotReady"
+	nodeStatusReadyScheduleDisabled = "Ready,SchedulingDisabled"
 )
 
 // Pod node assignment placeholder.
