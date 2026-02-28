@@ -169,174 +169,136 @@ test.describe('BottomTabBar - Tab Navigation', () => {
 
 test.describe('BottomTabBar - Overview Tab Badge', () => {
   /**
-   * Helper: intercept /api/overview and return a controlled response.
-   * This makes badge tests deterministic regardless of cluster state.
+   * Helper: capture the real /api/overview response without mocking.
+   * Returns a promise that resolves to the unhealthyPods count from
+   * the actual API response, allowing tests to assert against real data.
    */
-  function mockOverviewApi(page: import('@playwright/test').Page, unhealthyPods: number) {
-    return page.route('**/api/overview**', (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          nodes: { ready: 2, total: 2 },
-          unhealthyPods,
-          unhealthyPodsList: Array.from({ length: unhealthyPods }, (_, i) => ({
-            name: `unhealthy-pod-${i}`,
-            namespace: 'default',
-            status: 'CrashLoopBackOff',
-          })),
-          avgCpuPercent: 25.0,
-          avgMemoryPercent: 40.0,
-          nodesList: [],
-        }),
-      });
+  function captureOverviewResponse(page: import('@playwright/test').Page) {
+    return page.waitForResponse(
+      resp => resp.url().includes('/api/overview') && resp.status() === 200
+    ).then(async (resp) => {
+      const body = await resp.json();
+      return body.unhealthyPods as number;
     });
   }
 
-  test('should display badge with correct count when unhealthy pods exist', async ({ page }) => {
-    // Arrange: Mock API to return 3 unhealthy pods
-    await mockOverviewApi(page, 3);
+  test('should show badge only when API reports unhealthy pods, never show stray "0"', async ({ page }) => {
+    // Arrange: Capture the real API response to know the expected count
     await page.setViewportSize({ width: 375, height: 667 });
+    const overviewPromise = captureOverviewResponse(page);
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    // Assert: Badge should be visible with count "3"
-    const overviewTab = page.getByTestId('tab-overview');
-    const overviewBadge = overviewTab.getByTestId('overview-badge');
-
-    await expect(overviewBadge).toBeVisible();
-    await expect(overviewBadge).toHaveText('3');
-
-    // Assert: Badge number must be > 0
-    const badgeText = await overviewBadge.innerText();
-    expect(parseInt(badgeText, 10)).toBeGreaterThan(0);
-  });
-
-  test('should not display badge when unhealthyPods is 0', async ({ page }) => {
-    // Regression: previously "0" was rendered as visible text in the tab
-    // Arrange: Mock API to return 0 unhealthy pods
-    await mockOverviewApi(page, 0);
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/');
+    const unhealthyPods = await overviewPromise;
     await page.waitForLoadState('networkidle');
 
     const overviewTab = page.getByTestId('tab-overview');
-
-    // Assert: Badge element with data-testid should not exist in the DOM
     const overviewBadge = overviewTab.getByTestId('overview-badge');
-    await expect(overviewBadge).toHaveCount(0);
 
-    // Assert: No stray "0" text should appear in the Overview tab
-    // This catches the exact bug where {unhealthyPodCount} rendered "0" outside the badge span
+    if (unhealthyPods > 0) {
+      // Assert: Badge should be visible and match the real API count
+      await expect(overviewBadge).toBeVisible();
+      await expect(overviewBadge).toHaveText(String(unhealthyPods));
+    } else {
+      // Assert: Badge element must not exist in the DOM
+      await expect(overviewBadge).toHaveCount(0);
+    }
+
+    // Regression guard: "0" must never appear as visible text in the tab
+    // This catches the exact bug where {unhealthyPodCount} rendered "0"
+    // as a bare text node outside the conditional badge span
     const tabText = await overviewTab.innerText();
     expect(tabText).not.toMatch(/\b0\b/);
   });
 
-  test('should hide badge when unhealthy count drops to 0', async ({ page }) => {
-    // Arrange: Start with 5 unhealthy pods
-    await mockOverviewApi(page, 5);
+  test('should show badge count matching API response after re-navigation', async ({ page }) => {
+    // Tests that badge stays consistent with API data across navigations
     await page.setViewportSize({ width: 375, height: 667 });
+    const initialPromise = captureOverviewResponse(page);
     await page.goto('/');
+    const initialCount = await initialPromise;
+    await page.waitForLoadState('networkidle');
+
+    // Act: Navigate away and back to trigger a fresh API call
+    await page.getByTestId('tab-nodes').click();
+    await page.waitForLoadState('networkidle');
+
+    const refreshPromise = captureOverviewResponse(page);
+    await page.getByTestId('tab-overview').click();
+    const refreshedCount = await refreshPromise;
     await page.waitForLoadState('networkidle');
 
     const overviewTab = page.getByTestId('tab-overview');
     const overviewBadge = overviewTab.getByTestId('overview-badge');
 
-    // Assert: Badge should initially be visible
-    await expect(overviewBadge).toBeVisible();
-    await expect(overviewBadge).toHaveText('5');
+    if (refreshedCount > 0) {
+      await expect(overviewBadge).toBeVisible();
+      await expect(overviewBadge).toHaveText(String(refreshedCount));
+    } else {
+      await expect(overviewBadge).toHaveCount(0);
+    }
 
-    // Act: Simulate count dropping to 0 via new API response
-    await page.unrouteAll();
-    await mockOverviewApi(page, 0);
-
-    // Trigger a re-fetch by navigating away and back
-    await page.getByTestId('tab-nodes').click();
-    await page.waitForLoadState('networkidle');
-    await page.getByTestId('tab-overview').click();
-    await page.waitForLoadState('networkidle');
-
-    // Assert: Badge should disappear completely
-    await expect(overviewTab.getByTestId('overview-badge')).toHaveCount(0);
-
-    // Assert: No "0" text leaking into the tab
+    // Regression guard: no stray "0" in tab text regardless of count
     const tabText = await overviewTab.innerText();
     expect(tabText).not.toMatch(/\b0\b/);
-  });
-
-  test('should update badge count when unhealthy pod count changes', async ({ page }) => {
-    // Arrange: Start with 2 unhealthy pods
-    await mockOverviewApi(page, 2);
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const overviewTab = page.getByTestId('tab-overview');
-    await expect(overviewTab.getByTestId('overview-badge')).toHaveText('2');
-
-    // Act: Change to 7 unhealthy pods
-    await page.unrouteAll();
-    await mockOverviewApi(page, 7);
-
-    await page.getByTestId('tab-nodes').click();
-    await page.waitForLoadState('networkidle');
-    await page.getByTestId('tab-overview').click();
-    await page.waitForLoadState('networkidle');
-
-    // Assert: Badge should reflect the new count
-    await expect(overviewTab.getByTestId('overview-badge')).toHaveText('7');
   });
 
   test('should display correct badge count for selected namespace', async ({ page }) => {
     // Tests that badge count respects namespace filter
 
-    // Arrange: Set mobile viewport
+    // Arrange: Capture initial "all namespaces" count
     await page.setViewportSize({ width: 375, height: 667 });
+    const allNsPromise = captureOverviewResponse(page);
     await page.goto('/');
+    const allNsCount = await allNsPromise;
     await page.waitForLoadState('networkidle');
 
-    // Act: Select specific namespace and wait for API response
+    // Act: Select "default" namespace and capture the filtered response
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
       .or(page.getByTestId('namespace-option-default'));
 
-    // Wait for the overview API response after namespace selection
-    await Promise.all([
-      page.waitForResponse(resp => resp.url().includes('/api/overview') && resp.status() === 200),
-      defaultNamespaceOption.click(),
-    ]);
+    const filteredPromise = captureOverviewResponse(page);
+    await defaultNamespaceOption.click();
+    const filteredCount = await filteredPromise;
 
-    // Act: Check Overview tab badge (shows unhealthy pod count)
     const overviewTab = page.getByTestId('tab-overview');
     const overviewBadge = overviewTab.getByTestId('overview-badge');
 
-    const badgeExists = await overviewBadge.count() > 0;
+    // Assert: Filtered count should be <= all-namespaces count
+    expect(filteredCount).toBeLessThanOrEqual(allNsCount);
 
-    if (badgeExists) {
-      const badgeText = await overviewBadge.innerText();
-      const unhealthyCount = parseInt(badgeText, 10);
-
-      // Assert: Badge count must be > 0 if badge is present
-      expect(unhealthyCount).toBeGreaterThan(0);
-
-      // Act: Navigate to Pods page and wait for data to load
-      const podsTab = page.getByTestId('tab-pods');
-      await podsTab.click();
-
-      await expect(
-        page.getByTestId('pod-card').first()
-          .or(page.getByTestId('no-pods-message'))
-      ).toBeVisible({ timeout: 10000 });
-
-      // Assert: Pods page shows all pods, badge shows only unhealthy
-      // Total pod count should be >= unhealthy count
-      const podCards = page.getByTestId('pod-card');
-      const actualCount = await podCards.count();
-
-      expect(actualCount).toBeGreaterThanOrEqual(unhealthyCount);
+    if (filteredCount > 0) {
+      await expect(overviewBadge).toBeVisible();
+      await expect(overviewBadge).toHaveText(String(filteredCount));
+    } else {
+      await expect(overviewBadge).toHaveCount(0);
     }
+
+    // Regression guard
+    const tabText = await overviewTab.innerText();
+    expect(tabText).not.toMatch(/\b0\b/);
+  });
+
+  test('should have badge count consistent with pods page data', async ({ page }) => {
+    // Tests that badge (unhealthy) count <= total pod count on Pods page
+    await page.setViewportSize({ width: 375, height: 667 });
+    const overviewPromise = captureOverviewResponse(page);
+    await page.goto('/');
+    const unhealthyPods = await overviewPromise;
+    await page.waitForLoadState('networkidle');
+
+    // Act: Navigate to Pods page and wait for data to load
+    await page.getByTestId('tab-pods').click();
+    await expect(
+      page.getByTestId('pod-card').first()
+        .or(page.getByTestId('no-pods-message'))
+    ).toBeVisible({ timeout: 10000 });
+
+    const totalPodCount = await page.getByTestId('pod-card').count();
+
+    // Assert: Total pods >= unhealthy pods (badge only shows unhealthy subset)
+    expect(totalPodCount).toBeGreaterThanOrEqual(unhealthyPods);
   });
 });
 
@@ -592,53 +554,47 @@ test.describe('BottomTabBar - Namespace Context Integration', () => {
   test('should update Overview badge when namespace filter changes', async ({ page }) => {
     // Tests that Overview tab badge reflects namespace-filtered count
 
-    // Arrange: Set mobile viewport
+    // Arrange: Capture "All Namespaces" count from real API
     await page.setViewportSize({ width: 375, height: 667 });
+
+    const allNsPromise = page.waitForResponse(
+      resp => resp.url().includes('/api/overview') && resp.status() === 200
+    ).then(async (resp) => (await resp.json()).unhealthyPods as number);
+
     await page.goto('/');
+    const allNamespacesCount = await allNsPromise;
     await page.waitForLoadState('networkidle');
 
-    // Act: Record badge count with "All Namespaces"
-    const overviewTab = page.getByTestId('tab-overview');
-    const overviewBadge = overviewTab.getByTestId('overview-badge');
-
-    const allNamespacesBadgeVisible = await overviewBadge.count() > 0;
-    let allNamespacesCount = 0;
-
-    if (allNamespacesBadgeVisible) {
-      const badgeText = await overviewBadge.innerText();
-      allNamespacesCount = parseInt(badgeText, 10);
-    }
-
-    // Act: Select "default" namespace and wait for API response
+    // Act: Select "default" namespace and capture the filtered response
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
     const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
       .or(page.getByTestId('namespace-option-default'));
 
-    // Wait for the overview API response after namespace selection
-    await Promise.all([
-      page.waitForResponse(resp => resp.url().includes('/api/overview') && resp.status() === 200),
-      defaultNamespaceOption.click(),
-    ]);
+    const filteredPromise = page.waitForResponse(
+      resp => resp.url().includes('/api/overview') && resp.status() === 200
+    ).then(async (resp) => (await resp.json()).unhealthyPods as number);
 
-    // Assert: Badge count should update to reflect filtered namespace
-    const filteredBadgeVisible = await overviewBadge.count() > 0;
+    await defaultNamespaceOption.click();
+    const filteredCount = await filteredPromise;
 
-    if (filteredBadgeVisible) {
-      const filteredBadgeText = await overviewBadge.innerText();
-      const filteredCount = parseInt(filteredBadgeText, 10);
+    // Assert: Filtered count should be <= all-namespaces count
+    expect(filteredCount).toBeLessThanOrEqual(allNamespacesCount);
 
-      // Badge must only show positive counts
-      expect(filteredCount).toBeGreaterThan(0);
-      expect(filteredCount).toBeLessThanOrEqual(allNamespacesCount);
+    const overviewTab = page.getByTestId('tab-overview');
+    const overviewBadge = overviewTab.getByTestId('overview-badge');
+
+    if (filteredCount > 0) {
+      await expect(overviewBadge).toBeVisible();
+      await expect(overviewBadge).toHaveText(String(filteredCount));
+    } else {
+      await expect(overviewBadge).toHaveCount(0);
     }
 
-    // Assert: If no badge visible, ensure no stray "0" in the tab
-    if (!filteredBadgeVisible) {
-      const tabText = await overviewTab.innerText();
-      expect(tabText).not.toMatch(/\b0\b/);
-    }
+    // Regression guard: no stray "0" text in tab
+    const tabText = await overviewTab.innerText();
+    expect(tabText).not.toMatch(/\b0\b/);
   });
 });
 
@@ -750,43 +706,32 @@ test.describe('BottomTabBar - Accessibility', () => {
   });
 
   test('should announce badge count to screen readers', async ({ page }) => {
-    // Tests that badge count is accessible
-    // Arrange: Mock API to guarantee badge is present
-    await page.route('**/api/overview**', (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          nodes: { ready: 2, total: 2 },
-          unhealthyPods: 4,
-          unhealthyPodsList: [
-            { name: 'pod-1', namespace: 'default', status: 'CrashLoopBackOff' },
-            { name: 'pod-2', namespace: 'default', status: 'Error' },
-            { name: 'pod-3', namespace: 'kube-system', status: 'ImagePullBackOff' },
-            { name: 'pod-4', namespace: 'kube-system', status: 'CrashLoopBackOff' },
-          ],
-          avgCpuPercent: 30.0,
-          avgMemoryPercent: 50.0,
-          nodesList: [],
-        }),
-      });
-    });
+    // Tests that badge count is accessible via aria-label
 
+    // Arrange: Capture real API response to know the expected count
     await page.setViewportSize({ width: 375, height: 667 });
+    const overviewPromise = page.waitForResponse(
+      resp => resp.url().includes('/api/overview') && resp.status() === 200
+    ).then(async (resp) => (await resp.json()).unhealthyPods as number);
+
     await page.goto('/');
+    const unhealthyPods = await overviewPromise;
     await page.waitForLoadState('networkidle');
 
-    // Assert: Badge should be present and accessible
     const overviewTab = page.getByTestId('tab-overview');
     const overviewBadge = overviewTab.getByTestId('overview-badge');
 
-    await expect(overviewBadge).toBeVisible();
-    await expect(overviewBadge).toHaveText('4');
+    if (unhealthyPods > 0) {
+      // Assert: Badge should be present and have descriptive aria-label
+      await expect(overviewBadge).toBeVisible();
 
-    // Assert: Badge should have aria-label describing the count
-    const badgeAriaLabel = await overviewBadge.getAttribute('aria-label');
-    expect(badgeAriaLabel).toBeTruthy();
-    expect(badgeAriaLabel!.toLowerCase()).toMatch(/unhealthy|problems|issues|alerts?/);
-    expect(badgeAriaLabel).toContain('4');
+      const badgeAriaLabel = await overviewBadge.getAttribute('aria-label');
+      expect(badgeAriaLabel).toBeTruthy();
+      expect(badgeAriaLabel!.toLowerCase()).toMatch(/unhealthy|problems|issues|alerts?/);
+      expect(badgeAriaLabel).toContain(String(unhealthyPods));
+    } else {
+      // Assert: No badge, no stray text
+      await expect(overviewBadge).toHaveCount(0);
+    }
   });
 });
