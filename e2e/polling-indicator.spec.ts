@@ -461,8 +461,12 @@ test.describe('PollingIndicator Component - Time Display Format', () => {
     // Use 10s (well beyond the 5s "just now" threshold) to avoid boundary flakiness
     await page.clock.fastForward(10000);
 
+    // Resume the clock so React's rendering pipeline (requestAnimationFrame,
+    // MessageChannel) can process state updates triggered by the interval callback
+    await page.clock.resume();
+
     // Assert: Time display should now show elapsed seconds
-    await expect(lastUpdateTime).toHaveText(/\d+\s*seconds?\s*ago/i);
+    await expect(lastUpdateTime).toHaveText(/\d+\s*seconds?\s*ago/i, { timeout: 10000 });
   });
 
   test('should display tooltip with exact timestamp on hover', async ({ page }) => {
