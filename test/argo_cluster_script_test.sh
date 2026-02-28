@@ -10,7 +10,7 @@
 #   1.  scripts/kind-cluster.sh 에 install_argo_crds 함수가 존재하는지
 #   2.  install_argo_crds 함수가 CRD 설치 명령(kubectl apply ... argoproj/argo-workflows)을 포함하는지
 #   3.  create_cluster 함수가 install_argo_crds 를 호출하는지
-#   4.  test/fixtures/ 하위에 Argo fixture 파일 5종이 모두 존재하는지
+#   4.  test/fixtures/ 하위에 Argo fixture 파일 6종이 모두 존재하는지
 #   5.  각 Argo fixture 파일이 유효한 YAML(python3 safe_load)인지
 #   6.  WorkflowTemplate fixture들이 apiVersion: argoproj.io/v1alpha1 과 kind: WorkflowTemplate을 포함하는지
 #   7.  workflow-template-with-params.yaml 에 4개의 required parameter가 존재하는지
@@ -20,7 +20,7 @@
 #   11. workflow-succeeded.yaml 의 status.phase 가 Succeeded 인지
 #   12. workflow-failed.yaml 의 status.phase 가 Failed 이고 Failed/Omitted 노드를 포함하는지
 #   13. 각 Workflow fixture 의 status.nodes 에 inputs/outputs 데이터가 존재하는지
-#   14. test/fixtures/apply-all.sh 에 Argo fixture 5종이 모두 참조되는지
+#   14. test/fixtures/apply-all.sh 에 Argo fixture 6종이 모두 참조되는지
 
 set -euo pipefail
 
@@ -101,6 +101,7 @@ echo "Test 4: Argo fixture YAML files exist under test/fixtures/"
 ARGO_FIXTURES=(
     "workflow-template-with-params.yaml"
     "workflow-template-no-params.yaml"
+    "workflow-template-empty-runs.yaml"
     "workflow-running.yaml"
     "workflow-succeeded.yaml"
     "workflow-failed.yaml"
@@ -146,7 +147,7 @@ fi
 echo ""
 echo "Test 6: WorkflowTemplate fixtures declare correct apiVersion and kind"
 
-for fixture in "workflow-template-with-params.yaml" "workflow-template-no-params.yaml"; do
+for fixture in "workflow-template-with-params.yaml" "workflow-template-no-params.yaml" "workflow-template-empty-runs.yaml"; do
     fixture_path="$FIXTURES_DIR/$fixture"
     if [ ! -f "$fixture_path" ]; then
         fail "$fixture not found"

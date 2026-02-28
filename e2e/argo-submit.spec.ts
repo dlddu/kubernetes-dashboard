@@ -17,7 +17,8 @@ import { test, expect } from '@playwright/test';
  *   - batch-size  (default: 100)
  *   - env         (enum: [dev, staging, prod])
  * - workflow-template-no-params.yaml: simple-template (no params)
- * Both fixtures are in the dashboard-test namespace.
+ * - workflow-template-empty-runs.yaml: empty-runs-template (no params, no workflow runs)
+ * All fixtures are in the dashboard-test namespace.
  *
  * Related Issue: DLD-440 - 작업 3-1: WorkflowTemplate Submit — e2e 테스트 작성 (skipped)
  * Parent Issue:  DLD-435 - Argo WorkflowTemplate Submit 기능 추가

@@ -80,6 +80,7 @@ kubectl get pods -n dashboard-test -o wide
 log_info "Applying Argo Workflows fixtures..."
 kubectl apply -f "$SCRIPT_DIR/workflow-template-with-params.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-template-no-params.yaml"
+kubectl apply -f "$SCRIPT_DIR/workflow-template-empty-runs.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-running.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-succeeded.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-failed.yaml"
