@@ -483,24 +483,16 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
   });
 
   test('should display EmptyState when the requested templateName has no matching workflows', async ({ page }) => {
-    // Tests that when a templateName filter returns no workflows the UI shows EmptyState.
-    // The workflows API is mocked to return an empty array because other e2e tests
-    // (e.g. argo-submit) may have created real workflows for simple-template.
-
-    // Arrange: Mock the workflows API to return an empty array for any templateName query
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
+    // Tests that clicking a template card with no associated workflows shows EmptyState.
+    // Uses 'empty-runs-template' which exists in the cluster but has never had workflows
+    // submitted (no other e2e test submits to this template).
 
     // Arrange: Navigate to /argo (Templates view is default)
     await gotoArgo(page);
 
-    // Act: Click the 'simple-template' card.
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'simple-template' });
+    // Act: Click the 'empty-runs-template' card.
+    // This fetches /api/argo/workflows?templateName=empty-runs-template, which returns [].
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'empty-runs-template' });
     await expect(templateCard).toBeVisible();
     await templateCard.click();
     await page.waitForLoadState('networkidle');
