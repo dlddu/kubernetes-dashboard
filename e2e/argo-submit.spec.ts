@@ -132,15 +132,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 
   test('should show success view after editing parameters and submitting the form', async ({ page }) => {
     // Tests the full happy-path submit flow: change a parameter value → click confirm → success view appears
-
-    // Arrange: Mock the submit API to return a successful workflow reference
-    await page.route('**/api/argo/workflow-templates/data-processing-with-params/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'data-processing-with-params-abc12', namespace: 'dashboard-test' }),
-      });
-    });
+    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -170,15 +162,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
   test('should allow submitting a template with no parameters without showing a form', async ({ page }) => {
     // Tests that simple-template (0 parameters) opens a modal with no parameter fields
     // and can be submitted immediately without filling in anything
-
-    // Arrange: Mock the submit API for simple-template
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
+    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -210,15 +194,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 
   test('should navigate to the Workflows section when "View Workflow" link is clicked', async ({ page }) => {
     // Tests that clicking the "View Workflow" link in the success view switches to the Workflows tab/section
-
-    // Arrange: Mock submit API to return a created workflow
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
+    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -383,7 +359,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
 // Related Issue: DLD-532 (parent: DLD-527) - Submit 성공 후 View Workflow 클릭 시 해당 template의 Runs 뷰 전환 검증
 test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', () => {
   // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
-  // POST submit is always mocked because actual submit would modify cluster state.
+  // POST submit uses real API — tests create actual workflows in the cluster.
   // GET workflows is mocked only in the last test (templateName filtering verification).
 
   test('should close SubmitModal when "View Workflow" button is clicked after successful submit', async ({
@@ -391,15 +367,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   }) => {
     // Tests that the SubmitModal (submit-workflow-dialog) is no longer visible
     // after the user clicks the "View Workflow" button in the success view.
-
-    // Arrange: Mock the submit API to return a successfully created workflow
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
+    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -429,15 +397,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   test('should show workflow-runs-page after "View Workflow" is clicked', async ({ page }) => {
     // Tests that the workflow-runs-page element becomes visible after the user
     // clicks "View Workflow", confirming the UI has transitioned to the Runs view.
-
-    // Arrange: Mock the submit API
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
+    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -470,15 +430,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   test('should display the submitted template name in the Runs view header', async ({ page }) => {
     // Tests that the Runs view header shows the name of the template that was submitted,
     // so the user knows which template's runs they are viewing.
-
-    // Arrange: Mock the submit API
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
+    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -512,8 +464,8 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     // This verifies that the API is called with the correct templateName filter
     // and that the UI does not mix runs from unrelated templates.
     //
-    // This test requires workflow run mocking because simple-template has no
-    // real runs in the cluster (submit is also mocked).
+    // Workflow runs API is mocked to provide deterministic data for the
+    // filtering assertion. Submit uses the real API.
 
     const simpleTemplateRuns = [
       {
@@ -548,14 +500,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
       },
     ];
 
-    // Arrange: Mock the submit API for simple-template
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
+    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     // Arrange: Mock the workflow runs API to verify it is called with the correct
     // templateName and return only simple-template runs.
