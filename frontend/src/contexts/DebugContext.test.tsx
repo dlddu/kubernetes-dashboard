@@ -179,7 +179,7 @@ describe('DebugContext', () => {
 
       const mockLog = {
         method: 'GET' as const,
-        url: '/api/health',
+        url: '/api/test',
         params: undefined,
         status: 200,
         timestamp: 1234567890,
@@ -208,7 +208,7 @@ describe('DebugContext', () => {
 
       const log1 = {
         method: 'GET' as const,
-        url: '/api/health',
+        url: '/api/test',
         params: undefined,
         status: 200,
         timestamp: 1000,

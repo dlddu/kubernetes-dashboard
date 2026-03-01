@@ -9,10 +9,10 @@ import (
 
 // TestServerSetup tests the HTTP server setup
 func TestServerSetup(t *testing.T) {
-	t.Run("should create router with /api/health endpoint", func(t *testing.T) {
+	t.Run("should create router with /api/livez endpoint", func(t *testing.T) {
 		// Arrange
 		router := setupRouter()
-		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/livez", nil)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -78,7 +78,7 @@ func TestAPIRouting(t *testing.T) {
 	t.Run("should route /api/* to API handlers", func(t *testing.T) {
 		// Arrange
 		router := setupRouter()
-		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/livez", nil)
 		w := httptest.NewRecorder()
 
 		// Act

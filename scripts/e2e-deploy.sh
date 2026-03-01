@@ -27,7 +27,7 @@ kubectl wait --for=condition=Available deployment/kubernetes-dashboard --timeout
 
 log_info "Verifying health endpoint via NodePort..."
 for i in $(seq 1 30); do
-    if curl -sf "http://localhost:${E2E_PORT}/api/health" > /dev/null 2>&1; then
+    if curl -sf "http://localhost:${E2E_PORT}/api/livez" > /dev/null 2>&1; then
         log_info "Dashboard is healthy and accessible at http://localhost:${E2E_PORT}"
         exit 0
     fi

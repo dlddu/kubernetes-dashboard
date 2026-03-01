@@ -196,9 +196,9 @@ jobs:
           SERVER_PID=$!
           sleep 3
 
-          # Test health endpoint
-          if ! curl -f http://localhost:8080/api/health; then
-            echo "ERROR: Health endpoint not responding"
+          # Test liveness endpoint
+          if ! curl -f http://localhost:8080/api/livez; then
+            echo "ERROR: Liveness endpoint not responding"
             kill $SERVER_PID
             exit 1
           fi
@@ -259,18 +259,18 @@ jobs:
           docker run -d -p 8080:8080 --name test-container ghcr.io/${{ github.repository }}:latest
           sleep 5
 
-          # Test health endpoint
-          if ! curl -f http://localhost:8080/api/health; then
-            echo "ERROR: Docker container health check failed"
+          # Test liveness endpoint
+          if ! curl -f http://localhost:8080/api/livez; then
+            echo "ERROR: Docker container liveness check failed"
             docker logs test-container
             docker stop test-container
             exit 1
           fi
 
           # Verify JSON response
-          RESPONSE=$(curl -s http://localhost:8080/api/health)
+          RESPONSE=$(curl -s http://localhost:8080/api/livez)
           if ! echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null 2>&1; then
-            echo "ERROR: Invalid health response: $RESPONSE"
+            echo "ERROR: Invalid liveness response: $RESPONSE"
             docker stop test-container
             exit 1
           fi
