@@ -17,8 +17,8 @@ import { test, expect } from '@playwright/test';
  * All workflows reference workflowTemplateRef: data-processing-with-params.
  *
  * Workflow Runs section entry point:
- * - ArgoTab renders data-testid="workflow-runs-page" when showWorkflowRuns is true.
- * - The expected UI control to trigger this is data-testid="workflows-tab".
+ * - Clicking a template card navigates to /argo/templates/:templateName (React Router route).
+ * - ArgoWorkflowsPage renders data-testid="workflow-runs-page" at that route.
  *
  * Related Issue: DLD-442 - 작업 4-1: Workflow 목록 조회 — e2e 테스트 작성 (skipped)
  * Parent Issue: DLD-435 - Argo WorkflowTemplate Submit 기능 추가
@@ -95,8 +95,8 @@ async function gotoArgo(page: Parameters<typeof test>[1] extends (...args: infer
 // ---------------------------------------------------------------------------
 // Helper: navigate to /argo and switch to the Workflows section via template card click
 //
-// DLD-531: The standalone 'workflows-tab' button has been removed.
-// Navigation to the Runs view is now triggered by clicking a template card.
+// Navigation to the Runs view is triggered by clicking a template card,
+// which navigates to /argo/templates/:templateName via React Router.
 // This helper clicks the 'data-processing-with-params' template card to enter the Runs view.
 // ---------------------------------------------------------------------------
 
@@ -602,6 +602,9 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     await templateCard.click();
     await page.waitForLoadState('networkidle');
 
+    // Assert: URL changed to the template-specific runs route
+    expect(page.url()).toContain('/argo/templates/data-processing-with-params');
+
     // Assert: workflow-runs-page is now visible
     const workflowRunsPage = page.getByTestId('workflow-runs-page');
     await expect(workflowRunsPage).toBeVisible();
@@ -669,6 +672,9 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     await backButton.click();
     await page.waitForLoadState('networkidle');
 
+    // Assert: URL returned to /argo (template list route)
+    expect(page.url()).toMatch(/\/argo\/?$/);
+
     // Assert: workflow-templates-page is visible again
     const templatesPage = page.getByTestId('workflow-templates-page');
     await expect(templatesPage).toBeVisible();
@@ -719,5 +725,34 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
 
     // Assert: workflow-templates-page is still visible (view did not transition)
     await expect(templatesPage).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 7: Deep Linking — direct URL navigation to runs page
+// ---------------------------------------------------------------------------
+
+test.describe('Argo Tab - Workflow Runs - Deep Linking', () => {
+  test('should render workflow-runs-page when navigating directly to /argo/templates/:templateName', async ({ page }) => {
+    // Tests that navigating directly to the runs URL renders the runs page
+    // without requiring the user to first visit the template list.
+
+    // Act: Navigate directly to the runs page for a known template
+    await page.goto('/argo/templates/data-processing-with-params');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: workflow-runs-page is visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: The header contains the template name
+    const runsHeader = workflowRunsPage.locator('h2');
+    await expect(runsHeader).toBeVisible();
+    await expect(runsHeader).toContainText('data-processing-with-params');
+
+    // Assert: Workflow run cards are displayed
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
+    const workflowCards = page.getByTestId('workflow-run-card');
+    expect(await workflowCards.count()).toBeGreaterThanOrEqual(1);
   });
 });
