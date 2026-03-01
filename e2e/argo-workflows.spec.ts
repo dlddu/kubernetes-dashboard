@@ -708,42 +708,53 @@ test.describe('Argo Tab - Workflow Runs - Sorting', () => {
     expect(succeededIdx).toBeLessThan(failedIdx);
   });
 
-  test('should place dynamically submitted workflows before older fixture workflows', async ({ page }) => {
-    // Tests that if a workflow is submitted (and therefore has a newer startedAt),
-    // it appears before the fixture workflows in the sorted list.
-    // This uses API mocking to inject a workflow with a very recent startedAt.
+  test('should place a newly submitted workflow before older fixture workflows', async ({ page }) => {
+    // Tests that a workflow submitted via the SubmitModal (with a real startedAt of "now")
+    // appears before the fixture workflows in the sorted list.
+    // No API mocking — uses real cluster data and real submit API.
 
-    // Arrange: Mock the workflows API to return a new workflow with a later startedAt
-    await page.route('**/api/argo/workflows**', async route => {
-      const response = await route.fetch();
-      const workflows = await response.json();
+    // Arrange: Navigate to /argo (Templates view)
+    await gotoArgo(page);
 
-      // Add a mock workflow with a very recent startedAt
-      workflows.unshift({
-        name: 'data-processing-newest',
-        namespace: 'dashboard-test',
-        templateName: 'data-processing-with-params',
-        phase: 'Running',
-        startedAt: '2099-01-01T00:00:00Z',
-        finishedAt: '',
-        nodes: [],
-      });
+    // Act: Open the SubmitModal for data-processing-with-params
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
+    await expect(templateCard).toBeVisible();
+    const submitButton = templateCard.getByTestId('submit-button');
+    await expect(submitButton).toBeVisible();
+    await submitButton.click();
 
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(workflows),
-      });
-    });
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
 
-    // Act: Navigate to the Workflows section
-    await gotoArgoWorkflows(page);
+    // Act: Submit with default parameters
+    const confirmButton = submitDialog.getByTestId('confirm-button');
+    await expect(confirmButton).toBeEnabled();
+    await confirmButton.click();
 
-    // Assert: The newest workflow card appears first
+    // Assert: Success view is displayed
+    const successView = submitDialog.getByTestId('submit-success-view');
+    await expect(successView).toBeVisible();
+
+    // Act: Click "View Workflow" to navigate to the Runs view
+    const viewWorkflowLink = successView.getByTestId('view-workflow-link');
+    await expect(viewWorkflowLink).toBeVisible();
+    await viewWorkflowLink.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: workflow-runs-page is visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: The first card is the newly submitted workflow (not a fixture workflow)
     await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const firstCard = page.getByTestId('workflow-run-card').first();
     const firstName = await firstCard.getByTestId('workflow-run-name').innerText();
-    expect(firstName).toBe('data-processing-newest');
+
+    // The newly submitted workflow name is auto-generated and should NOT match
+    // any of the fixture workflow names (which have older startedAt values).
+    expect(firstName).not.toBe('data-processing-running');
+    expect(firstName).not.toBe('data-processing-succeeded');
+    expect(firstName).not.toBe('data-processing-failed');
   });
 });
 
