@@ -32,7 +32,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /api/health
+            path: /api/ready
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
