@@ -662,7 +662,104 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Group 7: Deep Linking — direct URL navigation to runs page
+// Group 7: Sorting — workflow runs ordered by startedAt descending
+// ---------------------------------------------------------------------------
+
+test.describe('Argo Tab - Workflow Runs - Sorting', () => {
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
+  // Fixture startedAt values (data-processing-with-params template):
+  //   data-processing-running:   2026-02-22T07:00:00Z  (newest)
+  //   data-processing-succeeded: 2026-02-22T06:00:00Z
+  //   data-processing-failed:    2026-02-22T05:00:00Z  (oldest)
+
+  test('should display workflow runs sorted by startedAt descending (most recent first)', async ({ page }) => {
+    // Tests that workflow run cards are rendered in descending order of startedAt,
+    // so the most recently started workflow appears first in the list.
+
+    // Arrange: Navigate to the Workflows section for data-processing-with-params
+    await gotoArgoWorkflows(page);
+
+    // Assert: At least 3 workflow cards are rendered
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
+    const workflowCards = page.getByTestId('workflow-run-card');
+    const cardCount = await workflowCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(3);
+
+    // Act: Collect the workflow names in display order
+    const workflowNames: string[] = [];
+    for (let i = 0; i < cardCount; i++) {
+      const card = workflowCards.nth(i);
+      const name = await card.getByTestId('workflow-run-name').innerText();
+      workflowNames.push(name);
+    }
+
+    // Assert: The three fixture workflows appear in descending startedAt order
+    // data-processing-running (07:00) must come before data-processing-succeeded (06:00)
+    // data-processing-succeeded (06:00) must come before data-processing-failed (05:00)
+    const runningIdx = workflowNames.indexOf('data-processing-running');
+    const succeededIdx = workflowNames.indexOf('data-processing-succeeded');
+    const failedIdx = workflowNames.indexOf('data-processing-failed');
+
+    expect(runningIdx).toBeGreaterThanOrEqual(0);
+    expect(succeededIdx).toBeGreaterThanOrEqual(0);
+    expect(failedIdx).toBeGreaterThanOrEqual(0);
+
+    expect(runningIdx).toBeLessThan(succeededIdx);
+    expect(succeededIdx).toBeLessThan(failedIdx);
+  });
+
+  test('should place a newly submitted workflow before older fixture workflows', async ({ page }) => {
+    // Tests that a workflow submitted via the SubmitModal (with a real startedAt of "now")
+    // appears before the fixture workflows in the sorted list.
+    // No API mocking — uses real cluster data and real submit API.
+
+    // Arrange: Navigate to /argo (Templates view)
+    await gotoArgo(page);
+
+    // Act: Open the SubmitModal for data-processing-with-params
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'data-processing-with-params' });
+    await expect(templateCard).toBeVisible();
+    const submitButton = templateCard.getByTestId('submit-button');
+    await expect(submitButton).toBeVisible();
+    await submitButton.click();
+
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    // Act: Submit with default parameters
+    const confirmButton = submitDialog.getByTestId('confirm-button');
+    await expect(confirmButton).toBeEnabled();
+    await confirmButton.click();
+
+    // Assert: Success view is displayed
+    const successView = submitDialog.getByTestId('submit-success-view');
+    await expect(successView).toBeVisible();
+
+    // Act: Click "View Workflow" to navigate to the Runs view
+    const viewWorkflowLink = successView.getByTestId('view-workflow-link');
+    await expect(viewWorkflowLink).toBeVisible();
+    await viewWorkflowLink.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: workflow-runs-page is visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
+
+    // Assert: The first card is the newly submitted workflow (not a fixture workflow)
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
+    const firstCard = page.getByTestId('workflow-run-card').first();
+    const firstName = await firstCard.getByTestId('workflow-run-name').innerText();
+
+    // The newly submitted workflow name is auto-generated and should NOT match
+    // any of the fixture workflow names (which have older startedAt values).
+    expect(firstName).not.toBe('data-processing-running');
+    expect(firstName).not.toBe('data-processing-succeeded');
+    expect(firstName).not.toBe('data-processing-failed');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 8: Deep Linking — direct URL navigation to runs page
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow Runs - Deep Linking', () => {
