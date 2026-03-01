@@ -197,10 +197,16 @@ type workflowNodeAPI struct {
 	Phase       string `json:"phase"`
 }
 
+// workflowDetailGetSpecAPI holds the spec of a single Workflow (Get) response.
+type workflowDetailGetSpecAPI struct {
+	WorkflowTemplateRef workflowListTemplateRef        `json:"workflowTemplateRef"`
+	Arguments           workflowTemplateArgumentsAPI   `json:"arguments"`
+}
+
 // workflowDetailGetAPIResponse is the raw API response for a single Workflow (Get).
 type workflowDetailGetAPIResponse struct {
 	Metadata workflowTemplateMetadata       `json:"metadata"`
-	Spec     workflowListSpecAPI            `json:"spec"`
+	Spec     workflowDetailGetSpecAPI       `json:"spec"`
 	Status   workflowDetailGetStatusAPI     `json:"status"`
 }
 
@@ -280,6 +286,7 @@ type WorkflowDetail struct {
 	Phase        string
 	StartedAt    string
 	FinishedAt   string
+	Parameters   []WorkflowDetailParam
 	Nodes        []WorkflowDetailNode
 }
 
@@ -466,6 +473,16 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 		nodes = append(nodes, e.node)
 	}
 
+	// Extract workflow-level arguments (the parameters submitted at creation time).
+	wfParams := make([]WorkflowDetailParam, 0, len(apiResponse.Spec.Arguments.Parameters))
+	for _, p := range apiResponse.Spec.Arguments.Parameters {
+		val := ""
+		if p.Value != nil {
+			val = *p.Value
+		}
+		wfParams = append(wfParams, WorkflowDetailParam{Name: p.Name, Value: val})
+	}
+
 	return &WorkflowDetail{
 		Name:         apiResponse.Metadata.Name,
 		Namespace:    apiResponse.Metadata.Namespace,
@@ -473,6 +490,7 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 		Phase:        apiResponse.Status.Phase,
 		StartedAt:    apiResponse.Status.StartedAt,
 		FinishedAt:   apiResponse.Status.FinishedAt,
+		Parameters:   wfParams,
 		Nodes:        nodes,
 	}, nil
 }

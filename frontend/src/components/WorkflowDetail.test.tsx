@@ -23,6 +23,10 @@ const mockWorkflowDetail = {
   templateName: 'data-processing-with-params',
   startedAt: '2026-02-22T08:00:00Z',
   finishedAt: '2026-02-22T09:00:00Z',
+  parameters: [
+    { name: 'input-path', value: '/data/input' },
+    { name: 'batch-size', value: '100' },
+  ],
   nodes: [
     {
       name: 'step-1',
@@ -67,6 +71,9 @@ const mockWorkflowRunning = {
   templateName: 'ml-training',
   startedAt: '2026-02-22T10:00:00Z',
   finishedAt: '',
+  parameters: [
+    { name: 'model-type', value: 'resnet' },
+  ],
   nodes: [
     {
       name: 'preprocess',
@@ -96,6 +103,7 @@ const mockWorkflowFailed = {
   templateName: 'batch-job',
   startedAt: '2026-02-22T07:00:00Z',
   finishedAt: '2026-02-22T07:15:00Z',
+  parameters: [],
   nodes: [
     {
       name: 'process',
@@ -116,6 +124,7 @@ const mockWorkflowNoNodes = {
   templateName: 'simple-template',
   startedAt: '',
   finishedAt: '',
+  parameters: [],
   nodes: [],
 };
 

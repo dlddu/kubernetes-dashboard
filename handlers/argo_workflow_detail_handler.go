@@ -52,6 +52,7 @@ type WorkflowDetailInfo struct {
 	Phase        string                   `json:"phase"`
 	StartedAt    string                   `json:"startedAt"`
 	FinishedAt   string                   `json:"finishedAt"`
+	Parameters   []WorkflowDetailParamInfo `json:"parameters"`
 	Nodes        []WorkflowDetailStepInfo `json:"nodes"`
 }
 
@@ -161,6 +162,12 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 		})
 	}
 
+	// Extract workflow-level parameters (submitted at creation time).
+	wfParams := make([]WorkflowDetailParamInfo, 0, len(wfDetail.Parameters))
+	for _, p := range wfDetail.Parameters {
+		wfParams = append(wfParams, WorkflowDetailParamInfo{Name: p.Name, Value: p.Value})
+	}
+
 	return &WorkflowDetailInfo{
 		Name:         wfDetail.Name,
 		Namespace:    wfDetail.Namespace,
@@ -168,6 +175,7 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 		Phase:        wfDetail.Phase,
 		StartedAt:    wfDetail.StartedAt,
 		FinishedAt:   wfDetail.FinishedAt,
+		Parameters:   wfParams,
 		Nodes:        nodes,
 	}, nil
 }
