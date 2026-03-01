@@ -2,7 +2,7 @@ import { fetchJSON } from './client';
 
 export interface NodeInfo {
   name: string;
-  status: 'Ready' | 'NotReady';
+  status: 'Ready' | 'NotReady' | 'Ready,SchedulingDisabled';
   role: string;
   cpuPercent: number;
   memoryPercent: number;

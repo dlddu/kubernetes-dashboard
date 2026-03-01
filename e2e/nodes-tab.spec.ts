@@ -88,9 +88,9 @@ test.describe('Nodes Tab - NodeCard Components', () => {
     const statusBadge = firstNodeCard.getByTestId('status-badge');
     await expect(statusBadge).toBeVisible();
 
-    // Assert: Status should be either Ready or NotReady
+    // Assert: Status should be Ready, NotReady, or Ready,SchedulingDisabled
     const statusText = await statusBadge.innerText();
-    expect(statusText.toLowerCase()).toMatch(/ready|notready/i);
+    expect(statusText).toMatch(/^(Ready|NotReady|Ready,SchedulingDisabled)$/i);
   });
 
   test('should display CPU usage bar in each NodeCard', async ({ page }) => {
@@ -254,7 +254,7 @@ test.describe('Nodes Tab - Ready Node Status', () => {
     const cardCount = await nodeCards.count();
     expect(cardCount).toBeGreaterThanOrEqual(1);
 
-    // Act: Find a Ready node
+    // Act: Find a Ready node (either Ready or Ready,SchedulingDisabled)
     let foundReadyNode = false;
     for (let i = 0; i < cardCount; i++) {
       const nodeCard = nodeCards.nth(i);
@@ -262,7 +262,7 @@ test.describe('Nodes Tab - Ready Node Status', () => {
       const statusText = await statusBadge.innerText();
 
       // Assert: If node is Ready, verify status badge styling
-      if (statusText.toLowerCase() === 'ready') {
+      if (statusText === 'Ready') {
         foundReadyNode = true;
 
         // Assert: Status badge should have success/green styling
@@ -276,10 +276,28 @@ test.describe('Nodes Tab - Ready Node Status', () => {
         await expect(memoryUsage).toBeVisible();
 
         break;
+      } else if (statusText === 'Ready,SchedulingDisabled') {
+        foundReadyNode = true;
+
+        // Assert: Status badge should have warning/yellow styling
+        const badgeClasses = await statusBadge.getAttribute('class');
+        expect(badgeClasses).toMatch(/warning|yellow/i);
+
+        // Assert: CPU and Memory usage bars should still be visible
+        const cpuUsage = nodeCard.getByTestId('node-cpu-usage');
+        const memoryUsage = nodeCard.getByTestId('node-memory-usage');
+        await expect(cpuUsage).toBeVisible();
+        await expect(memoryUsage).toBeVisible();
+
+        // Assert: Scheduling disabled warning should be visible
+        const schedulingWarning = nodeCard.getByTestId('node-scheduling-disabled-warning');
+        await expect(schedulingWarning).toBeVisible();
+
+        break;
       }
     }
 
-    // Assert: At least one Ready node should exist in a healthy cluster
+    // Assert: At least one Ready or SchedulingDisabled node should exist
     expect(foundReadyNode).toBe(true);
   });
 
@@ -300,13 +318,13 @@ test.describe('Nodes Tab - Ready Node Status', () => {
       const statusBadge = nodeCard.getByTestId('status-badge');
       const statusText = await statusBadge.innerText();
 
-      if (statusText.toLowerCase() === 'ready') {
+      if (statusText === 'Ready' || statusText === 'Ready,SchedulingDisabled') {
         readyNodeCard = nodeCard;
         break;
       }
     }
 
-    // Assert: Found a Ready node
+    // Assert: Found a Ready or SchedulingDisabled node
     expect(readyNodeCard).toBeTruthy();
     if (!readyNodeCard) return;
 
@@ -346,13 +364,13 @@ test.describe('Nodes Tab - Ready Node Status', () => {
       const statusBadge = nodeCard.getByTestId('status-badge');
       const statusText = await statusBadge.innerText();
 
-      if (statusText.toLowerCase() === 'ready') {
+      if (statusText === 'Ready' || statusText === 'Ready,SchedulingDisabled') {
         readyNodeCard = nodeCard;
         break;
       }
     }
 
-    // Assert: Found a Ready node
+    // Assert: Found a Ready or SchedulingDisabled node
     expect(readyNodeCard).toBeTruthy();
     if (!readyNodeCard) return;
 
@@ -677,6 +695,81 @@ test.describe('Nodes Tab - Role Display', () => {
       await expect(roleBadge).toBeVisible();
       const roleText = await roleBadge.innerText();
       expect(roleText.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+test.describe('Nodes Tab - SchedulingDisabled (Cordoned/Drained) Node Handling', () => {
+  test('should display yellow status badge for SchedulingDisabled nodes', async ({ page }) => {
+    // Tests that cordoned/drained nodes show warning-style status badge
+
+    // Arrange: Navigate to the Nodes page
+    await page.goto('/nodes');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Get all node cards
+    const nodeCards = page.getByTestId('node-card');
+    const cardCount = await nodeCards.count();
+
+    // Act: Look for SchedulingDisabled nodes
+    for (let i = 0; i < cardCount; i++) {
+      const nodeCard = nodeCards.nth(i);
+      const statusBadge = nodeCard.getByTestId('status-badge');
+      const statusText = await statusBadge.innerText();
+
+      // Assert: If node is SchedulingDisabled, verify yellow/warning styling
+      if (statusText === 'Ready,SchedulingDisabled') {
+        const badgeClasses = await statusBadge.getAttribute('class');
+        expect(badgeClasses).toMatch(/warning|yellow/i);
+
+        // Assert: Should still show usage bars (node is healthy)
+        const cpuUsage = nodeCard.getByTestId('node-cpu-usage');
+        const memoryUsage = nodeCard.getByTestId('node-memory-usage');
+        await expect(cpuUsage).toBeVisible();
+        await expect(memoryUsage).toBeVisible();
+
+        // Assert: Should show scheduling disabled warning message
+        const schedulingWarning = nodeCard.getByTestId('node-scheduling-disabled-warning');
+        await expect(schedulingWarning).toBeVisible();
+
+        // Assert: Should NOT show NotReady warning
+        const notReadyWarning = nodeCard.getByTestId('node-not-ready-warning');
+        const notReadyCount = await notReadyWarning.count();
+        if (notReadyCount > 0) {
+          await expect(notReadyWarning).not.toBeVisible();
+        }
+
+        break;
+      }
+    }
+
+    // Note: This test won't fail if no SchedulingDisabled nodes exist in the cluster
+  });
+
+  test('should display pod count for SchedulingDisabled nodes', async ({ page }) => {
+    // Tests that cordoned/drained nodes still show pod count
+
+    // Arrange: Navigate to the Nodes page
+    await page.goto('/nodes');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Look for SchedulingDisabled nodes
+    const nodeCards = page.getByTestId('node-card');
+    const cardCount = await nodeCards.count();
+
+    for (let i = 0; i < cardCount; i++) {
+      const nodeCard = nodeCards.nth(i);
+      const statusBadge = nodeCard.getByTestId('status-badge');
+      const statusText = await statusBadge.innerText();
+
+      if (statusText === 'Ready,SchedulingDisabled') {
+        // Assert: Pod count should still be visible
+        const podCount = nodeCard.getByTestId('node-pod-count');
+        await expect(podCount).toBeVisible();
+        const podCountText = await podCount.innerText();
+        expect(podCountText).toMatch(/\d+/);
+        break;
+      }
     }
   });
 });

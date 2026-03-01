@@ -37,7 +37,7 @@ test.describe('NodeQuickView Component', () => {
     const nodeStatus = firstNodeItem.getByTestId('node-status');
     await expect(nodeStatus).toBeVisible();
     const statusText = await nodeStatus.innerText();
-    expect(statusText).toMatch(/ready|notready/i);
+    expect(statusText).toMatch(/^(Ready|NotReady|Ready,SchedulingDisabled)$/i);
 
     // Assert: CPU usage bar should be visible
     const cpuUsageContainer = firstNodeItem.getByTestId('node-cpu-usage');
@@ -117,11 +117,17 @@ test.describe('NodeQuickView Component', () => {
       const statusText = await nodeStatus.innerText();
 
       // Assert: If node is NotReady, warning indicator should be visible
-      if (statusText.toLowerCase().includes('notready')) {
+      if (statusText === 'NotReady') {
         const warningIndicator = nodeItem.getByTestId('node-warning-indicator')
           .or(nodeItem.locator('[role="alert"]'))
           .or(nodeItem.locator('.warning-icon'));
         await expect(warningIndicator).toBeVisible();
+      }
+
+      // Assert: If node is SchedulingDisabled, scheduling disabled indicator should be visible
+      if (statusText === 'Ready,SchedulingDisabled') {
+        const schedulingDisabledIndicator = nodeItem.getByTestId('node-scheduling-disabled-indicator');
+        await expect(schedulingDisabledIndicator).toBeVisible();
       }
     }
   });
@@ -143,14 +149,14 @@ test.describe('NodeQuickView Component', () => {
     const nodeItems = nodeQuickView.getByTestId('node-item');
     const itemCount = await nodeItems.count();
 
-    // Assert: Check if all nodes are Ready
+    // Assert: Check if all nodes are Ready (not NotReady or SchedulingDisabled)
     let allNodesHealthy = true;
     for (let i = 0; i < itemCount; i++) {
       const nodeItem = nodeItems.nth(i);
       const nodeStatus = nodeItem.getByTestId('node-status');
       const statusText = await nodeStatus.innerText();
 
-      if (!statusText.toLowerCase().includes('ready') || statusText.toLowerCase().includes('notready')) {
+      if (statusText !== 'Ready') {
         allNodesHealthy = false;
         break;
       }
@@ -217,8 +223,8 @@ test.describe('NodeQuickView Component', () => {
     }
   });
 
-  test('should display node items ordered by status (NotReady first)', async ({ page }) => {
-    // Tests that unhealthy nodes are prioritized in the display order
+  test('should display node items ordered by status (NotReady first, then SchedulingDisabled, then Ready)', async ({ page }) => {
+    // Tests that unhealthy/degraded nodes are prioritized in the display order
 
     // Arrange: Navigate to the Overview page
     await page.goto('/');
@@ -233,19 +239,23 @@ test.describe('NodeQuickView Component', () => {
     const itemCount = await nodeItems.count();
     expect(itemCount).toBeGreaterThanOrEqual(1);
 
-    // Assert: Check ordering - NotReady nodes should appear first
-    let foundReadyNode = false;
+    // Assert: Check ordering - NotReady first, then SchedulingDisabled, then Ready
+    const statusPriority = (status: string) => {
+      if (status === 'NotReady') return 0;
+      if (status === 'Ready,SchedulingDisabled') return 1;
+      return 2; // Ready
+    };
+
+    let previousPriority = -1;
     for (let i = 0; i < itemCount; i++) {
       const nodeItem = nodeItems.nth(i);
       const nodeStatus = nodeItem.getByTestId('node-status');
       const statusText = await nodeStatus.innerText();
+      const currentPriority = statusPriority(statusText);
 
-      if (statusText.toLowerCase().includes('ready') && !statusText.toLowerCase().includes('notready')) {
-        foundReadyNode = true;
-      } else if (statusText.toLowerCase().includes('notready')) {
-        // Assert: Should not find NotReady nodes after Ready nodes
-        expect(foundReadyNode).toBe(false);
-      }
+      // Assert: Current node priority should be >= previous (non-decreasing order)
+      expect(currentPriority).toBeGreaterThanOrEqual(previousPriority);
+      previousPriority = currentPriority;
     }
   });
 
@@ -496,6 +506,78 @@ test.describe('Node Quick View - Role Display', () => {
       await expect(roleBadge).toBeVisible();
       const roleText = await roleBadge.innerText();
       expect(roleText.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+test.describe('Node Quick View - SchedulingDisabled (Cordoned/Drained) Nodes', () => {
+  test('should display yellow status badge for SchedulingDisabled nodes', async ({ page }) => {
+    // Arrange: Navigate to Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Locate the NodeQuickView component
+    const nodeQuickView = page.getByTestId('node-quick-view');
+    await expect(nodeQuickView).toBeVisible();
+
+    // Act: Check all node items for SchedulingDisabled status
+    const nodeItems = nodeQuickView.getByTestId('node-item');
+    const itemCount = await nodeItems.count();
+
+    for (let i = 0; i < itemCount; i++) {
+      const nodeItem = nodeItems.nth(i);
+      const nodeStatus = nodeItem.getByTestId('node-status');
+      const statusText = await nodeStatus.innerText();
+
+      // Assert: If node is SchedulingDisabled, badge should have yellow/warning styling
+      if (statusText === 'Ready,SchedulingDisabled') {
+        const badgeClasses = await nodeStatus.getAttribute('class');
+        expect(badgeClasses).toMatch(/yellow/i);
+
+        // Assert: Should still show usage bars (node is still healthy)
+        const cpuUsage = nodeItem.getByTestId('node-cpu-usage');
+        const memoryUsage = nodeItem.getByTestId('node-memory-usage');
+        await expect(cpuUsage).toBeVisible();
+        await expect(memoryUsage).toBeVisible();
+
+        // Assert: Should show scheduling disabled indicator
+        const schedulingIndicator = nodeItem.getByTestId('node-scheduling-disabled-indicator');
+        await expect(schedulingIndicator).toBeVisible();
+      }
+    }
+  });
+
+  test('should not show "all nodes healthy" message when SchedulingDisabled nodes exist', async ({ page }) => {
+    // Arrange: Navigate to Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Locate the NodeQuickView component
+    const nodeQuickView = page.getByTestId('node-quick-view');
+    await expect(nodeQuickView).toBeVisible();
+
+    // Act: Check if any node is SchedulingDisabled
+    const nodeItems = nodeQuickView.getByTestId('node-item');
+    const itemCount = await nodeItems.count();
+    let hasSchedulingDisabled = false;
+
+    for (let i = 0; i < itemCount; i++) {
+      const nodeItem = nodeItems.nth(i);
+      const nodeStatus = nodeItem.getByTestId('node-status');
+      const statusText = await nodeStatus.innerText();
+      if (statusText === 'Ready,SchedulingDisabled') {
+        hasSchedulingDisabled = true;
+        break;
+      }
+    }
+
+    // Assert: If SchedulingDisabled nodes exist, "all nodes healthy" should NOT be shown
+    if (hasSchedulingDisabled) {
+      const healthyMessage = nodeQuickView.getByTestId('all-nodes-healthy-message');
+      const messageCount = await healthyMessage.count();
+      if (messageCount > 0) {
+        await expect(healthyMessage).not.toBeVisible();
+      }
     }
   });
 });

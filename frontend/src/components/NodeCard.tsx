@@ -3,7 +3,8 @@ import { StatusBadge } from './StatusBadge';
 import { UsageBar } from './UsageBar';
 
 export function NodeCard({ name, status, role, cpuPercent, memoryPercent, podCount }: NodeInfo) {
-  const isReady = status === 'Ready';
+  const isReady = status === 'Ready' || status === 'Ready,SchedulingDisabled';
+  const isSchedulingDisabled = status === 'Ready,SchedulingDisabled';
 
   // Clamp percentages between 0 and 100
   const clampedCpuPercent = Math.max(0, Math.min(100, cpuPercent));
@@ -25,6 +26,15 @@ export function NodeCard({ name, status, role, cpuPercent, memoryPercent, podCou
           <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
             {role}
           </span>
+        </div>
+      )}
+
+      {/* Scheduling Disabled Warning */}
+      {isSchedulingDisabled && (
+        <div data-testid="node-scheduling-disabled-warning" className="bg-yellow-50 border border-yellow-200 rounded p-4">
+          <div className="text-yellow-800 text-sm">
+            This node is cordoned and unavailable for scheduling new pods.
+          </div>
         </div>
       )}
 

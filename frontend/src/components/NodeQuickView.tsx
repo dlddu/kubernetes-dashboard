@@ -54,12 +54,13 @@ export function NodeQuickView() {
     );
   }
 
-  // Sort nodes: NotReady first, then Ready
-  const sortedNodes = [...nodes].sort((a, b) => {
-    if (a.status === 'NotReady' && b.status !== 'NotReady') return -1;
-    if (a.status !== 'NotReady' && b.status === 'NotReady') return 1;
-    return 0;
-  });
+  // Sort nodes: NotReady first, then SchedulingDisabled, then Ready
+  const statusPriority = (status: string) => {
+    if (status === 'NotReady') return 0;
+    if (status === 'Ready,SchedulingDisabled') return 1;
+    return 2;
+  };
+  const sortedNodes = [...nodes].sort((a, b) => statusPriority(a.status) - statusPriority(b.status));
 
   // Display up to 5 nodes
   const displayNodes = sortedNodes.slice(0, 5);
@@ -125,15 +126,17 @@ export function NodeQuickView() {
                   className={`text-xs font-semibold px-2 py-1 rounded ${
                     node.status === 'Ready'
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
+                      : node.status === 'Ready,SchedulingDisabled'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
                   }`}
                 >
                   {node.status}
                 </div>
               </div>
 
-              {/* Ready nodes: show usage bars */}
-              {node.status === 'Ready' && (
+              {/* Ready nodes (including SchedulingDisabled): show usage bars */}
+              {(node.status === 'Ready' || node.status === 'Ready,SchedulingDisabled') && (
                 <div className="space-y-2">
                   <div data-testid="node-cpu-usage">
                     <div className="text-xs text-gray-600 mb-1">CPU</div>
@@ -143,6 +146,29 @@ export function NodeQuickView() {
                     <div className="text-xs text-gray-600 mb-1">Memory</div>
                     <UsageBar percentage={node.memoryPercent} label="Memory" />
                   </div>
+                </div>
+              )}
+
+              {/* SchedulingDisabled nodes: show scheduling warning */}
+              {node.status === 'Ready,SchedulingDisabled' && (
+                <div
+                  data-testid="node-scheduling-disabled-indicator"
+                  className="flex items-center gap-2 text-yellow-700 text-sm"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                    />
+                  </svg>
+                  Scheduling disabled (cordoned)
                 </div>
               )}
 
