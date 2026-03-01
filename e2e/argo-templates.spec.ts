@@ -12,7 +12,8 @@ import { test, expect } from '@playwright/test';
  * Test Fixtures (test/fixtures/):
  * - workflow-template-with-params.yaml: data-processing-with-params (4 params)
  * - workflow-template-no-params.yaml: simple-template (no params)
- * Both fixtures are in the dashboard-test namespace.
+ * - workflow-template-empty-runs.yaml: empty-runs-template (no params, no workflow runs)
+ * All fixtures are in the dashboard-test namespace.
  *
  * Related Issue: DLD-438 - 작업 2-1: WorkflowTemplate 목록 조회 — e2e 테스트 작성 (skipped)
  * Parent Issue: DLD-435 - Argo WorkflowTemplate Submit 기능 추가

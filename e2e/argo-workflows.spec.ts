@@ -467,10 +467,11 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
     await templateCard.click();
     await page.waitForLoadState('networkidle');
 
-    // Assert: All 3 workflow fixture cards are rendered (all belong to data-processing-with-params)
+    // Assert: At least 3 workflow fixture cards are rendered (all belong to data-processing-with-params).
+    // The count may exceed 3 if other e2e tests (e.g. argo-submit) created additional workflows.
     await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const workflowCards = page.getByTestId('workflow-run-card');
-    expect(await workflowCards.count()).toBe(3);
+    expect(await workflowCards.count()).toBeGreaterThanOrEqual(3);
 
     // Assert: Every visible card belongs to the 'data-processing-with-params' template
     const cardCount = await workflowCards.count();
@@ -482,16 +483,16 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
   });
 
   test('should display EmptyState when the requested templateName has no matching workflows', async ({ page }) => {
-    // Tests that clicking the 'simple-template' card (which has no associated workflows)
-    // renders an empty array and the UI shows the EmptyState component.
-    // Uses real cluster data — simple-template exists but has no workflow runs.
+    // Tests that clicking a template card with no associated workflows shows EmptyState.
+    // Uses 'empty-runs-template' which exists in the cluster but has never had workflows
+    // submitted (no other e2e test submits to this template).
 
     // Arrange: Navigate to /argo (Templates view is default)
     await gotoArgo(page);
 
-    // Act: Click the 'simple-template' card.
-    // This fetches /api/argo/workflows?templateName=simple-template, which returns [].
-    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'simple-template' });
+    // Act: Click the 'empty-runs-template' card.
+    // This fetches /api/argo/workflows?templateName=empty-runs-template, which returns [].
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'empty-runs-template' });
     await expect(templateCard).toBeVisible();
     await templateCard.click();
     await page.waitForLoadState('networkidle');
@@ -608,10 +609,11 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
     // Assert: workflow-templates-page is no longer visible
     await expect(templatesPage).not.toBeVisible();
 
-    // Assert: All 3 run cards are rendered (all belong to 'data-processing-with-params')
+    // Assert: At least 3 run cards are rendered (all belong to 'data-processing-with-params').
+    // The count may exceed 3 if other e2e tests (e.g. argo-submit) created additional workflows.
     await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
     const workflowCards = page.getByTestId('workflow-run-card');
-    expect(await workflowCards.count()).toBe(3);
+    expect(await workflowCards.count()).toBeGreaterThanOrEqual(3);
 
     // Assert: Every visible card belongs to the 'data-processing-with-params' template
     const cardCount = await workflowCards.count();
