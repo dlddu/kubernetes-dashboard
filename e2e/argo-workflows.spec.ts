@@ -14,7 +14,10 @@ import { test, expect } from '@playwright/test';
  * - workflow-running.yaml:    data-processing-running   (phase: Running,   3 steps)
  * - workflow-succeeded.yaml:  data-processing-succeeded  (phase: Succeeded, 2 steps)
  * - workflow-failed.yaml:     data-processing-failed     (phase: Failed,    3 steps)
- * All workflows reference workflowTemplateRef: data-processing-with-params.
+ * All above workflows reference workflowTemplateRef: data-processing-with-params.
+ * - workflow-template-ml-pipeline.yaml: ml-pipeline (no params)
+ * - workflow-ml-pipeline.yaml: ml-pipeline-running (phase: Running, 1 step)
+ * - workflow-template-empty-runs.yaml:  empty-runs-template (no workflow runs)
  *
  * Workflow Runs section entry point:
  * - Clicking a template card navigates to /argo/templates/:templateName (React Router route).
@@ -37,51 +40,6 @@ import { test, expect } from '@playwright/test';
  * - Related Issue: DLD-530 - e2e 테스트: Template 카드 클릭 → 해당 Runs 조회
  * - Parent Issue: DLD-527 - Argo Tab: Template 카드 클릭으로 해당 Runs 조회 기능
  */
-
-// ---------------------------------------------------------------------------
-// Mock data (only for Group 5-6 tests that need templates not in the real cluster)
-// ---------------------------------------------------------------------------
-
-// Fixture for templateName filter tests (Group 5-6).
-// Contains workflows from two distinct templates so that filtering by
-// templateName can produce a non-trivial subset.
-// This mock is needed because 'ml-pipeline' template does not exist in test/fixtures/.
-const MIXED_TEMPLATE_WORKFLOWS_FIXTURE = [
-  {
-    name: 'data-processing-running',
-    namespace: 'dashboard-test',
-    phase: 'Running',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T07:00:00Z',
-    finishedAt: '',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Running' },
-      { name: 'step-three', phase: 'Pending' },
-    ],
-  },
-  {
-    name: 'data-processing-succeeded',
-    namespace: 'dashboard-test',
-    phase: 'Succeeded',
-    templateName: 'data-processing',
-    startedAt: '2026-02-22T06:00:00Z',
-    finishedAt: '2026-02-22T06:30:00Z',
-    nodes: [
-      { name: 'step-one', phase: 'Succeeded' },
-      { name: 'step-two', phase: 'Succeeded' },
-    ],
-  },
-  {
-    name: 'ml-pipeline-running',
-    namespace: 'dashboard-test',
-    phase: 'Running',
-    templateName: 'ml-pipeline',
-    startedAt: '2026-02-22T08:00:00Z',
-    finishedAt: '',
-    nodes: [{ name: 'train', phase: 'Running' }],
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Helper: navigate to /argo and wait for network to settle
@@ -360,18 +318,16 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
 
   test('should display EmptyState with "No workflows found" when the API returns an empty list', async ({ page }) => {
     // Tests that EmptyState is rendered with the correct message when no workflows exist
+    // No API mocking — uses 'empty-runs-template' which has no workflow runs in the cluster.
 
-    // Arrange: Mock the workflows API to return an empty array
-    await page.route('**/api/argo/workflows**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
+    // Arrange: Navigate to /argo (Templates view is default)
+    await gotoArgo(page);
 
-    // Act: Navigate to the Workflows section
-    await gotoArgoWorkflows(page);
+    // Act: Click the 'empty-runs-template' card (has no workflow runs in the cluster)
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'empty-runs-template' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
 
     // Assert: EmptyState component is visible
     const emptyState = page.getByTestId('empty-state');
@@ -512,31 +468,8 @@ test.describe('Argo Tab - Workflow List - TemplateName Filtering', () => {
   test('should display only the ml-pipeline workflow when ml-pipeline template card is clicked', async ({ page }) => {
     // Tests that clicking the 'ml-pipeline' card fetches and renders exactly 1 matching run,
     // preserving the per-template filtering behavior across all templates.
-    // This test requires mocking because 'ml-pipeline' template does not exist in test/fixtures/.
-
-    // Arrange: Mock both APIs to include ml-pipeline data
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { name: 'data-processing', namespace: 'dashboard-test', parameters: [] },
-          { name: 'ml-pipeline', namespace: 'dashboard-test', parameters: [] },
-        ]),
-      });
-    });
-    await page.route('**/api/argo/workflows**', async route => {
-      const url = new URL(route.request().url());
-      const templateName = url.searchParams.get('templateName');
-      const body = templateName
-        ? MIXED_TEMPLATE_WORKFLOWS_FIXTURE.filter(w => w.templateName === templateName)
-        : MIXED_TEMPLATE_WORKFLOWS_FIXTURE;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
+    // No API mocking — uses real cluster data from test/fixtures/ YAML resources.
+    // Fixtures: workflow-template-ml-pipeline.yaml, workflow-ml-pipeline.yaml
 
     // Arrange: Navigate to /argo (Templates view is default)
     await gotoArgo(page);

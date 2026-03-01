@@ -13,7 +13,9 @@ import { test, expect } from '@playwright/test';
  * - workflow-template-with-params.yaml: data-processing-with-params (4 params)
  * - workflow-template-no-params.yaml: simple-template (no params)
  * - workflow-template-empty-runs.yaml: empty-runs-template (no params, no workflow runs)
- * All fixtures are in the dashboard-test namespace.
+ * - workflow-template-ml-pipeline.yaml: ml-pipeline (no params)
+ * All templates are in the dashboard-test namespace.
+ * - empty-namespace.yaml: dashboard-empty (empty namespace for empty state testing)
  *
  * Related Issue: DLD-438 - 작업 2-1: WorkflowTemplate 목록 조회 — e2e 테스트 작성 (skipped)
  * Parent Issue: DLD-435 - Argo WorkflowTemplate Submit 기능 추가
@@ -198,19 +200,20 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
   });
 
   test('should display EmptyState with "No workflow templates found" when no templates exist', async ({ page }) => {
-    // Tests that EmptyState is rendered with the correct message when the API returns an empty list
+    // Tests that EmptyState is rendered with the correct message when no templates exist
+    // No API mocking — uses 'dashboard-empty' namespace which has no Argo resources.
 
-    // Arrange: Mock the workflow templates API to return an empty array
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    // Act: Navigate to the Argo tab
+    // Arrange: Navigate to the Argo tab
     await page.goto('/argo');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Filter to the 'dashboard-empty' namespace (has no Argo WorkflowTemplates)
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    const emptyNamespaceOption = page.getByRole('option', { name: /^dashboard-empty$/i })
+      .or(page.getByTestId('namespace-option-dashboard-empty'));
+    await emptyNamespaceOption.click();
     await page.waitForLoadState('networkidle');
 
     // Assert: EmptyState component is visible
