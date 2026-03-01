@@ -76,8 +76,15 @@ func getWorkflowsData(ctx context.Context, clientset *versioned.Clientset, names
 	}
 
 	// Sort by startedAt descending (most recent first).
+	// Workflows without startedAt (e.g. Pending) are treated as most recent.
 	// StartedAt is RFC 3339 so lexicographic comparison is correct.
 	sort.Slice(result, func(i, j int) bool {
+		if result[i].StartedAt == "" {
+			return result[j].StartedAt != ""
+		}
+		if result[j].StartedAt == "" {
+			return false
+		}
 		return result[i].StartedAt > result[j].StartedAt
 	})
 
