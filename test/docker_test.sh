@@ -35,8 +35,8 @@ echo "Waiting for server to be ready..."
 sleep 3
 
 # Test 4: Health endpoint should respond
-echo "Test 4: Testing /api/health endpoint..."
-if ! curl -f http://localhost:8080/api/health > /dev/null 2>&1; then
+echo "Test 4: Testing /api/livez endpoint..."
+if ! curl -f http://localhost:8080/api/livez > /dev/null 2>&1; then
     echo "FAIL: Health endpoint not responding"
     docker logs $CONTAINER_ID
     docker stop $CONTAINER_ID
@@ -47,7 +47,7 @@ echo "PASS: Health endpoint responding"
 
 # Test 5: Health endpoint should return valid JSON
 echo "Test 5: Validating health endpoint response..."
-RESPONSE=$(curl -s http://localhost:8080/api/health)
+RESPONSE=$(curl -s http://localhost:8080/api/livez)
 if ! echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null 2>&1; then
     echo "FAIL: Invalid health response: $RESPONSE"
     docker stop $CONTAINER_ID

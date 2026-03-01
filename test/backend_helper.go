@@ -75,11 +75,18 @@ func (bs *BackendServer) Start() error {
 	// Create HTTP server
 	mux := http.NewServeMux()
 
-	// Health endpoint
-	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+	// Liveness endpoint
+	mux.HandleFunc("/api/livez", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","message":"Backend is healthy"}`)
+		fmt.Fprintf(w, `{"status":"ok","message":"Alive"}`)
+	})
+
+	// Readiness endpoint
+	mux.HandleFunc("/api/readyz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","message":"Ready"}`)
 	})
 
 	bs.Server = &http.Server{
@@ -151,7 +158,7 @@ func (bs *BackendServer) WaitForReady(timeout time.Duration) error {
 		Timeout: 1 * time.Second,
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/health", bs.Port)
+	url := fmt.Sprintf("http://localhost:%d/api/livez", bs.Port)
 	deadline := time.Now().Add(timeout)
 
 	for time.Now().Before(deadline) {

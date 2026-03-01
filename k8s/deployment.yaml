@@ -24,7 +24,7 @@ spec:
           protocol: TCP
         livenessProbe:
           httpGet:
-            path: /api/health
+            path: /api/livez
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -32,11 +32,12 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /api/health
+            path: /api/readyz
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 3
+          successThreshold: 1
           failureThreshold: 3
         securityContext:
           allowPrivilegeEscalation: false

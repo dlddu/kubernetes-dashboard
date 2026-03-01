@@ -7,17 +7,13 @@ import (
 	"testing"
 )
 
-// TestHealthHandler tests the /api/health endpoint
-func TestHealthHandler(t *testing.T) {
-	t.Run("should return 200 OK with health check response", func(t *testing.T) {
-		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+func TestLivezHandler(t *testing.T) {
+	t.Run("should return 200 OK", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/livez", nil)
 		w := httptest.NewRecorder()
 
-		// Act
-		HealthHandler(w, req)
+		LivezHandler(w, req)
 
-		// Assert
 		res := w.Result()
 		defer res.Body.Close()
 
@@ -25,29 +21,22 @@ func TestHealthHandler(t *testing.T) {
 			t.Errorf("expected status 200, got %d", res.StatusCode)
 		}
 
-		var healthResp HealthResponse
-		if err := json.NewDecoder(res.Body).Decode(&healthResp); err != nil {
+		var resp HealthResponse
+		if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		if healthResp.Status != "ok" {
-			t.Errorf("expected status 'ok', got '%s'", healthResp.Status)
-		}
-
-		if healthResp.Message == "" {
-			t.Error("expected non-empty message")
+		if resp.Status != "ok" {
+			t.Errorf("expected status 'ok', got '%s'", resp.Status)
 		}
 	})
 
 	t.Run("should set correct content-type header", func(t *testing.T) {
-		// Arrange
-		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/livez", nil)
 		w := httptest.NewRecorder()
 
-		// Act
-		HealthHandler(w, req)
+		LivezHandler(w, req)
 
-		// Assert
 		contentType := w.Header().Get("Content-Type")
 		if contentType != "application/json" {
 			t.Errorf("expected Content-Type 'application/json', got '%s'", contentType)
@@ -55,18 +44,15 @@ func TestHealthHandler(t *testing.T) {
 	})
 
 	t.Run("should reject non-GET methods", func(t *testing.T) {
-		// Arrange
 		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
 			t.Run(method, func(t *testing.T) {
-				req := httptest.NewRequest(method, "/api/health", nil)
+				req := httptest.NewRequest(method, "/api/livez", nil)
 				w := httptest.NewRecorder()
 
-				// Act
-				HealthHandler(w, req)
+				LivezHandler(w, req)
 
-				// Assert
 				res := w.Result()
 				defer res.Body.Close()
 

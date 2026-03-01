@@ -56,7 +56,7 @@ describe('debugFetch', () => {
       });
 
       // Act
-      await debugFetch('/api/health');
+      await debugFetch('/api/livez');
 
       // Assert
       expect(mockAddLog).not.toHaveBeenCalled();
@@ -143,14 +143,14 @@ describe('debugFetch', () => {
       vi.setSystemTime(startTime);
 
       // Act
-      await debugFetch('/api/health');
+      await debugFetch('/api/livez');
 
       vi.advanceTimersByTime(100);
 
       // Assert
       expect(mockAddLog).toHaveBeenCalledWith({
         method: 'GET',
-        url: '/api/health',
+        url: '/api/livez',
         params: undefined,
         status: 200,
         timestamp: expect.any(Number),

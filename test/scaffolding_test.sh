@@ -175,21 +175,27 @@ else
     pass "GitHub Actions CI workflow exists"
 fi
 
-# Test 11: Health endpoint implementation
+# Test 11: Liveness/Readiness endpoint implementation
 echo ""
-echo "Test 11: Health endpoint handler"
-if [ ! -f handlers/health.go ]; then
-    fail "handlers/health.go not found"
+echo "Test 11: Liveness and readiness endpoint handlers"
+if [ ! -f handlers/livez.go ]; then
+    fail "handlers/livez.go not found"
 else
-    pass "handlers/health.go exists"
+    pass "handlers/livez.go exists"
 fi
 
-if [ -f handlers/health.go ]; then
-    if ! grep -q "HealthHandler" handlers/health.go; then
-        fail "HealthHandler function not found in health.go"
+if [ -f handlers/livez.go ]; then
+    if ! grep -q "LivezHandler" handlers/livez.go; then
+        fail "LivezHandler function not found in livez.go"
     else
-        pass "HealthHandler function exists"
+        pass "LivezHandler function exists"
     fi
+fi
+
+if [ ! -f handlers/readyz.go ]; then
+    fail "handlers/readyz.go not found"
+else
+    pass "handlers/readyz.go exists"
 fi
 
 # Test 12: Frontend React App component
@@ -205,7 +211,7 @@ fi
 echo ""
 echo "Test 13: Test files"
 TEST_FILES=(
-    "handlers/health_test.go"
+    "handlers/livez_test.go"
     "main_test.go"
     "frontend/src/App.test.tsx"
 )

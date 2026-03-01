@@ -248,7 +248,7 @@ make e2e-status            # Show E2E environment status
 
 1. Check backend is running:
    ```bash
-   curl http://localhost:8080/api/health
+   curl http://localhost:8080/api/livez
    ```
 
 2. Check kind cluster:

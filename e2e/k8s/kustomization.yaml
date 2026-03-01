@@ -22,6 +22,9 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
         value: 10
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/initialDelaySeconds
+        value: 3
   - target:
       kind: Service
       name: kubernetes-dashboard

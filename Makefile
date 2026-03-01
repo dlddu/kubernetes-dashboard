@@ -39,7 +39,7 @@ test-integration: build ## Run integration tests
 	@./kubernetes-dashboard &
 	@SERVER_PID=$$!; \
 	sleep 3; \
-	curl -f http://localhost:8080/api/health || (kill $$SERVER_PID && exit 1); \
+	curl -f http://localhost:8080/api/livez || (kill $$SERVER_PID && exit 1); \
 	curl -f http://localhost:8080/ || (kill $$SERVER_PID && exit 1); \
 	kill $$SERVER_PID; \
 	echo "Integration tests passed!"

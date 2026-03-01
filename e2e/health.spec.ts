@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Health Check', () => {
-  test('should return healthy status from API endpoint', async ({ request }) => {
-    // Act: Call the health endpoint
-    const response = await request.get('/api/health');
+test.describe('Liveness Check', () => {
+  test('should return alive status from livez endpoint', async ({ request }) => {
+    // Act: Call the liveness endpoint
+    const response = await request.get('/api/livez');
 
     // Assert: Response should be successful
     expect(response.ok()).toBeTruthy();
@@ -15,7 +15,7 @@ test.describe('Health Check', () => {
     // Assert: Response body should match expected structure
     const body = await response.json();
     expect(body).toHaveProperty('status', 'ok');
-    expect(body).toHaveProperty('message', 'Backend is healthy');
+    expect(body).toHaveProperty('message', 'Alive');
   });
 
   test('should serve the frontend application', async ({ page }) => {
@@ -38,9 +38,9 @@ test.describe('Health Check', () => {
     expect([200, 404]).toContain(response.status());
   });
 
-  test('should reject non-GET requests to health endpoint', async ({ request }) => {
-    // Act: Try POST to health endpoint
-    const response = await request.post('/api/health');
+  test('should reject non-GET requests to livez endpoint', async ({ request }) => {
+    // Act: Try POST to livez endpoint
+    const response = await request.post('/api/livez');
 
     // Assert: Should return 405 Method Not Allowed
     expect(response.status()).toBe(405);
@@ -48,7 +48,7 @@ test.describe('Health Check', () => {
 
   test('should have correct CORS headers', async ({ request }) => {
     // Act: Make a request to the API
-    const response = await request.get('/api/health');
+    const response = await request.get('/api/livez');
 
     // Assert: Response should be successful
     expect(response.ok()).toBeTruthy();
@@ -56,6 +56,33 @@ test.describe('Health Check', () => {
     // Note: Add CORS header checks if/when CORS is configured
     // const headers = response.headers();
     // expect(headers['access-control-allow-origin']).toBeDefined();
+  });
+});
+
+test.describe('Readiness Check', () => {
+  test('should return readiness status from readyz endpoint', async ({ request }) => {
+    // Act: Call the readiness endpoint
+    const response = await request.get('/api/readyz');
+
+    // Assert: Response should be successful (cluster is available in e2e)
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    // Assert: Response should have correct content type
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    // Assert: Response body should match expected structure
+    const body = await response.json();
+    expect(body).toHaveProperty('status', 'ok');
+    expect(body).toHaveProperty('message', 'Ready');
+  });
+
+  test('should reject non-GET requests to readyz endpoint', async ({ request }) => {
+    // Act: Try POST to readyz endpoint
+    const response = await request.post('/api/readyz');
+
+    // Assert: Should return 405 Method Not Allowed
+    expect(response.status()).toBe(405);
   });
 });
 

@@ -33,7 +33,7 @@ func TestBackendServer_StartStop(t *testing.T) {
 
 	// Assert: Server should be running
 	client := &http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Get(server.GetBaseURL() + "/api/health")
+	resp, err := client.Get(server.GetBaseURL() + "/api/livez")
 	if err != nil {
 		t.Fatalf("Failed to connect to server: %v", err)
 	}
@@ -50,13 +50,13 @@ func TestBackendServer_StartStop(t *testing.T) {
 
 	// Assert: Server should be stopped (connection should fail)
 	time.Sleep(500 * time.Millisecond)
-	_, err = client.Get(server.GetBaseURL() + "/api/health")
+	_, err = client.Get(server.GetBaseURL() + "/api/livez")
 	if err == nil {
 		t.Error("Expected connection to fail after stopping server")
 	}
 }
 
-func TestBackendServer_HealthEndpoint(t *testing.T) {
+func TestBackendServer_LivezEndpoint(t *testing.T) {
 	// Skip if no kubeconfig available
 	kubeconfig := getDefaultKubeconfig()
 	if _, err := os.Stat(kubeconfig); err != nil {
@@ -78,7 +78,7 @@ func TestBackendServer_HealthEndpoint(t *testing.T) {
 
 	// Act
 	client := &http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Get(server.GetBaseURL() + "/api/health")
+	resp, err := client.Get(server.GetBaseURL() + "/api/livez")
 	if err != nil {
 		t.Fatalf("Failed to call health endpoint: %v", err)
 	}
