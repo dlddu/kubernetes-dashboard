@@ -29,6 +29,8 @@ func setupRouter() http.Handler {
 
 	// API routes
 	mux.HandleFunc("/api/health", handlers.HealthHandler)
+	mux.HandleFunc("/api/livez", handlers.LivezHandler)
+	mux.HandleFunc("/api/readyz", handlers.ReadyzHandler)
 	mux.HandleFunc("/api/namespaces", handlers.NamespacesHandler)
 	mux.HandleFunc("/api/overview", handlers.OverviewHandler)
 	mux.HandleFunc("/api/nodes", handlers.NodesHandler)

@@ -82,6 +82,20 @@ func (bs *BackendServer) Start() error {
 		fmt.Fprintf(w, `{"status":"ok","message":"Backend is healthy"}`)
 	})
 
+	// Liveness endpoint
+	mux.HandleFunc("/api/livez", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","message":"Alive"}`)
+	})
+
+	// Readiness endpoint
+	mux.HandleFunc("/api/readyz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","message":"Ready"}`)
+	})
+
 	bs.Server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", bs.Port),
 		Handler: mux,
