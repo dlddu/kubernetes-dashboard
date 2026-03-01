@@ -219,11 +219,17 @@ test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
     // Assert: Parameter list is now visible (expanded)
     await expect(paramsList).toBeVisible();
 
-    // Assert: Parameter items are rendered (input-path=/data/input from fixture)
+    // Assert: Parameter items are rendered — workflow-level submitted arguments from spec.arguments.parameters
     const paramItems = paramsList.getByTestId('workflow-detail-param-item');
-    await expect(paramItems.first()).toBeVisible();
-    await expect(paramItems.first()).toContainText('input-path');
-    await expect(paramItems.first()).toContainText('/data/input');
+    expect(await paramItems.count()).toBe(4);
+    await expect(paramItems.nth(0)).toContainText('input-path');
+    await expect(paramItems.nth(0)).toContainText('/data/input');
+    await expect(paramItems.nth(1)).toContainText('output-path');
+    await expect(paramItems.nth(1)).toContainText('/data/output');
+    await expect(paramItems.nth(2)).toContainText('batch-size');
+    await expect(paramItems.nth(2)).toContainText('100');
+    await expect(paramItems.nth(3)).toContainText('env');
+    await expect(paramItems.nth(3)).toContainText('dev');
 
     // Act: Click the toggle again to collapse
     await paramsToggle.click();
