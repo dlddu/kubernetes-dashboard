@@ -662,7 +662,93 @@ test.describe('Argo Tab - Template Card Click → Runs View (DLD-531)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Group 7: Deep Linking — direct URL navigation to runs page
+// Group 7: Sorting — workflow runs ordered by startedAt descending
+// ---------------------------------------------------------------------------
+
+test.describe('Argo Tab - Workflow Runs - Sorting', () => {
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
+  // Fixture startedAt values (data-processing-with-params template):
+  //   data-processing-running:   2026-02-22T07:00:00Z  (newest)
+  //   data-processing-succeeded: 2026-02-22T06:00:00Z
+  //   data-processing-failed:    2026-02-22T05:00:00Z  (oldest)
+
+  test('should display workflow runs sorted by startedAt descending (most recent first)', async ({ page }) => {
+    // Tests that workflow run cards are rendered in descending order of startedAt,
+    // so the most recently started workflow appears first in the list.
+
+    // Arrange: Navigate to the Workflows section for data-processing-with-params
+    await gotoArgoWorkflows(page);
+
+    // Assert: At least 3 workflow cards are rendered
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
+    const workflowCards = page.getByTestId('workflow-run-card');
+    const cardCount = await workflowCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(3);
+
+    // Act: Collect the workflow names in display order
+    const workflowNames: string[] = [];
+    for (let i = 0; i < cardCount; i++) {
+      const card = workflowCards.nth(i);
+      const name = await card.getByTestId('workflow-run-name').innerText();
+      workflowNames.push(name);
+    }
+
+    // Assert: The three fixture workflows appear in descending startedAt order
+    // data-processing-running (07:00) must come before data-processing-succeeded (06:00)
+    // data-processing-succeeded (06:00) must come before data-processing-failed (05:00)
+    const runningIdx = workflowNames.indexOf('data-processing-running');
+    const succeededIdx = workflowNames.indexOf('data-processing-succeeded');
+    const failedIdx = workflowNames.indexOf('data-processing-failed');
+
+    expect(runningIdx).toBeGreaterThanOrEqual(0);
+    expect(succeededIdx).toBeGreaterThanOrEqual(0);
+    expect(failedIdx).toBeGreaterThanOrEqual(0);
+
+    expect(runningIdx).toBeLessThan(succeededIdx);
+    expect(succeededIdx).toBeLessThan(failedIdx);
+  });
+
+  test('should place dynamically submitted workflows before older fixture workflows', async ({ page }) => {
+    // Tests that if a workflow is submitted (and therefore has a newer startedAt),
+    // it appears before the fixture workflows in the sorted list.
+    // This uses API mocking to inject a workflow with a very recent startedAt.
+
+    // Arrange: Mock the workflows API to return a new workflow with a later startedAt
+    await page.route('**/api/argo/workflows**', async route => {
+      const response = await route.fetch();
+      const workflows = await response.json();
+
+      // Add a mock workflow with a very recent startedAt
+      workflows.unshift({
+        name: 'data-processing-newest',
+        namespace: 'dashboard-test',
+        templateName: 'data-processing-with-params',
+        phase: 'Running',
+        startedAt: '2099-01-01T00:00:00Z',
+        finishedAt: '',
+        nodes: [],
+      });
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(workflows),
+      });
+    });
+
+    // Act: Navigate to the Workflows section
+    await gotoArgoWorkflows(page);
+
+    // Assert: The newest workflow card appears first
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
+    const firstCard = page.getByTestId('workflow-run-card').first();
+    const firstName = await firstCard.getByTestId('workflow-run-name').innerText();
+    expect(firstName).toBe('data-processing-newest');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 8: Deep Linking — direct URL navigation to runs page
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - Workflow Runs - Deep Linking', () => {
