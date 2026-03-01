@@ -32,7 +32,7 @@ function AppContent() {
           <Route path="/pods" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/pods/*" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/secrets" element={<SecretsTab namespace={namespaceParam} />} />
-          <Route path="/argo" element={<ArgoTab namespace={namespaceParam} />} />
+          <Route path="/argo/*" element={<ArgoTab namespace={namespaceParam} />} />
           <Route path="/debug" element={<DebugPage />} />
         </Routes>
       </main>

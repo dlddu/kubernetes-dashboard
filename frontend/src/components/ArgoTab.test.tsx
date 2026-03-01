@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ArgoTab } from './ArgoTab';
 
 // Mock usePolling to avoid timer side effects in tests
@@ -59,6 +60,17 @@ const mockTemplates = [
   },
 ];
 
+// Helper to render ArgoTab with router context
+function renderArgoTab(props: { namespace?: string } = {}, initialEntry = '/argo') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Routes>
+        <Route path="/argo/*" element={<ArgoTab {...props} />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
 describe('ArgoTab Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -73,7 +85,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       const argoPage = screen.getByTestId('argo-page');
@@ -88,7 +100,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       const templatesSection = screen.getByTestId('workflow-templates-page');
@@ -103,7 +115,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       const heading = screen.getByRole('heading', { name: /argo/i });
@@ -122,7 +134,7 @@ describe('ArgoTab Component', () => {
       );
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert: LoadingSkeleton should be present
       const loadingSkeleton = screen.getByTestId('loading-skeleton');
@@ -136,7 +148,7 @@ describe('ArgoTab Component', () => {
       );
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       const loadingSkeleton = screen.getByTestId('loading-skeleton');
@@ -151,7 +163,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert: Wait for data to load
       await waitFor(() => {
@@ -175,7 +187,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -192,7 +204,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -211,7 +223,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -231,7 +243,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -249,7 +261,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert: simple-template has no params so it shows "No parameters"
       await waitFor(() => {
@@ -271,7 +283,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -290,7 +302,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -307,7 +319,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -325,7 +337,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -343,7 +355,7 @@ describe('ArgoTab Component', () => {
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -357,7 +369,7 @@ describe('ArgoTab Component', () => {
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -371,7 +383,7 @@ describe('ArgoTab Component', () => {
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -389,7 +401,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -403,7 +415,7 @@ describe('ArgoTab Component', () => {
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -424,7 +436,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -442,7 +454,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       await waitFor(() => {
@@ -460,7 +472,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab namespace="dashboard-test" />);
+      renderArgoTab({ namespace: 'dashboard-test' });
 
       // Assert
       await waitFor(() => {
@@ -483,14 +495,26 @@ describe('ArgoTab Component', () => {
         });
 
       // Act
-      const { rerender } = render(<ArgoTab />);
+      const { rerender } = render(
+        <MemoryRouter initialEntries={['/argo']}>
+          <Routes>
+            <Route path="/argo/*" element={<ArgoTab />} />
+          </Routes>
+        </MemoryRouter>
+      );
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
           '/api/argo/workflow-templates'
         );
       });
 
-      rerender(<ArgoTab namespace="dashboard-test" />);
+      rerender(
+        <MemoryRouter initialEntries={['/argo']}>
+          <Routes>
+            <Route path="/argo/*" element={<ArgoTab namespace="dashboard-test" />} />
+          </Routes>
+        </MemoryRouter>
+      );
 
       // Assert
       await waitFor(() => {
@@ -518,7 +542,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab namespace="dashboard-test" />);
+      renderArgoTab({ namespace: 'dashboard-test' });
 
       // Assert
       await waitFor(() => {
@@ -544,7 +568,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert: independent "Workflow Runs" tab button must not exist after DLD-531
       const workflowsTabButton = screen.queryByTestId('workflows-tab');
@@ -559,7 +583,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert: runs view must not be visible until a template card is clicked
       const workflowRunsPage = screen.queryByTestId('workflow-runs-page');
@@ -572,7 +596,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -593,7 +617,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -616,7 +640,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -642,7 +666,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -665,7 +689,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab namespace="dashboard-test" />);
+      renderArgoTab({ namespace: 'dashboard-test' });
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -689,9 +713,10 @@ describe('ArgoTab Component', () => {
       // Arrange
       (global.fetch as any)
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
-        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+        .mockResolvedValueOnce({ ok: true, json: async () => [] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -721,7 +746,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -743,7 +768,7 @@ describe('ArgoTab Component', () => {
       (global.fetch as any)
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -768,7 +793,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert
       expect(screen.getByTestId('workflow-templates-page')).toBeInTheDocument();
@@ -782,7 +807,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -804,7 +829,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -826,7 +851,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -852,7 +877,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -875,7 +900,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows });
 
-      render(<ArgoTab namespace="dashboard-test" />);
+      renderArgoTab({ namespace: 'dashboard-test' });
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -898,7 +923,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockRejectedValueOnce(new Error('Network error'));
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -925,7 +950,7 @@ describe('ArgoTab Component', () => {
           () => new Promise(() => {}) // Never resolves
         );
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -958,7 +983,7 @@ describe('ArgoTab Component', () => {
         json: async () => mockTemplates,
       });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -982,7 +1007,7 @@ describe('ArgoTab Component', () => {
         })
         .mockResolvedValueOnce({ ok: true, json: async () => [] }); // workflow runs fetch
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1025,7 +1050,7 @@ describe('ArgoTab Component', () => {
         })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1058,7 +1083,7 @@ describe('ArgoTab Component', () => {
         })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1094,7 +1119,7 @@ describe('ArgoTab Component', () => {
         })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1123,7 +1148,7 @@ describe('ArgoTab Component', () => {
         json: async () => mockTemplates,
       });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1152,7 +1177,7 @@ describe('ArgoTab Component', () => {
           json: async () => ({ error: 'Internal Server Error' }),
         });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1186,7 +1211,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert: detail view should not be mounted initially
       const detailPage = screen.queryByTestId('workflow-detail-page');
@@ -1200,7 +1225,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })    // workflows
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] }); // detail
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Navigate to Runs view via template card click
       await waitFor(() => {
@@ -1229,7 +1254,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1256,9 +1281,10 @@ describe('ArgoTab Component', () => {
       (global.fetch as any)
         .mockResolvedValueOnce({ ok: true, json: async () => mockTemplates })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
-        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows }); // re-fetch on back
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1293,7 +1319,7 @@ describe('ArgoTab Component', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows })
         .mockResolvedValueOnce({ ok: true, json: async () => mockWorkflows[0] });
 
-      render(<ArgoTab />);
+      renderArgoTab();
 
       await waitFor(() => {
         expect(screen.getAllByTestId('workflow-template-card')).toHaveLength(2);
@@ -1327,7 +1353,7 @@ describe('ArgoTab Component', () => {
       });
 
       // Act
-      render(<ArgoTab />);
+      renderArgoTab();
 
       // Assert: templates tab is default; no detail view
       expect(screen.queryByTestId('workflow-detail-page')).not.toBeInTheDocument();
