@@ -213,6 +213,9 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
     await expect(viewWorkflowLink).toBeVisible();
     await viewWorkflowLink.click();
 
+    // Assert: URL changed to the template-specific runs route
+    expect(page.url()).toContain('/argo/templates/simple-template');
+
     // Assert: The page has transitioned to the Workflows section
     // (the modal closes and the workflows list is visible)
     await expect(submitDialog).not.toBeVisible();
@@ -405,6 +408,9 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
 
     // Act: Click "View Workflow"
     await successView.getByTestId('view-workflow-link').click();
+
+    // Assert: URL changed to the template-specific runs route
+    expect(page.url()).toContain('/argo/templates/simple-template');
 
     // Assert: The Runs view is now displayed
     const workflowRunsPage = page.getByTestId('workflow-runs-page');

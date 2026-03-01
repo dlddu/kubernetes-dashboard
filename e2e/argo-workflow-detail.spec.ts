@@ -26,9 +26,9 @@ import { test, expect } from '@playwright/test';
  *     - step-three Omitted — no inputs, no outputs
  *
  * WorkflowDetail is rendered when a WorkflowCard is clicked.
- * Expected navigation model: clicking a WorkflowCard inside workflow-runs-page
- * transitions to data-testid="workflow-detail-page" (same-page view swap, no URL change).
- * "Back to Workflows" returns to data-testid="workflow-runs-page".
+ * Navigation model: clicking a WorkflowCard navigates to
+ * /argo/templates/:templateName/workflows/:workflowName via React Router.
+ * "Back to Workflows" navigates back to /argo/templates/:templateName.
  *
  * Related Issue: DLD-445 - 작업 5-1: Workflow 상세 (step IO) — e2e 테스트 작성 (skipped)
  * Parent Issue:  DLD-435 - Argo WorkflowTemplate Submit 기능 추가
@@ -49,8 +49,8 @@ type PageParam = Parameters<typeof test>[1] extends (...args: infer A) => unknow
 /**
  * Navigate to /argo, switch to the Workflows section, and wait for cards to appear.
  *
- * DLD-531: The standalone 'workflows-tab' button has been removed.
- * To navigate to the runs view, click the 'data-processing-with-params' template card.
+ * Navigation to the runs view is triggered by clicking a template card,
+ * which navigates to /argo/templates/:templateName via React Router.
  */
 async function gotoArgoWorkflows(page: PageParam) {
   await page.goto('/argo');
@@ -126,6 +126,9 @@ test.describe('Argo Tab - Workflow Detail - Navigation', () => {
     if (!card) return;
     await card.click();
     await page.waitForLoadState('networkidle');
+
+    // Assert: URL changed to the workflow detail route
+    expect(page.url()).toContain('/argo/templates/data-processing-with-params/workflows/data-processing-running');
 
     // Assert: WorkflowDetail page is now visible
     const detailPage = page.getByTestId('workflow-detail-page');
@@ -584,6 +587,10 @@ test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
     await backButton.click();
     await page.waitForLoadState('networkidle');
 
+    // Assert: URL returned to the runs route
+    expect(page.url()).toContain('/argo/templates/data-processing-with-params');
+    expect(page.url()).not.toContain('/workflows/');
+
     // Assert: Workflow list is visible again
     const workflowRunsPage = page.getByTestId('workflow-runs-page');
     await expect(workflowRunsPage).toBeVisible();
@@ -686,5 +693,58 @@ test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
 
     // Assert: ErrorRetry is no longer visible
     await expect(errorRetry).not.toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 12: Deep Linking — direct URL navigation to detail page
+// ---------------------------------------------------------------------------
+
+test.describe('Argo Tab - Workflow Detail - Deep Linking', () => {
+  test('should render workflow-detail-page when navigating directly to /argo/templates/:templateName/workflows/:workflowName', async ({ page }) => {
+    // Tests that navigating directly to the detail URL renders the detail page
+    // without requiring the user to first visit the template list or runs list.
+
+    // Act: Navigate directly to the workflow detail page
+    await page.goto('/argo/templates/data-processing-with-params/workflows/data-processing-running');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: workflow-detail-page is visible
+    const detailPage = page.getByTestId('workflow-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Assert: Workflow name is displayed in the header
+    const headerName = detailPage.getByTestId('workflow-detail-name');
+    await expect(headerName).toBeVisible();
+    await expect(headerName).toContainText('data-processing-running');
+
+    // Assert: Phase badge is displayed
+    const phaseBadge = detailPage.getByTestId('workflow-detail-phase');
+    await expect(phaseBadge).toBeVisible();
+  });
+
+  test('should navigate back to runs page when back button is clicked from deep-linked detail page', async ({ page }) => {
+    // Tests that the back button works correctly even when navigating directly
+    // to the detail page via deep link.
+
+    // Arrange: Navigate directly to the workflow detail page
+    await page.goto('/argo/templates/data-processing-with-params/workflows/data-processing-running');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('workflow-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Act: Click the back button
+    const backButton = detailPage.getByTestId('workflow-detail-back-button');
+    await backButton.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: URL navigated to runs page
+    expect(page.url()).toContain('/argo/templates/data-processing-with-params');
+    expect(page.url()).not.toContain('/workflows/');
+
+    // Assert: Runs page is visible
+    const workflowRunsPage = page.getByTestId('workflow-runs-page');
+    await expect(workflowRunsPage).toBeVisible();
   });
 });
