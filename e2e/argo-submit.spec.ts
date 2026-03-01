@@ -7,9 +7,8 @@ import { test, expect } from '@playwright/test';
  * These tests define the expected behavior of the WorkflowTemplate Submit feature,
  * which allows users to trigger a Workflow from a WorkflowTemplate card via a Submit
  * modal. The modal pre-fills parameter defaults, supports enum dropdowns, shows
- * a success view with a "View Workflow" link, and allows cancellation via the Cancel button.
- *
- * All tests use real cluster data and real API calls — no route mocking.
+ * a success view with a "View Workflow" link, handles API errors with a retry flow,
+ * and disables the submit button while the request is in-flight.
  *
  * Test Fixtures (test/fixtures/):
  * - workflow-template-with-params.yaml: data-processing-with-params (4 params)
@@ -219,6 +218,102 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
     await expect(submitDialog).not.toBeVisible();
     const workflowsSection = page.getByTestId('workflow-runs-page');
     await expect(workflowsSection).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () => {
+  test('should display error view and allow retry when the submit API returns an error', async ({ page }) => {
+    // Tests that a failed submit shows an error view inside the modal,
+    // and the Retry button re-triggers the API call (which succeeds on retry)
+
+    // Arrange: First call fails, second call succeeds
+    let submitCallCount = 0;
+    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
+      submitCallCount += 1;
+      if (submitCallCount === 1) {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Internal Server Error' }),
+        });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
+        });
+      }
+    });
+
+    await gotoArgo(page);
+
+    const card = await findCardByName(page, 'simple-template');
+    expect(card).toBeTruthy();
+    if (!card) return;
+
+    await card.getByTestId('submit-button').click();
+
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    // Act: Click confirm — first call will fail
+    await submitDialog.getByTestId('confirm-button').click();
+
+    // Assert: Error view is displayed
+    const errorView = submitDialog.getByTestId('submit-error-view');
+    await expect(errorView).toBeVisible();
+
+    // Assert: Retry button is present and enabled
+    const retryButton = errorView.getByTestId('retry-button');
+    await expect(retryButton).toBeVisible();
+    await expect(retryButton).toBeEnabled();
+
+    // Act: Click retry — second call will succeed
+    await retryButton.click();
+
+    // Assert: Success view replaces the error view
+    const successView = submitDialog.getByTestId('submit-success-view');
+    await expect(successView).toBeVisible();
+    await expect(errorView).not.toBeVisible();
+  });
+
+  test('should disable the confirm button and show a loading spinner while submitting', async ({ page }) => {
+    // Tests that during the in-flight POST request the confirm button is disabled
+    // and a loading spinner is visible, preventing duplicate submissions
+
+    // Arrange: Mock submit API with a deliberate delay to observe in-flight state
+    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
+      });
+    });
+
+    await gotoArgo(page);
+
+    const card = await findCardByName(page, 'simple-template');
+    expect(card).toBeTruthy();
+    if (!card) return;
+
+    await card.getByTestId('submit-button').click();
+
+    const submitDialog = page.getByTestId('submit-workflow-dialog');
+    await expect(submitDialog).toBeVisible();
+
+    // Act: Click the confirm button to start the submit
+    const confirmButton = submitDialog.getByTestId('confirm-button');
+    await confirmButton.click();
+
+    // Assert: Confirm button is disabled while the request is in-flight
+    await expect(confirmButton).toBeDisabled();
+
+    // Assert: Loading spinner is visible
+    const spinner = submitDialog.getByTestId('submit-spinner');
+    await expect(spinner).toBeVisible();
   });
 });
 
