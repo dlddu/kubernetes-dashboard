@@ -32,13 +32,15 @@ fi
 # Apply manifests in order
 log_info "Applying Kubernetes test fixtures..."
 
-# 1. Create namespace first
-log_info "Creating namespace..."
+# 1. Create namespaces first
+log_info "Creating namespaces..."
 kubectl apply -f "$SCRIPT_DIR/namespace.yaml"
+kubectl apply -f "$SCRIPT_DIR/empty-namespace.yaml"
 
-# Wait for namespace to be created
-log_info "Waiting for namespace to be active..."
+# Wait for namespaces to be created
+log_info "Waiting for namespaces to be active..."
 kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-test --timeout=30s
+kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-empty --timeout=30s
 
 # 2. Apply secrets and configmaps
 log_info "Creating secrets and configmaps..."
@@ -81,9 +83,11 @@ log_info "Applying Argo Workflows fixtures..."
 kubectl apply -f "$SCRIPT_DIR/workflow-template-with-params.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-template-no-params.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-template-empty-runs.yaml"
+kubectl apply -f "$SCRIPT_DIR/workflow-template-ml-pipeline.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-running.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-succeeded.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-failed.yaml"
+kubectl apply -f "$SCRIPT_DIR/workflow-ml-pipeline.yaml"
 
 echo ""
 log_info "To clean up, run: kubectl delete namespace dashboard-test"

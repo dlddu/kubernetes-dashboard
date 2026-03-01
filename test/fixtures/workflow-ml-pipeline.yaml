@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: ml-pipeline-running
+  namespace: dashboard-test
+spec:
+  workflowTemplateRef:
+    name: ml-pipeline
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: train
+            template: process
+    - name: process
+      container:
+        image: busybox
+        command: [echo, "training"]
+status:
+  phase: Running
+  startedAt: "2026-02-22T08:00:00Z"
+  finishedAt: ""
+  nodes:
+    ml-pipeline-running:
+      id: ml-pipeline-running
+      name: ml-pipeline-running
+      displayName: ml-pipeline-running
+      type: Steps
+      phase: Running
+    ml-pipeline-running-train:
+      id: ml-pipeline-running-train
+      name: ml-pipeline-running[0].train
+      displayName: train
+      type: Pod
+      phase: Running
+      startedAt: "2026-02-22T08:00:10Z"
+      finishedAt: ""
