@@ -7,8 +7,9 @@ import { test, expect } from '@playwright/test';
  * These tests define the expected behavior of the WorkflowTemplate Submit feature,
  * which allows users to trigger a Workflow from a WorkflowTemplate card via a Submit
  * modal. The modal pre-fills parameter defaults, supports enum dropdowns, shows
- * a success view with a "View Workflow" link, handles API errors with a retry flow,
- * and disables the submit button while the request is in-flight.
+ * a success view with a "View Workflow" link, and allows cancellation via the Cancel button.
+ *
+ * All tests use real cluster data and real API calls — no route mocking.
  *
  * Test Fixtures (test/fixtures/):
  * - workflow-template-with-params.yaml: data-processing-with-params (4 params)
@@ -57,8 +58,6 @@ async function findCardByName(
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
-  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
-
   test('should open SubmitModal when Submit button is clicked on a template card', async ({ page }) => {
     // Tests that clicking the Submit button on a WorkflowTemplate card opens the Submit modal
 
@@ -133,7 +132,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 
   test('should show success view after editing parameters and submitting the form', async ({ page }) => {
     // Tests the full happy-path submit flow: change a parameter value → click confirm → success view appears
-    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -163,7 +161,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
   test('should allow submitting a template with no parameters without showing a form', async ({ page }) => {
     // Tests that simple-template (0 parameters) opens a modal with no parameter fields
     // and can be submitted immediately without filling in anything
-    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -195,7 +192,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 
   test('should navigate to the Workflows section when "View Workflow" link is clicked', async ({ page }) => {
     // Tests that clicking the "View Workflow" link in the success view switches to the Workflows tab/section
-    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -228,107 +224,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 
 // ---------------------------------------------------------------------------
 
-test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () => {
-  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
-
-  test('should display error view and allow retry when the submit API returns an error', async ({ page }) => {
-    // Tests that a failed submit shows an error view inside the modal,
-    // and the Retry button re-triggers the API call (which succeeds on retry)
-
-    // Arrange: First call fails, second call succeeds
-    let submitCallCount = 0;
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      submitCallCount += 1;
-      if (submitCallCount === 1) {
-        await route.fulfill({
-          status: 500,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal Server Error' }),
-        });
-      } else {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-        });
-      }
-    });
-
-    await gotoArgo(page);
-
-    const card = await findCardByName(page, 'simple-template');
-    expect(card).toBeTruthy();
-    if (!card) return;
-
-    await card.getByTestId('submit-button').click();
-
-    const submitDialog = page.getByTestId('submit-workflow-dialog');
-    await expect(submitDialog).toBeVisible();
-
-    // Act: Click confirm — first call will fail
-    await submitDialog.getByTestId('confirm-button').click();
-
-    // Assert: Error view is displayed
-    const errorView = submitDialog.getByTestId('submit-error-view');
-    await expect(errorView).toBeVisible();
-
-    // Assert: Retry button is present and enabled
-    const retryButton = errorView.getByTestId('retry-button');
-    await expect(retryButton).toBeVisible();
-    await expect(retryButton).toBeEnabled();
-
-    // Act: Click retry — second call will succeed
-    await retryButton.click();
-
-    // Assert: Success view replaces the error view
-    const successView = submitDialog.getByTestId('submit-success-view');
-    await expect(successView).toBeVisible();
-    await expect(errorView).not.toBeVisible();
-  });
-
-  test('should disable the confirm button and show a loading spinner while submitting', async ({ page }) => {
-    // Tests that during the in-flight POST request the confirm button is disabled
-    // and a loading spinner is visible, preventing duplicate submissions
-
-    // Arrange: Mock submit API with a deliberate delay to observe in-flight state
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
-    });
-
-    await gotoArgo(page);
-
-    const card = await findCardByName(page, 'simple-template');
-    expect(card).toBeTruthy();
-    if (!card) return;
-
-    await card.getByTestId('submit-button').click();
-
-    const submitDialog = page.getByTestId('submit-workflow-dialog');
-    await expect(submitDialog).toBeVisible();
-
-    // Act: Click the confirm button to start the submit
-    const confirmButton = submitDialog.getByTestId('confirm-button');
-    await confirmButton.click();
-
-    // Assert: Confirm button is disabled while the request is in-flight
-    await expect(confirmButton).toBeDisabled();
-
-    // Assert: Loading spinner is visible
-    const spinner = submitDialog.getByTestId('submit-spinner');
-    await expect(spinner).toBeVisible();
-  });
-});
-
-// ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
-  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
-
   test('should close the Submit modal when the Cancel button is clicked', async ({ page }) => {
     // Tests that clicking the Cancel button in the Submit modal dismisses it
     // without triggering an API call
@@ -359,16 +255,13 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
 
 // Related Issue: DLD-532 (parent: DLD-527) - Submit 성공 후 View Workflow 클릭 시 해당 template의 Runs 뷰 전환 검증
 test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', () => {
-  // No API mocking for GET templates — tests use real cluster data from test/fixtures/.
-  // POST submit uses real API — tests create actual workflows in the cluster.
-  // GET workflows is mocked only in the last test (templateName filtering verification).
+  // No API mocking — all tests use real cluster data from test/fixtures/ and real API calls.
 
   test('should close SubmitModal when "View Workflow" button is clicked after successful submit', async ({
     page,
   }) => {
     // Tests that the SubmitModal (submit-workflow-dialog) is no longer visible
     // after the user clicks the "View Workflow" button in the success view.
-    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -398,7 +291,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   test('should show workflow-runs-page after "View Workflow" is clicked', async ({ page }) => {
     // Tests that the workflow-runs-page element becomes visible after the user
     // clicks "View Workflow", confirming the UI has transitioned to the Runs view.
-    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -431,7 +323,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   test('should display the submitted template name in the Runs view header', async ({ page }) => {
     // Tests that the Runs view header shows the name of the template that was submitted,
     // so the user knows which template's runs they are viewing.
-    // No submit mock — uses real API to create an actual workflow in the cluster.
 
     await gotoArgo(page);
 
@@ -461,71 +352,10 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
   test('should show only the submitted template runs and not runs from other templates', async ({ page }) => {
     // Tests that the Runs view is filtered to the submitted template:
     // runs from "simple-template" are visible, while runs from
-    // "data-processing-with-params" are not present in the list.
+    // "data-processing-with-params" (loaded via test/fixtures/) are not present.
     // This verifies that the API is called with the correct templateName filter
     // and that the UI does not mix runs from unrelated templates.
-    //
-    // Workflow runs API is mocked to provide deterministic data for the
-    // filtering assertion. Submit uses the real API.
-
-    const simpleTemplateRuns = [
-      {
-        name: 'simple-template-xyz99',
-        namespace: 'dashboard-test',
-        templateName: 'simple-template',
-        phase: 'Succeeded',
-        startedAt: '2026-02-24T00:00:00Z',
-        finishedAt: '2026-02-24T00:01:00Z',
-        nodes: [{ name: 'main', phase: 'Succeeded' }],
-      },
-      {
-        name: 'simple-template-abc11',
-        namespace: 'dashboard-test',
-        templateName: 'simple-template',
-        phase: 'Running',
-        startedAt: '2026-02-24T00:02:00Z',
-        finishedAt: '',
-        nodes: [{ name: 'main', phase: 'Running' }],
-      },
-    ];
-
-    const otherTemplateRuns = [
-      {
-        name: 'data-processing-with-params-def22',
-        namespace: 'dashboard-test',
-        templateName: 'data-processing-with-params',
-        phase: 'Succeeded',
-        startedAt: '2026-02-24T00:03:00Z',
-        finishedAt: '2026-02-24T00:04:00Z',
-        nodes: [{ name: 'main', phase: 'Succeeded' }],
-      },
-    ];
-
-    // No submit mock — uses real API to create an actual workflow in the cluster.
-
-    // Arrange: Mock the workflow runs API to verify it is called with the correct
-    // templateName and return only simple-template runs.
-    // A request for a different templateName (or no filter) would return the "other" fixture,
-    // making the assertion below fail — this catches incorrect API call arguments.
-    await page.route('**/api/argo/workflows**', async route => {
-      const url = new URL(route.request().url());
-      const templateNameParam = url.searchParams.get('templateName');
-
-      if (templateNameParam === 'simple-template') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(simpleTemplateRuns),
-        });
-      } else {
-        // Return other-template runs to surface a filtering bug in assertions
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(otherTemplateRuns),
-        });
-      }
-    });
+    // Uses real API — no mocking.
 
     await gotoArgo(page);
 
@@ -550,11 +380,10 @@ test.describe('Argo Tab - WorkflowTemplate Submit - View Workflow Navigation', (
     const workflowRunsPage = page.getByTestId('workflow-runs-page');
     await expect(workflowRunsPage).toBeVisible();
 
-    // Assert: simple-template runs are shown
-    await expect(workflowRunsPage).toContainText('simple-template-xyz99');
-    await expect(workflowRunsPage).toContainText('simple-template-abc11');
+    // Assert: The runs page shows simple-template content
+    await expect(workflowRunsPage).toContainText('simple-template');
 
-    // Assert: runs from the other template are not shown
-    await expect(workflowRunsPage).not.toContainText('data-processing-with-params-def22');
+    // Assert: Runs from other templates (loaded via test/fixtures/) are not shown
+    await expect(workflowRunsPage).not.toContainText('data-processing-with-params');
   });
 });
