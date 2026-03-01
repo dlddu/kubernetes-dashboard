@@ -6,6 +6,16 @@ metadata:
 spec:
   workflowTemplateRef:
     name: data-processing-with-params
+  arguments:
+    parameters:
+      - name: input-path
+        value: /data/input
+      - name: output-path
+        value: /data/output
+      - name: batch-size
+        value: "100"
+      - name: env
+        value: dev
   entrypoint: main
   templates:
     - name: main

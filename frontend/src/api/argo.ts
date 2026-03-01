@@ -67,6 +67,7 @@ export interface WorkflowDetailInfo {
   phase: string;
   startedAt: string;
   finishedAt: string;
+  parameters: WorkflowDetailParamInfo[];
   nodes: WorkflowDetailStepInfo[];
 }
 

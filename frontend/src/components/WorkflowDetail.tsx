@@ -239,20 +239,18 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
                   data-testid="workflow-detail-params-list"
                   className="mt-2 bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 space-y-1"
                 >
-                  {detail.nodes.flatMap((node) =>
-                    (node.inputs?.parameters ?? []).map((param, idx) => (
-                      <div
-                        key={`${node.name}-param-${idx}`}
-                        data-testid="workflow-detail-param-item"
-                        className="flex gap-2 text-xs"
-                      >
-                        <span className="font-medium text-gray-700">{param.name}</span>
-                        <span className="text-gray-500">=</span>
-                        <span className="text-gray-600">{param.value}</span>
-                      </div>
-                    ))
-                  )}
-                  {detail.nodes.every((node) => (node.inputs?.parameters ?? []).length === 0) && (
+                  {(detail.parameters ?? []).map((param, idx) => (
+                    <div
+                      key={`wf-param-${idx}`}
+                      data-testid="workflow-detail-param-item"
+                      className="flex gap-2 text-xs"
+                    >
+                      <span className="font-medium text-gray-700">{param.name}</span>
+                      <span className="text-gray-500">=</span>
+                      <span className="text-gray-600">{param.value}</span>
+                    </div>
+                  ))}
+                  {(detail.parameters ?? []).length === 0 && (
                     <p className="text-gray-500 text-xs">
                       No parameters found.
                     </p>

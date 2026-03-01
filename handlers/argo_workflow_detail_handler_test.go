@@ -213,7 +213,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 			t.Fatalf("failed to decode response: %v", err)
 		}
 
-		requiredFields := []string{"name", "namespace", "phase", "startedAt", "finishedAt", "nodes"}
+		requiredFields := []string{"name", "namespace", "phase", "startedAt", "finishedAt", "parameters", "nodes"}
 		for _, field := range requiredFields {
 			if _, exists := detail[field]; !exists {
 				t.Errorf("expected field '%s' in workflow detail, but not found", field)
@@ -431,6 +431,7 @@ func TestWorkflowDetailHandlerResponseStructure(t *testing.T) {
 			Phase        string           `json:"phase"`
 			StartedAt    string           `json:"startedAt"`
 			FinishedAt   string           `json:"finishedAt"`
+			Parameters   []parameterInfo  `json:"parameters"`
 			Nodes        []nodeDetailInfo `json:"nodes"`
 		}
 
