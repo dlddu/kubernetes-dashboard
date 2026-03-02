@@ -195,6 +195,7 @@ type workflowNodeAPI struct {
 	DisplayName string `json:"displayName"`
 	Type        string `json:"type"`
 	Phase       string `json:"phase"`
+	StartedAt   string `json:"startedAt"`
 }
 
 // workflowDetailGetSpecAPI holds the spec of a single Workflow (Get) response.
@@ -355,8 +356,9 @@ func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*Workf
 	}
 
 	type nodeWithKey struct {
-		sortKey string
-		node    WorkflowNode
+		startedAt string
+		name      string
+		node      WorkflowNode
 	}
 
 	items := make([]WorkflowFull, 0, len(apiResponse.Items))
@@ -367,12 +369,26 @@ func (c *workflowClient) List(ctx context.Context, _ metav1.ListOptions) (*Workf
 				continue
 			}
 			entries = append(entries, nodeWithKey{
-				sortKey: node.Name,
-				node:    WorkflowNode{Name: node.DisplayName, Phase: node.Phase},
+				startedAt: node.StartedAt,
+				name:      node.Name,
+				node:      WorkflowNode{Name: node.DisplayName, Phase: node.Phase},
 			})
 		}
 		sort.Slice(entries, func(i, j int) bool {
-			return entries[i].sortKey < entries[j].sortKey
+			si, sj := entries[i].startedAt, entries[j].startedAt
+			if si == "" && sj == "" {
+				return entries[i].name < entries[j].name
+			}
+			if si == "" {
+				return false
+			}
+			if sj == "" {
+				return true
+			}
+			if si != sj {
+				return si < sj
+			}
+			return entries[i].name < entries[j].name
 		})
 		nodes := make([]WorkflowNode, 0, len(entries))
 		for _, e := range entries {
@@ -414,8 +430,9 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 	}
 
 	type detailNodeWithKey struct {
-		sortKey string
-		node    WorkflowDetailNode
+		startedAt string
+		name      string
+		node      WorkflowDetailNode
 	}
 
 	entries := make([]detailNodeWithKey, 0)
@@ -452,7 +469,8 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 		}
 
 		entries = append(entries, detailNodeWithKey{
-			sortKey: node.Name,
+			startedAt: node.StartedAt,
+			name:      node.Name,
 			node: WorkflowDetailNode{
 				Name:       node.DisplayName,
 				Type:       node.Type,
@@ -466,7 +484,20 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 		})
 	}
 	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].sortKey < entries[j].sortKey
+		si, sj := entries[i].startedAt, entries[j].startedAt
+		if si == "" && sj == "" {
+			return entries[i].name < entries[j].name
+		}
+		if si == "" {
+			return false
+		}
+		if sj == "" {
+			return true
+		}
+		if si != sj {
+			return si < sj
+		}
+		return entries[i].name < entries[j].name
 	})
 	nodes := make([]WorkflowDetailNode, 0, len(entries))
 	for _, e := range entries {

@@ -748,3 +748,123 @@ test.describe('Argo Tab - Workflow Detail - Deep Linking', () => {
     await expect(workflowRunsPage).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Group 13: Step Ordering — steps in the timeline are ordered by startedAt
+// ---------------------------------------------------------------------------
+
+test.describe('Argo Tab - Workflow Detail - Step Ordering', () => {
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
+  // Fixture step startedAt values (data-processing-running):
+  //   step-one:   2026-02-22T07:00:10Z (earliest)
+  //   step-two:   2026-02-22T07:05:10Z
+  //   step-three: ""                   (Pending, no startedAt — should appear last)
+
+  test('should display steps in startedAt ascending order in the Steps timeline', async ({ page }) => {
+    // Tests that the Steps timeline renders steps sorted by startedAt ascending,
+    // with steps that have no startedAt (Pending) placed at the end.
+
+    // Arrange: Open the workflow detail for data-processing-running (3 steps)
+    await gotoArgoWorkflows(page);
+
+    const card = await findWorkflowCardByName(page, 'data-processing-running');
+    expect(card).toBeTruthy();
+    if (!card) return;
+    await card.click();
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('workflow-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Assert: Steps timeline section is visible
+    const stepsTimeline = detailPage.getByTestId('workflow-detail-steps-timeline');
+    await expect(stepsTimeline).toBeVisible();
+
+    // Assert: Three step entries are rendered
+    const stepEntries = stepsTimeline.getByTestId('workflow-detail-step');
+    expect(await stepEntries.count()).toBe(3);
+
+    // Assert: Steps are in startedAt order by position
+    // step-one (07:00:10) at index 0, step-two (07:05:10) at index 1, step-three (empty) at index 2
+    const stepNames: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const name = await stepEntries.nth(i).getByTestId('workflow-detail-step-name').innerText();
+      stepNames.push(name);
+    }
+
+    expect(stepNames[0]).toBe('step-one');
+    expect(stepNames[1]).toBe('step-two');
+    expect(stepNames[2]).toBe('step-three');
+  });
+
+  test('should display steps in startedAt ascending order for a failed workflow with omitted steps last', async ({ page }) => {
+    // Tests step ordering for data-processing-failed (3 steps):
+    //   step-one:   startedAt 2026-02-22T05:00:10Z (Succeeded)
+    //   step-two:   startedAt 2026-02-22T05:20:10Z (Failed)
+    //   step-three: startedAt ""                   (Omitted, no startedAt — last)
+
+    // Arrange: Open the workflow detail for data-processing-failed
+    await gotoArgoWorkflows(page);
+
+    const card = await findWorkflowCardByName(page, 'data-processing-failed');
+    expect(card).toBeTruthy();
+    if (!card) return;
+    await card.click();
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('workflow-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Assert: Steps timeline is visible
+    const stepsTimeline = detailPage.getByTestId('workflow-detail-steps-timeline');
+    await expect(stepsTimeline).toBeVisible();
+
+    // Assert: Three step entries are rendered
+    const stepEntries = stepsTimeline.getByTestId('workflow-detail-step');
+    expect(await stepEntries.count()).toBe(3);
+
+    // Assert: Steps are in startedAt order by position
+    // step-one (05:00:10) → step-two (05:20:10) → step-three (empty/Omitted)
+    const stepNames: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const name = await stepEntries.nth(i).getByTestId('workflow-detail-step-name').innerText();
+      stepNames.push(name);
+    }
+
+    expect(stepNames[0]).toBe('step-one');
+    expect(stepNames[1]).toBe('step-two');
+    expect(stepNames[2]).toBe('step-three');
+  });
+
+  test('should display steps in startedAt ascending order for a succeeded workflow', async ({ page }) => {
+    // Tests step ordering for data-processing-succeeded (2 steps):
+    //   step-one: startedAt 2026-02-22T06:00:10Z
+    //   step-two: startedAt 2026-02-22T06:15:10Z
+
+    // Arrange: Open the workflow detail for data-processing-succeeded
+    await gotoArgoWorkflows(page);
+
+    const card = await findWorkflowCardByName(page, 'data-processing-succeeded');
+    expect(card).toBeTruthy();
+    if (!card) return;
+    await card.click();
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('workflow-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Assert: Steps timeline is visible
+    const stepsTimeline = detailPage.getByTestId('workflow-detail-steps-timeline');
+    await expect(stepsTimeline).toBeVisible();
+
+    // Assert: Two step entries are rendered in startedAt order
+    const stepEntries = stepsTimeline.getByTestId('workflow-detail-step');
+    expect(await stepEntries.count()).toBe(2);
+
+    const firstName = await stepEntries.nth(0).getByTestId('workflow-detail-step-name').innerText();
+    const secondName = await stepEntries.nth(1).getByTestId('workflow-detail-step-name').innerText();
+
+    expect(firstName).toBe('step-one');
+    expect(secondName).toBe('step-two');
+  });
+});
