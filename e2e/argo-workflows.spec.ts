@@ -344,11 +344,15 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
   test('should display ErrorRetry component and functional retry button when the workflows API returns an error', async ({ page }) => {
     // Tests that ErrorRetry is rendered on API failure and the retry button re-triggers the fetch
 
-    // Arrange: First call fails with 500, second call passes through to real API
-    let callCount = 0;
+    // Arrange: Block ALL workflow API calls with 500 until we flip the flag.
+    // A flag-based approach is used instead of call-counting because the
+    // useDataFetch hook may trigger multiple concurrent fetches on mount
+    // (one from PollingContext registration, one from its own useEffect),
+    // and a counter-based strategy would only fail the first call while the
+    // second concurrent call succeeds — causing a race condition.
+    let shouldFail = true;
     await page.route('**/api/argo/workflows**', async route => {
-      callCount += 1;
-      if (callCount === 1) {
+      if (shouldFail) {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -378,7 +382,8 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
     const workflowCards = page.getByTestId('workflow-run-card');
     expect(await workflowCards.count()).toBe(0);
 
-    // Act: Click retry — second call will succeed
+    // Act: Allow subsequent calls to succeed, then click retry
+    shouldFail = false;
     await retryButton.click();
     await page.waitForLoadState('networkidle');
 
