@@ -85,9 +85,76 @@ if ! grep -q "serviceAccountName:" "$K8S_DIR/deployment.yaml"; then
 fi
 echo "PASS: Deployment references ServiceAccount"
 
-# Test 7: Validate with kubectl (if available)
+# Test 7: ClusterRole should have pods/log subresource declared
+echo "Test 7: Checking pods/log subresource in ClusterRole..."
+if ! grep -q "pods/log" "$K8S_DIR/rbac.yaml"; then
+    echo "FAIL: rbac.yaml ClusterRole missing pods/log subresource"
+    exit 1
+fi
+echo "PASS: ClusterRole has pods/log subresource"
+
+# Test 8: pods/log subresource should allow get verb
+echo "Test 8: Checking get verb is allowed for pods/log..."
+# Extract the block containing pods/log and verify get verb is present in the same rule block
+PODS_LOG_BLOCK=$(python3 - <<'EOF'
+import yaml, sys
+
+with open("k8s/rbac.yaml") as f:
+    docs = list(yaml.safe_load_all(f))
+
+cluster_role = next((d for d in docs if d and d.get("kind") == "ClusterRole"), None)
+if not cluster_role:
+    sys.exit(1)
+
+for rule in cluster_role.get("rules", []):
+    resources = rule.get("resources", [])
+    if "pods/log" in resources:
+        verbs = rule.get("verbs", [])
+        if "get" in verbs:
+            print("found")
+            sys.exit(0)
+
+sys.exit(1)
+EOF
+)
+if [ "$PODS_LOG_BLOCK" != "found" ]; then
+    echo "FAIL: pods/log rule does not include get verb"
+    exit 1
+fi
+echo "PASS: pods/log allows get verb"
+
+# Test 9: pods/log subresource should belong to core API group ("")
+echo "Test 9: Checking pods/log belongs to core apiGroup [\"\"]..."
+PODS_LOG_APIGROUP=$(python3 - <<'EOF'
+import yaml, sys
+
+with open("k8s/rbac.yaml") as f:
+    docs = list(yaml.safe_load_all(f))
+
+cluster_role = next((d for d in docs if d and d.get("kind") == "ClusterRole"), None)
+if not cluster_role:
+    sys.exit(1)
+
+for rule in cluster_role.get("rules", []):
+    resources = rule.get("resources", [])
+    if "pods/log" in resources:
+        api_groups = rule.get("apiGroups", [])
+        if "" in api_groups:
+            print("found")
+            sys.exit(0)
+
+sys.exit(1)
+EOF
+)
+if [ "$PODS_LOG_APIGROUP" != "found" ]; then
+    echo "FAIL: pods/log rule is not in core apiGroup [\"\"]"
+    exit 1
+fi
+echo "PASS: pods/log belongs to core apiGroup [\"\"]"
+
+# Test 10: Validate with kubectl (if available)
 if command -v kubectl &> /dev/null; then
-    echo "Test 7: Validating with kubectl dry-run..."
+    echo "Test 10: Validating with kubectl dry-run..."
     for file in "$K8S_DIR"/*.yaml; do
         if ! kubectl apply --dry-run=client -f "$file" > /dev/null 2>&1; then
             echo "FAIL: kubectl validation failed for $file"
