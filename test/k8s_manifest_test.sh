@@ -24,7 +24,7 @@ echo "Test 2: Validating YAML syntax..."
 for file in "$K8S_DIR"/*.yaml; do
     if ! yamllint -d relaxed "$file" 2>/dev/null; then
         # Fallback to basic YAML parsing if yamllint not available
-        if ! python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+        if ! python3 -c "import yaml; list(yaml.safe_load_all(open('$file')))" 2>/dev/null; then
             echo "FAIL: Invalid YAML in $file"
             exit 1
         fi
