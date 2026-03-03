@@ -4,6 +4,7 @@ package handlers
 const (
 	deploymentsPathPrefix = "/api/deployments/"
 	secretsPathPrefix     = "/api/secrets/"
+	podLogsPathPrefix     = "/api/pods/logs/"
 	restartPathSuffix     = "/restart"
 )
 

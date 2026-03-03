@@ -36,6 +36,15 @@ var UnhealthyPodsHandler = handleGet("Failed to fetch pods data", func(r *http.R
 	})
 })
 
+// PodLogsHandler handles the GET /api/pods/logs/{namespace}/{name} endpoint.
+// The actual log retrieval logic is not yet implemented (planned for DLD-697).
+func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
+	if !requireMethod(w, r, http.MethodGet) {
+		return
+	}
+	writeError(w, http.StatusNotImplemented, "Pod logs endpoint not yet implemented")
+}
+
 // AllPodsHandler handles the GET /api/pods/all endpoint
 var AllPodsHandler = handleGet("Failed to fetch pods data", func(r *http.Request) (interface{}, error) {
 	clientset, err := getKubernetesClient()

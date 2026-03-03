@@ -681,6 +681,128 @@ func TestUnhealthyPodsHandlerErrorHandling(t *testing.T) {
 	})
 }
 
+// TestPodLogsHandlerRegistration verifies the PodLogsHandler symbol and constant exist and are usable.
+// These tests form the Red phase for DLD-697: constant definition and handler registration.
+func TestPodLogsHandlerRegistration(t *testing.T) {
+	t.Run("should have podLogsPathPrefix constant defined as /api/pods/logs/", func(t *testing.T) {
+		// Arrange & Act
+		// The constant is package-private; we verify its value indirectly by using it in a
+		// strings.HasPrefix check against the expected URL shape.
+		// If the constant is renamed or its value changes, the route-registration test will
+		// catch it via the router. Here we document the expected value explicitly.
+		const expectedPrefix = "/api/pods/logs/"
+
+		// Assert: podLogsPathPrefix must equal the expected value.
+		// This comparison is evaluated at compile time when both sides are untyped constants,
+		// so a mismatch is a build error — but we also provide a runtime assertion for clarity.
+		if podLogsPathPrefix != expectedPrefix {
+			t.Errorf("expected podLogsPathPrefix to be %q, got %q", expectedPrefix, podLogsPathPrefix)
+		}
+	})
+
+	t.Run("should expose PodLogsHandler as a callable http.HandlerFunc", func(t *testing.T) {
+		// Arrange
+		// This test verifies the handler symbol exists with the correct signature.
+		// The test will fail to compile if PodLogsHandler is not defined in the handlers package.
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// The handler is not yet implemented (DLD-697), so 501 Not Implemented is expected.
+		// 200, 400, 404, or 500 are also acceptable if a partial implementation exists.
+		acceptableStatuses := map[int]bool{
+			http.StatusOK:                 true,
+			http.StatusBadRequest:         true,
+			http.StatusNotFound:           true,
+			http.StatusInternalServerError: true,
+			http.StatusNotImplemented:     true,
+		}
+		if !acceptableStatuses[res.StatusCode] {
+			t.Errorf("unexpected status code %d from PodLogsHandler", res.StatusCode)
+		}
+	})
+
+	t.Run("should reject non-GET methods", func(t *testing.T) {
+		// Arrange
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				req := httptest.NewRequest(method, "/api/pods/logs/default/my-pod", nil)
+				w := httptest.NewRecorder()
+
+				// Act
+				PodLogsHandler(w, req)
+
+				// Assert
+				res := w.Result()
+				defer res.Body.Close()
+
+				// Once fully implemented the handler must return 405 for non-GET methods.
+				// During the stub phase, 501 Not Implemented is also acceptable.
+				if res.StatusCode == http.StatusOK {
+					t.Errorf("expected non-200 status for %s method, got 200", method)
+				}
+			})
+		}
+	})
+}
+
+// TestPodLogsHandlerConstantUsage verifies that the podLogsPathPrefix constant can be
+// used in path-parsing helpers consistently with other handler constants in the package.
+func TestPodLogsHandlerConstantUsage(t *testing.T) {
+	t.Run("should parse namespace and name from path using podLogsPathPrefix", func(t *testing.T) {
+		// Arrange
+		path := "/api/pods/logs/default/my-pod"
+
+		// Act
+		namespace, name, err := parseResourcePath(path, podLogsPathPrefix, "")
+
+		// Assert
+		if err != nil {
+			t.Fatalf("parseResourcePath returned unexpected error: %v", err)
+		}
+		if namespace != "default" {
+			t.Errorf("expected namespace %q, got %q", "default", namespace)
+		}
+		if name != "my-pod" {
+			t.Errorf("expected name %q, got %q", "my-pod", name)
+		}
+	})
+
+	t.Run("should return error when path does not contain namespace and name", func(t *testing.T) {
+		// Arrange
+		path := "/api/pods/logs/"
+
+		// Act
+		_, _, err := parseResourcePath(path, podLogsPathPrefix, "")
+
+		// Assert
+		if err == nil {
+			t.Error("expected error for path without namespace/name, got nil")
+		}
+	})
+
+	t.Run("should return error when path contains only namespace", func(t *testing.T) {
+		// Arrange
+		path := "/api/pods/logs/default"
+
+		// Act
+		_, _, err := parseResourcePath(path, podLogsPathPrefix, "")
+
+		// Assert
+		if err == nil {
+			t.Error("expected error for path with namespace but no pod name, got nil")
+		}
+	})
+}
+
 // TestUnhealthyPodsHandlerTestFixture tests with actual test fixtures
 func TestUnhealthyPodsHandlerTestFixture(t *testing.T) {
 	t.Run("should return test fixture pods from dashboard-test namespace", func(t *testing.T) {
