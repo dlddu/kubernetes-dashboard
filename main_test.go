@@ -217,6 +217,171 @@ func TestArgoWorkflowDetailRoute(t *testing.T) {
 	})
 }
 
+// TestPodLogsRoute tests that the /api/pods/logs/ route is registered in the router.
+func TestPodLogsRoute(t *testing.T) {
+	t.Run("should route GET /api/pods/logs/{namespace}/{name} to PodLogsHandler", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Should be routed (any status except generic 404 means the route is registered).
+		// The handler is not yet fully implemented, so 501 Not Implemented is also expected.
+		if res.StatusCode == http.StatusNotFound && res.Header.Get("Content-Type") == "" {
+			t.Error("expected /api/pods/logs/{namespace}/{name} to be routed, got generic 404")
+		}
+	})
+
+	t.Run("should not return generic 404 for /api/pods/logs/ prefix", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/kube-system/coredns-abc", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// A plain 404 with no Content-Type means the mux has no matching route.
+		// Any other response (including 501) means the route is registered.
+		contentType := res.Header.Get("Content-Type")
+		if res.StatusCode == http.StatusNotFound && contentType == "" {
+			t.Errorf(
+				"route /api/pods/logs/ is not registered in setupRouter (got 404 with no Content-Type); "+
+					"add mux.HandleFunc(%q, handlers.PodLogsHandler) to main.go",
+				"/api/pods/logs/",
+			)
+		}
+	})
+
+	t.Run("should return JSON Content-Type for /api/pods/logs/ route", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		contentType := res.Header.Get("Content-Type")
+		if !strings.Contains(contentType, "application/json") {
+			t.Errorf("pod logs API should return JSON Content-Type, got %q", contentType)
+		}
+	})
+}
+
+// TestExistingPodRoutesUnaffected verifies that the existing pod routes are not broken
+// by the addition of the /api/pods/logs/ route.
+func TestExistingPodRoutesUnaffected(t *testing.T) {
+	t.Run("should still route /api/pods/all after adding logs route", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode == http.StatusNotFound {
+			t.Error("expected /api/pods/all to remain routed, got 404")
+		}
+	})
+
+	t.Run("should still route /api/pods/unhealthy after adding logs route", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode == http.StatusNotFound {
+			t.Error("expected /api/pods/unhealthy to remain routed, got 404")
+		}
+	})
+
+	t.Run("/api/pods/all should still return JSON Content-Type", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		contentType := res.Header.Get("Content-Type")
+		if !strings.Contains(contentType, "application/json") {
+			t.Errorf("/api/pods/all should still return JSON, got Content-Type: %q", contentType)
+		}
+	})
+
+	t.Run("/api/pods/unhealthy should still return JSON Content-Type", func(t *testing.T) {
+		// Arrange
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		contentType := res.Header.Get("Content-Type")
+		if !strings.Contains(contentType, "application/json") {
+			t.Errorf("/api/pods/unhealthy should still return JSON, got Content-Type: %q", contentType)
+		}
+	})
+
+	t.Run("/api/pods/logs/ should not intercept /api/pods/all requests", func(t *testing.T) {
+		// Arrange: send request to /api/pods/all which must NOT be handled by the logs handler
+		router := setupRouter()
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		router.ServeHTTP(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// /api/pods/all returns a JSON array; the logs handler returns a different structure.
+		// If status is 501 (Not Implemented) it means the logs handler accidentally matched.
+		if res.StatusCode == http.StatusNotImplemented {
+			t.Error("/api/pods/all was incorrectly handled by PodLogsHandler (got 501)")
+		}
+	})
+}
+
 // TestArgoWorkflowTemplatesRoute tests that the Argo workflow templates route is registered
 func TestArgoWorkflowTemplatesRoute(t *testing.T) {
 	t.Run("should route GET /api/argo/workflow-templates to WorkflowTemplatesHandler", func(t *testing.T) {
