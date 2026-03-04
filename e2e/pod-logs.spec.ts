@@ -259,3 +259,132 @@ test.describe('PodCard UI - container count display', () => {
     await expect(testPodCard.getByTestId('pod-containers')).toBeVisible();
   });
 });
+
+/**
+ * E2E Tests for Pod Logs API (DLD-699)
+ *
+ * Tests written in skip state pending DLD-699 implementation.
+ * These tests define the expected behavior of the pod logs retrieval API
+ * endpoint: GET /api/pods/logs/{namespace}/{name}
+ *
+ * Activation: Remove test.skip() calls after DLD-699 implementation.
+ *
+ * Related issues:
+ *   DLD-699 - 작업 3-1: [로그 조회 API] e2e 테스트 작성 (skipped)
+ *   DLD-694 - Pod Log 조회 기능 추가 (parent)
+ *
+ * Test Fixtures:
+ *   - unhealthy-pod.yaml: 4 unhealthy pods in dashboard-test namespace
+ *   - Default test target: unhealthy-test-pod-1 in dashboard-test namespace
+ *   - Each fixture pod has at least 1 container defined in its spec
+ */
+
+// ------------------------------------------------------------
+// API Tests: GET /api/pods/logs/{namespace}/{name}
+// ------------------------------------------------------------
+
+test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
+  test('should return 200 with text/plain logs for a valid pod', async ({ request }) => {
+    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
+
+    // Arrange
+    const namespace = 'dashboard-test';
+    const podName = 'unhealthy-test-pod-1';
+
+    // Act
+    const response = await request.get(`/api/pods/logs/${namespace}/${podName}`);
+
+    // Assert
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('text/plain');
+
+    const body = await response.text();
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  test('should return logs for a specific container when container query param is provided', async ({ request }) => {
+    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
+
+    // Arrange: Fetch pod details first to get a valid container name
+    const namespace = 'dashboard-test';
+    const podName = 'unhealthy-test-pod-1';
+    const podsResponse = await request.get('/api/pods/all?ns=dashboard-test');
+    expect(podsResponse.ok()).toBeTruthy();
+
+    const pods = await podsResponse.json();
+    const targetPod = pods.find((pod: { name: string }) => pod.name === podName);
+    expect(targetPod).toBeDefined();
+    expect(Array.isArray(targetPod.containers)).toBeTruthy();
+    expect(targetPod.containers.length).toBeGreaterThanOrEqual(1);
+
+    const containerName = targetPod.containers[0];
+
+    // Act
+    const response = await request.get(
+      `/api/pods/logs/${namespace}/${podName}?container=${containerName}`
+    );
+
+    // Assert
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('text/plain');
+
+    const body = await response.text();
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  test('should return only the last 10 lines when tailLines=10 query param is provided', async ({ request }) => {
+    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
+
+    // Arrange
+    const namespace = 'dashboard-test';
+    const podName = 'unhealthy-test-pod-1';
+
+    // Act
+    const response = await request.get(
+      `/api/pods/logs/${namespace}/${podName}?tailLines=10`
+    );
+
+    // Assert
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('text/plain');
+
+    const body = await response.text();
+    expect(body.length).toBeGreaterThan(0);
+
+    // Assert: Response must contain at most 10 lines
+    const lines = body.trimEnd().split('\n');
+    expect(lines.length).toBeLessThanOrEqual(10);
+  });
+
+  test('should return 404 when the requested pod does not exist', async ({ request }) => {
+    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
+
+    // Arrange
+    const namespace = 'dashboard-test';
+    const podName = 'nonexistent-pod-xyz';
+
+    // Act
+    const response = await request.get(`/api/pods/logs/${namespace}/${podName}`);
+
+    // Assert
+    expect(response.status()).toBe(404);
+  });
+
+  test('should return 400 when the requested container does not exist in the pod', async ({ request }) => {
+    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
+
+    // Arrange
+    const namespace = 'dashboard-test';
+    const podName = 'unhealthy-test-pod-1';
+    const containerName = 'nonexistent-container-xyz';
+
+    // Act
+    const response = await request.get(
+      `/api/pods/logs/${namespace}/${podName}?container=${containerName}`
+    );
+
+    // Assert: Expect 400 Bad Request or an appropriate client error
+    expect(response.status()).toBeGreaterThanOrEqual(400);
+    expect(response.status()).toBeLessThan(500);
+  });
+});
