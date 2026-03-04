@@ -62,6 +62,16 @@ export function UnhealthyPodCard({ pod }: UnhealthyPodCardProps) {
           {pod.age}
         </div>
       </div>
+
+      {/* Containers */}
+      <div>
+        <div className="text-sm text-gray-600">Containers</div>
+        <div data-testid="pod-containers" className="text-sm font-medium text-gray-900">
+          {pod.containers && pod.containers.length > 0
+            ? `${pod.containers.length} ${pod.containers.length === 1 ? 'container' : 'containers'}: ${pod.containers.join(', ')}`
+            : '0 containers'}
+        </div>
+      </div>
     </div>
   );
 }

@@ -19,6 +19,7 @@ describe('UnhealthyPodCard Component', () => {
     restarts: 5,
     node: 'node-1',
     age: '1h',
+    containers: ['api-server'],
   };
 
   describe('Basic Rendering', () => {
@@ -551,6 +552,7 @@ describe('UnhealthyPodCard Component', () => {
         restarts: 7,
         node: 'kind-control-plane',
         age: '2h30m',
+        containers: ['api-server', 'sidecar-proxy'],
       };
 
       // Act
@@ -574,6 +576,126 @@ describe('UnhealthyPodCard Component', () => {
 
       // Assert: Original pod object should not be modified
       expect(mockPod).toEqual(originalPod);
+    });
+  });
+
+  describe('Containers Display', () => {
+    it('should render pod-containers element', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: ['api-server'] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert
+      expect(screen.getByTestId('pod-containers')).toBeInTheDocument();
+    });
+
+    it('should display single container name', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: ['api-server'] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert
+      const containers = screen.getByTestId('pod-containers');
+      expect(containers).toHaveTextContent('api-server');
+    });
+
+    it('should display container count prefix for single container', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: ['api-server'] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert: "1 container: api-server" or "1 containers: api-server"
+      const containers = screen.getByTestId('pod-containers');
+      expect(containers.textContent).toMatch(/1.*container/i);
+    });
+
+    it('should display all container names for multi-container pod', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: ['api-server', 'sidecar-proxy'] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert
+      const containers = screen.getByTestId('pod-containers');
+      expect(containers).toHaveTextContent('api-server');
+      expect(containers).toHaveTextContent('sidecar-proxy');
+    });
+
+    it('should display container count for multi-container pod', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: ['api-server', 'sidecar-proxy'] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert: text contains "2 containers"
+      const containers = screen.getByTestId('pod-containers');
+      expect(containers.textContent).toMatch(/2.*container/i);
+    });
+
+    it('should display full label in the expected format for two containers', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: ['api-server', 'sidecar-proxy'] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert: "2 containers: api-server, sidecar-proxy"
+      const containers = screen.getByTestId('pod-containers');
+      expect(containers.textContent).toMatch(/2 containers:\s*api-server,\s*sidecar-proxy/i);
+    });
+
+    it('should handle three or more containers', () => {
+      // Arrange
+      const pod = {
+        ...mockPod,
+        containers: ['frontend', 'backend', 'sidecar'],
+      };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert
+      const containers = screen.getByTestId('pod-containers');
+      expect(containers.textContent).toMatch(/3.*container/i);
+      expect(containers).toHaveTextContent('frontend');
+      expect(containers).toHaveTextContent('backend');
+      expect(containers).toHaveTextContent('sidecar');
+    });
+
+    it('should handle empty containers array gracefully', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: [] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert: element is present even with no containers
+      expect(screen.getByTestId('pod-containers')).toBeInTheDocument();
+    });
+
+    it('should include containers in required rendered fields', () => {
+      // Arrange
+      const pod = { ...mockPod, containers: ['api-server', 'sidecar-proxy'] };
+
+      // Act
+      render(<UnhealthyPodCard pod={pod} />);
+
+      // Assert: all required elements including containers are present
+      expect(screen.getByTestId('pod-name')).toBeInTheDocument();
+      expect(screen.getByTestId('pod-namespace')).toBeInTheDocument();
+      expect(screen.getByTestId('status-badge')).toBeInTheDocument();
+      expect(screen.getByTestId('pod-restarts')).toBeInTheDocument();
+      expect(screen.getByTestId('pod-node')).toBeInTheDocument();
+      expect(screen.getByTestId('pod-age')).toBeInTheDocument();
+      expect(screen.getByTestId('pod-containers')).toBeInTheDocument();
     });
   });
 });

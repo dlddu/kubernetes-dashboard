@@ -7,6 +7,7 @@ export interface UnhealthyPodDetails {
   restarts: number;
   node: string;
   age: string;
+  containers: string[];
 }
 
 export type PodDetails = UnhealthyPodDetails;

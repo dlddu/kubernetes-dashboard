@@ -1,10 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 // TestUnhealthyPodsHandler tests the GET /api/pods/unhealthy endpoint
@@ -854,6 +859,344 @@ func TestUnhealthyPodsHandlerTestFixture(t *testing.T) {
 			if foundPods[expectedName] {
 				t.Logf("Found test fixture pod: %s", expectedName)
 			}
+		}
+	})
+}
+
+// TestPodDetailsContainersField tests that PodDetails includes the Containers field
+// and that listPods correctly collects container names from pod specs.
+func TestPodDetailsContainersField(t *testing.T) {
+	t.Run("should include containers field in PodDetails struct", func(t *testing.T) {
+		// Arrange: create a fake clientset with a single-container pod
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "single-container-pod",
+				Namespace: "default",
+			},
+			Spec: corev1.PodSpec{
+				NodeName: "node-1",
+				Containers: []corev1.Container{
+					{Name: "api-server"},
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		}
+		clientset := fake.NewSimpleClientset(&pod)
+
+		// Act
+		pods, err := listPods(context.Background(), clientset, "default", nil)
+
+		// Assert
+		if err != nil {
+			t.Fatalf("listPods returned unexpected error: %v", err)
+		}
+		if len(pods) != 1 {
+			t.Fatalf("expected 1 pod, got %d", len(pods))
+		}
+
+		result := pods[0]
+		if result.Containers == nil {
+			t.Fatal("expected Containers field to be non-nil, got nil")
+		}
+		if len(result.Containers) != 1 {
+			t.Errorf("expected 1 container, got %d", len(result.Containers))
+		}
+		if result.Containers[0] != "api-server" {
+			t.Errorf("expected container name 'api-server', got '%s'", result.Containers[0])
+		}
+	})
+
+	t.Run("should collect all container names for multi-container pod", func(t *testing.T) {
+		// Arrange: create a fake clientset with a multi-container pod
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "multi-container-pod",
+				Namespace: "default",
+			},
+			Spec: corev1.PodSpec{
+				NodeName: "node-1",
+				Containers: []corev1.Container{
+					{Name: "api-server"},
+					{Name: "sidecar-proxy"},
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		}
+		clientset := fake.NewSimpleClientset(&pod)
+
+		// Act
+		pods, err := listPods(context.Background(), clientset, "default", nil)
+
+		// Assert
+		if err != nil {
+			t.Fatalf("listPods returned unexpected error: %v", err)
+		}
+		if len(pods) != 1 {
+			t.Fatalf("expected 1 pod, got %d", len(pods))
+		}
+
+		result := pods[0]
+		if len(result.Containers) != 2 {
+			t.Errorf("expected 2 containers, got %d", len(result.Containers))
+		}
+
+		containerNames := make(map[string]bool)
+		for _, name := range result.Containers {
+			containerNames[name] = true
+		}
+
+		if !containerNames["api-server"] {
+			t.Error("expected container 'api-server' to be present")
+		}
+		if !containerNames["sidecar-proxy"] {
+			t.Error("expected container 'sidecar-proxy' to be present")
+		}
+	})
+
+	t.Run("should preserve container name order from pod spec", func(t *testing.T) {
+		// Arrange
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ordered-containers-pod",
+				Namespace: "default",
+			},
+			Spec: corev1.PodSpec{
+				NodeName: "node-1",
+				Containers: []corev1.Container{
+					{Name: "first"},
+					{Name: "second"},
+					{Name: "third"},
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		}
+		clientset := fake.NewSimpleClientset(&pod)
+
+		// Act
+		pods, err := listPods(context.Background(), clientset, "default", nil)
+
+		// Assert
+		if err != nil {
+			t.Fatalf("listPods returned unexpected error: %v", err)
+		}
+		if len(pods) != 1 {
+			t.Fatalf("expected 1 pod, got %d", len(pods))
+		}
+
+		result := pods[0]
+		if len(result.Containers) != 3 {
+			t.Fatalf("expected 3 containers, got %d", len(result.Containers))
+		}
+		expectedOrder := []string{"first", "second", "third"}
+		for i, name := range expectedOrder {
+			if result.Containers[i] != name {
+				t.Errorf("expected container[%d] = '%s', got '%s'", i, name, result.Containers[i])
+			}
+		}
+	})
+
+	t.Run("should return empty containers slice when pod has no containers", func(t *testing.T) {
+		// Arrange: pod with no containers defined in spec
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "no-containers-pod",
+				Namespace: "default",
+			},
+			Spec: corev1.PodSpec{
+				NodeName:   "node-1",
+				Containers: []corev1.Container{},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodPending,
+			},
+		}
+		clientset := fake.NewSimpleClientset(&pod)
+
+		// Act
+		pods, err := listPods(context.Background(), clientset, "default", nil)
+
+		// Assert
+		if err != nil {
+			t.Fatalf("listPods returned unexpected error: %v", err)
+		}
+		if len(pods) != 1 {
+			t.Fatalf("expected 1 pod, got %d", len(pods))
+		}
+
+		result := pods[0]
+		if len(result.Containers) != 0 {
+			t.Errorf("expected 0 containers, got %d: %v", len(result.Containers), result.Containers)
+		}
+	})
+
+	t.Run("should include containers in JSON-serialised response", func(t *testing.T) {
+		// Arrange: create a fake clientset with a known pod
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "json-pod",
+				Namespace: "default",
+			},
+			Spec: corev1.PodSpec{
+				NodeName: "node-1",
+				Containers: []corev1.Container{
+					{Name: "api-server"},
+					{Name: "sidecar-proxy"},
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			},
+		}
+		clientset := fake.NewSimpleClientset(&pod)
+
+		// Act: serialise via listPods then JSON encode
+		pods, err := listPods(context.Background(), clientset, "default", nil)
+		if err != nil {
+			t.Fatalf("listPods returned unexpected error: %v", err)
+		}
+
+		data, err := json.Marshal(pods)
+		if err != nil {
+			t.Fatalf("failed to marshal pods: %v", err)
+		}
+
+		// Assert: the JSON output contains the 'containers' key and both names
+		var decoded []map[string]interface{}
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			t.Fatalf("failed to unmarshal pods: %v", err)
+		}
+		if len(decoded) != 1 {
+			t.Fatalf("expected 1 pod in JSON output, got %d", len(decoded))
+		}
+
+		containersRaw, exists := decoded[0]["containers"]
+		if !exists {
+			t.Fatal("expected 'containers' key in JSON output, but not found")
+		}
+
+		containers, ok := containersRaw.([]interface{})
+		if !ok {
+			t.Fatalf("expected 'containers' to be a JSON array, got %T", containersRaw)
+		}
+		if len(containers) != 2 {
+			t.Errorf("expected 2 containers in JSON, got %d", len(containers))
+		}
+	})
+}
+
+// TestPodDetailsContainersFieldResponseStructure tests that the HTTP response
+// includes the containers field with the correct content.
+func TestPodDetailsContainersFieldResponseStructure(t *testing.T) {
+	t.Run("should return containers field in API response", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		AllPodsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var pods []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(pods) == 0 {
+			t.Skip("no pods in cluster")
+		}
+
+		// All pods must include the 'containers' field
+		for i, pod := range pods {
+			if _, exists := pod["containers"]; !exists {
+				t.Errorf("pod[%d] (%v) is missing required 'containers' field", i, pod["name"])
+			}
+		}
+	})
+
+	t.Run("should include containers in required fields list", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/unhealthy", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		UnhealthyPodsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var pods []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(pods) == 0 {
+			t.Skip("no unhealthy pods in cluster")
+		}
+
+		firstPod := pods[0]
+		requiredFields := []string{"name", "namespace", "status", "restarts", "node", "age", "containers"}
+		for _, field := range requiredFields {
+			if _, exists := firstPod[field]; !exists {
+				t.Errorf("expected field '%s' in pod object, but not found", field)
+			}
+		}
+	})
+
+	t.Run("should return containers as a JSON array", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/all", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		AllPodsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", res.StatusCode)
+		}
+
+		var pods []map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&pods); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(pods) == 0 {
+			t.Skip("no pods in cluster")
+		}
+
+		containersRaw, exists := pods[0]["containers"]
+		if !exists {
+			t.Fatal("expected 'containers' field in response, not found")
+		}
+		if _, ok := containersRaw.([]interface{}); !ok {
+			t.Errorf("expected 'containers' to be an array, got %T", containersRaw)
 		}
 	})
 }
