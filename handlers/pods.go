@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -98,7 +99,15 @@ func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if k8serrors.IsBadRequest(err) {
-			writeError(w, http.StatusBadRequest, err.Error())
+			errMsg := err.Error()
+			// "waiting to start" means the container hasn't started yet (e.g., ImagePullBackOff).
+			// Return empty logs with 200 instead of 400.
+			if strings.Contains(errMsg, "waiting to start") {
+				w.Header().Set("Content-Type", "text/plain")
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			writeError(w, http.StatusBadRequest, errMsg)
 			return
 		}
 		writeError(w, http.StatusInternalServerError, errMsgPodLogsFetch)
