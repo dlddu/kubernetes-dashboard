@@ -285,8 +285,6 @@ test.describe('PodCard UI - container count display', () => {
 
 test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
   test('should return 200 with text/plain logs for a valid pod', async ({ request }) => {
-    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
-
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'unhealthy-test-pod-1';
@@ -303,8 +301,6 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
   });
 
   test('should return logs for a specific container when container query param is provided', async ({ request }) => {
-    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
-
     // Arrange: Fetch pod details first to get a valid container name
     const namespace = 'dashboard-test';
     const podName = 'unhealthy-test-pod-1';
@@ -333,8 +329,6 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
   });
 
   test('should return only the last 10 lines when tailLines=10 query param is provided', async ({ request }) => {
-    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
-
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'unhealthy-test-pod-1';
@@ -357,8 +351,6 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
   });
 
   test('should return 404 when the requested pod does not exist', async ({ request }) => {
-    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
-
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'nonexistent-pod-xyz';
@@ -371,8 +363,6 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
   });
 
   test('should return 400 when the requested container does not exist in the pod', async ({ request }) => {
-    test.skip(true, 'Skipped: pending DLD-699 pod logs API implementation');
-
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'unhealthy-test-pod-1';

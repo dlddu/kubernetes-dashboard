@@ -38,4 +38,7 @@ const (
 	errMsgSecretDelete    = "Failed to delete secret"
 
 	errMsgDeploymentNotFound = "Deployment not found"
+
+	errMsgPodNotFound  = "Pod not found"
+	errMsgPodLogsFetch = "Failed to fetch pod logs"
 )
