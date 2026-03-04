@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 /**
  * E2E Tests for Pod Containers Field (DLD-697)
  *
- * TDD Red Phase: All tests are skipped pending implementation.
+ * Tests activated after DLD-698 implementation.
  * These tests define the expected behavior of the containers field
  * added to the PodDetails API response and the container count
  * display on the UnhealthyPodCard UI component.
@@ -25,8 +25,7 @@ import { test, expect } from '@playwright/test';
 // ------------------------------------------------------------
 
 test.describe('Pods API - containers field', () => {
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should include containers array in every pod object', async ({ request }) => {
+  test('should include containers array in every pod object', async ({ request }) => {
     // Arrange: Fetch all pods from the API
     const response = await request.get('/api/pods/all');
 
@@ -47,8 +46,7 @@ test.describe('Pods API - containers field', () => {
     }
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should have at least one container name per pod', async ({ request }) => {
+  test('should have at least one container name per pod', async ({ request }) => {
     // Arrange: Fetch all pods from the API
     const response = await request.get('/api/pods/all');
 
@@ -65,8 +63,7 @@ test.describe('Pods API - containers field', () => {
     }
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should include only non-empty string values in containers array', async ({ request }) => {
+  test('should include only non-empty string values in containers array', async ({ request }) => {
     // Arrange: Fetch all pods from the API
     const response = await request.get('/api/pods/all');
 
@@ -86,8 +83,7 @@ test.describe('Pods API - containers field', () => {
     }
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should include containers array for fixture pods in dashboard-test namespace', async ({ request }) => {
+  test('should include containers array for fixture pods in dashboard-test namespace', async ({ request }) => {
     // Arrange: Fetch pods filtered to dashboard-test namespace
     const response = await request.get('/api/pods/all?ns=dashboard-test');
 
@@ -116,8 +112,7 @@ test.describe('Pods API - containers field', () => {
     }
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should preserve all existing pod fields alongside containers', async ({ request }) => {
+  test('should preserve all existing pod fields alongside containers', async ({ request }) => {
     // Arrange: Fetch all pods from the API
     const response = await request.get('/api/pods/all');
 
@@ -144,8 +139,7 @@ test.describe('Pods API - containers field', () => {
 // ------------------------------------------------------------
 
 test.describe('PodCard UI - container count display', () => {
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should display container count on each pod card', async ({ page }) => {
+  test('should display container count on each pod card', async ({ page }) => {
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
@@ -159,8 +153,7 @@ test.describe('PodCard UI - container count display', () => {
     await expect(podContainers).toBeVisible();
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should display a numeric container count on each pod card', async ({ page }) => {
+  test('should display a numeric container count on each pod card', async ({ page }) => {
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
@@ -177,8 +170,7 @@ test.describe('PodCard UI - container count display', () => {
     expect(containersText).toMatch(/\d+/); // Contains at least one digit
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should display container count of 1 or more for every pod card', async ({ page }) => {
+  test('should display container count of 1 or more for every pod card', async ({ page }) => {
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
@@ -200,8 +192,7 @@ test.describe('PodCard UI - container count display', () => {
     }
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should display container count for fixture pods from dashboard-test namespace', async ({ page }) => {
+  test('should display container count for fixture pods from dashboard-test namespace', async ({ page }) => {
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
@@ -234,8 +225,7 @@ test.describe('PodCard UI - container count display', () => {
     expect(containerCount).toBeGreaterThanOrEqual(1);
   });
 
-  // TODO: Activate when DLD-698 is implemented
-  test.skip('should display all required pod card fields including container count', async ({ page }) => {
+  test('should display all required pod card fields including container count', async ({ page }) => {
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');

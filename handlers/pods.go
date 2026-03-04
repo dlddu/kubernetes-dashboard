@@ -13,12 +13,13 @@ import (
 
 // PodDetails represents detailed information about a pod
 type PodDetails struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Status    string `json:"status"`
-	Restarts  int32  `json:"restarts"`
-	Node      string `json:"node"`
-	Age       string `json:"age"`
+	Name       string   `json:"name"`
+	Namespace  string   `json:"namespace"`
+	Status     string   `json:"status"`
+	Restarts   int32    `json:"restarts"`
+	Node       string   `json:"node"`
+	Age        string   `json:"age"`
+	Containers []string `json:"containers"`
 }
 
 // podFilter is a predicate used to select which pods to include in results.
@@ -74,13 +75,19 @@ func listPods(ctx context.Context, clientset *kubernetes.Clientset, namespace st
 			nodeName = podNodePending
 		}
 
+		containerNames := make([]string, 0, len(pod.Spec.Containers))
+		for _, c := range pod.Spec.Containers {
+			containerNames = append(containerNames, c.Name)
+		}
+
 		pods = append(pods, PodDetails{
-			Name:      pod.Name,
-			Namespace: pod.Namespace,
-			Status:    getPodStatus(pod),
-			Restarts:  getPodRestartCount(pod),
-			Node:      nodeName,
-			Age:       formatPodAge(pod.CreationTimestamp.Time),
+			Name:       pod.Name,
+			Namespace:  pod.Namespace,
+			Status:     getPodStatus(pod),
+			Restarts:   getPodRestartCount(pod),
+			Node:       nodeName,
+			Age:        formatPodAge(pod.CreationTimestamp.Time),
+			Containers: containerNames,
 		})
 	}
 
