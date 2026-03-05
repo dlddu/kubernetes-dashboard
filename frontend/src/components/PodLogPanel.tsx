@@ -176,7 +176,13 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
             </div>
           )}
 
-          {!isLoading && !error && logLines.map((line, idx) => (
+          {!isLoading && !error && logLines.length === 0 && (
+            <div className="text-gray-500">
+              No logs available for container {selectedContainer}
+            </div>
+          )}
+
+          {!isLoading && !error && logLines.length > 0 && logLines.map((line, idx) => (
             <div key={idx} className={getLineClass(line)}>
               {line}
             </div>
