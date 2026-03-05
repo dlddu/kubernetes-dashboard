@@ -378,3 +378,203 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
     expect(response.status()).toBeLessThan(500);
   });
 });
+
+/**
+ * E2E Tests for Pod Log Streaming API (DLD-701)
+ *
+ * Tests written in skip state pending DLD-701 implementation.
+ * These tests define the expected behavior of the pod log streaming API
+ * endpoint: GET /api/pods/logs/{namespace}/{name}?follow=true
+ *
+ * Activation: Remove test.skip() calls after DLD-701 implementation.
+ *
+ * Related issues:
+ *   DLD-701 - 작업 4-1: [스트리밍 API] e2e 테스트 작성 (skipped)
+ *   DLD-694 - Pod Log 조회 기능 추가 (parent)
+ *
+ * Test Fixtures:
+ *   - pod.yaml: busybox-test pod in dashboard-test namespace (running pod with log output)
+ *   - Default test target: busybox-test in dashboard-test namespace
+ *   - Container name: busybox
+ */
+
+// ------------------------------------------------------------
+// API Tests: GET /api/pods/logs/{namespace}/{name}?follow=true (SSE streaming)
+// ------------------------------------------------------------
+
+test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?follow=true', () => {
+  test('should establish SSE stream connection and receive initial log events', async ({ page }) => {
+    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
+
+    // Arrange
+    const namespace = 'dashboard-test';
+    const podName = 'busybox-test';
+    const streamUrl = `http://localhost:8080/api/pods/logs/${namespace}/${podName}?follow=true`;
+
+    // Act: Connect to SSE stream via EventSource in browser context and collect events
+    const result = await page.evaluate(async (url) => {
+      return new Promise<{ connected: boolean; contentType: string | null; events: string[] }>((resolve) => {
+        const events: string[] = [];
+        let contentType: string | null = null;
+        let connected = false;
+
+        // Use fetch to inspect headers before reading stream
+        fetch(url)
+          .then((response) => {
+            connected = response.ok;
+            contentType = response.headers.get('content-type');
+
+            const reader = response.body?.getReader();
+            if (!reader) {
+              resolve({ connected, contentType, events });
+              return;
+            }
+
+            // Read a small portion to confirm stream is live
+            reader.read().then(({ value }) => {
+              if (value) {
+                events.push(new TextDecoder().decode(value));
+              }
+              reader.cancel();
+              resolve({ connected, contentType, events });
+            });
+          })
+          .catch(() => {
+            resolve({ connected: false, contentType: null, events: [] });
+          });
+
+        // Timeout safety: resolve after 5 seconds if no data arrives
+        setTimeout(() => resolve({ connected, contentType, events }), 5000);
+      });
+    }, streamUrl);
+
+    // Assert: SSE connection should be established with correct content type
+    expect(result.connected).toBe(true);
+    expect(result.contentType).toContain('text/event-stream');
+  });
+
+  test('should receive at least one log event within 5 seconds of stream connection', async ({ page }) => {
+    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
+
+    // Arrange
+    const namespace = 'dashboard-test';
+    const podName = 'busybox-test';
+    const streamUrl = `http://localhost:8080/api/pods/logs/${namespace}/${podName}?follow=true`;
+
+    // Act: Connect to SSE stream and wait for at least one data event
+    const receivedEvents = await page.evaluate(async (url) => {
+      return new Promise<string[]>((resolve) => {
+        const events: string[] = [];
+
+        const eventSource = new EventSource(url);
+
+        eventSource.onmessage = (event) => {
+          events.push(event.data);
+          // Close after receiving at least one event
+          eventSource.close();
+          resolve(events);
+        };
+
+        eventSource.addEventListener('log', (event) => {
+          events.push((event as MessageEvent).data);
+          eventSource.close();
+          resolve(events);
+        });
+
+        eventSource.onerror = () => {
+          eventSource.close();
+          resolve(events);
+        };
+
+        // Timeout: resolve after 5 seconds even if no events received
+        setTimeout(() => {
+          eventSource.close();
+          resolve(events);
+        }, 5000);
+      });
+    }, streamUrl);
+
+    // Assert: At least one log event must be received within the timeout
+    expect(receivedEvents.length).toBeGreaterThanOrEqual(1);
+    expect(receivedEvents[0].length).toBeGreaterThan(0);
+  });
+
+  test('should clean up server-side stream resources when client disconnects', async ({ page }) => {
+    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
+
+    // Arrange
+    const namespace = 'dashboard-test';
+    const podName = 'busybox-test';
+    const streamUrl = `http://localhost:8080/api/pods/logs/${namespace}/${podName}?follow=true`;
+
+    // Act: Connect to SSE stream, receive at least one event, then close the connection
+    const streamResult = await page.evaluate(async (url) => {
+      return new Promise<{ receivedBeforeClose: number; closedSuccessfully: boolean }>((resolve) => {
+        let receivedBeforeClose = 0;
+        let closedSuccessfully = false;
+
+        const eventSource = new EventSource(url);
+
+        const closeAndResolve = () => {
+          eventSource.close();
+          closedSuccessfully = eventSource.readyState === EventSource.CLOSED;
+          resolve({ receivedBeforeClose, closedSuccessfully });
+        };
+
+        eventSource.onmessage = (event) => {
+          if (event.data) {
+            receivedBeforeClose++;
+          }
+          // Close after first event to simulate client disconnect
+          closeAndResolve();
+        };
+
+        eventSource.addEventListener('log', (event) => {
+          if ((event as MessageEvent).data) {
+            receivedBeforeClose++;
+          }
+          closeAndResolve();
+        });
+
+        eventSource.onerror = () => {
+          closeAndResolve();
+        };
+
+        // Timeout safety
+        setTimeout(closeAndResolve, 5000);
+      });
+    }, streamUrl);
+
+    // Assert: Client must have received at least one event before closing
+    expect(streamResult.receivedBeforeClose).toBeGreaterThanOrEqual(1);
+
+    // Assert: EventSource must report CLOSED state after close() is called
+    expect(streamResult.closedSuccessfully).toBe(true);
+
+    // Act: Verify the server accepts new connections after previous client disconnected
+    // (indicates server-side cleanup occurred and resources are not leaked)
+    const reconnectResult = await page.evaluate(async (url) => {
+      return new Promise<{ connected: boolean }>((resolve) => {
+        const eventSource = new EventSource(url);
+
+        eventSource.onopen = () => {
+          eventSource.close();
+          resolve({ connected: true });
+        };
+
+        eventSource.onerror = () => {
+          eventSource.close();
+          resolve({ connected: false });
+        };
+
+        setTimeout(() => {
+          eventSource.close();
+          resolve({ connected: false });
+        }, 5000);
+      });
+    }, streamUrl);
+
+    // Assert: Server must accept a new SSE connection after previous client disconnected
+    expect(reconnectResult.connected).toBe(true);
+  });
+});
