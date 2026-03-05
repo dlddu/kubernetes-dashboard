@@ -581,3 +581,322 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
     expect(reconnectResult.connected).toBe(true);
   });
 });
+
+/**
+ * E2E Tests for PodLogPanel UI Component (DLD-703)
+ *
+ * Tests written in skip state pending DLD-703 implementation.
+ * These tests define the expected behavior of the PodLogPanel slide-over
+ * component that appears when a user clicks a Pod card on the Pods page.
+ *
+ * Activation: Remove test.describe.skip() call after DLD-703 implementation.
+ *
+ * Related issues:
+ *   DLD-703 - 작업 5-1: [PodLogPanel UI] e2e 테스트 작성 (skipped)
+ *   DLD-694 - Pod Log 조회 기능 추가 (parent)
+ *
+ * Component structure (from pod-log-panel.jsx wireframe):
+ *   - Backdrop: fixed overlay behind the panel (data-testid="log-panel-backdrop")
+ *   - LogPanel: slide-over from right side (data-testid="log-panel")
+ *     - Header: title, StatusBadge, pod namespace/name, container selector, Follow button
+ *     - Log viewer: dark-background monospace area (data-testid="log-panel-log-viewer")
+ *     - Footer: selected container name + streaming indicator
+ *
+ * Test Fixtures:
+ *   - unhealthy-pod.yaml: 4 unhealthy pods in dashboard-test namespace
+ *   - multi-container fixture: pod with 2+ containers (e.g., unhealthy-test-pod-1)
+ *   - busybox-test: running pod in dashboard-test namespace with log output
+ */
+
+// ------------------------------------------------------------
+// UI Tests: PodLogPanel — open and content display
+// ------------------------------------------------------------
+
+test.describe.skip('PodLogPanel UI - panel open and content display', () => {
+  test('should slide in the log panel when a pod card is clicked', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and wait for pod cards to render
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+
+    // Act: Click the first pod card to open the log panel
+    await firstPodCard.click();
+
+    // Assert: Log panel should become visible after click
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Assert: Backdrop overlay should also be visible
+    const backdrop = page.getByTestId('log-panel-backdrop');
+    await expect(backdrop).toBeVisible();
+  });
+
+  test('should display pod name, namespace, and status badge in the log panel header', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and locate a known fixture pod card
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(1);
+
+    // Act: Find unhealthy-test-pod-1 and click it to open the log panel
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'unhealthy-test-pod-1') {
+        targetCard = card;
+        break;
+      }
+    }
+
+    expect(targetCard).toBeTruthy();
+    if (!targetCard) return;
+
+    await targetCard.click();
+
+    // Assert: Log panel should be visible
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Assert: Panel title should read "Pod Logs"
+    const panelTitle = logPanel.getByTestId('log-panel-title');
+    await expect(panelTitle).toBeVisible();
+    await expect(panelTitle).toContainText('Pod Logs');
+
+    // Assert: Pod info area should show namespace/name format
+    const podInfo = logPanel.getByTestId('log-panel-pod-info');
+    await expect(podInfo).toBeVisible();
+    const podInfoText = await podInfo.innerText();
+    expect(podInfoText).toContain('dashboard-test');
+    expect(podInfoText).toContain('unhealthy-test-pod-1');
+
+    // Assert: Status badge should reflect the pod's current status
+    const statusBadge = logPanel.getByTestId('status-badge');
+    await expect(statusBadge).toBeVisible();
+    const statusText = await statusBadge.innerText();
+    expect(statusText.length).toBeGreaterThan(0);
+  });
+
+  test('should display log content in the log viewer area', async ({ page }) => {
+    // Arrange: Navigate to the Pods page
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Click the first pod card to open the log panel
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    // Assert: Log panel should be visible
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Assert: Log viewer should be visible and not empty
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    await expect(logViewer).toBeVisible();
+
+    // Wait for logs to load (API call completes after panel opens)
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Log viewer should contain at least one line of text
+    const logContent = await logViewer.innerText();
+    expect(logContent.trim().length).toBeGreaterThan(0);
+  });
+});
+
+// ------------------------------------------------------------
+// UI Tests: PodLogPanel — multi-container support
+// ------------------------------------------------------------
+
+test.describe.skip('PodLogPanel UI - multi-container pod support', () => {
+  test('should display container selector dropdown for a multi-container pod', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and find a multi-container pod
+    // (unhealthy-test-pod-1 is expected to have 2+ containers per fixture)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(1);
+
+    // Act: Find a pod whose container count badge shows >= 2 and click it
+    let multiContainerCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const containersText = await card.getByTestId('pod-containers').innerText();
+      const containerCount = parseInt(containersText.replace(/\D/g, ''), 10);
+      if (containerCount >= 2) {
+        multiContainerCard = card;
+        break;
+      }
+    }
+
+    expect(multiContainerCard).toBeTruthy();
+    if (!multiContainerCard) return;
+
+    await multiContainerCard.click();
+
+    // Assert: Log panel should be visible
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Assert: Container selector dropdown should be visible for multi-container pods
+    const containerSelector = logPanel.getByTestId('log-panel-container-selector');
+    await expect(containerSelector).toBeVisible();
+  });
+
+  test('should reload logs when a different container is selected from the dropdown', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and open a multi-container pod log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    // Act: Find a pod with 2+ containers
+    let multiContainerCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const containersText = await card.getByTestId('pod-containers').innerText();
+      const containerCount = parseInt(containersText.replace(/\D/g, ''), 10);
+      if (containerCount >= 2) {
+        multiContainerCard = card;
+        break;
+      }
+    }
+
+    expect(multiContainerCard).toBeTruthy();
+    if (!multiContainerCard) return;
+
+    await multiContainerCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const containerSelector = logPanel.getByTestId('log-panel-container-selector');
+    await expect(containerSelector).toBeVisible();
+
+    // Act: Record the initial log content before switching container
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    await page.waitForLoadState('networkidle');
+    const initialLogContent = await logViewer.innerText();
+
+    // Act: Select the second option in the container dropdown
+    await containerSelector.selectOption({ index: 1 });
+
+    // Wait for new logs to load after container switch
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Footer should show the newly selected container name
+    const footer = logPanel.getByTestId('log-panel-footer');
+    await expect(footer).toBeVisible();
+    const footerText = await footer.innerText();
+    expect(footerText.length).toBeGreaterThan(0);
+
+    // Assert: Log viewer should still be visible (logs reloaded)
+    await expect(logViewer).toBeVisible();
+    const updatedLogContent = await logViewer.innerText();
+
+    // Assert: Log content area should have been refreshed
+    // (content may differ or remain the same depending on the container,
+    //  but the viewer must remain visible and non-empty after switch)
+    expect(updatedLogContent.trim().length).toBeGreaterThan(0);
+    expect(updatedLogContent).not.toBe(initialLogContent);
+  });
+});
+
+// ------------------------------------------------------------
+// UI Tests: PodLogPanel — Follow (streaming) mode
+// ------------------------------------------------------------
+
+test.describe.skip('PodLogPanel UI - Follow streaming mode', () => {
+  test('should show streaming indicator in footer when Follow button is clicked', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and open the log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Act: Click the Follow button to enable streaming mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await expect(followButton).toBeVisible();
+    await followButton.click();
+
+    // Assert: Follow button should show active/streaming state
+    // (pulse animation class applied when follow mode is active)
+    const followButtonClasses = await followButton.getAttribute('class');
+    expect(followButtonClasses).toMatch(/pulse|active|streaming/i);
+
+    // Assert: Streaming indicator should appear in the footer
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    // Assert: Streaming indicator should contain "Streaming live" text
+    const indicatorText = await streamingIndicator.innerText();
+    expect(indicatorText.toLowerCase()).toContain('streaming live');
+  });
+});
+
+// ------------------------------------------------------------
+// UI Tests: PodLogPanel — close interactions
+// ------------------------------------------------------------
+
+test.describe.skip('PodLogPanel UI - panel close interactions', () => {
+  test('should close the log panel when the backdrop is clicked', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and open the log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const backdrop = page.getByTestId('log-panel-backdrop');
+    await expect(backdrop).toBeVisible();
+
+    // Act: Click the backdrop overlay to dismiss the panel
+    await backdrop.click({ position: { x: 10, y: 10 } });
+
+    // Assert: Log panel should no longer be visible after backdrop click
+    await expect(logPanel).not.toBeVisible();
+
+    // Assert: Backdrop should also be dismissed
+    await expect(backdrop).not.toBeVisible();
+  });
+
+  test('should close the log panel when the X close button is clicked', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and open the log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Act: Click the X close button in the panel header
+    const closeButton = logPanel.getByTestId('log-panel-close-button');
+    await expect(closeButton).toBeVisible();
+    await closeButton.click();
+
+    // Assert: Log panel should no longer be visible after close button click
+    await expect(logPanel).not.toBeVisible();
+
+    // Assert: The pods page should still be visible after panel is closed
+    await expect(page.getByTestId('pod-card').first()).toBeVisible();
+  });
+});
