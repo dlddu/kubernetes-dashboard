@@ -166,7 +166,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
                 role="status"
                 className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full"
               />
-              <span>Loading logs...</span>
+              <span>Loading logs for {selectedContainer}...</span>
             </div>
           )}
 
