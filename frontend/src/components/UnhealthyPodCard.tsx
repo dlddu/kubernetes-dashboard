@@ -3,14 +3,30 @@ import { StatusBadge } from './StatusBadge';
 
 interface UnhealthyPodCardProps {
   pod: UnhealthyPodDetails;
+  onClick?: (pod: UnhealthyPodDetails) => void;
+  isSelected?: boolean;
 }
 
-export function UnhealthyPodCard({ pod }: UnhealthyPodCardProps) {
+export function UnhealthyPodCard({ pod, onClick, isSelected }: UnhealthyPodCardProps) {
   // Determine if restart count should be highlighted (> 10)
   const isHighRestartCount = pod.restarts > 10;
 
+  const handleClick = () => {
+    onClick?.(pod);
+  };
+
   return (
-    <div data-testid="pod-card" className="bg-white rounded-lg border border-gray-200 shadow p-6 space-y-4">
+    <div
+      data-testid="pod-card"
+      className={[
+        'bg-white rounded-lg border border-gray-200 shadow p-6 space-y-4',
+        onClick ? 'cursor-pointer hover:bg-gray-50 transition-all' : '',
+        isSelected ? 'ring-2 ring-blue-500' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onClick={handleClick}
+    >
       {/* Pod Name */}
       <div>
         <h3 data-testid="pod-name" className="text-lg font-semibold text-gray-900 truncate">

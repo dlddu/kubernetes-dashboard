@@ -612,7 +612,7 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
 // UI Tests: PodLogPanel — open and content display
 // ------------------------------------------------------------
 
-test.describe.skip('PodLogPanel UI - panel open and content display', () => {
+test.describe('PodLogPanel UI - panel open and content display', () => {
   test('should slide in the log panel when a pod card is clicked', async ({ page }) => {
     // Arrange: Navigate to the Pods page and wait for pod cards to render
     await page.goto('/pods');
@@ -712,7 +712,7 @@ test.describe.skip('PodLogPanel UI - panel open and content display', () => {
 // UI Tests: PodLogPanel — multi-container support
 // ------------------------------------------------------------
 
-test.describe.skip('PodLogPanel UI - multi-container pod support', () => {
+test.describe('PodLogPanel UI - multi-container pod support', () => {
   test('should display container selector dropdown for a multi-container pod', async ({ page }) => {
     // Arrange: Navigate to the Pods page and find a multi-container pod
     // (unhealthy-test-pod-1 is expected to have 2+ containers per fixture)
@@ -813,7 +813,7 @@ test.describe.skip('PodLogPanel UI - multi-container pod support', () => {
 // UI Tests: PodLogPanel — Follow (streaming) mode
 // ------------------------------------------------------------
 
-test.describe.skip('PodLogPanel UI - Follow streaming mode', () => {
+test.describe('PodLogPanel UI - Follow streaming mode', () => {
   test('should show streaming indicator in footer when Follow button is clicked', async ({ page }) => {
     // Arrange: Navigate to the Pods page and open the log panel
     await page.goto('/pods');
@@ -850,7 +850,7 @@ test.describe.skip('PodLogPanel UI - Follow streaming mode', () => {
 // UI Tests: PodLogPanel — close interactions
 // ------------------------------------------------------------
 
-test.describe.skip('PodLogPanel UI - panel close interactions', () => {
+test.describe('PodLogPanel UI - panel close interactions', () => {
   test('should close the log panel when the backdrop is clicked', async ({ page }) => {
     // Arrange: Navigate to the Pods page and open the log panel
     await page.goto('/pods');

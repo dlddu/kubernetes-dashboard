@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { PodsTab } from './PodsTab';
 
 // Mock usePolling to avoid timer side effects in tests
@@ -10,6 +11,16 @@ vi.mock('../hooks/usePolling', () => ({
     lastUpdate: new Date(),
     isLoading: false,
   })),
+}));
+
+// Mock PodLogPanel to avoid testing it here (it has its own test file)
+vi.mock('./PodLogPanel', () => ({
+  PodLogPanel: ({ pod, onClose }: { pod: { name: string }; onClose: () => void }) => (
+    <div data-testid="log-panel">
+      <span data-testid="log-panel-pod-name">{pod.name}</span>
+      <button data-testid="log-panel-close-button" onClick={onClose}>Close</button>
+    </div>
+  ),
 }));
 
 // Mock fetch API
@@ -657,6 +668,278 @@ describe('PodsTab Component', () => {
         expect(screen.getByText('test-pod')).toBeInTheDocument();
         expect(screen.getByText('dashboard-test')).toBeInTheDocument();
         expect(screen.getByText(/7/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  // =========================================================================
+  // Pod card click → PodLogPanel
+  // =========================================================================
+
+  describe('Pod card click — PodLogPanel integration', () => {
+    it('should not render PodLogPanel before any pod card is clicked', async () => {
+      // Arrange
+      const mockPods = [
+        {
+          name: 'pod-1',
+          namespace: 'default',
+          status: 'CrashLoopBackOff',
+          restarts: 5,
+          node: 'node-1',
+          age: '1h',
+          containers: ['main'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pod-card')).toBeInTheDocument();
+      });
+
+      // Assert: log panel must NOT be present until a card is clicked
+      expect(screen.queryByTestId('log-panel')).not.toBeInTheDocument();
+    });
+
+    it('should render PodLogPanel when a pod card is clicked', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const mockPods = [
+        {
+          name: 'click-me-pod',
+          namespace: 'default',
+          status: 'ImagePullBackOff',
+          restarts: 2,
+          node: 'node-1',
+          age: '30m',
+          containers: ['main'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pod-card')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('pod-card'));
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel')).toBeInTheDocument();
+      });
+    });
+
+    it('should pass the clicked pod to PodLogPanel', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const mockPods = [
+        {
+          name: 'specific-pod',
+          namespace: 'prod',
+          status: 'Failed',
+          restarts: 10,
+          node: 'node-2',
+          age: '2h',
+          containers: ['app'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pod-card')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('pod-card'));
+
+      // Assert: PodLogPanel should receive and display the pod name
+      await waitFor(() => {
+        const podNameInPanel = screen.getByTestId('log-panel-pod-name');
+        expect(podNameInPanel).toHaveTextContent('specific-pod');
+      });
+    });
+
+    it('should close PodLogPanel when onClose callback is called', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const mockPods = [
+        {
+          name: 'close-test-pod',
+          namespace: 'default',
+          status: 'Pending',
+          restarts: 0,
+          node: 'node-1',
+          age: '5m',
+          containers: ['main'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pod-card')).toBeInTheDocument();
+      });
+
+      // Open the panel
+      await user.click(screen.getByTestId('pod-card'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel')).toBeInTheDocument();
+      });
+
+      // Close the panel via the mocked close button
+      await user.click(screen.getByTestId('log-panel-close-button'));
+
+      // Assert: panel should be gone
+      await waitFor(() => {
+        expect(screen.queryByTestId('log-panel')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should make pod cards clickable (cursor-pointer styling)', async () => {
+      // Arrange
+      const mockPods = [
+        {
+          name: 'styled-pod',
+          namespace: 'default',
+          status: 'CrashLoopBackOff',
+          restarts: 7,
+          node: 'node-1',
+          age: '3h',
+          containers: ['main'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pod-card')).toBeInTheDocument();
+      });
+
+      // Assert: pod card should have pointer cursor class
+      const podCard = screen.getByTestId('pod-card');
+      expect(podCard.className).toMatch(/cursor-pointer/);
+    });
+
+    it('should highlight selected pod card with ring styling', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const mockPods = [
+        {
+          name: 'selected-pod',
+          namespace: 'default',
+          status: 'ImagePullBackOff',
+          restarts: 1,
+          node: 'node-1',
+          age: '1h',
+          containers: ['main'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pod-card')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('pod-card'));
+
+      // Assert: selected pod card should have ring highlight class
+      await waitFor(() => {
+        const podCard = screen.getByTestId('pod-card');
+        expect(podCard.className).toMatch(/ring/);
+      });
+    });
+
+    it('should open a different pod panel when clicking another card', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const mockPods = [
+        {
+          name: 'pod-alpha',
+          namespace: 'default',
+          status: 'Failed',
+          restarts: 3,
+          node: 'node-1',
+          age: '1h',
+          containers: ['main'],
+        },
+        {
+          name: 'pod-beta',
+          namespace: 'default',
+          status: 'Pending',
+          restarts: 0,
+          node: 'node-2',
+          age: '2h',
+          containers: ['app'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPods,
+      });
+
+      // Act
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        const cards = screen.getAllByTestId('pod-card');
+        expect(cards.length).toBe(2);
+      });
+
+      const cards = screen.getAllByTestId('pod-card');
+
+      // Click first pod
+      await user.click(cards[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-pod-name')).toHaveTextContent('pod-alpha');
+      });
+
+      // Click second pod
+      await user.click(cards[1]);
+
+      // Assert: panel now shows the second pod
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-pod-name')).toHaveTextContent('pod-beta');
       });
     });
   });
