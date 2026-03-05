@@ -403,13 +403,14 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
 // ------------------------------------------------------------
 
 test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?follow=true', () => {
-  test('should establish SSE stream connection and receive initial log events', async ({ page }) => {
-    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
-
+  test('should establish SSE stream connection and receive initial log events', async ({ page, baseURL }) => {
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'busybox-test';
-    const streamUrl = `http://localhost:8080/api/pods/logs/${namespace}/${podName}?follow=true`;
+    const streamUrl = `${baseURL}/api/pods/logs/${namespace}/${podName}?follow=true`;
+
+    // Navigate to dashboard so browser has proper origin for fetch/EventSource
+    await page.goto(baseURL!);
 
     // Act: Connect to SSE stream via EventSource in browser context and collect events
     const result = await page.evaluate(async (url) => {
@@ -453,13 +454,14 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
     expect(result.contentType).toContain('text/event-stream');
   });
 
-  test('should receive at least one log event within 5 seconds of stream connection', async ({ page }) => {
-    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
-
+  test('should receive at least one log event within 5 seconds of stream connection', async ({ page, baseURL }) => {
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'busybox-test';
-    const streamUrl = `http://localhost:8080/api/pods/logs/${namespace}/${podName}?follow=true`;
+    const streamUrl = `${baseURL}/api/pods/logs/${namespace}/${podName}?follow=true`;
+
+    // Navigate to dashboard so browser has proper origin for fetch/EventSource
+    await page.goto(baseURL!);
 
     // Act: Connect to SSE stream and wait for at least one data event
     const receivedEvents = await page.evaluate(async (url) => {
@@ -499,13 +501,14 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
     expect(receivedEvents[0].length).toBeGreaterThan(0);
   });
 
-  test('should clean up server-side stream resources when client disconnects', async ({ page }) => {
-    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
-
+  test('should clean up server-side stream resources when client disconnects', async ({ page, baseURL }) => {
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'busybox-test';
-    const streamUrl = `http://localhost:8080/api/pods/logs/${namespace}/${podName}?follow=true`;
+    const streamUrl = `${baseURL}/api/pods/logs/${namespace}/${podName}?follow=true`;
+
+    // Navigate to dashboard so browser has proper origin for fetch/EventSource
+    await page.goto(baseURL!);
 
     // Act: Connect to SSE stream, receive at least one event, then close the connection
     const streamResult = await page.evaluate(async (url) => {

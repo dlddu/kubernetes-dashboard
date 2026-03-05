@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -78,6 +79,7 @@ func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	container := r.URL.Query().Get("container")
+	follow := r.URL.Query().Get("follow") == "true"
 
 	tailLines := int64(500)
 	if tl := r.URL.Query().Get("tailLines"); tl != "" {
@@ -89,7 +91,7 @@ func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
 	opts := &corev1.PodLogOptions{
 		Container: container,
 		TailLines: &tailLines,
-		Follow:    false,
+		Follow:    follow,
 	}
 
 	stream, err := getPodLogStream(r.Context(), clientset, namespace, name, opts)
@@ -114,6 +116,34 @@ func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer stream.Close()
+
+	if follow {
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			writeError(w, http.StatusInternalServerError, "streaming not supported")
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.WriteHeader(http.StatusOK)
+
+		scanner := bufio.NewScanner(stream)
+		for {
+			select {
+			case <-r.Context().Done():
+				return
+			default:
+			}
+
+			if !scanner.Scan() {
+				return
+			}
+
+			fmt.Fprintf(w, "data: %s\n\n", scanner.Text()) //nolint:errcheck
+			flusher.Flush()
+		}
+	}
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
