@@ -31,6 +31,16 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.namespace
+  - name: sidecar-logger
+    image: nonexistent-sidecar:latest
+    imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
   restartPolicy: Always
 ---
 apiVersion: v1

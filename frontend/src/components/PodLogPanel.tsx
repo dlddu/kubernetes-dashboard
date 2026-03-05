@@ -147,7 +147,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
             onClick={handleFollowToggle}
             className={`text-sm px-3 py-1 rounded border ${
               isFollowing
-                ? 'bg-blue-600 border-blue-500 text-white'
+                ? 'bg-blue-600 border-blue-500 text-white animate-pulse'
                 : 'bg-gray-700 border-gray-600 text-gray-300 hover:text-white'
             }`}
           >
