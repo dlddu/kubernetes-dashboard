@@ -3,10 +3,14 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -37,13 +41,83 @@ var UnhealthyPodsHandler = handleGet("Failed to fetch pods data", func(r *http.R
 	})
 })
 
+// getLogClientset is a package-level variable that returns a Kubernetes client.
+// Tests may override this variable to inject a fake clientset.
+var getLogClientset func() (kubernetes.Interface, error) = func() (kubernetes.Interface, error) {
+	return getKubernetesClient()
+}
+
+// getPodLogStream is a package-level variable that retrieves a log stream for a pod.
+// Tests may override this variable to inject a fake stream.
+var getPodLogStream func(ctx context.Context, clientset kubernetes.Interface, namespace, name string, opts *corev1.PodLogOptions) (io.ReadCloser, error) = func(
+	ctx context.Context,
+	clientset kubernetes.Interface,
+	namespace, name string,
+	opts *corev1.PodLogOptions,
+) (io.ReadCloser, error) {
+	return clientset.CoreV1().Pods(namespace).GetLogs(name, opts).Stream(ctx)
+}
+
 // PodLogsHandler handles the GET /api/pods/logs/{namespace}/{name} endpoint.
-// The actual log retrieval logic is not yet implemented (planned for DLD-697).
 func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-	writeError(w, http.StatusNotImplemented, "Pod logs endpoint not yet implemented")
+
+	namespace, name, err := parseResourcePath(r.URL.Path, podLogsPathPrefix, "")
+	if err != nil {
+		writeError(w, http.StatusBadRequest,
+			fmt.Sprintf("Invalid path format. Expected %s{namespace}/{name}", podLogsPathPrefix))
+		return
+	}
+
+	clientset, err := getLogClientset()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, errMsgClientCreate)
+		return
+	}
+
+	container := r.URL.Query().Get("container")
+
+	tailLines := int64(500)
+	if tl := r.URL.Query().Get("tailLines"); tl != "" {
+		if parsed, parseErr := strconv.ParseInt(tl, 10, 64); parseErr == nil {
+			tailLines = parsed
+		}
+	}
+
+	opts := &corev1.PodLogOptions{
+		Container: container,
+		TailLines: &tailLines,
+		Follow:    false,
+	}
+
+	stream, err := getPodLogStream(r.Context(), clientset, namespace, name, opts)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			writeError(w, http.StatusNotFound, errMsgPodNotFound)
+			return
+		}
+		if k8serrors.IsBadRequest(err) {
+			errMsg := err.Error()
+			// "waiting to start" means the container hasn't started yet (e.g., ImagePullBackOff).
+			// Return empty logs with 200 instead of 400.
+			if strings.Contains(errMsg, "waiting to start") {
+				w.Header().Set("Content-Type", "text/plain")
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			writeError(w, http.StatusBadRequest, errMsg)
+			return
+		}
+		writeError(w, http.StatusInternalServerError, errMsgPodLogsFetch)
+		return
+	}
+	defer stream.Close()
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	io.Copy(w, stream) //nolint:errcheck
 }
 
 // AllPodsHandler handles the GET /api/pods/all endpoint

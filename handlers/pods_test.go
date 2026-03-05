@@ -3,13 +3,20 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	ktesting "k8s.io/client-go/testing"
 )
 
 // TestUnhealthyPodsHandler tests the GET /api/pods/unhealthy endpoint
@@ -1197,6 +1204,573 @@ func TestPodDetailsContainersFieldResponseStructure(t *testing.T) {
 		}
 		if _, ok := containersRaw.([]interface{}); !ok {
 			t.Errorf("expected 'containers' to be an array, got %T", containersRaw)
+		}
+	})
+}
+
+// ---------------------------------------------------------------------------
+// TestPodLogsHandler tests the GET /api/pods/logs/{namespace}/{name} endpoint.
+//
+// fake.NewSimpleClientset does not provide a real log stream via GetLogs.
+// Tests that require actual log content use a ktesting.ReactionFunc reactor
+// registered on the fake client to intercept the "get" action on "pods/log"
+// and return a synthetic io.ReadCloser.
+//
+// Tests that only care about routing / validation (404, 405, 400) use the
+// PodLogsHandler directly without wiring up a reactor.
+// ---------------------------------------------------------------------------
+
+// podLogReactor returns a ktesting.ReactionFunc that intercepts GetLogs calls
+// on the fake clientset and returns the provided log content.  It only fires
+// for the "log" subresource so ordinary pod GET calls are passed through.
+//
+// Usage:
+//
+//	clientset.Fake.PrependReactor("get", "pods", podLogReactor(logBody))
+func podLogReactor(logBody string) ktesting.ReactionFunc {
+	return func(action ktesting.Action) (bool, runtime.Object, error) {
+		if action.GetSubresource() != "log" {
+			return false, nil, nil
+		}
+		// runtime.Unknown carries raw bytes; the implementation reads the stream
+		// via io.ReadAll after calling GetLogs(...).Stream(ctx).
+		return true, &runtime.Unknown{Raw: []byte(logBody)}, nil
+	}
+}
+
+// TestPodLogsHandlerHappyPath tests the successful log retrieval path.
+// These tests define the contract that the implementation must satisfy.
+func TestPodLogsHandlerHappyPath(t *testing.T) {
+	t.Run("should return 200 OK with text/plain content-type for valid pod", func(t *testing.T) {
+		// Arrange
+		fakeLogContent := "line1\nline2\nline3\n"
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(fakeLogContent)), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 200 is valid.
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200, got %d", res.StatusCode)
+		}
+
+		// The Content-Type must be text/plain.
+		if res.StatusCode == http.StatusOK {
+			ct := res.Header.Get("Content-Type")
+			if !strings.HasPrefix(ct, "text/plain") {
+				t.Errorf("expected Content-Type 'text/plain', got '%s'", ct)
+			}
+		}
+	})
+
+	t.Run("should include log content in response body", func(t *testing.T) {
+		// Arrange
+		wantLogs := "2024-01-01 INFO server started\n2024-01-01 INFO listening on :8080\n"
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(wantLogs)), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/log-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200, got %d", res.StatusCode)
+		}
+		if res.StatusCode == http.StatusOK {
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatalf("failed to read response body: %v", err)
+			}
+			if string(body) != wantLogs {
+				t.Errorf("expected log body %q, got %q", wantLogs, string(body))
+			}
+		}
+	})
+
+	t.Run("should filter logs by container when container query param is provided", func(t *testing.T) {
+		// Arrange – multi-container pod; caller requests "sidecar" container.
+		// capturedContainer records the container name passed to getPodLogStream via PodLogOptions.
+		var capturedContainer string
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, opts *corev1.PodLogOptions) (io.ReadCloser, error) {
+			capturedContainer = opts.Container
+			return io.NopCloser(strings.NewReader("sidecar log\n")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/multi-container-pod?container=sidecar", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 200 is valid.
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("unexpected status %d", res.StatusCode)
+		}
+
+		// The container name must be forwarded to PodLogOptions.
+		if capturedContainer != "sidecar" {
+			t.Errorf("expected container 'sidecar' to be requested, got %q", capturedContainer)
+		}
+	})
+
+	t.Run("should respect tailLines query parameter", func(t *testing.T) {
+		// Arrange
+		var capturedTailLines *int64
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, opts *corev1.PodLogOptions) (io.ReadCloser, error) {
+			capturedTailLines = opts.TailLines
+			return io.NopCloser(strings.NewReader("last 100 lines\n")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/tail-pod?tailLines=100", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 200 is valid.
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("unexpected status %d", res.StatusCode)
+		}
+
+		if capturedTailLines == nil || *capturedTailLines != 100 {
+			t.Errorf("expected tailLines=100 to be passed to GetLogs, got %v", capturedTailLines)
+		}
+	})
+}
+
+// TestPodLogsHandlerNotFound tests the 404 error path.
+func TestPodLogsHandlerNotFound(t *testing.T) {
+	t.Run("should return 404 when pod does not exist", func(t *testing.T) {
+		// Arrange – inject a stream function that returns a NotFound error.
+		podGR := schema.GroupResource{Group: "", Resource: "pods"}
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, name string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return nil, k8serrors.NewNotFound(podGR, name)
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/ghost-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 404 is valid.
+		if res.StatusCode != http.StatusNotFound {
+			t.Errorf("expected 404, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return 404 for non-existent pod via cluster", func(t *testing.T) {
+		skipIfNoCluster(t)
+
+		// Arrange
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/non-existent-pod-xyz-123", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusNotFound {
+			t.Errorf("expected 404 for non-existent pod, got %d", res.StatusCode)
+		}
+	})
+}
+
+// TestPodLogsHandlerMethodNotAllowed tests the 405 path for non-GET methods.
+func TestPodLogsHandlerMethodNotAllowed(t *testing.T) {
+	t.Run("should return 405 for non-GET methods", func(t *testing.T) {
+		// Arrange
+		methods := []string{
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodPatch,
+		}
+
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				req := httptest.NewRequest(method, "/api/pods/logs/default/my-pod", nil)
+				w := httptest.NewRecorder()
+
+				// Act
+				PodLogsHandler(w, req)
+
+				// Assert
+				res := w.Result()
+				defer res.Body.Close()
+
+				if res.StatusCode != http.StatusMethodNotAllowed {
+					t.Errorf("expected 405 for %s, got %d", method, res.StatusCode)
+				}
+			})
+		}
+	})
+}
+
+// TestPodLogsHandlerBadRequest tests the 400 path for malformed paths.
+func TestPodLogsHandlerBadRequest(t *testing.T) {
+	t.Run("should return 400 for path missing pod name", func(t *testing.T) {
+		// Arrange – path has only namespace, no pod name segment.
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 400 is valid.
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected 400 for malformed path, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return 400 for path with only prefix and no namespace", func(t *testing.T) {
+		// Arrange – bare prefix with no resource segments.
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 400 is valid.
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected 400 for bare prefix path, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return 400 for path with empty namespace segment", func(t *testing.T) {
+		// Arrange – double slash forces an empty namespace token.
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs//my-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 400 is valid.
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected 400 for empty namespace, got %d", res.StatusCode)
+		}
+	})
+}
+
+// TestPodLogsHandlerQueryParams tests query parameter parsing contracts.
+// These tests verify that the handler correctly reads and forwards query
+// parameters to the Kubernetes API; they form the specification for the
+// implementation to fulfil.
+func TestPodLogsHandlerQueryParams(t *testing.T) {
+	t.Run("should use default tailLines of 500 when param is absent", func(t *testing.T) {
+		// Arrange
+		var observedTailLines *int64
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, opts *corev1.PodLogOptions) (io.ReadCloser, error) {
+			observedTailLines = opts.TailLines
+			return io.NopCloser(strings.NewReader("log line\n")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/default-tail-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 200 is valid.
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("unexpected status %d", res.StatusCode)
+		}
+
+		// Contract: default tailLines must be 500.
+		if observedTailLines == nil || *observedTailLines != 500 {
+			t.Errorf("expected default tailLines=500, got %v", observedTailLines)
+		}
+	})
+
+	t.Run("should not follow logs when follow param is absent or false", func(t *testing.T) {
+		// Arrange – verify Follow=false is set in PodLogOptions.
+		var capturedFollow bool
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, opts *corev1.PodLogOptions) (io.ReadCloser, error) {
+			capturedFollow = opts.Follow
+			return io.NopCloser(strings.NewReader("one-shot log\n")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/no-follow-pod?follow=false", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 200 is valid.
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("unexpected status %d", res.StatusCode)
+		}
+
+		// Follow must be false.
+		if capturedFollow {
+			t.Errorf("expected Follow=false, but Follow was true")
+		}
+	})
+
+	t.Run("should pass invalid tailLines as default 500", func(t *testing.T) {
+		// Arrange – non-integer tailLines should fall back to the default (500).
+		var observedTailLines *int64
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, opts *corev1.PodLogOptions) (io.ReadCloser, error) {
+			observedTailLines = opts.TailLines
+			return io.NopCloser(strings.NewReader("log\n")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/bad-tail-pod?tailLines=abc", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert – should not return 400; invalid tailLines is silently treated as default.
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 200 is valid.
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200 for invalid tailLines, got %d", res.StatusCode)
+		}
+
+		// Default tailLines (500) must be used when the param is invalid.
+		if observedTailLines == nil || *observedTailLines != 500 {
+			t.Errorf("expected default tailLines=500 for invalid param, got %v", observedTailLines)
+		}
+	})
+}
+
+// TestPodLogsHandlerInternalErrors tests error paths beyond 404 and 400.
+func TestPodLogsHandlerInternalErrors(t *testing.T) {
+	t.Run("should return 500 when Kubernetes API returns unexpected error", func(t *testing.T) {
+		// Arrange – inject a stream function that returns an internal server error.
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return nil, k8serrors.NewInternalError(io.ErrUnexpectedEOF)
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/error-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 500 is valid.
+		if res.StatusCode != http.StatusInternalServerError {
+			t.Errorf("expected 500 for API error, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return 400 when container does not exist in pod", func(t *testing.T) {
+		// Arrange – inject a stream function that returns a BadRequest error (unknown container).
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return nil, k8serrors.NewBadRequest("container nonexistent is not valid for pod single-container-pod")
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/single-container-pod?container=nonexistent", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Green phase: implementation is complete, only 400 is valid.
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected 400 for unknown container, got %d", res.StatusCode)
+		}
+	})
+}
+
+// TestPodLogsHandlerResponseFormat verifies response format contracts.
+func TestPodLogsHandlerResponseFormat(t *testing.T) {
+	t.Run("should return text/plain content-type on success", func(t *testing.T) {
+		// This test mirrors the happy-path check but is explicitly focused on
+		// verifying the Content-Type header, not the body content.
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader("log content\n")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/ct-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200, got %d", res.StatusCode)
+		}
+		ct := res.Header.Get("Content-Type")
+		if !strings.HasPrefix(ct, "text/plain") {
+			t.Errorf("expected Content-Type starting with 'text/plain', got '%s'", ct)
+		}
+	})
+
+	t.Run("should return JSON error body for non-200 responses", func(t *testing.T) {
+		// Arrange – path that triggers a 400 (missing pod name segment).
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// Non-200 responses must use JSON (consistent with other handlers).
+		// This path triggers a 400 (missing pod name segment).
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected 400 for malformed path, got %d", res.StatusCode)
+		}
+		ct := res.Header.Get("Content-Type")
+		if ct != "application/json" {
+			t.Errorf("expected Content-Type 'application/json' for error response, got '%s'", ct)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatalf("failed to read response body: %v", err)
+		}
+
+		var errResp map[string]interface{}
+		if jsonErr := json.Unmarshal(body, &errResp); jsonErr != nil {
+			t.Errorf("expected JSON error body, got: %s", string(body))
 		}
 	})
 }
