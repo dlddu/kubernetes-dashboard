@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -364,8 +363,6 @@ describe('PodLogPanel', () => {
       // Assert
       await waitFor(() => {
         const viewer = screen.getByTestId('log-panel-log-viewer');
-        const errorLine = viewer.querySelector('[class*="red"]') ||
-          viewer.querySelector('[class*="error"]');
         // Either a styled element exists or the text is present (implementation-agnostic check)
         expect(viewer.textContent).toContain('ERROR Something went wrong');
       });
