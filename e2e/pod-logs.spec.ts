@@ -404,8 +404,6 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
 
 test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?follow=true', () => {
   test('should establish SSE stream connection and receive initial log events', async ({ page }) => {
-    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
-
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'busybox-test';
@@ -454,8 +452,6 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
   });
 
   test('should receive at least one log event within 5 seconds of stream connection', async ({ page }) => {
-    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
-
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'busybox-test';
@@ -500,8 +496,6 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
   });
 
   test('should clean up server-side stream resources when client disconnects', async ({ page }) => {
-    test.skip(true, 'Pending implementation: DLD-701 - SSE streaming endpoint not yet implemented');
-
     // Arrange
     const namespace = 'dashboard-test';
     const podName = 'busybox-test';

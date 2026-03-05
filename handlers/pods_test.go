@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1702,6 +1703,388 @@ func TestPodLogsHandlerInternalErrors(t *testing.T) {
 		// Green phase: implementation is complete, only 400 is valid.
 		if res.StatusCode != http.StatusBadRequest {
 			t.Errorf("expected 400 for unknown container, got %d", res.StatusCode)
+		}
+	})
+}
+
+// ---------------------------------------------------------------------------
+// SSE / follow=true streaming tests
+//
+// httptest.ResponseRecorder does not implement http.Flusher, so tests that
+// exercise the streaming code path use the flusherRecorder helper below.
+// Tests that specifically verify the "flusher not supported" error path use
+// httptest.ResponseRecorder directly (which intentionally lacks Flush).
+// ---------------------------------------------------------------------------
+
+// flusherRecorder wraps httptest.ResponseRecorder and also satisfies
+// http.Flusher so that the SSE handler can call Flush() without error.
+type flusherRecorder struct {
+	*httptest.ResponseRecorder
+	flushed bool
+}
+
+func (f *flusherRecorder) Flush() {
+	f.flushed = true
+	f.ResponseRecorder.Flush()
+}
+
+// TestPodLogsHandlerSSEStreaming tests the follow=true SSE streaming path.
+// These tests form the Red Phase for the SSE implementation and will FAIL
+// until the streaming code is added to PodLogsHandler.
+func TestPodLogsHandlerSSEStreaming(t *testing.T) {
+	t.Run("should set Content-Type to text/event-stream when follow=true", func(t *testing.T) {
+		// Arrange
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			// A stream that closes immediately so the handler loop terminates.
+			return io.NopCloser(strings.NewReader("")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod?follow=true", nil)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		ct := res.Header.Get("Content-Type")
+		if ct != "text/event-stream" {
+			t.Errorf("expected Content-Type 'text/event-stream', got %q", ct)
+		}
+	})
+
+	t.Run("should set Cache-Control to no-cache when follow=true", func(t *testing.T) {
+		// Arrange
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader("")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod?follow=true", nil)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		cc := res.Header.Get("Cache-Control")
+		if cc != "no-cache" {
+			t.Errorf("expected Cache-Control 'no-cache', got %q", cc)
+		}
+	})
+
+	t.Run("should return 200 OK for follow=true request", func(t *testing.T) {
+		// Arrange
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader("")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod?follow=true", nil)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should send log lines in SSE data format", func(t *testing.T) {
+		// Arrange
+		logContent := "first log line\nsecond log line\n"
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(logContent)), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod?follow=true", nil)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		body := w.Body.String()
+		// Each log line must be wrapped in SSE format: "data: {line}\n\n"
+		if !strings.Contains(body, "data: first log line\n\n") {
+			t.Errorf("expected SSE line 'data: first log line\\n\\n' in body, got:\n%s", body)
+		}
+		if !strings.Contains(body, "data: second log line\n\n") {
+			t.Errorf("expected SSE line 'data: second log line\\n\\n' in body, got:\n%s", body)
+		}
+	})
+
+	t.Run("should pass Follow=true in PodLogOptions when follow=true", func(t *testing.T) {
+		// Arrange
+		var capturedFollow bool
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, opts *corev1.PodLogOptions) (io.ReadCloser, error) {
+			capturedFollow = opts.Follow
+			return io.NopCloser(strings.NewReader("")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod?follow=true", nil)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		if !capturedFollow {
+			t.Error("expected PodLogOptions.Follow=true, but it was false")
+		}
+	})
+
+	t.Run("should flush after each log line", func(t *testing.T) {
+		// Arrange – verify that Flush() is called at least once after writing lines.
+		logContent := "flush me\n"
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(logContent)), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/flush-pod?follow=true", nil)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		if !w.flushed {
+			t.Error("expected http.Flusher.Flush() to be called at least once during SSE streaming")
+		}
+	})
+
+	t.Run("should return 500 when ResponseWriter does not implement http.Flusher", func(t *testing.T) {
+		// Arrange – We need a ResponseWriter that does NOT satisfy http.Flusher.
+		// httptest.ResponseRecorder itself implements Flush(), so we wrap it in a
+		// struct that shadows/hides the Flush method by not promoting it, achieved
+		// by wrapping via a private interface rather than embedding the concrete type.
+		//
+		// plainWriter holds only the http.ResponseWriter interface, which does NOT
+		// include http.Flusher.  The type-assertion `w.(http.Flusher)` in the handler
+		// must therefore fail.
+		type plainWriter struct {
+			http.ResponseWriter
+		}
+
+		inner := httptest.NewRecorder()
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader("log\n")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod?follow=true", nil)
+		// plainWriter wraps the ResponseRecorder but does NOT expose http.Flusher.
+		w := &plainWriter{ResponseWriter: inner}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert – the handler must detect that Flusher is unsupported and return 500.
+		if inner.Code != http.StatusInternalServerError {
+			t.Errorf("expected 500 when Flusher not supported, got %d", inner.Code)
+		}
+	})
+
+	t.Run("should stop streaming when client context is cancelled", func(t *testing.T) {
+		// This scenario is fully covered by TestPodLogsHandlerSSEContextCancellation
+		// below, which uses a proper timer-based deadline.  Skip here to avoid
+		// duplicating the blocking-goroutine plumbing.
+		t.Skip("covered by TestPodLogsHandlerSSEContextCancellation")
+	})
+
+	t.Run("should pass tailLines in PodLogOptions when follow=true", func(t *testing.T) {
+		// Arrange
+		var capturedTailLines *int64
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, opts *corev1.PodLogOptions) (io.ReadCloser, error) {
+			capturedTailLines = opts.TailLines
+			return io.NopCloser(strings.NewReader("")), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod?follow=true&tailLines=50", nil)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		if capturedTailLines == nil || *capturedTailLines != 50 {
+			t.Errorf("expected TailLines=50 in PodLogOptions, got %v", capturedTailLines)
+		}
+	})
+
+	t.Run("should not use SSE format when follow is absent", func(t *testing.T) {
+		// Arrange – a plain log request (no follow param) must NOT produce SSE framing.
+		wantLogs := "plain log line\n"
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(wantLogs)), nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/my-pod", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		PodLogsHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200, got %d", res.StatusCode)
+		}
+
+		ct := res.Header.Get("Content-Type")
+		if strings.HasPrefix(ct, "text/event-stream") {
+			t.Errorf("expected non-SSE Content-Type for follow=false request, got %q", ct)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatalf("failed to read response body: %v", err)
+		}
+		if strings.Contains(string(body), "data: ") {
+			t.Errorf("plain log response must not contain SSE 'data: ' framing, got:\n%s", string(body))
+		}
+	})
+}
+
+// TestPodLogsHandlerSSEContextCancellation is a self-contained context
+// cancellation test that avoids import-cycle workarounds.
+func TestPodLogsHandlerSSEContextCancellation(t *testing.T) {
+	t.Run("should stop streaming and return when client disconnects", func(t *testing.T) {
+		// Arrange
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		streamStarted := make(chan struct{})
+		blockCh := make(chan struct{})
+
+		oldClientsetFn := getLogClientset
+		defer func() { getLogClientset = oldClientsetFn }()
+		getLogClientset = func() (kubernetes.Interface, error) {
+			return fake.NewSimpleClientset(), nil
+		}
+		oldStreamFn := getPodLogStream
+		defer func() { getPodLogStream = oldStreamFn }()
+		getPodLogStream = func(_ context.Context, _ kubernetes.Interface, _, _ string, _ *corev1.PodLogOptions) (io.ReadCloser, error) {
+			pr, pw := io.Pipe()
+			go func() {
+				pw.Write([]byte("line one\n")) //nolint:errcheck
+				close(streamStarted)           // signal that one line was written
+				<-blockCh                      // wait until the test unlocks us
+				pw.Close()
+			}()
+			return pr, nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/pods/logs/default/ctx-cancel-pod?follow=true", nil)
+		req = req.WithContext(ctx)
+		w := &flusherRecorder{ResponseRecorder: httptest.NewRecorder()}
+
+		handlerDone := make(chan struct{})
+		go func() {
+			defer close(handlerDone)
+			PodLogsHandler(w, req)
+		}()
+
+		// Wait until the stream has produced at least one line, then cancel.
+		<-streamStarted
+		cancel()
+		close(blockCh) // unblock the fake stream writer goroutine
+
+		// The handler must exit within a reasonable time after context cancellation.
+		select {
+		case <-handlerDone:
+			// Handler exited cleanly.
+		case <-func() <-chan struct{} {
+			timeout := make(chan struct{})
+			go func() {
+				// 2-second deadline implemented via a ticker to avoid importing "time" again
+				// (already imported at package level).
+				timer := time.NewTimer(2 * time.Second)
+				defer timer.Stop()
+				<-timer.C
+				close(timeout)
+			}()
+			return timeout
+		}():
+			t.Error("PodLogsHandler did not exit within 2 s after context cancellation")
 		}
 	})
 }
