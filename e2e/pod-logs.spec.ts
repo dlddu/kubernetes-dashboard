@@ -409,6 +409,9 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
     const podName = 'busybox-test';
     const streamUrl = `${baseURL}/api/pods/logs/${namespace}/${podName}?follow=true`;
 
+    // Navigate to dashboard so browser has proper origin for fetch/EventSource
+    await page.goto(baseURL!);
+
     // Act: Connect to SSE stream via EventSource in browser context and collect events
     const result = await page.evaluate(async (url) => {
       return new Promise<{ connected: boolean; contentType: string | null; events: string[] }>((resolve) => {
@@ -457,6 +460,9 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
     const podName = 'busybox-test';
     const streamUrl = `${baseURL}/api/pods/logs/${namespace}/${podName}?follow=true`;
 
+    // Navigate to dashboard so browser has proper origin for fetch/EventSource
+    await page.goto(baseURL!);
+
     // Act: Connect to SSE stream and wait for at least one data event
     const receivedEvents = await page.evaluate(async (url) => {
       return new Promise<string[]>((resolve) => {
@@ -500,6 +506,9 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
     const namespace = 'dashboard-test';
     const podName = 'busybox-test';
     const streamUrl = `${baseURL}/api/pods/logs/${namespace}/${podName}?follow=true`;
+
+    // Navigate to dashboard so browser has proper origin for fetch/EventSource
+    await page.goto(baseURL!);
 
     // Act: Connect to SSE stream, receive at least one event, then close the connection
     const streamResult = await page.evaluate(async (url) => {
