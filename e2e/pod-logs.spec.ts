@@ -919,16 +919,23 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
     // Wait for streaming to produce some logs
     await page.waitForTimeout(1500);
 
-    // Act: Manually scroll up to simulate user reading older logs
-    // Set scrollTop and dispatch a native scroll event inside the same evaluate
-    // so React's onScroll handler picks it up correctly
-    await logViewer.evaluate((el) => {
-      el.scrollTop = 0;
-      el.dispatchEvent(new Event('scroll', { bubbles: true }));
-    });
+    // Verify there's enough content to scroll
+    const canScroll = await logViewer.evaluate((el) => el.scrollHeight > el.clientHeight);
+    expect(canScroll).toBe(true);
 
-    // Small delay to let React process the scroll event and update autoScrollRef
+    // Act: Manually scroll up using mouse wheel to simulate real user interaction.
+    // Playwright's mouse.wheel triggers native scroll events that React's onScroll detects.
+    await logViewer.hover();
+    await page.mouse.wheel(0, -10000);
+
+    // Allow the scroll and React state to settle
     await page.waitForTimeout(500);
+
+    // Verify we actually scrolled away from the bottom
+    const scrolledAway = await logViewer.evaluate((el) => {
+      return el.scrollHeight - el.scrollTop - el.clientHeight > 20;
+    });
+    expect(scrolledAway).toBe(true);
 
     // Wait for more streaming events to arrive
     await page.waitForTimeout(2000);
@@ -968,19 +975,14 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
 
     await page.waitForTimeout(1000);
 
-    // Act: Scroll up to pause auto-scroll
-    await logViewer.evaluate((el) => {
-      el.scrollTop = 0;
-      el.dispatchEvent(new Event('scroll', { bubbles: true }));
-    });
-
+    // Act: Scroll up to pause auto-scroll using mouse wheel
+    await logViewer.hover();
+    await page.mouse.wheel(0, -10000);
     await page.waitForTimeout(500);
 
-    // Act: Scroll back to bottom to resume auto-scroll
-    await logViewer.evaluate((el) => {
-      el.scrollTop = el.scrollHeight;
-      el.dispatchEvent(new Event('scroll', { bubbles: true }));
-    });
+    // Act: Scroll back to bottom to resume auto-scroll using mouse wheel
+    await page.mouse.wheel(0, 10000);
+    await page.waitForTimeout(500);
 
     // Wait for new streaming events
     await page.waitForTimeout(2000);
