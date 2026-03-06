@@ -11,10 +11,6 @@ export function UnhealthyPodCard({ pod, onClick, isSelected }: UnhealthyPodCardP
   // Determine if restart count should be highlighted (> 10)
   const isHighRestartCount = pod.restarts > 10;
 
-  const handleClick = () => {
-    onClick?.(pod);
-  };
-
   return (
     <div
       data-testid="pod-card"
@@ -25,7 +21,7 @@ export function UnhealthyPodCard({ pod, onClick, isSelected }: UnhealthyPodCardP
       ]
         .filter(Boolean)
         .join(' ')}
-      onClick={handleClick}
+      onClick={onClick ? () => onClick(pod) : undefined}
     >
       {/* Pod Name */}
       <div>
