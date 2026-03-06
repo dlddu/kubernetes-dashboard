@@ -847,6 +847,155 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
 });
 
 // ------------------------------------------------------------
+// UI Tests: PodLogPanel — auto-scroll behavior
+// ------------------------------------------------------------
+
+test.describe('PodLogPanel UI - auto-scroll behavior', () => {
+  test('should auto-scroll to bottom when Follow mode is active and new logs arrive', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and open the log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    await expect(logViewer).toBeVisible();
+
+    // Wait for initial logs to load
+    await page.waitForLoadState('networkidle');
+
+    // Act: Enable Follow mode to start streaming
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    // Assert: Streaming indicator should be visible
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    // Wait for new log events to arrive via streaming
+    await page.waitForTimeout(2000);
+
+    // Assert: Log viewer should be scrolled to the bottom (auto-scroll active)
+    const scrollState = await logViewer.evaluate((el) => {
+      return {
+        scrollTop: el.scrollTop,
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+      };
+    });
+
+    // scrollTop + clientHeight should be close to scrollHeight (within 20px threshold)
+    const distanceFromBottom = scrollState.scrollHeight - scrollState.scrollTop - scrollState.clientHeight;
+    expect(distanceFromBottom).toBeLessThan(20);
+  });
+
+  test('should pause auto-scroll when user scrolls up during Follow mode', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and open the log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    await expect(logViewer).toBeVisible();
+
+    // Wait for initial logs to load
+    await page.waitForLoadState('networkidle');
+
+    // Act: Enable Follow mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    // Wait for streaming to produce some logs
+    await page.waitForTimeout(1500);
+
+    // Act: Manually scroll up to simulate user reading older logs
+    await logViewer.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+
+    // Trigger scroll event so the component detects the manual scroll
+    await logViewer.dispatchEvent('scroll');
+
+    // Record the scroll position after manual scroll
+    const scrollTopAfterManualScroll = await logViewer.evaluate((el) => el.scrollTop);
+
+    // Wait for more streaming events to arrive
+    await page.waitForTimeout(2000);
+
+    // Assert: Scroll position should NOT have jumped to bottom (auto-scroll paused)
+    const scrollTopAfterNewLogs = await logViewer.evaluate((el) => el.scrollTop);
+    const scrollHeight = await logViewer.evaluate((el) => el.scrollHeight);
+    const clientHeight = await logViewer.evaluate((el) => el.clientHeight);
+
+    // The user manually scrolled to top (0), so it should still be near the top
+    // and NOT at the bottom (which would mean auto-scroll overrode the user's position)
+    const distanceFromBottom = scrollHeight - scrollTopAfterNewLogs - clientHeight;
+    expect(distanceFromBottom).toBeGreaterThan(20);
+  });
+
+  test('should resume auto-scroll when user scrolls back to bottom during Follow mode', async ({ page }) => {
+    // Arrange: Navigate to the Pods page and open the log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    await expect(logViewer).toBeVisible();
+
+    // Wait for initial logs to load
+    await page.waitForLoadState('networkidle');
+
+    // Act: Enable Follow mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    await page.waitForTimeout(1000);
+
+    // Act: Scroll up to pause auto-scroll
+    await logViewer.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    await logViewer.dispatchEvent('scroll');
+
+    // Act: Scroll back to bottom to resume auto-scroll
+    await logViewer.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await logViewer.dispatchEvent('scroll');
+
+    // Wait for new streaming events
+    await page.waitForTimeout(2000);
+
+    // Assert: Log viewer should be at the bottom again (auto-scroll resumed)
+    const scrollState = await logViewer.evaluate((el) => ({
+      scrollTop: el.scrollTop,
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+    }));
+
+    const distanceFromBottom = scrollState.scrollHeight - scrollState.scrollTop - scrollState.clientHeight;
+    expect(distanceFromBottom).toBeLessThan(20);
+  });
+});
+
+// ------------------------------------------------------------
 // UI Tests: PodLogPanel — close interactions
 // ------------------------------------------------------------
 
