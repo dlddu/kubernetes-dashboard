@@ -851,53 +851,28 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
 // ------------------------------------------------------------
 
 test.describe('PodLogPanel UI - auto-scroll behavior', () => {
-  // Generate many log lines so the log viewer overflows and becomes scrollable
-  function generateLogBody(count: number): string {
-    return Array.from({ length: count }, (_, i) =>
-      `2024-01-01T00:00:${String(i % 60).padStart(2, '0')}Z INFO log line ${i + 1}`
-    ).join('\n');
-  }
-
-  // Intercept log API to return enough content (busybox pod only has 2-3 lines)
-  async function interceptLogApi(page: import('@playwright/test').Page) {
-    await page.route('**/api/pods/logs/**', async (route) => {
-      const url = route.request().url();
-
-      if (url.includes('follow=true')) {
-        // SSE streaming: return a batch of lines in SSE format
-        const sseLines = Array.from({ length: 30 }, (_, i) =>
-          `data: ${new Date().toISOString()} streamed line ${i + 1}\n\n`
-        ).join('');
-
-        await route.fulfill({
-          status: 200,
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-          },
-          body: sseLines,
-        });
-      } else {
-        // Initial fetch: return 200 lines so the viewer is scrollable
-        await route.fulfill({
-          status: 200,
-          headers: { 'Content-Type': 'text/plain' },
-          body: generateLogBody(200),
-        });
-      }
-    });
-  }
-
-  test('should auto-scroll to bottom when Follow mode is active and new logs arrive', async ({ page }) => {
-    await interceptLogApi(page);
-
-    // Arrange: Navigate to the Pods page and open the log panel
+  // Helper: find and click the verbose-log-test pod card to open its log panel.
+  // This pod outputs 300 initial lines + 1 line/sec streaming, ensuring the
+  // log viewer is scrollable without any API interception.
+  async function openVerboseLogPanel(page: import('@playwright/test').Page) {
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
 
-    const firstPodCard = page.getByTestId('pod-card').first();
-    await expect(firstPodCard).toBeVisible();
-    await firstPodCard.click();
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
 
     const logPanel = page.getByTestId('log-panel');
     await expect(logPanel).toBeVisible();
@@ -905,8 +880,19 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
     const logViewer = logPanel.getByTestId('log-panel-log-viewer');
     await expect(logViewer).toBeVisible();
 
-    // Wait for intercepted logs to render
+    // Wait for initial logs (300 lines) to render
     await expect(logViewer.locator('div').first()).toBeVisible();
+
+    // Confirm the log viewer has enough content to be scrollable
+    await expect.poll(async () => {
+      return logViewer.evaluate((el) => el.scrollHeight > el.clientHeight);
+    }).toBe(true);
+
+    return { logPanel, logViewer };
+  }
+
+  test('should auto-scroll to bottom when Follow mode is active and new logs arrive', async ({ page }) => {
+    const { logPanel, logViewer } = await openVerboseLogPanel(page);
 
     // Act: Enable Follow mode to start streaming
     const followButton = logPanel.getByTestId('log-panel-follow-button');
@@ -916,53 +902,27 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
     const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
     await expect(streamingIndicator).toBeVisible();
 
-    // Wait for streaming log events to arrive and render
-    await page.waitForTimeout(2000);
+    // Wait for live streaming log events to arrive (verbose-log-test emits 1 line/sec)
+    await page.waitForTimeout(3000);
 
     // Assert: Log viewer should be scrolled to the bottom (auto-scroll active)
-    const scrollState = await logViewer.evaluate((el) => ({
-      scrollTop: el.scrollTop,
-      scrollHeight: el.scrollHeight,
-      clientHeight: el.clientHeight,
-    }));
-
-    const distanceFromBottom = scrollState.scrollHeight - scrollState.scrollTop - scrollState.clientHeight;
+    const distanceFromBottom = await logViewer.evaluate((el) => {
+      return el.scrollHeight - el.scrollTop - el.clientHeight;
+    });
     expect(distanceFromBottom).toBeLessThan(20);
   });
 
   test('should pause auto-scroll when user scrolls up during Follow mode', async ({ page }) => {
-    await interceptLogApi(page);
-
-    // Arrange: Navigate to the Pods page and open the log panel
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
-
-    const firstPodCard = page.getByTestId('pod-card').first();
-    await expect(firstPodCard).toBeVisible();
-    await firstPodCard.click();
-
-    const logPanel = page.getByTestId('log-panel');
-    await expect(logPanel).toBeVisible();
-
-    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
-    await expect(logViewer).toBeVisible();
-
-    // Wait for intercepted logs (200 lines) to render
-    await expect(logViewer.locator('div').first()).toBeVisible();
-
-    // Verify log viewer is scrollable with the intercepted content
-    await expect.poll(async () => {
-      return logViewer.evaluate((el) => el.scrollHeight > el.clientHeight);
-    }).toBe(true);
+    const { logPanel, logViewer } = await openVerboseLogPanel(page);
 
     // Act: Enable Follow mode
     const followButton = logPanel.getByTestId('log-panel-follow-button');
     await followButton.click();
 
-    // Wait for streaming to produce some logs
-    await page.waitForTimeout(1500);
+    // Wait for streaming to start producing live logs
+    await page.waitForTimeout(2000);
 
-    // Act: Manually scroll up using mouse wheel to simulate real user interaction
+    // Act: Manually scroll up using mouse wheel to simulate user reading older logs
     await logViewer.hover();
     await page.mouse.wheel(0, -10000);
 
@@ -975,8 +935,8 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
     });
     expect(scrolledAway).toBe(true);
 
-    // Wait for more streaming events to arrive
-    await page.waitForTimeout(2000);
+    // Wait for more streaming events to arrive (1 line/sec)
+    await page.waitForTimeout(3000);
 
     // Assert: Scroll position should NOT have jumped to bottom (auto-scroll paused)
     const distanceFromBottom = await logViewer.evaluate((el) => {
@@ -986,30 +946,13 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
   });
 
   test('should resume auto-scroll when user scrolls back to bottom during Follow mode', async ({ page }) => {
-    await interceptLogApi(page);
-
-    // Arrange: Navigate to the Pods page and open the log panel
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
-
-    const firstPodCard = page.getByTestId('pod-card').first();
-    await expect(firstPodCard).toBeVisible();
-    await firstPodCard.click();
-
-    const logPanel = page.getByTestId('log-panel');
-    await expect(logPanel).toBeVisible();
-
-    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
-    await expect(logViewer).toBeVisible();
-
-    // Wait for intercepted logs to render
-    await expect(logViewer.locator('div').first()).toBeVisible();
+    const { logPanel, logViewer } = await openVerboseLogPanel(page);
 
     // Act: Enable Follow mode
     const followButton = logPanel.getByTestId('log-panel-follow-button');
     await followButton.click();
 
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Act: Scroll up to pause auto-scroll using mouse wheel
     await logViewer.hover();
@@ -1020,8 +963,8 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
     await page.mouse.wheel(0, 10000);
     await page.waitForTimeout(500);
 
-    // Wait for new streaming events
-    await page.waitForTimeout(2000);
+    // Wait for new streaming events to arrive
+    await page.waitForTimeout(3000);
 
     // Assert: Log viewer should be at the bottom again (auto-scroll resumed)
     const distanceFromBottom = await logViewer.evaluate((el) => {
