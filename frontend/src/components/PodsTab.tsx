@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { fetchAllPods, PodDetails } from '../api/pods';
 import { UnhealthyPodCard } from './UnhealthyPodCard';
+import { PodLogPanel } from './PodLogPanel';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
@@ -15,6 +17,8 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
     'Failed to fetch pods',
     [namespace],
   );
+
+  const [selectedPod, setSelectedPod] = useState<PodDetails | null>(null);
 
   return (
     <div data-testid="pods-page" className="space-y-6">
@@ -52,11 +56,26 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
         {pods.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pods.map((pod) => (
-              <UnhealthyPodCard key={`${pod.namespace}-${pod.name}`} pod={pod} />
+              <UnhealthyPodCard
+                key={`${pod.namespace}-${pod.name}`}
+                pod={pod}
+                onClick={(p) => setSelectedPod(p)}
+                isSelected={
+                  selectedPod?.name === pod.name &&
+                  selectedPod?.namespace === pod.namespace
+                }
+              />
             ))}
           </div>
         )}
       </div>
+
+      {selectedPod && (
+        <PodLogPanel
+          pod={selectedPod}
+          onClose={() => setSelectedPod(null)}
+        />
+      )}
     </div>
   );
 }

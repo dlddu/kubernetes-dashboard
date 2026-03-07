@@ -46,9 +46,10 @@ kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-empty -
 log_info "Creating secrets and configmaps..."
 kubectl apply -f "$SCRIPT_DIR/secret.yaml"
 
-# 3. Apply pod
-log_info "Creating standalone pod..."
+# 3. Apply pods
+log_info "Creating standalone pods..."
 kubectl apply -f "$SCRIPT_DIR/pod.yaml"
+kubectl apply -f "$SCRIPT_DIR/verbose-pod.yaml"
 
 # 4. Apply unhealthy pods (intentionally fail for testing)
 log_info "Creating unhealthy pods (will remain in ImagePullBackOff state)..."
@@ -65,6 +66,7 @@ kubectl wait --for=condition=Available deployment/nginx-test -n dashboard-test -
 # Wait for healthy pods to be ready (skip unhealthy-test-pod)
 log_info "Waiting for healthy pods to be ready..."
 kubectl wait --for=condition=Ready pod/busybox-test -n dashboard-test --timeout=60s
+kubectl wait --for=condition=Ready pod/verbose-log-test -n dashboard-test --timeout=60s
 
 # Display status
 log_info "Test fixtures applied successfully!"

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { UnhealthyPodCard } from './UnhealthyPodCard';
 
 // Mock StatusBadge component
@@ -696,6 +697,129 @@ describe('UnhealthyPodCard Component', () => {
       expect(screen.getByTestId('pod-node')).toBeInTheDocument();
       expect(screen.getByTestId('pod-age')).toBeInTheDocument();
       expect(screen.getByTestId('pod-containers')).toBeInTheDocument();
+    });
+  });
+
+  // =========================================================================
+  // onClick prop
+  // =========================================================================
+
+  describe('onClick prop', () => {
+    it('should call onClick when the card is clicked', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+
+      // Act
+      render(<UnhealthyPodCard pod={mockPod} onClick={onClick} />);
+      await user.click(screen.getByTestId('pod-card'));
+
+      // Assert
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onClick with the pod details as argument', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+
+      // Act
+      render(<UnhealthyPodCard pod={mockPod} onClick={onClick} />);
+      await user.click(screen.getByTestId('pod-card'));
+
+      // Assert
+      expect(onClick).toHaveBeenCalledWith(mockPod);
+    });
+
+    it('should not throw when onClick prop is not provided', async () => {
+      // Arrange
+      const user = userEvent.setup();
+
+      // Act
+      render(<UnhealthyPodCard pod={mockPod} />);
+
+      // Assert: clicking without onClick handler should not throw
+      await expect(user.click(screen.getByTestId('pod-card'))).resolves.not.toThrow();
+    });
+
+    it('should have cursor-pointer styling when onClick is provided', () => {
+      // Arrange
+      const onClick = vi.fn();
+
+      // Act
+      render(<UnhealthyPodCard pod={mockPod} onClick={onClick} />);
+
+      // Assert
+      const card = screen.getByTestId('pod-card');
+      expect(card.className).toMatch(/cursor-pointer/);
+    });
+
+    it('should invoke onClick only once per single click', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+
+      // Act
+      render(<UnhealthyPodCard pod={mockPod} onClick={onClick} />);
+      await user.click(screen.getByTestId('pod-card'));
+
+      // Assert
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // =========================================================================
+  // isSelected prop
+  // =========================================================================
+
+  describe('isSelected prop', () => {
+    it('should apply ring-2 ring-blue-500 styling when isSelected is true', () => {
+      // Arrange & Act
+      render(<UnhealthyPodCard pod={mockPod} isSelected={true} />);
+
+      // Assert
+      const card = screen.getByTestId('pod-card');
+      expect(card.className).toMatch(/ring-2/);
+      expect(card.className).toMatch(/ring-blue-500/);
+    });
+
+    it('should not apply ring styling when isSelected is false', () => {
+      // Arrange & Act
+      render(<UnhealthyPodCard pod={mockPod} isSelected={false} />);
+
+      // Assert
+      const card = screen.getByTestId('pod-card');
+      expect(card.className).not.toMatch(/ring-2/);
+      expect(card.className).not.toMatch(/ring-blue-500/);
+    });
+
+    it('should not apply ring styling when isSelected is not provided', () => {
+      // Arrange & Act
+      render(<UnhealthyPodCard pod={mockPod} />);
+
+      // Assert
+      const card = screen.getByTestId('pod-card');
+      expect(card.className).not.toMatch(/ring-2.*ring-blue/);
+    });
+
+    it('should toggle ring styling correctly between selected and not selected', () => {
+      // Arrange
+      const { rerender } = render(<UnhealthyPodCard pod={mockPod} isSelected={false} />);
+
+      const card = screen.getByTestId('pod-card');
+      expect(card.className).not.toMatch(/ring-2/);
+
+      // Act: select the card
+      rerender(<UnhealthyPodCard pod={mockPod} isSelected={true} />);
+
+      // Assert
+      expect(card.className).toMatch(/ring-2/);
+
+      // Act: deselect
+      rerender(<UnhealthyPodCard pod={mockPod} isSelected={false} />);
+
+      // Assert
+      expect(card.className).not.toMatch(/ring-2/);
     });
   });
 });
