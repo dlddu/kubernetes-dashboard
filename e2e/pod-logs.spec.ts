@@ -847,6 +847,134 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
 });
 
 // ------------------------------------------------------------
+// UI Tests: PodLogPanel — auto-scroll behavior
+// ------------------------------------------------------------
+
+test.describe('PodLogPanel UI - auto-scroll behavior', () => {
+  // Helper: find and click the verbose-log-test pod card to open its log panel.
+  // This pod outputs 300 initial lines + 1 line/sec streaming, ensuring the
+  // log viewer is scrollable without any API interception.
+  async function openVerboseLogPanel(page: import('@playwright/test').Page) {
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    await expect(logViewer).toBeVisible();
+
+    // Wait for initial logs (300 lines) to render
+    await expect(logViewer.locator('div').first()).toBeVisible();
+
+    // Confirm the log viewer has enough content to be scrollable
+    await expect.poll(async () => {
+      return logViewer.evaluate((el) => el.scrollHeight > el.clientHeight);
+    }).toBe(true);
+
+    return { logPanel, logViewer };
+  }
+
+  test('should auto-scroll to bottom when Follow mode is active and new logs arrive', async ({ page }) => {
+    const { logPanel, logViewer } = await openVerboseLogPanel(page);
+
+    // Act: Enable Follow mode to start streaming
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    // Assert: Streaming indicator should be visible
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    // Wait for live streaming log events to arrive (verbose-log-test emits 1 line/sec)
+    await page.waitForTimeout(3000);
+
+    // Assert: Log viewer should be scrolled to the bottom (auto-scroll active)
+    const distanceFromBottom = await logViewer.evaluate((el) => {
+      return el.scrollHeight - el.scrollTop - el.clientHeight;
+    });
+    expect(distanceFromBottom).toBeLessThan(20);
+  });
+
+  test('should pause auto-scroll when user scrolls up during Follow mode', async ({ page }) => {
+    const { logPanel, logViewer } = await openVerboseLogPanel(page);
+
+    // Act: Enable Follow mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    // Wait for streaming to start producing live logs
+    await page.waitForTimeout(2000);
+
+    // Act: Manually scroll up using mouse wheel to simulate user reading older logs
+    await logViewer.hover();
+    await page.mouse.wheel(0, -10000);
+
+    // Allow the scroll and React state to settle
+    await page.waitForTimeout(500);
+
+    // Verify we actually scrolled away from the bottom
+    const scrolledAway = await logViewer.evaluate((el) => {
+      return el.scrollHeight - el.scrollTop - el.clientHeight > 20;
+    });
+    expect(scrolledAway).toBe(true);
+
+    // Wait for more streaming events to arrive (1 line/sec)
+    await page.waitForTimeout(3000);
+
+    // Assert: Scroll position should NOT have jumped to bottom (auto-scroll paused)
+    const distanceFromBottom = await logViewer.evaluate((el) => {
+      return el.scrollHeight - el.scrollTop - el.clientHeight;
+    });
+    expect(distanceFromBottom).toBeGreaterThan(20);
+  });
+
+  test('should resume auto-scroll when user scrolls back to bottom during Follow mode', async ({ page }) => {
+    const { logPanel, logViewer } = await openVerboseLogPanel(page);
+
+    // Act: Enable Follow mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    await page.waitForTimeout(2000);
+
+    // Act: Scroll up to pause auto-scroll using mouse wheel
+    await logViewer.hover();
+    await page.mouse.wheel(0, -10000);
+    await page.waitForTimeout(500);
+
+    // Act: Scroll back to bottom to resume auto-scroll using mouse wheel
+    await page.mouse.wheel(0, 10000);
+    await page.waitForTimeout(500);
+
+    // Wait for new streaming events to arrive
+    await page.waitForTimeout(3000);
+
+    // Assert: Log viewer should be at the bottom again (auto-scroll resumed)
+    const distanceFromBottom = await logViewer.evaluate((el) => {
+      return el.scrollHeight - el.scrollTop - el.clientHeight;
+    });
+    expect(distanceFromBottom).toBeLessThan(20);
+  });
+});
+
+// ------------------------------------------------------------
 // UI Tests: PodLogPanel — close interactions
 // ------------------------------------------------------------
 

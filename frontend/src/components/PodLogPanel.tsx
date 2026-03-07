@@ -25,6 +25,9 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
   const [isFollowing, setIsFollowing] = useState(false);
 
   const cleanupRef = useRef<(() => void) | null>(null);
+  const logViewerRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef(true);
+  const logLineKeyRef = useRef(0);
 
   // Stop streaming helper
   const stopStreaming = useCallback(() => {
@@ -35,6 +38,21 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
     setIsFollowing(false);
   }, []);
 
+  // Auto-scroll to bottom when following and new logs arrive
+  useEffect(() => {
+    if (isFollowing && autoScrollRef.current && logViewerRef.current) {
+      logViewerRef.current.scrollTop = logViewerRef.current.scrollHeight;
+    }
+  }, [logLines, isFollowing]);
+
+  // Detect manual scroll to pause auto-scroll
+  const handleScroll = useCallback(() => {
+    const el = logViewerRef.current;
+    if (!el || !isFollowing) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20;
+    autoScrollRef.current = atBottom;
+  }, [isFollowing]);
+
   // Fetch logs when pod or container changes
   useEffect(() => {
     // Stop any ongoing stream when pod/container changes
@@ -43,10 +61,12 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
     setIsLoading(true);
     setError(null);
     setLogLines([]);
+    logLineKeyRef.current = 0;
 
     fetchPodLogs(pod.namespace, pod.name, selectedContainer, DEFAULT_TAIL_LINES)
       .then((text) => {
         const lines = text ? text.split('\n') : [];
+        logLineKeyRef.current = lines.length;
         setLogLines(lines);
         setIsLoading(false);
       })
@@ -54,7 +74,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
         setError(err.message || 'Failed to fetch logs');
         setIsLoading(false);
       });
-  }, [pod.namespace, pod.name, selectedContainer]);
+  }, [pod.namespace, pod.name, selectedContainer, stopStreaming]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -75,10 +95,12 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
       stopStreaming();
     } else {
       setIsFollowing(true);
+      autoScrollRef.current = true;
       const cleanup = streamPodLogs(
         pod.namespace,
         pod.name,
         (line: string) => {
+          logLineKeyRef.current += 1;
           setLogLines((prev) => [...prev, line]);
         },
         selectedContainer,
@@ -157,8 +179,10 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
 
         {/* Log Viewer */}
         <div
+          ref={logViewerRef}
           data-testid="log-panel-log-viewer"
           className="flex-1 overflow-auto bg-gray-950 px-6 py-4 font-mono text-xs"
+          onScroll={handleScroll}
         >
           {isLoading && (
             <div className="flex items-center gap-2 text-gray-400">
@@ -183,7 +207,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
           )}
 
           {!isLoading && !error && logLines.length > 0 && logLines.map((line, idx) => (
-            <div key={idx} className={getLineClass(line)}>
+            <div key={`log-${idx}`} className={getLineClass(line)}>
               {line}
             </div>
           ))}

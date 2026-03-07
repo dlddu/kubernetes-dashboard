@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: verbose-log-test
+  namespace: dashboard-test
+  labels:
+    app: verbose-log-test
+    env: test
+    type: standalone
+spec:
+  containers:
+  - name: logger
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - |
+        i=0
+        while [ $i -lt 300 ]; do
+          echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') INFO [line $i] application log message"
+          i=$((i + 1))
+        done
+        echo "=== initial batch complete ==="
+        while true; do
+          echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') INFO [stream] live log event $(date +%s)"
+          sleep 1
+        done
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+  restartPolicy: Always
