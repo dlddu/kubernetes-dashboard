@@ -148,8 +148,8 @@ export function KustomizationDetailPage() {
                   <span className="text-gray-400">None</span>
                 ) : (
                   <ul className="mt-1 list-disc list-inside">
-                    {detail.spec.dependsOn.map((dep, idx) => (
-                      <li key={idx} className="text-gray-700">
+                    {detail.spec.dependsOn.map((dep) => (
+                      <li key={`${dep.namespace || '_'}/${dep.name}`} className="text-gray-700">
                         {dep.namespace ? `${dep.namespace}/` : ''}{dep.name}
                       </li>
                     ))}
@@ -175,7 +175,7 @@ export function KustomizationDetailPage() {
               </div>
 
               <div data-testid="kustomization-detail-status-last-applied">
-                <span className="font-medium">Last Applied: </span>
+                <span className="font-medium">Last Condition Transition: </span>
                 {detail.status.conditions.length > 0
                   ? formatTime(detail.status.conditions[0].lastTransitionTime)
                   : '-'}
@@ -188,9 +188,9 @@ export function KustomizationDetailPage() {
             <h3 className="text-lg font-semibold text-gray-900">Conditions</h3>
 
             <div data-testid="kustomization-detail-conditions" className="space-y-2">
-              {detail.status.conditions.map((condition, idx) => (
+              {detail.status.conditions.map((condition) => (
                 <div
-                  key={idx}
+                  key={condition.type}
                   data-testid="kustomization-detail-condition"
                   className={`pl-4 py-3 bg-gray-50 rounded-r ${getConditionBorderClass(condition.status)}`}
                 >

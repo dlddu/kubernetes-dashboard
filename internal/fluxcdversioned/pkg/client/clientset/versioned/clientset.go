@@ -23,6 +23,12 @@ type Kustomization struct {
 	Suspended bool
 }
 
+// DependsOnRef represents a dependency reference in a Kustomization spec.
+type DependsOnRef struct {
+	Name      string
+	Namespace string
+}
+
 // KustomizationSpec holds the spec of a Kustomization.
 type KustomizationSpec struct {
 	Interval        string
@@ -30,6 +36,7 @@ type KustomizationSpec struct {
 	Prune           bool
 	SourceRef       SourceRef
 	TargetNamespace string
+	DependsOn       []DependsOnRef
 }
 
 // SourceRef holds the source reference for a Kustomization.
@@ -87,12 +94,18 @@ type kustomizationMetadata struct {
 }
 
 type kustomizationSpecAPI struct {
-	Interval        string          `json:"interval"`
-	Path            string          `json:"path"`
-	Prune           bool            `json:"prune"`
-	SourceRef       sourceRefAPI    `json:"sourceRef"`
-	TargetNamespace string          `json:"targetNamespace,omitempty"`
-	Suspend         bool            `json:"suspend,omitempty"`
+	Interval        string             `json:"interval"`
+	Path            string             `json:"path"`
+	Prune           bool               `json:"prune"`
+	SourceRef       sourceRefAPI       `json:"sourceRef"`
+	TargetNamespace string             `json:"targetNamespace,omitempty"`
+	Suspend         bool               `json:"suspend,omitempty"`
+	DependsOn       []dependsOnRefAPI  `json:"dependsOn,omitempty"`
+}
+
+type dependsOnRefAPI struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 type sourceRefAPI struct {
@@ -222,6 +235,14 @@ func (c *kustomizationClient) Get(ctx context.Context, name string) (*Kustomizat
 		})
 	}
 
+	dependsOn := make([]DependsOnRef, 0, len(apiResponse.Spec.DependsOn))
+	for _, d := range apiResponse.Spec.DependsOn {
+		dependsOn = append(dependsOn, DependsOnRef{
+			Name:      d.Name,
+			Namespace: d.Namespace,
+		})
+	}
+
 	return &KustomizationDetail{
 		Name:      apiResponse.Metadata.Name,
 		Namespace: apiResponse.Metadata.Namespace,
@@ -235,6 +256,7 @@ func (c *kustomizationClient) Get(ctx context.Context, name string) (*Kustomizat
 				Namespace: apiResponse.Spec.SourceRef.Namespace,
 			},
 			TargetNamespace: apiResponse.Spec.TargetNamespace,
+			DependsOn:       dependsOn,
 		},
 		Status: KustomizationStatus{
 			Conditions:          conditions,
