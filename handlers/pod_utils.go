@@ -46,6 +46,9 @@ func getPodStatus(pod corev1.Pod) string {
 		}
 		if containerStatus.State.Terminated != nil {
 			if reason := containerStatus.State.Terminated.Reason; reason != "" {
+				if reason == "Completed" {
+					return "Succeeded"
+				}
 				return reason
 			}
 		}
