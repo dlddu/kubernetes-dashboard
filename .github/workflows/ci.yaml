@@ -360,3 +360,37 @@ jobs:
           go test -v -run TestWorkflow ./test/...
           go test -v -run TestApplyAllSh ./test/...
           go test -v -run TestKindClusterSh ./test/...
+
+  # DLD-743: e2e 테스트 환경에 FluxCD CRD 등록
+  fluxcd-fixture-validation:
+    name: FluxCD Fixture Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Ensure go.mod is tidy
+        run: go mod tidy
+
+      # Shell-level static analysis: checks kind-cluster.sh and apply-all.sh structure
+      - name: Run FluxCD cluster script tests (shell)
+        run: |
+          chmod +x ./test/fluxcd_cluster_script_test.sh
+          ./test/fluxcd_cluster_script_test.sh
+
+      # Go-level YAML structural validation of all FluxCD fixture CRs
+      - name: Run FluxCD fixture YAML validation (Go)
+        run: |
+          go test -v -run TestFluxCDFixture ./test/...
+          go test -v -run TestKustomization ./test/...
+          go test -v -run TestApplyAllShIncludesFluxCD ./test/...
+          go test -v -run TestKindClusterShHasInstallFluxCD ./test/...

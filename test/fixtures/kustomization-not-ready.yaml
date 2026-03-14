@@ -1,0 +1,20 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: app-not-ready
+  namespace: dashboard-test
+spec:
+  interval: 10m
+  path: ./deploy
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: app-source
+    namespace: flux-system
+status:
+  conditions:
+    - type: Ready
+      status: "False"
+      lastTransitionTime: "2026-03-14T05:30:00Z"
+      reason: ArtifactFailed
+      message: "Source artifact not found: GitRepository/flux-system/app-source"
