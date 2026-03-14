@@ -20,6 +20,7 @@ type Kustomization struct {
 	Namespace string
 	Spec      KustomizationSpec
 	Status    KustomizationStatus
+	Suspended bool
 }
 
 // KustomizationSpec holds the spec of a Kustomization.
@@ -183,6 +184,7 @@ func (c *kustomizationClient) List(ctx context.Context, _ metav1.ListOptions) (*
 				Conditions:          conditions,
 				LastAppliedRevision: item.Status.LastAppliedRevision,
 			},
+			Suspended: item.Spec.Suspend,
 		})
 	}
 

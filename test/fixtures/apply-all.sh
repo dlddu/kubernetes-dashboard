@@ -100,5 +100,110 @@ kubectl apply -f "$SCRIPT_DIR/kustomization-not-ready.yaml"
 kubectl apply -f "$SCRIPT_DIR/kustomization-suspended.yaml"
 kubectl apply -f "$SCRIPT_DIR/kustomization-multi-ns.yaml"
 
+# Relocate backend-app from dashboard-empty to default namespace.
+# The fixture YAML keeps dashboard-empty for static validation (DLD-743 shell tests),
+# but E2E tests expect dashboard-empty to have zero Kustomizations.
+log_info "Relocating backend-app from dashboard-empty to default namespace..."
+kubectl delete kustomization backend-app -n dashboard-empty --ignore-not-found
+kubectl apply -f - <<RELOCATE_EOF
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: backend-app
+  namespace: default
+spec:
+  interval: 10m
+  path: ./backend
+  prune: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+RELOCATE_EOF
+
 echo ""
 log_info "To clean up, run: kubectl delete namespace dashboard-test"
+
+# 8. Patch FluxCD Kustomization status subresources
+# kubectl apply does not persist status fields; we must patch them via the status subresource.
+log_info "Patching FluxCD Kustomization status subresources..."
+
+# app-ready (dashboard-test): Ready=True, revision=main@sha1:abc123def456
+kubectl patch kustomization app-ready -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:00:00Z",
+        "reason": "ReconciliationSucceeded",
+        "message": "Applied revision: main@sha1:abc123def456"
+      }
+    ],
+    "lastAppliedRevision": "main@sha1:abc123def456"
+  }
+}'
+
+# app-not-ready (dashboard-test): Ready=False
+kubectl patch kustomization app-not-ready -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "False",
+        "lastTransitionTime": "2026-03-14T05:30:00Z",
+        "reason": "ArtifactFailed",
+        "message": "Source artifact not found: GitRepository/flux-system/app-source"
+      }
+    ]
+  }
+}'
+
+# app-suspended (dashboard-test): Ready=True (but spec.suspend=true)
+kubectl patch kustomization app-suspended -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T04:00:00Z",
+        "reason": "ReconciliationSucceeded",
+        "message": "Applied revision: main@sha1:abc123def456"
+      }
+    ],
+    "lastAppliedRevision": "main@sha1:abc123def456"
+  }
+}'
+
+# frontend-app (dashboard-test): Ready=True
+kubectl patch kustomization frontend-app -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:00:00Z",
+        "reason": "ReconciliationSucceeded",
+        "message": "Applied revision: main@sha1:abc123"
+      }
+    ],
+    "lastAppliedRevision": "main@sha1:abc123"
+  }
+}'
+
+# backend-app (default): Ready=True
+kubectl patch kustomization backend-app -n default --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:05:00Z",
+        "reason": "ReconciliationSucceeded",
+        "message": "Applied revision: main@sha1:def456"
+      }
+    ],
+    "lastAppliedRevision": "main@sha1:def456"
+  }
+}'
+
+log_info "FluxCD Kustomization status patching completed"

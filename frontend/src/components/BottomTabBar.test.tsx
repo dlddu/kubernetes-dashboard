@@ -60,6 +60,29 @@ describe('BottomTabBar Component', () => {
       expect(screen.getByTestId('tab-argo')).toBeInTheDocument();
     });
 
+    it('should render all 7 tabs including FluxCD', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Assert
+      expect(screen.getByTestId('tab-overview')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-nodes')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-workloads')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-pods')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-secrets')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-argo')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-flux')).toBeInTheDocument();
+    });
+
     it('should display tab labels including Argo', () => {
       // Arrange
       vi.mocked(useLocation).mockReturnValue({
@@ -80,6 +103,23 @@ describe('BottomTabBar Component', () => {
       expect(screen.getByText('Pods')).toBeInTheDocument();
       expect(screen.getByText('Secrets')).toBeInTheDocument();
       expect(screen.getByText('Argo')).toBeInTheDocument();
+    });
+
+    it('should display FluxCD tab label', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Assert
+      expect(screen.getByText('FluxCD')).toBeInTheDocument();
     });
 
     it('should display tab icons including Argo icon', () => {
@@ -213,6 +253,24 @@ describe('BottomTabBar Component', () => {
       // Assert
       const argoTab = screen.getByTestId('tab-argo');
       expect(argoTab).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('should highlight FluxCD tab when pathname is /flux', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/flux',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Assert
+      const fluxTab = screen.getByTestId('tab-flux');
+      expect(fluxTab).toHaveAttribute('aria-current', 'page');
     });
 
     it('should apply active styling to active tab', () => {
@@ -501,6 +559,25 @@ describe('BottomTabBar Component', () => {
 
       // Assert
       expect(mockNavigate).toHaveBeenCalledWith('/argo');
+    });
+
+    it('should navigate to /flux when FluxCD tab is clicked', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+      const fluxTab = screen.getByTestId('tab-flux');
+      fireEvent.click(fluxTab);
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith('/flux');
     });
 
     it('should call onTabChange prop if provided when tab is clicked', () => {
@@ -804,6 +881,7 @@ describe('BottomTabBar Component', () => {
         screen.getByTestId('tab-pods'),
         screen.getByTestId('tab-secrets'),
         screen.getByTestId('tab-argo'),
+        screen.getByTestId('tab-flux'),
       ];
       tabs.forEach(tab => {
         expect(tab).not.toHaveAttribute('aria-current', 'page');
