@@ -29,7 +29,7 @@ import { test, expect } from '@playwright/test';
 // TODO: Activate when DLD-744 is implemented.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization List - Basic Rendering', () => {
+test.describe('FluxCD Tab - Kustomization List - Basic Rendering', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should display Kustomization list page when navigating to FluxCD tab', async ({ page }) => {
@@ -113,7 +113,7 @@ test.describe.skip('FluxCD Tab - Kustomization List - Basic Rendering', () => {
 // TODO: Activate when DLD-744 is implemented.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization List - Summary Cards', () => {
+test.describe('FluxCD Tab - Kustomization List - Summary Cards', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should display correct counts on Ready, Not Ready, and Suspended summary cards', async ({ page }) => {
@@ -153,7 +153,7 @@ test.describe.skip('FluxCD Tab - Kustomization List - Summary Cards', () => {
 // TODO: Activate when DLD-744 is implemented.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization List - Namespace Filtering', () => {
+test.describe('FluxCD Tab - Kustomization List - Namespace Filtering', () => {
   test('should display only Kustomizations for the selected namespace when namespace filter is applied', async ({ page }) => {
     // Tests that the namespace selector filters the displayed Kustomization cards.
     // kustomization-multi-ns.yaml provides: frontend-app (dashboard-test) + backend-app (dashboard-empty).
@@ -198,7 +198,7 @@ test.describe.skip('FluxCD Tab - Kustomization List - Namespace Filtering', () =
 // TODO: Activate when DLD-744 is implemented.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization List - Loading, Empty & Error States', () => {
+test.describe('FluxCD Tab - Kustomization List - Loading, Empty & Error States', () => {
   test('should display EmptyState when CRD is not installed (dashboard-empty namespace)', async ({ page }) => {
     // Tests that EmptyState is rendered when the selected namespace has no Kustomizations.
     // Uses 'dashboard-empty' namespace which has no FluxCD CRD resources installed.
@@ -303,7 +303,7 @@ test.describe.skip('FluxCD Tab - Kustomization List - Loading, Empty & Error Sta
 // TODO: Activate when DLD-744 is implemented.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD API - GET /api/fluxcd/kustomizations', () => {
+test.describe('FluxCD API - GET /api/fluxcd/kustomizations', () => {
   test('should return all Kustomizations across namespaces when no namespace filter is applied', async ({ request }) => {
     // Tests that GET /api/fluxcd/kustomizations returns a non-empty array
     // containing all Kustomization resources across namespaces.
