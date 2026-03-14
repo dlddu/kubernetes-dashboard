@@ -55,6 +55,10 @@ kubectl apply -f "$SCRIPT_DIR/verbose-pod.yaml"
 log_info "Creating unhealthy pods (will remain in ImagePullBackOff state)..."
 kubectl apply -f "$SCRIPT_DIR/unhealthy-pod.yaml"
 
+# 4.0.1 Apply completed pod (will reach Succeeded phase)
+log_info "Creating completed pod (will reach Succeeded phase)..."
+kubectl apply -f "$SCRIPT_DIR/completed-pod.yaml"
+
 # 4.1 Apply terminating pod (will be deleted to enter Terminating state)
 log_info "Creating terminating test pod..."
 kubectl apply -f "$SCRIPT_DIR/terminating-pod.yaml"
@@ -72,6 +76,10 @@ log_info "Waiting for healthy pods to be ready..."
 kubectl wait --for=condition=Ready pod/busybox-test -n dashboard-test --timeout=60s
 kubectl wait --for=condition=Ready pod/verbose-log-test -n dashboard-test --timeout=60s
 
+# Wait for completed-job-pod to finish (Succeeded phase)
+log_info "Waiting for completed-job-pod to finish..."
+kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/completed-job-pod -n dashboard-test --timeout=60s
+
 # Wait for terminating-test-pod to be ready, then delete it to enter Terminating state
 log_info "Waiting for terminating-test-pod to be ready..."
 kubectl wait --for=condition=Ready pod/terminating-test-pod -n dashboard-test --timeout=60s
@@ -82,6 +90,7 @@ kubectl delete pod/terminating-test-pod -n dashboard-test --wait=false
 log_info "Test fixtures applied successfully!"
 echo ""
 log_warn "Note: unhealthy-test-pod-1~4 are intentionally configured to fail (ImagePullBackOff)"
+log_warn "Note: completed-job-pod has finished successfully (Succeeded phase)"
 log_warn "Note: terminating-test-pod is in Terminating state (long terminationGracePeriodSeconds)"
 echo ""
 log_info "Resources in dashboard-test namespace:"
