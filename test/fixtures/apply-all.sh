@@ -100,6 +100,26 @@ kubectl apply -f "$SCRIPT_DIR/kustomization-not-ready.yaml"
 kubectl apply -f "$SCRIPT_DIR/kustomization-suspended.yaml"
 kubectl apply -f "$SCRIPT_DIR/kustomization-multi-ns.yaml"
 
+# Relocate backend-app from dashboard-empty to default namespace.
+# The fixture YAML keeps dashboard-empty for static validation (DLD-743 shell tests),
+# but E2E tests expect dashboard-empty to have zero Kustomizations.
+log_info "Relocating backend-app from dashboard-empty to default namespace..."
+kubectl delete kustomization backend-app -n dashboard-empty --ignore-not-found
+kubectl apply -f - <<RELOCATE_EOF
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: backend-app
+  namespace: default
+spec:
+  interval: 10m
+  path: ./backend
+  prune: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+RELOCATE_EOF
+
 echo ""
 log_info "To clean up, run: kubectl delete namespace dashboard-test"
 
