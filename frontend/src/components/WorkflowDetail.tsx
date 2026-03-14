@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchWorkflowDetail, WorkflowDetailInfo, WorkflowDetailStepInfo } from '../api/argo';
-import { usePolling } from '../hooks/usePolling';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { StepIO } from './StepIO';
@@ -123,8 +122,6 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
     }
   }, [namespace, name]);
 
-  usePolling(load);
-
   useEffect(() => {
     load();
   }, [load]);
@@ -139,14 +136,39 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
 
   return (
     <div data-testid="workflow-detail-page" className="space-y-4">
-      {/* Back button — always visible */}
-      <button
-        data-testid="workflow-detail-back-button"
-        onClick={onBack}
-        className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-      >
-        &larr; Back to Workflows
-      </button>
+      {/* Navigation bar — always visible */}
+      <div className="flex items-center justify-between">
+        <button
+          data-testid="workflow-detail-back-button"
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+        >
+          &larr; Back to Workflows
+        </button>
+        <button
+          data-testid="workflow-detail-refresh-button"
+          onClick={handleRetry}
+          disabled={isLoading}
+          aria-label="Refresh workflow detail"
+          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          Refresh
+        </button>
+      </div>
 
       {/* Loading state */}
       {isLoading && (

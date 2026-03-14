@@ -9,10 +9,6 @@ vi.mock('../api/argo', () => ({
   fetchWorkflowDetail: vi.fn(),
 }));
 
-vi.mock('../hooks/usePolling', () => ({
-  usePolling: () => ({ refresh: vi.fn(), lastUpdate: new Date(), isLoading: false }),
-}));
-
 import { fetchWorkflowDetail } from '../api/argo';
 const mockFetchWorkflowDetail = fetchWorkflowDetail as ReturnType<typeof vi.fn>;
 
@@ -774,6 +770,49 @@ describe('WorkflowDetail Component', () => {
           'dashboard-test',
           'data-processing-abc12'
         );
+      });
+    });
+
+    it('should render a manual refresh button', async () => {
+      // Arrange
+      mockFetchWorkflowDetail.mockResolvedValueOnce(mockWorkflowDetail);
+
+      // Act
+      render(
+        <WorkflowDetail
+          namespace="dashboard-test"
+          name="data-processing-abc12"
+          onBack={vi.fn()}
+        />
+      );
+
+      // Assert
+      const refreshButton = screen.getByTestId('workflow-detail-refresh-button');
+      expect(refreshButton).toBeInTheDocument();
+    });
+
+    it('should call fetchWorkflowDetail again when refresh button is clicked', async () => {
+      // Arrange
+      mockFetchWorkflowDetail.mockResolvedValue(mockWorkflowDetail);
+
+      render(
+        <WorkflowDetail
+          namespace="dashboard-test"
+          name="data-processing-abc12"
+          onBack={vi.fn()}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('workflow-detail-header')).toBeInTheDocument();
+      });
+
+      // Act
+      fireEvent.click(screen.getByTestId('workflow-detail-refresh-button'));
+
+      // Assert
+      await waitFor(() => {
+        expect(mockFetchWorkflowDetail).toHaveBeenCalledTimes(2);
       });
     });
 
