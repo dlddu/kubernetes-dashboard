@@ -42,3 +42,16 @@ const (
 	errMsgPodNotFound  = "Pod not found"
 	errMsgPodLogsFetch = "Failed to fetch pod logs"
 )
+
+// FluxCD API path prefixes.
+const (
+	fluxcdKustomizationsPathPrefix = "/api/fluxcd/kustomizations/"
+)
+
+// FluxCD error messages.
+const (
+	errMsgFluxCDClientCreate    = "Failed to create FluxCD client"
+	errMsgKustomizationNotFound = "Kustomization not found"
+	errMsgKustomizationFetch    = "Failed to fetch kustomization"
+	errMsgKustomizationListFetch = "Failed to fetch kustomization list"
+)
