@@ -16,6 +16,10 @@ vi.mock('../api/fluxcd', () => ({
   reconcileKustomization: vi.fn(),
 }));
 
+vi.mock('../hooks/usePolling', () => ({
+  usePolling: () => ({ refresh: vi.fn(), lastUpdate: new Date(), isLoading: false }),
+}));
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchKustomizationDetail, reconcileKustomization } from '../api/fluxcd';
 import { KustomizationDetailPage } from './KustomizationDetailPage';

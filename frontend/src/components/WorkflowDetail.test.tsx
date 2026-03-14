@@ -9,6 +9,10 @@ vi.mock('../api/argo', () => ({
   fetchWorkflowDetail: vi.fn(),
 }));
 
+vi.mock('../hooks/usePolling', () => ({
+  usePolling: () => ({ refresh: vi.fn(), lastUpdate: new Date(), isLoading: false }),
+}));
+
 import { fetchWorkflowDetail } from '../api/argo';
 const mockFetchWorkflowDetail = fetchWorkflowDetail as ReturnType<typeof vi.fn>;
 
