@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"strings"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	versioned "github.com/dlddu/kubernetes-dashboard/internal/fluxcdversioned/pkg/client/clientset/versioned"
 )
 
@@ -76,9 +76,7 @@ func KustomizationDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	detail, err := getKustomizationDetail(r.Context(), clientset, namespace, name)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") ||
-			strings.Contains(err.Error(), "Not Found") ||
-			strings.Contains(err.Error(), "404") {
+		if k8serrors.IsNotFound(err) {
 			writeError(w, http.StatusNotFound, errMsgKustomizationNotFound)
 			return
 		}
