@@ -92,4 +92,13 @@ kubectl apply -f "$SCRIPT_DIR/workflow-failed.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-ml-pipeline.yaml"
 
 echo ""
+
+# 7. Apply FluxCD Kustomization fixtures
+log_info "Applying FluxCD Kustomization fixtures..."
+kubectl apply -f "$SCRIPT_DIR/kustomization-ready.yaml"
+kubectl apply -f "$SCRIPT_DIR/kustomization-not-ready.yaml"
+kubectl apply -f "$SCRIPT_DIR/kustomization-suspended.yaml"
+kubectl apply -f "$SCRIPT_DIR/kustomization-multi-ns.yaml"
+
+echo ""
 log_info "To clean up, run: kubectl delete namespace dashboard-test"

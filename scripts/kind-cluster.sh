@@ -90,6 +90,9 @@ create_cluster() {
 
     # Install Argo Workflows CRDs
     install_argo_crds
+
+    # Install FluxCD Kustomization CRD
+    install_fluxcd_crds
 }
 
 # Install metrics-server for real CPU/Memory metrics
@@ -129,6 +132,17 @@ install_argo_crds() {
     kubectl wait --for=condition=Established crd/workflowtemplates.argoproj.io --timeout=60s || true
 
     log_info "Argo Workflows CRDs installed successfully"
+}
+
+# Install FluxCD Kustomization CRD for e2e test environment
+install_fluxcd_crds() {
+    log_info "Installing FluxCD Kustomization CRD..."
+    kubectl apply -f "https://raw.githubusercontent.com/fluxcd/kustomize-controller/v1.4.0/config/crd/bases/kustomize.toolkit.fluxcd.io_kustomizations.yaml"
+
+    log_info "Waiting for FluxCD Kustomization CRD to be established..."
+    kubectl wait --for=condition=Established crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=60s || true
+
+    log_info "FluxCD Kustomization CRD installed successfully"
 }
 
 # Delete kind cluster
