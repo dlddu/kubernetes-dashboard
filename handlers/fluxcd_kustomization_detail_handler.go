@@ -105,6 +105,14 @@ func getKustomizationDetail(ctx context.Context, clientset *versioned.Clientset,
 		})
 	}
 
+	dependsOn := make([]DependsOnRef, 0, len(kd.Spec.DependsOn))
+	for _, d := range kd.Spec.DependsOn {
+		dependsOn = append(dependsOn, DependsOnRef{
+			Name:      d.Name,
+			Namespace: d.Namespace,
+		})
+	}
+
 	return &KustomizationDetailInfo{
 		Name:      kd.Name,
 		Namespace: kd.Namespace,
@@ -118,7 +126,7 @@ func getKustomizationDetail(ctx context.Context, clientset *versioned.Clientset,
 				Name:      kd.Spec.SourceRef.Name,
 				Namespace: kd.Spec.SourceRef.Namespace,
 			},
-			DependsOn: []DependsOnRef{},
+			DependsOn: dependsOn,
 		},
 		Status: KustomizationStatusInfo{
 			LastAppliedRevision: kd.Status.LastAppliedRevision,
