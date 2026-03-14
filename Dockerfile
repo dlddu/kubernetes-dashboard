@@ -23,6 +23,7 @@ WORKDIR /app
 # Copy go mod files and local replace targets
 COPY go.mod go.sum* ./
 COPY internal/argoversioned/go.mod internal/argoversioned/go.sum* ./internal/argoversioned/
+COPY internal/fluxcdversioned/go.mod internal/fluxcdversioned/go.sum* ./internal/fluxcdversioned/
 
 # Download dependencies
 RUN go mod download
