@@ -192,6 +192,63 @@ func TestIsPodHealthy(t *testing.T) {
 			},
 			expected: false,
 		},
+		{
+			name: "should return true for running pod with completed container (exit code 0)",
+			pod: corev1.Pod{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodRunning,
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									Reason:   "Completed",
+									ExitCode: 0,
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "should return false for running pod with failed container (non-zero exit code)",
+			pod: corev1.Pod{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodRunning,
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									Reason:   "Error",
+									ExitCode: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "should return true for succeeded pod with terminated containers",
+			pod: corev1.Pod{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodSucceeded,
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									Reason:   "Completed",
+									ExitCode: 0,
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
 	}
 
 	for _, tt := range tests {

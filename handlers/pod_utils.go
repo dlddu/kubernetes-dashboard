@@ -21,7 +21,7 @@ func isPodHealthy(pod corev1.Pod) bool {
 		if containerStatus.State.Waiting != nil {
 			return false
 		}
-		if containerStatus.State.Terminated != nil {
+		if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.ExitCode != 0 {
 			return false
 		}
 	}
