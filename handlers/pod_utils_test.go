@@ -86,7 +86,7 @@ func TestGetPodStatus(t *testing.T) {
 			expected: "Succeeded",
 		},
 		{
-			name: "should return Succeeded for succeeded pod with Completed container reason",
+			name: "should return Completed for succeeded pod with Completed container reason",
 			pod: corev1.Pod{
 				Status: corev1.PodStatus{
 					Phase: corev1.PodSucceeded,
@@ -102,7 +102,7 @@ func TestGetPodStatus(t *testing.T) {
 					},
 				},
 			},
-			expected: "Succeeded",
+			expected: "Completed",
 		},
 		{
 			name: "should return Failed for failed pod",

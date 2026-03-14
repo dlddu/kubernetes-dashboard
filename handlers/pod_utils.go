@@ -31,15 +31,11 @@ func isPodHealthy(pod corev1.Pod) bool {
 
 // getPodStatus returns the detailed status string for a pod.
 // Checks deletionTimestamp first (Terminating), then container statuses
-// for more specific information (e.g., ImagePullBackOff, CrashLoopBackOff),
-// then falls back to pod phase.
+// for more specific information (e.g., ImagePullBackOff, CrashLoopBackOff,
+// Completed), then falls back to pod phase.
 func getPodStatus(pod corev1.Pod) string {
 	if pod.DeletionTimestamp != nil {
 		return "Terminating"
-	}
-
-	if pod.Status.Phase == corev1.PodSucceeded {
-		return "Succeeded"
 	}
 
 	for _, containerStatus := range pod.Status.ContainerStatuses {
