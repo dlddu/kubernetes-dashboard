@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchWorkflowDetail, WorkflowDetailInfo, WorkflowDetailStepInfo } from '../api/argo';
+import { usePolling } from '../hooks/usePolling';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { StepIO } from './StepIO';
@@ -109,52 +110,31 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
   const [error, setError] = useState<string | null>(null);
   const [showParams, setShowParams] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = await fetchWorkflowDetail(namespace, name);
-        if (!cancelled) {
-          setDetail(result);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load workflow detail');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchWorkflowDetail(namespace, name);
+      setDetail(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load workflow detail');
+    } finally {
+      setIsLoading(false);
+    }
   }, [namespace, name]);
+
+  usePolling(load);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleToggleParams = () => {
     setShowParams((prev) => !prev);
   };
 
   const handleRetry = () => {
-    setError(null);
-    setIsLoading(true);
-    fetchWorkflowDetail(namespace, name)
-      .then((result) => {
-        setDetail(result);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to load workflow detail');
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    load();
   };
 
   return (

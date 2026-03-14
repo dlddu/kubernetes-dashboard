@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchKustomizationDetail, reconcileKustomization, KustomizationDetailInfo } from '../api/fluxcd';
+import { usePolling } from '../hooks/usePolling';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 
@@ -31,43 +32,31 @@ export function KustomizationDetailPage() {
   const [detail, setDetail] = useState<KustomizationDetailInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [isReconciling, setIsReconciling] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!namespace || !name) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchKustomizationDetail(namespace, name);
+      setDetail(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load kustomization detail');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [namespace, name]);
 
-    let cancelled = false;
+  usePolling(load);
 
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = await fetchKustomizationDetail(namespace, name);
-        if (!cancelled) {
-          setDetail(result);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load kustomization detail');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
+  useEffect(() => {
     load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [namespace, name, retryCount]);
+  }, [load]);
 
   const handleRetry = () => {
-    setRetryCount((prev) => prev + 1);
+    load();
   };
 
   const handleReconcile = async () => {
@@ -76,7 +65,7 @@ export function KustomizationDetailPage() {
     setReconcileError(null);
     try {
       await reconcileKustomization(namespace, name);
-      setRetryCount((prev) => prev + 1); // triggers re-fetch
+      await load(); // re-fetch after reconcile
     } catch (err) {
       setReconcileError(err instanceof Error ? err.message : 'Failed to reconcile');
     } finally {
