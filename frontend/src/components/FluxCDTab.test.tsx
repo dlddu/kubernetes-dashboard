@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { FluxCDTab } from './FluxCDTab';
 
 // Mock fetchKustomizations API
@@ -307,10 +306,12 @@ describe('FluxCDTab Component', () => {
       // Act
       render(<FluxCDTab />);
 
-      // Assert
-      expect(screen.getByText('flux-system')).toBeInTheDocument();
-      expect(screen.getByText('apps')).toBeInTheDocument();
-      expect(screen.getByText('infra')).toBeInTheDocument();
+      // Assert: use testid to specifically query name elements (namespace may also match 'flux-system')
+      const nameElements = screen.getAllByTestId('kustomization-name');
+      const names = nameElements.map((el) => el.textContent);
+      expect(names).toContain('flux-system');
+      expect(names).toContain('apps');
+      expect(names).toContain('infra');
     });
 
     it('should display kustomization namespaces', () => {
@@ -392,10 +393,10 @@ describe('FluxCDTab Component', () => {
       // Act
       render(<FluxCDTab />);
 
-      // Assert: summary cards should be rendered
-      expect(screen.getByText(/ready/i)).toBeInTheDocument();
-      expect(screen.getByText(/not ready/i)).toBeInTheDocument();
-      expect(screen.getByText(/suspended/i)).toBeInTheDocument();
+      // Assert: summary cards should be rendered by testid (avoid ambiguity with status badges)
+      expect(screen.getByTestId('summary-card-ready')).toBeInTheDocument();
+      expect(screen.getByTestId('summary-card-not-ready')).toBeInTheDocument();
+      expect(screen.getByTestId('summary-card-suspended')).toBeInTheDocument();
     });
 
     it('should display correct Ready count', () => {
