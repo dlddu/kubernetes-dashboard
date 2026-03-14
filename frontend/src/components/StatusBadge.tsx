@@ -26,6 +26,7 @@ export function StatusBadge({ status, testId = 'status-badge' }: StatusBadgeProp
     // Warning statuses (yellow)
     if (
       statusLower === 'pending' ||
+      statusLower === 'terminating' ||
       statusLower === 'unknown' ||
       statusLower === 'containercreating' ||
       statusLower === 'ready,schedulingdisabled'

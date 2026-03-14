@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: terminating-test-pod
+  namespace: dashboard-test
+  labels:
+    app: terminating-test
+    env: test
+    type: terminating
+spec:
+  terminationGracePeriodSeconds: 3600
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - |
+        trap 'echo "received SIGTERM, sleeping..."; sleep 3600' TERM
+        echo "pod started"
+        while true; do sleep 60; done
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "50m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+  restartPolicy: Always
