@@ -53,3 +53,12 @@ export async function fetchKustomizationDetail(
     `/api/fluxcd/kustomizations/${namespace}/${name}`
   );
 }
+
+export async function reconcileKustomization(
+  namespace: string,
+  name: string
+): Promise<void> {
+  await fetchJSON(`/api/fluxcd/kustomizations/${namespace}/${name}/reconcile`, {
+    method: 'POST',
+  });
+}
