@@ -38,6 +38,10 @@ func getPodStatus(pod corev1.Pod) string {
 		return "Terminating"
 	}
 
+	if pod.Status.Phase == corev1.PodSucceeded {
+		return "Succeeded"
+	}
+
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.State.Waiting != nil {
 			if reason := containerStatus.State.Waiting.Reason; reason != "" {
@@ -49,10 +53,6 @@ func getPodStatus(pod corev1.Pod) string {
 				return reason
 			}
 		}
-	}
-
-	if pod.Status.Phase == corev1.PodSucceeded {
-		return "Succeeded"
 	}
 	if pod.Status.Phase == corev1.PodFailed {
 		return "Failed"
