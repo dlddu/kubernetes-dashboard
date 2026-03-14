@@ -9,6 +9,10 @@ import (
 //   - It's not in Running phase (except Succeeded), OR
 //   - It has container issues (Waiting or Terminated state)
 func isPodHealthy(pod corev1.Pod) bool {
+	if pod.DeletionTimestamp != nil {
+		return false
+	}
+
 	if pod.Status.Phase == corev1.PodSucceeded {
 		return true
 	}
@@ -26,9 +30,14 @@ func isPodHealthy(pod corev1.Pod) bool {
 }
 
 // getPodStatus returns the detailed status string for a pod.
-// Checks container statuses first for more specific information
-// (e.g., ImagePullBackOff, CrashLoopBackOff), then falls back to pod phase.
+// Checks deletionTimestamp first (Terminating), then container statuses
+// for more specific information (e.g., ImagePullBackOff, CrashLoopBackOff),
+// then falls back to pod phase.
 func getPodStatus(pod corev1.Pod) string {
+	if pod.DeletionTimestamp != nil {
+		return "Terminating"
+	}
+
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.State.Waiting != nil {
 			if reason := containerStatus.State.Waiting.Reason; reason != "" {
