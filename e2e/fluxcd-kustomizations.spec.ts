@@ -970,7 +970,7 @@ test.describe('FluxCD API - GET /api/fluxcd/kustomizations/{namespace}/{name}', 
 // Activation: Remove test.describe.skip() when KustomizationDetail Reconcile feature is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
   // No API mocking for button visibility — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should display "Reconcile Now" button on the Kustomization detail page', async ({ page }) => {
@@ -1128,7 +1128,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Reconcile Button', () =>
 // Activation: Remove test.describe.skip() when backend reconcile endpoint is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD API - POST /api/fluxcd/kustomizations/{namespace}/{name}/reconcile', () => {
+test.describe('FluxCD API - POST /api/fluxcd/kustomizations/{namespace}/{name}/reconcile', () => {
   test('should return 200 and add the reconcile annotation when the Kustomization exists', async ({ request }) => {
     // Tests that POST /api/fluxcd/kustomizations/dashboard-test/app-ready/reconcile
     // adds the reconcile.fluxcd.io/requestedAt annotation to the resource and returns 200.

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	versioned "github.com/dlddu/kubernetes-dashboard/internal/fluxcdversioned/pkg/client/clientset/versioned"
@@ -55,7 +56,14 @@ type ConditionInfo struct {
 }
 
 // KustomizationDetailHandler handles GET /api/fluxcd/kustomizations/{namespace}/{name}
+// and dispatches POST .../reconcile requests to KustomizationReconcileHandler.
 func KustomizationDetailHandler(w http.ResponseWriter, r *http.Request) {
+	// Dispatch to reconcile handler if the path ends with /reconcile
+	if strings.HasSuffix(r.URL.Path, reconcilePathSuffix) {
+		KustomizationReconcileHandler(w, r)
+		return
+	}
+
 	r = withTimeout(r)
 
 	if !requireMethod(w, r, http.MethodGet) {

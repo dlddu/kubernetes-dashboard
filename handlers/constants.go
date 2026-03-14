@@ -6,11 +6,13 @@ const (
 	secretsPathPrefix     = "/api/secrets/"
 	podLogsPathPrefix     = "/api/pods/logs/"
 	restartPathSuffix     = "/restart"
+	reconcilePathSuffix   = "/reconcile"
 )
 
 // Kubernetes annotation keys.
 const (
-	annotationRestartedAt = "kubectl.kubernetes.io/restartedAt"
+	annotationRestartedAt          = "kubectl.kubernetes.io/restartedAt"
+	annotationReconcileRequestedAt = "reconcile.fluxcd.io/requestedAt"
 )
 
 // Node role label keys.
@@ -50,8 +52,9 @@ const (
 
 // FluxCD error messages.
 const (
-	errMsgFluxCDClientCreate    = "Failed to create FluxCD client"
-	errMsgKustomizationNotFound = "Kustomization not found"
-	errMsgKustomizationFetch    = "Failed to fetch kustomization"
+	errMsgFluxCDClientCreate     = "Failed to create FluxCD client"
+	errMsgKustomizationNotFound  = "Kustomization not found"
+	errMsgKustomizationFetch     = "Failed to fetch kustomization"
 	errMsgKustomizationListFetch = "Failed to fetch kustomization list"
+	errMsgKustomizationReconcile = "Failed to reconcile kustomization"
 )

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchKustomizationDetail, KustomizationDetailInfo } from '../api/fluxcd';
+import { fetchKustomizationDetail, reconcileKustomization, KustomizationDetailInfo } from '../api/fluxcd';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 
@@ -32,6 +32,8 @@ export function KustomizationDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isReconciling, setIsReconciling] = useState(false);
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!namespace || !name) return;
@@ -66,6 +68,20 @@ export function KustomizationDetailPage() {
 
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
+  };
+
+  const handleReconcile = async () => {
+    if (!namespace || !name) return;
+    setIsReconciling(true);
+    setReconcileError(null);
+    try {
+      await reconcileKustomization(namespace, name);
+      setRetryCount((prev) => prev + 1); // triggers re-fetch
+    } catch (err) {
+      setReconcileError(err instanceof Error ? err.message : 'Failed to reconcile');
+    } finally {
+      setIsReconciling(false);
+    }
   };
 
   const handleBack = () => {
@@ -233,6 +249,39 @@ export function KustomizationDetailPage() {
               ))}
             </div>
           </div>
+
+          {/* Reconcile Button */}
+          <button
+            data-testid="reconcile-button"
+            onClick={handleReconcile}
+            disabled={isReconciling}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isReconciling && (
+              <svg
+                data-testid="reconcile-spinner"
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {isReconciling ? 'Reconciling...' : 'Reconcile Now'}
+          </button>
+
+          {/* Reconcile Error */}
+          {reconcileError && (
+            <div
+              data-testid="reconcile-error"
+              role="alert"
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+            >
+              {reconcileError}
+            </div>
+          )}
         </>
       )}
     </div>
