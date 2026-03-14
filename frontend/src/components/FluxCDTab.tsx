@@ -18,7 +18,7 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
   );
 
   // Summary counts
-  const readyCount = kustomizations.filter((k) => k.ready).length;
+  const readyCount = kustomizations.filter((k) => k.ready && !k.suspended).length;
   const notReadyCount = kustomizations.filter((k) => !k.ready && !k.suspended).length;
   const suspendedCount = kustomizations.filter((k) => k.suspended).length;
 
@@ -91,15 +91,19 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
               <div data-testid="kustomization-source" className="text-sm text-gray-600">
                 {k.sourceKind}/{k.sourceName}
               </div>
-              <div data-testid="kustomization-revision" className="text-sm text-gray-600 font-mono">
-                {k.revision}
-              </div>
+              {k.revision && (
+                <div data-testid="kustomization-revision" className="text-sm text-gray-600 font-mono">
+                  {k.revision}
+                </div>
+              )}
               <div data-testid="kustomization-interval" className="text-sm text-gray-600">
                 {k.interval}
               </div>
-              <div data-testid="kustomization-last-applied" className="text-sm text-gray-600">
-                {k.lastApplied}
-              </div>
+              {k.lastApplied && (
+                <div data-testid="kustomization-last-applied" className="text-sm text-gray-600">
+                  {k.lastApplied}
+                </div>
+              )}
               <div className="text-sm text-gray-600">
                 {k.path}
               </div>

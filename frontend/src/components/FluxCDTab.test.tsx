@@ -412,10 +412,10 @@ describe('FluxCDTab Component', () => {
       render(<FluxCDTab />);
 
       // Assert: the Ready summary card value should reflect ready count
-      // flux-system and infra are ready=true
+      // flux-system is ready=true (infra is ready but suspended, excluded from ready count)
       const summaryCardValues = screen.getAllByTestId('summary-card-value');
       const values = summaryCardValues.map((el) => el.textContent);
-      expect(values).toContain('2'); // 2 ready kustomizations
+      expect(values).toContain('1'); // 1 ready kustomization (infra excluded — suspended)
     });
 
     it('should display correct Suspended count', () => {
