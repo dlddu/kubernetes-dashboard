@@ -427,7 +427,7 @@ test.describe('FluxCD API - GET /api/fluxcd/kustomizations', () => {
 // Activation: Remove test.describe.skip() when KustomizationDetail component is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Navigation', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Navigation', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should navigate to the detail page with correct URL when a Kustomization card is clicked', async ({ page }) => {
@@ -464,7 +464,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Navigation', () => {
 // Activation: Remove test.describe.skip() when KustomizationDetail back navigation is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Back Navigation', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Back Navigation', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should return to the Kustomization list when the back button is clicked', async ({ page }) => {
@@ -512,7 +512,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Back Navigation', () => 
 // Activation: Remove test.describe.skip() when KustomizationDetail Spec section is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Spec Information', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Spec Information', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should display Spec fields: Source, Path, Interval, Prune, Suspended, and DependsOn', async ({ page }) => {
@@ -596,7 +596,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Spec Information', () =>
 // Activation: Remove test.describe.skip() when KustomizationDetail Status section is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Status Information', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Status Information', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should display Revision in monospace font and Last Applied time in the Status section', async ({ page }) => {
@@ -637,7 +637,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Status Information', () 
 // Activation: Remove test.describe.skip() when KustomizationDetail Conditions section is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Conditions', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Conditions', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should display each Condition with Type, Status badge, Reason, and Message', async ({ page }) => {
@@ -727,7 +727,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Conditions', () => {
 // Activation: Remove test.describe.skip() when KustomizationDetail condition border colors are ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Condition Border Colors', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Condition Border Colors', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should apply green left border to conditions with Status=True', async ({ page }) => {
@@ -783,7 +783,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Condition Border Colors'
 // Activation: Remove test.describe.skip() when KustomizationDetail error handling is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Error State', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Error State', () => {
   test('should display ErrorRetry with retry button when the Kustomization detail API returns an error', async ({ page }) => {
     // Tests that when the detail API returns 500, ErrorRetry is shown inside the detail page,
     // and clicking Retry re-fetches and renders the detail on success.
@@ -844,7 +844,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Error State', () => {
 // Activation: Remove test.describe.skip() when KustomizationDetail deep link routing is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
+test.describe('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should render kustomization-detail-page when navigating directly to /fluxcd/{namespace}/{name}', async ({ page }) => {
@@ -896,7 +896,7 @@ test.describe.skip('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
 // Activation: Remove test.describe.skip() when backend detail endpoint is ready.
 // ---------------------------------------------------------------------------
 
-test.describe.skip('FluxCD API - GET /api/fluxcd/kustomizations/{namespace}/{name}', () => {
+test.describe('FluxCD API - GET /api/fluxcd/kustomizations/{namespace}/{name}', () => {
   test('should return 200 with full Kustomization detail for an existing resource', async ({ request }) => {
     // Tests that GET /api/fluxcd/kustomizations/dashboard-test/app-ready
     // returns the complete detail object with spec and status fields.

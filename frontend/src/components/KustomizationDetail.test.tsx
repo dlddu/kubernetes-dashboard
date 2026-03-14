@@ -1,0 +1,647 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+
+// ---------------------------------------------------------------------------
+// Module mocks — must be declared before any imports of the mocked modules
+// ---------------------------------------------------------------------------
+
+vi.mock('react-router-dom', () => ({
+  useParams: vi.fn(),
+  useNavigate: vi.fn(),
+}));
+
+vi.mock('../api/fluxcd', () => ({
+  fetchKustomizationDetail: vi.fn(),
+  fetchKustomizations: vi.fn(),
+}));
+
+import { useParams, useNavigate } from 'react-router-dom';
+import { fetchKustomizationDetail } from '../api/fluxcd';
+import { KustomizationDetailPage } from './KustomizationDetailPage';
+
+// ---------------------------------------------------------------------------
+// Typed mock helpers
+// ---------------------------------------------------------------------------
+
+const mockUseParams = useParams as ReturnType<typeof vi.fn>;
+const mockUseNavigate = useNavigate as ReturnType<typeof vi.fn>;
+const mockFetchKustomizationDetail = fetchKustomizationDetail as ReturnType<typeof vi.fn>;
+
+// ---------------------------------------------------------------------------
+// Fixture data
+// ---------------------------------------------------------------------------
+
+const mockDetail = {
+  name: 'flux-system',
+  namespace: 'flux-system',
+  suspended: false,
+  spec: {
+    interval: '1m0s',
+    path: './clusters/my-cluster',
+    prune: true,
+    sourceRef: {
+      kind: 'GitRepository',
+      name: 'flux-system',
+      namespace: 'flux-system',
+    },
+    dependsOn: [],
+  },
+  status: {
+    lastAppliedRevision: 'main@sha1:abc1234567890abcdef',
+    conditions: [
+      {
+        type: 'Ready',
+        status: 'True',
+        reason: 'ReconciliationSucceeded',
+        message: 'Applied revision: main@sha1:abc1234567890abcdef',
+        lastTransitionTime: '2026-03-14T10:00:00Z',
+      },
+      {
+        type: 'Reconciling',
+        status: 'False',
+        reason: 'ReconciliationSucceeded',
+        message: '',
+        lastTransitionTime: '2026-03-14T10:00:00Z',
+      },
+    ],
+  },
+};
+
+const mockDetailWithDependsOn = {
+  ...mockDetail,
+  spec: {
+    ...mockDetail.spec,
+    dependsOn: [
+      { name: 'infra', namespace: 'flux-system' },
+      { name: 'crds', namespace: '' },
+    ],
+  },
+};
+
+const mockDetailSuspended = {
+  ...mockDetail,
+  name: 'suspended-app',
+  suspended: true,
+};
+
+// ---------------------------------------------------------------------------
+// Setup / teardown
+// ---------------------------------------------------------------------------
+
+beforeEach(() => {
+  vi.clearAllMocks();
+
+  // Default router mock values
+  mockUseParams.mockReturnValue({ namespace: 'flux-system', name: 'flux-system' });
+  mockUseNavigate.mockReturnValue(vi.fn());
+});
+
+// ---------------------------------------------------------------------------
+// Helper: render component and wait for loading to complete
+// ---------------------------------------------------------------------------
+
+async function renderAndWait() {
+  const utils = render(<KustomizationDetailPage />);
+  // Wait for the initial loading skeleton to disappear
+  await waitFor(() => {
+    expect(screen.queryByTestId('loading-skeleton')).not.toBeInTheDocument();
+  });
+  return utils;
+}
+
+// ---------------------------------------------------------------------------
+// Test suites
+// ---------------------------------------------------------------------------
+
+describe('KustomizationDetailPage', () => {
+  // -------------------------------------------------------------------------
+  // Loading state
+  // -------------------------------------------------------------------------
+  describe('Loading State', () => {
+    it('should show loading skeleton while fetching', async () => {
+      // Arrange: fetch never resolves during this test
+      let resolvePromise!: (value: typeof mockDetail) => void;
+      mockFetchKustomizationDetail.mockReturnValue(
+        new Promise<typeof mockDetail>((res) => {
+          resolvePromise = res;
+        })
+      );
+
+      // Act
+      render(<KustomizationDetailPage />);
+
+      // Assert: skeleton is visible immediately
+      expect(screen.getByTestId('loading-skeleton')).toBeInTheDocument();
+
+      // Cleanup: resolve to avoid act() warning
+      await act(async () => {
+        resolvePromise(mockDetail);
+      });
+    });
+
+    it('should hide loading skeleton after fetch resolves', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.queryByTestId('loading-skeleton')).not.toBeInTheDocument();
+    });
+
+    it('should call fetchKustomizationDetail with correct namespace and name', async () => {
+      // Arrange
+      mockUseParams.mockReturnValue({ namespace: 'production', name: 'my-app' });
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(mockFetchKustomizationDetail).toHaveBeenCalledWith('production', 'my-app');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Error state
+  // -------------------------------------------------------------------------
+  describe('Error State', () => {
+    it('should show error retry component when fetch fails', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockRejectedValue(new Error('Network error'));
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.getByTestId('error-retry')).toBeInTheDocument();
+    });
+
+    it('should display retry button on error', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockRejectedValue(new Error('Failed to fetch'));
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    });
+
+    it('should retry fetch when retry button is clicked', async () => {
+      // Arrange: first call fails, second succeeds
+      mockFetchKustomizationDetail
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce(mockDetail);
+
+      await renderAndWait();
+
+      const retryButton = screen.getByRole('button', { name: /retry/i });
+
+      // Act
+      await act(async () => {
+        fireEvent.click(retryButton);
+      });
+
+      // Assert: fetch called twice (initial + retry)
+      await waitFor(() => {
+        expect(mockFetchKustomizationDetail).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('should not show spec content on error', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockRejectedValue(new Error('Error'));
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.queryByTestId('kustomization-detail-spec-path')).not.toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Back button
+  // -------------------------------------------------------------------------
+  describe('Back Button', () => {
+    it('should render back button', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.getByTestId('kustomization-detail-back-button')).toBeInTheDocument();
+    });
+
+    it('should navigate to /flux when back button is clicked', async () => {
+      // Arrange
+      const mockNavigate = vi.fn();
+      mockUseNavigate.mockReturnValue(mockNavigate);
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+      fireEvent.click(screen.getByTestId('kustomization-detail-back-button'));
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith('/flux');
+    });
+
+    it('should show back button even during loading', () => {
+      // Arrange: never-resolving fetch
+      mockFetchKustomizationDetail.mockReturnValue(new Promise(() => {}));
+
+      // Act
+      render(<KustomizationDetailPage />);
+
+      // Assert
+      expect(screen.getByTestId('kustomization-detail-back-button')).toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Main container
+  // -------------------------------------------------------------------------
+  describe('Main Container', () => {
+    it('should render main page container with correct testId', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.getByTestId('kustomization-detail-page')).toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Spec card
+  // -------------------------------------------------------------------------
+  describe('Spec Card', () => {
+    it('should display spec source information', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const sourceEl = screen.getByTestId('kustomization-detail-spec-source');
+      expect(sourceEl).toBeInTheDocument();
+      expect(sourceEl.textContent).toMatch(/GitRepository/);
+      expect(sourceEl.textContent).toMatch(/flux-system/);
+    });
+
+    it('should display spec path', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const pathEl = screen.getByTestId('kustomization-detail-spec-path');
+      expect(pathEl).toBeInTheDocument();
+      expect(pathEl.textContent).toContain('./clusters/my-cluster');
+    });
+
+    it('should display spec interval', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const intervalEl = screen.getByTestId('kustomization-detail-spec-interval');
+      expect(intervalEl).toBeInTheDocument();
+      expect(intervalEl.textContent).toContain('1m0s');
+    });
+
+    it('should display spec prune', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const pruneEl = screen.getByTestId('kustomization-detail-spec-prune');
+      expect(pruneEl).toBeInTheDocument();
+    });
+
+    it('should display suspended status', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const suspendedEl = screen.getByTestId('kustomization-detail-spec-suspended');
+      expect(suspendedEl).toBeInTheDocument();
+    });
+
+    it('should show suspended=true correctly', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetailSuspended);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const suspendedEl = screen.getByTestId('kustomization-detail-spec-suspended');
+      expect(suspendedEl.textContent).toMatch(/true/i);
+    });
+
+    it('should show suspended=false correctly', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const suspendedEl = screen.getByTestId('kustomization-detail-spec-suspended');
+      expect(suspendedEl.textContent).toMatch(/false/i);
+    });
+
+    it('should display dependsOn section', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetailWithDependsOn);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const dependsOnEl = screen.getByTestId('kustomization-detail-spec-depends-on');
+      expect(dependsOnEl).toBeInTheDocument();
+      expect(dependsOnEl.textContent).toContain('infra');
+    });
+
+    it('should display dependsOn section even when there are no dependencies', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert: element always exists
+      const dependsOnEl = screen.getByTestId('kustomization-detail-spec-depends-on');
+      expect(dependsOnEl).toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Status card
+  // -------------------------------------------------------------------------
+  describe('Status Card', () => {
+    it('should display last applied revision', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const revisionEl = screen.getByTestId('kustomization-detail-status-revision');
+      expect(revisionEl).toBeInTheDocument();
+      expect(revisionEl.textContent).toContain('main@sha1:abc1234567890abcdef');
+    });
+
+    it('should render revision element with font-mono class', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert: monospace class required per spec
+      const revisionEl = screen.getByTestId('kustomization-detail-status-revision');
+      expect(revisionEl.className).toContain('font-mono');
+    });
+
+    it('should display last applied time section', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const lastAppliedEl = screen.getByTestId('kustomization-detail-status-last-applied');
+      expect(lastAppliedEl).toBeInTheDocument();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Conditions card
+  // -------------------------------------------------------------------------
+  describe('Conditions Card', () => {
+    it('should render the conditions section container', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.getByTestId('kustomization-detail-conditions')).toBeInTheDocument();
+    });
+
+    it('should render the correct number of condition rows', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert: fixture has 2 conditions
+      const conditionRows = screen.getAllByTestId('kustomization-detail-condition');
+      expect(conditionRows).toHaveLength(2);
+    });
+
+    it('should display condition Type for each condition', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const typeEls = screen.getAllByTestId('kustomization-detail-condition-type');
+      const typeTexts = typeEls.map((el) => el.textContent);
+      expect(typeTexts).toContain('Ready');
+      expect(typeTexts).toContain('Reconciling');
+    });
+
+    it('should display condition Status for each condition', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const statusEls = screen.getAllByTestId('kustomization-detail-condition-status');
+      const statusTexts = statusEls.map((el) => el.textContent);
+      expect(statusTexts).toContain('True');
+      expect(statusTexts).toContain('False');
+    });
+
+    it('should display condition Reason for each condition', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const reasonEls = screen.getAllByTestId('kustomization-detail-condition-reason');
+      const reasonTexts = reasonEls.map((el) => el.textContent);
+      expect(reasonTexts).toContain('ReconciliationSucceeded');
+    });
+
+    it('should display condition Message for each condition', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const messageEls = screen.getAllByTestId('kustomization-detail-condition-message');
+      const messageTexts = messageEls.map((el) => el.textContent);
+      expect(messageTexts).toContain('Applied revision: main@sha1:abc1234567890abcdef');
+    });
+
+    it('should apply green class for status=True condition', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert: the "Ready" condition has status=True → some element with green class
+      const conditionRows = screen.getAllByTestId('kustomization-detail-condition');
+      const readyRow = conditionRows.find(
+        (row) =>
+          row.querySelector('[data-testid="kustomization-detail-condition-type"]')?.textContent ===
+          'Ready'
+      );
+      expect(readyRow).toBeDefined();
+      expect(readyRow!.innerHTML).toMatch(/green/);
+    });
+
+    it('should apply red class for status=False condition', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert: the "Reconciling" condition has status=False → red class
+      const conditionRows = screen.getAllByTestId('kustomization-detail-condition');
+      const reconcilingRow = conditionRows.find(
+        (row) =>
+          row.querySelector('[data-testid="kustomization-detail-condition-type"]')?.textContent ===
+          'Reconciling'
+      );
+      expect(reconcilingRow).toBeDefined();
+      expect(reconcilingRow!.innerHTML).toMatch(/red/);
+    });
+
+    it('should render empty conditions section when conditions array is empty', async () => {
+      // Arrange
+      const detailNoConditions = {
+        ...mockDetail,
+        status: { ...mockDetail.status, conditions: [] },
+      };
+      mockFetchKustomizationDetail.mockResolvedValue(detailNoConditions);
+
+      // Act
+      await renderAndWait();
+
+      // Assert: section container exists but has no condition rows
+      expect(screen.getByTestId('kustomization-detail-conditions')).toBeInTheDocument();
+      expect(screen.queryAllByTestId('kustomization-detail-condition')).toHaveLength(0);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Edge cases
+  // -------------------------------------------------------------------------
+  describe('Edge Cases', () => {
+    it('should handle kustomization with empty revision without crashing', async () => {
+      // Arrange
+      const detailEmptyRevision = {
+        ...mockDetail,
+        status: { ...mockDetail.status, lastAppliedRevision: '' },
+      };
+      mockFetchKustomizationDetail.mockResolvedValue(detailEmptyRevision);
+
+      // Act
+      await renderAndWait();
+
+      // Assert: revision element still renders
+      expect(screen.getByTestId('kustomization-detail-status-revision')).toBeInTheDocument();
+    });
+
+    it('should show all three conditions when present', async () => {
+      // Arrange
+      const detailThreeConditions = {
+        ...mockDetail,
+        status: {
+          ...mockDetail.status,
+          conditions: [
+            ...mockDetail.status.conditions,
+            {
+              type: 'HealthChecks',
+              status: 'True',
+              reason: 'Passed',
+              message: 'All health checks passed',
+              lastTransitionTime: '2026-03-14T11:00:00Z',
+            },
+          ],
+        },
+      };
+      mockFetchKustomizationDetail.mockResolvedValue(detailThreeConditions);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(screen.getAllByTestId('kustomization-detail-condition')).toHaveLength(3);
+    });
+
+    it('should use namespace and name from URL params for the API call', async () => {
+      // Arrange
+      mockUseParams.mockReturnValue({ namespace: 'staging', name: 'my-kustomization' });
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      expect(mockFetchKustomizationDetail).toHaveBeenCalledWith('staging', 'my-kustomization');
+    });
+
+    it('should display multiple dependsOn entries', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetailWithDependsOn);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const dependsOnEl = screen.getByTestId('kustomization-detail-spec-depends-on');
+      expect(dependsOnEl.textContent).toContain('infra');
+      expect(dependsOnEl.textContent).toContain('crds');
+    });
+  });
+});

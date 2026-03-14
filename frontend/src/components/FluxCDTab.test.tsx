@@ -2,6 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { FluxCDTab } from './FluxCDTab';
 
+vi.mock('react-router-dom', () => ({
+  useNavigate: vi.fn(() => vi.fn()),
+}));
+
 // Mock fetchKustomizations API
 vi.mock('../api/fluxcd', () => ({
   fetchKustomizations: vi.fn(),
