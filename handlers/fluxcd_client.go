@@ -3,7 +3,7 @@ package handlers
 import (
 	"sync"
 
-	versioned "github.com/fluxcd/kustomize-controller/v1/pkg/client/clientset/versioned"
+	versioned "github.com/dlddu/kubernetes-dashboard/internal/fluxcdversioned/pkg/client/clientset/versioned"
 )
 
 var (

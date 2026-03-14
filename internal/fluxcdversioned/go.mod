@@ -1,4 +1,4 @@
-module github.com/fluxcd/kustomize-controller/v1
+module github.com/dlddu/kubernetes-dashboard/internal/fluxcdversioned
 
 go 1.23
 
