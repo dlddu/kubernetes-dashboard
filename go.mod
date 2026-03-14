@@ -6,6 +6,7 @@ toolchain go1.24.13
 
 require (
 	github.com/argoproj/argo-workflows/v3 v3.0.0
+	github.com/fluxcd/kustomize-controller/v1 v1.0.0
 	k8s.io/api v0.27.0
 	k8s.io/apimachinery v0.27.0
 	k8s.io/client-go v0.27.0
@@ -13,6 +14,8 @@ require (
 )
 
 replace github.com/argoproj/argo-workflows/v3 => ./internal/argoversioned
+
+replace github.com/fluxcd/kustomize-controller/v1 => ./internal/fluxcdversioned
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
