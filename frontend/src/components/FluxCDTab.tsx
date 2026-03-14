@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { fetchKustomizations, KustomizationInfo } from '../api/fluxcd';
 import { useDataFetch } from '../hooks/useDataFetch';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -11,6 +12,7 @@ interface FluxCDTabProps {
 }
 
 export function FluxCDTab({ namespace }: FluxCDTabProps) {
+  const navigate = useNavigate();
   const { data: kustomizations, isLoading, error, refresh } = useDataFetch<KustomizationInfo>(
     () => fetchKustomizations(namespace),
     'Failed to fetch kustomizations',
@@ -77,7 +79,8 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
             <div
               key={`${k.namespace}-${k.name}`}
               data-testid="kustomization-card"
-              className="bg-white rounded-lg shadow p-6 space-y-2"
+              className="bg-white rounded-lg shadow p-6 space-y-2 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => navigate(`/fluxcd/${k.namespace}/${k.name}`)}
             >
               <div className="flex items-center justify-between">
                 <div data-testid="kustomization-name" className="text-lg font-semibold text-gray-900">
