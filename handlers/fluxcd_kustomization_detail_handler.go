@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -78,6 +79,7 @@ func KustomizationDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getFluxCDClient()
 	if err != nil {
+		slog.Error("Failed to create FluxCD client", "error", err)
 		writeError(w, http.StatusInternalServerError, errMsgFluxCDClientCreate)
 		return
 	}
@@ -88,6 +90,7 @@ func KustomizationDetailHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, errMsgKustomizationNotFound)
 			return
 		}
+		slog.Error("Failed to fetch Kustomization detail", "error", err, "namespace", namespace, "name", name)
 		writeError(w, http.StatusInternalServerError, errMsgKustomizationFetch)
 		return
 	}

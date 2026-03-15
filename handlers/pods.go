@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -75,6 +76,7 @@ func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getLogClientset()
 	if err != nil {
+		slog.Error("Failed to create Kubernetes client", "error", err)
 		writeError(w, http.StatusInternalServerError, errMsgClientCreate)
 		return
 	}
@@ -113,6 +115,7 @@ func PodLogsHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, errMsg)
 			return
 		}
+		slog.Error("Failed to fetch pod logs", "error", err, "namespace", namespace, "name", name)
 		writeError(w, http.StatusInternalServerError, errMsgPodLogsFetch)
 		return
 	}
