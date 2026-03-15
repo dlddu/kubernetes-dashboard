@@ -134,15 +134,19 @@ install_argo_crds() {
     log_info "Argo Workflows CRDs installed successfully"
 }
 
-# Install FluxCD Kustomization CRD for e2e test environment
+# Install FluxCD CRDs for e2e test environment
 install_fluxcd_crds() {
     log_info "Installing FluxCD Kustomization CRD..."
     kubectl apply -f "https://raw.githubusercontent.com/fluxcd/kustomize-controller/v1.4.0/config/crd/bases/kustomize.toolkit.fluxcd.io_kustomizations.yaml"
 
-    log_info "Waiting for FluxCD Kustomization CRD to be established..."
-    kubectl wait --for=condition=Established crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=60s || true
+    log_info "Installing FluxCD GitRepository CRD..."
+    kubectl apply -f "https://raw.githubusercontent.com/fluxcd/source-controller/v1.4.1/config/crd/bases/source.toolkit.fluxcd.io_gitrepositories.yaml"
 
-    log_info "FluxCD Kustomization CRD installed successfully"
+    log_info "Waiting for FluxCD CRDs to be established..."
+    kubectl wait --for=condition=Established crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=60s || true
+    kubectl wait --for=condition=Established crd/gitrepositories.source.toolkit.fluxcd.io --timeout=60s || true
+
+    log_info "FluxCD CRDs installed successfully"
 }
 
 # Delete kind cluster
