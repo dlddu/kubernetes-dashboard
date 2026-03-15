@@ -225,11 +225,7 @@ test.describe('FluxCD Tab - GitRepository List - Loading, Empty & Error States',
     // Arrange: Intercept the gitrepositories API and delay the response
     await page.route('**/api/fluxcd/gitrepositories**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
+      await route.continue();
     });
 
     await page.goto('/flux');
@@ -717,11 +713,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
   test('should transition to "Reconciling..." loading state with spinner and disabled button after clicking "Reconcile Now"', async ({ page }) => {
     await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/reconcile', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Reconciliation triggered' }),
-      });
+      await route.continue();
     });
 
     await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
@@ -750,11 +742,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
     });
 
     await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/reconcile', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Reconciliation triggered' }),
-      });
+      await route.continue();
     });
 
     await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
