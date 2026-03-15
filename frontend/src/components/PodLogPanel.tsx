@@ -157,11 +157,22 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
             onChange={handleContainerChange}
             className="bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600"
           >
-            {(pod.containers ?? []).map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
+            {(pod.initContainers ?? []).length > 0 && (
+              <optgroup label="Init Containers">
+                {pod.initContainers.map((c) => (
+                  <option key={`init-${c}`} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Containers">
+              {(pod.containers ?? []).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </optgroup>
           </select>
 
           <button
