@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -73,6 +74,7 @@ func GitRepositoryDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getFluxCDClient()
 	if err != nil {
+		slog.Error("Failed to create FluxCD client", "error", err)
 		writeError(w, http.StatusInternalServerError, errMsgFluxCDClientCreate)
 		return
 	}
@@ -83,6 +85,7 @@ func GitRepositoryDetailHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, errMsgGitRepositoryNotFound)
 			return
 		}
+		slog.Error("Failed to fetch GitRepository detail", "error", err, "namespace", namespace, "name", name)
 		writeError(w, http.StatusInternalServerError, errMsgGitRepositoryFetch)
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -34,7 +35,11 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 }
 
 // writeError writes a JSON error response with the given status code and message.
+// For 5xx status codes, the error message is also logged to aid debugging.
 func writeError(w http.ResponseWriter, status int, message string) {
+	if status >= 500 {
+		slog.Error("HTTP error response", "status", status, "message", message)
+	}
 	writeJSON(w, status, map[string]string{"error": message})
 }
 
@@ -78,6 +83,7 @@ func handleGet(errMsg string, fetch func(r *http.Request) (interface{}, error)) 
 
 		result, err := fetch(r)
 		if err != nil {
+			slog.Error("API handler error", "error", err, "path", r.URL.Path)
 			writeError(w, http.StatusInternalServerError, errMsg)
 			return
 		}
@@ -106,6 +112,7 @@ func withParsedResource(w http.ResponseWriter, r *http.Request, pathPrefix, path
 
 	clientset, err := getKubernetesClient()
 	if err != nil {
+		slog.Error("Failed to create Kubernetes client", "error", err)
 		writeError(w, http.StatusInternalServerError, errMsgClientCreate)
 		return nil
 	}
@@ -120,5 +127,6 @@ func writeResourceError(w http.ResponseWriter, err error, notFoundMsg, internalM
 		writeError(w, http.StatusNotFound, notFoundMsg)
 		return
 	}
+	slog.Error("Resource operation failed", "error", err)
 	writeError(w, http.StatusInternalServerError, internalMsg)
 }

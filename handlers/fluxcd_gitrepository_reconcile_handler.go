@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -26,6 +27,7 @@ func GitRepositoryReconcileHandler(w http.ResponseWriter, r *http.Request) {
 
 	clientset, err := getFluxCDClient()
 	if err != nil {
+		slog.Error("Failed to create FluxCD client", "error", err)
 		writeError(w, http.StatusInternalServerError, errMsgFluxCDClientCreate)
 		return
 	}
@@ -36,6 +38,7 @@ func GitRepositoryReconcileHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, errMsgGitRepositoryNotFound)
 			return
 		}
+		slog.Error("Failed to reconcile GitRepository", "error", err, "namespace", namespace, "name", name)
 		writeError(w, http.StatusInternalServerError, errMsgGitRepositoryReconcile)
 		return
 	}
