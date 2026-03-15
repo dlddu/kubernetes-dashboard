@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { UnhealthyPodPreview } from './UnhealthyPodPreview';
 
 interface ErrorWithStatus extends Error {
@@ -21,8 +21,8 @@ vi.mock('./StatusBadge', () => ({
   ),
 }));
 
-function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+function renderComponent(ui: React.ReactElement) {
+  return render(ui);
 }
 
 import { useDashboard } from '../contexts/DashboardContext';
@@ -60,7 +60,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -85,7 +85,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -110,7 +110,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -131,7 +131,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       const loadingIndicator = screen.getByTestId('loading-indicator');
@@ -148,7 +148,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       const loadingText = screen.getByText(/loading/i);
@@ -165,7 +165,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       const component = screen.getByTestId('unhealthy-pod-preview');
@@ -190,7 +190,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -215,7 +215,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -240,7 +240,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -265,7 +265,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -292,7 +292,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -318,7 +318,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -344,7 +344,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -369,7 +369,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -406,7 +406,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -433,7 +433,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -458,7 +458,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -485,7 +485,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -510,7 +510,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -535,7 +535,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -560,7 +560,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -570,8 +570,8 @@ describe('UnhealthyPodPreview', () => {
     });
   });
 
-  describe('view more link', () => {
-    it('should display "view more" link', async () => {
+  describe('view more button', () => {
+    it('should display "view more" button when more than 3 pods', async () => {
       // Arrange
       vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
@@ -587,16 +587,16 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
-        const viewMoreLink = screen.getByTestId('view-more-link');
-        expect(viewMoreLink).toBeInTheDocument();
+        const viewMoreButton = screen.getByTestId('view-more-link');
+        expect(viewMoreButton).toBeInTheDocument();
       });
     });
 
-    it('should be a clickable link', async () => {
+    it('should be a clickable button', async () => {
       // Arrange
       vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
@@ -612,16 +612,116 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
-        const viewMoreLink = screen.getByTestId('view-more-link');
-        expect(viewMoreLink.tagName).toBe('A');
+        const viewMoreButton = screen.getByTestId('view-more-link');
+        expect(viewMoreButton.tagName).toBe('BUTTON');
       });
     });
 
-    it('should navigate to pods tab/page', async () => {
+    it('should expand the card to show all pods when clicked', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      vi.mocked(useDashboard).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 3 },
+          unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+        },
+        isLoading: false,
+        error: null,
+        loadDashboard: vi.fn(),
+      });
+
+      // Act
+      renderComponent(<UnhealthyPodPreview />);
+
+      // Initially should show only 3 pods
+      await waitFor(() => {
+        const podItems = screen.getAllByTestId('unhealthy-pod-item');
+        expect(podItems.length).toBe(3);
+      });
+
+      // Click expand button
+      const viewMoreButton = screen.getByTestId('view-more-link');
+      await user.click(viewMoreButton);
+
+      // Assert: Should now show all 5 pods
+      await waitFor(() => {
+        const podItems = screen.getAllByTestId('unhealthy-pod-item');
+        expect(podItems.length).toBe(5);
+      });
+    });
+
+    it('should show "Show less" text when expanded', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      vi.mocked(useDashboard).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 3 },
+          unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+        },
+        isLoading: false,
+        error: null,
+        loadDashboard: vi.fn(),
+      });
+
+      // Act
+      renderComponent(<UnhealthyPodPreview />);
+
+      const viewMoreButton = screen.getByTestId('view-more-link');
+      await user.click(viewMoreButton);
+
+      // Assert
+      await waitFor(() => {
+        expect(viewMoreButton.textContent).toMatch(/show less/i);
+      });
+    });
+
+    it('should collapse back to 3 pods when "Show less" is clicked', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      vi.mocked(useDashboard).mockReturnValue({
+        overviewData: {
+          nodes: { ready: 2, total: 3 },
+          unhealthyPods: 5,
+          unhealthyPodsList: mockPodsList(5),
+          avgCpuPercent: 45.5,
+          avgMemoryPercent: 62.3,
+        },
+        isLoading: false,
+        error: null,
+        loadDashboard: vi.fn(),
+      });
+
+      // Act
+      renderComponent(<UnhealthyPodPreview />);
+
+      const viewMoreButton = screen.getByTestId('view-more-link');
+      // Expand
+      await user.click(viewMoreButton);
+      await waitFor(() => {
+        expect(screen.getAllByTestId('unhealthy-pod-item').length).toBe(5);
+      });
+
+      // Collapse
+      await user.click(viewMoreButton);
+
+      // Assert
+      await waitFor(() => {
+        const podItems = screen.getAllByTestId('unhealthy-pod-item');
+        expect(podItems.length).toBe(3);
+      });
+    });
+
+    it('should have accessible button text', async () => {
       // Arrange
       vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
@@ -637,43 +737,16 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
-        const viewMoreLink = screen.getByTestId('view-more-link');
-        expect(viewMoreLink).toHaveAttribute('href');
-        const href = viewMoreLink.getAttribute('href');
-        expect(href?.toLowerCase()).toMatch(/pods?/);
+        const viewMoreButton = screen.getByTestId('view-more-link');
+        expect(viewMoreButton.textContent).toMatch(/view|more|see|all/i);
       });
     });
 
-    it('should have accessible link text', async () => {
-      // Arrange
-      vi.mocked(useDashboard).mockReturnValue({
-        overviewData: {
-          nodes: { ready: 2, total: 3 },
-          unhealthyPods: 5,
-          unhealthyPodsList: mockPodsList(5),
-          avgCpuPercent: 45.5,
-          avgMemoryPercent: 62.3,
-        },
-        isLoading: false,
-        error: null,
-        loadDashboard: vi.fn(),
-      });
-
-      // Act
-      renderWithRouter(<UnhealthyPodPreview />);
-
-      // Assert
-      await waitFor(() => {
-        const viewMoreLink = screen.getByTestId('view-more-link');
-        expect(viewMoreLink.textContent).toMatch(/view|more|see|all/i);
-      });
-    });
-
-    it('should show link when more than 3 unhealthy pods exist', async () => {
+    it('should show button when more than 3 unhealthy pods exist', async () => {
       // Arrange
       vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
@@ -689,12 +762,12 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
-        const viewMoreLink = screen.getByTestId('view-more-link');
-        expect(viewMoreLink).toBeInTheDocument();
+        const viewMoreButton = screen.getByTestId('view-more-link');
+        expect(viewMoreButton).toBeInTheDocument();
       });
     });
   });
@@ -710,7 +783,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -729,7 +802,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -748,7 +821,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -772,7 +845,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -793,7 +866,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -820,7 +893,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -845,7 +918,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -870,7 +943,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -895,7 +968,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -904,7 +977,7 @@ describe('UnhealthyPodPreview', () => {
       });
     });
 
-    it('should have accessible link to pods page', async () => {
+    it('should have accessible button to expand card', async () => {
       // Arrange
       vi.mocked(useDashboard).mockReturnValue({
         overviewData: {
@@ -920,12 +993,12 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
-        const link = screen.getByRole('link', { name: /view|more|see|all/i });
-        expect(link).toBeInTheDocument();
+        const button = screen.getByRole('button', { name: /view|more|see|all/i });
+        expect(button).toBeInTheDocument();
       });
     });
   });
@@ -947,7 +1020,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -972,7 +1045,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -997,7 +1070,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1028,7 +1101,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1053,7 +1126,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1079,7 +1152,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
@@ -1105,7 +1178,7 @@ describe('UnhealthyPodPreview', () => {
       });
 
       // Act
-      renderWithRouter(<UnhealthyPodPreview />);
+      renderComponent(<UnhealthyPodPreview />);
 
       // Assert
       await waitFor(() => {
