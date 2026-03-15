@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchWorkflowDetail, WorkflowDetailInfo, WorkflowDetailStepInfo } from '../api/argo';
+import { usePolling } from '../hooks/usePolling';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { StepIO } from './StepIO';
@@ -108,19 +109,25 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showParams, setShowParams] = useState(false);
+  const hasLoadedRef = useRef(false);
 
   const load = useCallback(async () => {
-    setIsLoading(true);
+    if (!hasLoadedRef.current) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const result = await fetchWorkflowDetail(namespace, name);
       setDetail(result);
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load workflow detail');
     } finally {
       setIsLoading(false);
     }
   }, [namespace, name]);
+
+  usePolling(load);
 
   useEffect(() => {
     load();
@@ -137,38 +144,13 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
   return (
     <div data-testid="workflow-detail-page" className="space-y-4">
       {/* Navigation bar — always visible */}
-      <div className="flex items-center justify-between">
-        <button
-          data-testid="workflow-detail-back-button"
-          onClick={onBack}
-          className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-        >
-          &larr; Back to Workflows
-        </button>
-        <button
-          data-testid="workflow-detail-refresh-button"
-          onClick={handleRetry}
-          disabled={isLoading}
-          aria-label="Refresh workflow detail"
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          Refresh
-        </button>
-      </div>
+      <button
+        data-testid="workflow-detail-back-button"
+        onClick={onBack}
+        className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+      >
+        &larr; Back to Workflows
+      </button>
 
       {/* Loading state */}
       {isLoading && (
