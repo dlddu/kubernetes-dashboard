@@ -242,7 +242,9 @@ kubectl patch gitrepository flux-system -n dashboard-test --type=merge --subreso
     ],
     "artifact": {
       "revision": "main@sha1:abc123def456",
-      "lastUpdateTime": "2026-03-14T06:00:00Z"
+      "lastUpdateTime": "2026-03-14T06:00:00Z",
+      "url": "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/flux-system/main@sha1:abc123def456.tar.gz",
+      "path": "gitrepository/dashboard-test/flux-system/abc123def456.tar.gz"
     }
   }
 }'
@@ -276,7 +278,9 @@ kubectl patch gitrepository infra-repo -n dashboard-test --type=merge --subresou
     ],
     "artifact": {
       "revision": "v1.0.0@sha1:fed9876",
-      "lastUpdateTime": "2026-03-14T04:00:00Z"
+      "lastUpdateTime": "2026-03-14T04:00:00Z",
+      "url": "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/infra-repo/v1.0.0@sha1:fed9876.tar.gz",
+      "path": "gitrepository/dashboard-test/infra-repo/fed9876.tar.gz"
     }
   }
 }'

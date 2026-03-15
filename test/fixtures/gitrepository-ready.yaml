@@ -18,3 +18,5 @@ status:
   artifact:
     revision: "main@sha1:abc123def456"
     lastUpdateTime: "2026-03-14T06:00:00Z"
+    url: "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/flux-system/main@sha1:abc123def456.tar.gz"
+    path: "gitrepository/dashboard-test/flux-system/abc123def456.tar.gz"
