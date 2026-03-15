@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchKustomizationDetail, reconcileKustomization, KustomizationDetailInfo } from '../api/fluxcd';
 import { usePolling } from '../hooks/usePolling';
@@ -34,14 +34,18 @@ export function KustomizationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   const load = useCallback(async () => {
     if (!namespace || !name) return;
-    setIsLoading(true);
+    if (!hasLoadedRef.current) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const result = await fetchKustomizationDetail(namespace, name);
       setDetail(result);
+      hasLoadedRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load kustomization detail');
     } finally {
