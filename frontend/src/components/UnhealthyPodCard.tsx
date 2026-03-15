@@ -75,6 +75,16 @@ export function UnhealthyPodCard({ pod, onClick, isSelected }: UnhealthyPodCardP
         </div>
       </div>
 
+      {/* Init Containers */}
+      {pod.initContainers && pod.initContainers.length > 0 && (
+        <div>
+          <div className="text-sm text-gray-600">Init Containers</div>
+          <div data-testid="pod-init-containers" className="text-sm font-medium text-gray-900">
+            {`${pod.initContainers.length} ${pod.initContainers.length === 1 ? 'init container' : 'init containers'}: ${pod.initContainers.join(', ')}`}
+          </div>
+        </div>
+      )}
+
       {/* Containers */}
       <div>
         <div className="text-sm text-gray-600">Containers</div>

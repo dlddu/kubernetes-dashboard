@@ -8,6 +8,7 @@ export interface UnhealthyPodDetails {
   node: string;
   age: string;
   containers: string[];
+  initContainers: string[];
 }
 
 export type PodDetails = UnhealthyPodDetails;
