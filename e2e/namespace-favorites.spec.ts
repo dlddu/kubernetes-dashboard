@@ -188,18 +188,16 @@ test.describe('Namespace Favorites - Edge Cases', () => {
     await expect(staleItem).not.toBeVisible();
   });
 
-  test('should limit the number of displayed favorites to a maximum', async ({ page }) => {
-    // Tests that the UI caps the visible favorites list at a reasonable maximum (e.g. 5)
+  test('should display all favorites without a cap', async ({ page }) => {
+    // Tests that all favorited namespaces are displayed without any limit
     //
     // E2E environment namespaces (kind cluster + fixtures):
     //   default, kube-system, kube-public, kube-node-lease, local-path-storage, dashboard-test
     // Seeding all 6 as favorites ensures that:
     //   - The favorites section is rendered (intersection with real namespaces is non-empty)
-    //   - The rendered count can be verified against the cap of 5
-    // If the cluster happens to have fewer than 6 of the expected namespaces available,
-    // the test gracefully falls back: it still asserts that rendered count <= 5.
+    //   - All favorited namespaces that exist in the cluster are displayed
 
-    // Arrange: Seed all known E2E namespaces as favorites (6 real namespaces, exceeds the cap of 5)
+    // Arrange: Seed all known E2E namespaces as favorites
     await setFavorites(page, [
       'default',
       'kube-system',
@@ -215,14 +213,14 @@ test.describe('Namespace Favorites - Edge Cases', () => {
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await namespaceSelector.click();
 
-    // Assert: Favorites section exists (at least one of the seeded namespaces must exist in the cluster)
+    // Assert: Favorites section exists
     const favoritesSection = page.getByTestId('namespace-favorites-section');
     await expect(favoritesSection).toBeVisible();
 
-    // Assert: Rendered favorite items do not exceed the defined maximum
+    // Assert: All 6 favorited namespaces are rendered
     const favoriteItems = favoritesSection.getByTestId(/^namespace-favorite-item-/);
     const renderedCount = await favoriteItems.count();
-    expect(renderedCount).toBeLessThanOrEqual(5);
+    expect(renderedCount).toBe(6);
   });
 });
 

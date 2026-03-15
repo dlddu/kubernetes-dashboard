@@ -92,7 +92,7 @@ export function NamespaceSelector() {
 
   if (isLoading) {
     return (
-      <div data-testid="namespace-selector" className="relative">
+      <div data-testid="namespace-selector" className="relative min-w-[200px]">
         <div data-testid="namespace-loading" className="namespace-skeleton">
           <button
             disabled
@@ -114,7 +114,7 @@ export function NamespaceSelector() {
 
   if (error) {
     return (
-      <div data-testid="namespace-selector" className="relative">
+      <div data-testid="namespace-selector" className="relative min-w-[200px]">
         <div className="flex flex-col gap-2">
           <button
             className="h-10 px-4 border border-gray-300 rounded bg-white text-left"
@@ -143,7 +143,7 @@ export function NamespaceSelector() {
   const hasFavorites = favoriteNamespaces.length > 0;
 
   return (
-    <div data-testid="namespace-selector" className="relative" ref={dropdownRef}>
+    <div data-testid="namespace-selector" className="relative min-w-[200px]" ref={dropdownRef}>
       <div className="relative">
         <button
           type="button"
@@ -218,7 +218,7 @@ export function NamespaceSelector() {
                   : 'Tap ⭐ next to a namespace to add favorites'}
               </div>
             ) : (
-              favoriteNamespaces.slice(0, 5).map((ns) => (
+              favoriteNamespaces.map((ns) => (
                 <div
                   key={`favorite-${ns}`}
                   data-testid={`namespace-option-${ns}`}
