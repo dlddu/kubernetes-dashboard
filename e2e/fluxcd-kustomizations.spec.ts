@@ -11,7 +11,7 @@ import { test, expect } from '@playwright/test';
  * Also covers backend API filtering by namespace and CRD-not-installed empty response.
  *
  * Also covers the Kustomization detail view (DLD-746):
- * - Card click → detail page navigation (URL: /fluxcd/{namespace}/{name})
+ * - Card click → detail page navigation (URL: /fluxcd/kustomization/{namespace}/{name})
  * - Back button → list page return
  * - Spec info: Source, Path, Interval, Prune, Suspended, DependsOn
  * - Status info: Revision (mono font), Last Applied
@@ -431,7 +431,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Navigation', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should navigate to the detail page with correct URL when a Kustomization card is clicked', async ({ page }) => {
-    // Tests that clicking a kustomization-card navigates to /fluxcd/{namespace}/{name}
+    // Tests that clicking a kustomization-card navigates to /fluxcd/kustomization/{namespace}/{name}
     // and renders the detail page container.
     // Fixture: app-ready (namespace: dashboard-test)
 
@@ -446,7 +446,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: URL navigated to the detail route
-    expect(page.url()).toContain('/fluxcd/dashboard-test/app-ready');
+    expect(page.url()).toContain('/fluxcd/kustomization/dashboard-test/app-ready');
 
     // Assert: Detail page container is visible
     const detailPage = page.getByTestId('kustomization-detail-page');
@@ -492,7 +492,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Back Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: URL returned to the list route
-    expect(page.url()).not.toContain('/fluxcd/dashboard-test/app-ready');
+    expect(page.url()).not.toContain('/fluxcd/kustomization/dashboard-test/app-ready');
 
     // Assert: List page is visible again
     const listPage = page.getByTestId('flux-page').or(page.getByTestId('fluxcd-page'));
@@ -805,7 +805,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Error State', () => {
     });
 
     // Act: Navigate directly to the detail page
-    await page.goto('/fluxcd/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
 
     // Assert: Detail page container is rendered
@@ -847,13 +847,13 @@ test.describe('FluxCD Tab - Kustomization Detail - Error State', () => {
 test.describe('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
-  test('should render kustomization-detail-page when navigating directly to /fluxcd/{namespace}/{name}', async ({ page }) => {
+  test('should render kustomization-detail-page when navigating directly to /fluxcd/kustomization/{namespace}/{name}', async ({ page }) => {
     // Tests that navigating directly to the detail URL renders the detail page
     // without requiring the user to first visit the list.
     // Fixture: app-ready (namespace: dashboard-test)
 
     // Act: Navigate directly to the detail page
-    await page.goto('/fluxcd/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
 
     // Assert: Detail page is visible
@@ -870,7 +870,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
     // Tests that the back button works correctly even when entering via direct URL.
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('kustomization-detail-page');
@@ -882,7 +882,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: URL no longer points to the detail route
-    expect(page.url()).not.toContain('/fluxcd/dashboard-test/app-ready');
+    expect(page.url()).not.toContain('/fluxcd/kustomization/dashboard-test/app-ready');
 
     // Assert: List page is visible
     const listPage = page.getByTestId('flux-page').or(page.getByTestId('fluxcd-page'));
@@ -978,7 +978,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     // Fixture: app-ready (namespace: dashboard-test)
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
 
     // Assert: Detail page container is visible
@@ -1010,7 +1010,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     });
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('kustomization-detail-page');
@@ -1056,7 +1056,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     });
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
 
     // Assert: Detail page is rendered (initial fetch counted)
@@ -1095,7 +1095,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     });
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('kustomization-detail-page');

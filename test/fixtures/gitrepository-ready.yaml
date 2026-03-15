@@ -1,0 +1,20 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: dashboard-test
+spec:
+  interval: 1m
+  url: https://github.com/example/flux-system
+  ref:
+    branch: main
+status:
+  conditions:
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2026-03-14T06:00:00Z"
+      reason: Succeeded
+      message: "stored artifact for revision 'main@sha1:abc123def456'"
+  artifact:
+    revision: "main@sha1:abc123def456"
+    lastUpdateTime: "2026-03-14T06:00:00Z"
