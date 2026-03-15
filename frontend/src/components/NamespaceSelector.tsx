@@ -218,7 +218,7 @@ export function NamespaceSelector() {
                   : 'Tap ⭐ next to a namespace to add favorites'}
               </div>
             ) : (
-              favoriteNamespaces.slice(0, 5).map((ns) => (
+              favoriteNamespaces.map((ns) => (
                 <div
                   key={`favorite-${ns}`}
                   data-testid={`namespace-option-${ns}`}
