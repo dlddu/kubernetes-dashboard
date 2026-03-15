@@ -6,9 +6,10 @@ vi.mock('react-router-dom', () => ({
   useNavigate: vi.fn(() => vi.fn()),
 }));
 
-// Mock fetchKustomizations API
+// Mock fetchKustomizations and fetchGitRepositories API
 vi.mock('../api/fluxcd', () => ({
   fetchKustomizations: vi.fn(),
+  fetchGitRepositories: vi.fn(),
 }));
 
 // Mock useDataFetch hook
@@ -16,11 +17,29 @@ vi.mock('../hooks/useDataFetch', () => ({
   useDataFetch: vi.fn(),
 }));
 
-import { fetchKustomizations } from '../api/fluxcd';
+import { fetchKustomizations, fetchGitRepositories } from '../api/fluxcd';
 import { useDataFetch } from '../hooks/useDataFetch';
 
 const mockFetchKustomizations = fetchKustomizations as ReturnType<typeof vi.fn>;
+const mockFetchGitRepositories = fetchGitRepositories as ReturnType<typeof vi.fn>;
 const mockUseDataFetch = useDataFetch as ReturnType<typeof vi.fn>;
+
+const emptyResult = {
+  data: [],
+  isLoading: false,
+  error: null,
+  refresh: vi.fn(),
+};
+
+/** Helper: mock useDataFetch for both kustomizations (1st call) and git repos (2nd call). */
+function mockBothFetches(
+  kustomizationResult: object = emptyResult,
+  gitRepoResult: object = emptyResult,
+) {
+  mockUseDataFetch
+    .mockReturnValueOnce(kustomizationResult)
+    .mockReturnValueOnce(gitRepoResult);
+}
 
 // Sample fixture data
 const mockKustomizations = [
@@ -69,89 +88,47 @@ describe('FluxCDTab Component', () => {
 
   describe('Basic Rendering', () => {
     it('should render FluxCD page container with data-testid="flux-page"', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches();
       render(<FluxCDTab />);
-
-      // Assert
       const fluxPage = screen.getByTestId('flux-page');
       expect(fluxPage).toBeInTheDocument();
     });
 
-    it('should render a page heading for FluxCD', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+    it('should render page headings for FluxCD', () => {
+      mockBothFetches();
       render(<FluxCDTab />);
-
-      // Assert
-      const heading = screen.getByRole('heading', { level: 1 });
-      expect(heading).toBeInTheDocument();
-      expect(heading.textContent).toMatch(/flux/i);
+      const headings = screen.getAllByRole('heading', { level: 1 });
+      expect(headings.length).toBeGreaterThanOrEqual(1);
+      expect(headings.some((h) => /flux/i.test(h.textContent || ''))).toBe(true);
     });
   });
 
   describe('Loading State', () => {
     it('should show LoadingSkeleton while loading', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: true,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [], isLoading: true, error: null, refresh: vi.fn() },
+        { data: [], isLoading: true, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
-      const loadingSkeleton = screen.getByTestId('loading-skeleton');
-      expect(loadingSkeleton).toBeInTheDocument();
+      const loadingSkeletons = screen.getAllByTestId('loading-skeleton');
+      expect(loadingSkeletons.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should set aria-busy on loading skeleton', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: true,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [], isLoading: true, error: null, refresh: vi.fn() },
+        { data: [], isLoading: true, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
-      const loadingSkeleton = screen.getByTestId('loading-skeleton');
-      expect(loadingSkeleton).toHaveAttribute('aria-busy', 'true');
+      const loadingSkeletons = screen.getAllByTestId('loading-skeleton');
+      expect(loadingSkeletons[0]).toHaveAttribute('aria-busy', 'true');
     });
 
     it('should hide loading skeleton when data is loaded', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: mockKustomizations,
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: mockKustomizations, isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       const loadingSkeleton = screen.queryByTestId('loading-skeleton');
       expect(loadingSkeleton).not.toBeInTheDocument();
     });
@@ -159,51 +136,21 @@ describe('FluxCDTab Component', () => {
 
   describe('Empty State', () => {
     it('should show EmptyState when no kustomizations', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches();
       render(<FluxCDTab />);
-
-      // Assert
-      const emptyState = screen.getByTestId('empty-state');
-      expect(emptyState).toBeInTheDocument();
+      const emptyStates = screen.getAllByTestId('empty-state');
+      expect(emptyStates.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should display an empty message when no kustomizations found', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches();
       render(<FluxCDTab />);
-
-      // Assert
       expect(screen.getByText(/no kustomizations found/i)).toBeInTheDocument();
     });
 
     it('should not render kustomization cards when empty', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches();
       render(<FluxCDTab />);
-
-      // Assert
       const cards = screen.queryAllByTestId('kustomization-card');
       expect(cards).toHaveLength(0);
     });
@@ -211,70 +158,38 @@ describe('FluxCDTab Component', () => {
 
   describe('Error State', () => {
     it('should show ErrorRetry when fetch fails', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: 'Failed to fetch kustomizations',
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [], isLoading: false, error: 'Failed to fetch kustomizations', refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       const errorRetry = screen.getByTestId('error-retry');
       expect(errorRetry).toBeInTheDocument();
     });
 
     it('should have role="alert" on error component', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: 'Network error',
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [], isLoading: false, error: 'Network error', refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       const errorRetry = screen.getByTestId('error-retry');
       expect(errorRetry).toHaveAttribute('role', 'alert');
     });
 
     it('should display a retry button on error', () => {
-      // Arrange
       const mockRefresh = vi.fn();
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: 'Failed to fetch kustomizations',
-        refresh: mockRefresh,
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [], isLoading: false, error: 'Failed to fetch kustomizations', refresh: mockRefresh },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       const retryButton = screen.getByRole('button', { name: /retry/i });
       expect(retryButton).toBeInTheDocument();
     });
 
     it('should not render kustomization cards on error', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: 'Failed to fetch kustomizations',
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [], isLoading: false, error: 'Failed to fetch kustomizations', refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       const cards = screen.queryAllByTestId('kustomization-card');
       expect(cards).toHaveLength(0);
     });
@@ -282,35 +197,19 @@ describe('FluxCDTab Component', () => {
 
   describe('Success State - Kustomization Cards', () => {
     it('should render kustomization cards with required fields', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: mockKustomizations,
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: mockKustomizations, isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       const cards = screen.getAllByTestId('kustomization-card');
       expect(cards).toHaveLength(3);
     });
 
     it('should display kustomization names', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: mockKustomizations,
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: mockKustomizations, isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert: use testid to specifically query name elements (namespace may also match 'flux-system')
       const nameElements = screen.getAllByTestId('kustomization-name');
       const names = nameElements.map((el) => el.textContent);
       expect(names).toContain('flux-system');
@@ -319,122 +218,65 @@ describe('FluxCDTab Component', () => {
     });
 
     it('should display kustomization namespaces', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [mockKustomizations[0]],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [mockKustomizations[0]], isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       const namespaceElements = screen.getAllByText('flux-system');
       expect(namespaceElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should display source kind and source name', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [mockKustomizations[0]],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [mockKustomizations[0]], isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
-      expect(screen.getByText(/GitRepository/i)).toBeInTheDocument();
+      expect(screen.getByText(/GitRepository\/flux-system/i)).toBeInTheDocument();
     });
 
     it('should display revision information', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [mockKustomizations[0]],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [mockKustomizations[0]], isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       expect(screen.getByText(/abc1234/i)).toBeInTheDocument();
     });
 
     it('should display path information', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [mockKustomizations[0]],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: [mockKustomizations[0]], isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert
       expect(screen.getByText(/clusters\/my-cluster/i)).toBeInTheDocument();
     });
   });
 
   describe('Summary Cards', () => {
     it('should render summary cards (Ready, Not Ready, Suspended)', () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: mockKustomizations,
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: mockKustomizations, isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert: summary cards should be rendered by testid (avoid ambiguity with status badges)
       expect(screen.getByTestId('summary-card-ready')).toBeInTheDocument();
       expect(screen.getByTestId('summary-card-not-ready')).toBeInTheDocument();
       expect(screen.getByTestId('summary-card-suspended')).toBeInTheDocument();
     });
 
     it('should display correct Ready count', () => {
-      // Arrange: 2 ready (flux-system, infra), 1 not ready (apps), 1 suspended (infra)
-      mockUseDataFetch.mockReturnValue({
-        data: mockKustomizations,
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: mockKustomizations, isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert: the Ready summary card value should reflect ready count
-      // flux-system is ready=true (infra is ready but suspended, excluded from ready count)
       const summaryCardValues = screen.getAllByTestId('summary-card-value');
       const values = summaryCardValues.map((el) => el.textContent);
       expect(values).toContain('1'); // 1 ready kustomization (infra excluded — suspended)
     });
 
     it('should display correct Suspended count', () => {
-      // Arrange: infra is suspended
-      mockUseDataFetch.mockReturnValue({
-        data: mockKustomizations,
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches(
+        { data: mockKustomizations, isLoading: false, error: null, refresh: vi.fn() },
+      );
       render(<FluxCDTab />);
-
-      // Assert: the Suspended count should be 1
       const summaryCardValues = screen.getAllByTestId('summary-card-value');
       const values = summaryCardValues.map((el) => el.textContent);
       expect(values).toContain('1'); // 1 suspended kustomization
@@ -443,46 +285,21 @@ describe('FluxCDTab Component', () => {
 
   describe('Namespace Filtering', () => {
     it('should pass namespace prop to fetch function', async () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches();
       render(<FluxCDTab namespace="default" />);
-
-      // Assert: useDataFetch should have been called with a fetcher that uses the namespace
       expect(mockUseDataFetch).toHaveBeenCalled();
       const [fetcher, , deps] = mockUseDataFetch.mock.calls[0];
-
-      // Verify deps contain the namespace
       expect(deps).toContain('default');
-
-      // Trigger the fetcher to verify it calls fetchKustomizations with namespace
       mockFetchKustomizations.mockResolvedValueOnce([]);
       await fetcher();
       expect(mockFetchKustomizations).toHaveBeenCalledWith('default');
     });
 
     it('should pass undefined namespace when no namespace prop given', async () => {
-      // Arrange
-      mockUseDataFetch.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: null,
-        refresh: vi.fn(),
-      });
-
-      // Act
+      mockBothFetches();
       render(<FluxCDTab />);
-
-      // Assert
       expect(mockUseDataFetch).toHaveBeenCalled();
       const [fetcher] = mockUseDataFetch.mock.calls[0];
-
       mockFetchKustomizations.mockResolvedValueOnce([]);
       await fetcher();
       expect(mockFetchKustomizations).toHaveBeenCalledWith(undefined);

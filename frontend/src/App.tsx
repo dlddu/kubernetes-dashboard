@@ -14,6 +14,7 @@ import { SecretsTab } from './components/SecretsTab';
 import { ArgoTab } from './components/ArgoTab';
 import { FluxCDTab } from './components/FluxCDTab';
 import { KustomizationDetailPage } from './components/KustomizationDetailPage';
+import { GitRepositoryDetailPage } from './components/GitRepositoryDetailPage';
 import { DebugPage } from './components/DebugPage';
 
 function AppContent() {
@@ -37,6 +38,7 @@ function AppContent() {
           <Route path="/argo/*" element={<ArgoTab namespace={namespaceParam} />} />
           <Route path="/flux" element={<FluxCDTab namespace={namespaceParam} />} />
           <Route path="/fluxcd/:namespace/:name" element={<KustomizationDetailPage />} />
+          <Route path="/fluxcd/gitrepository/:namespace/:name" element={<GitRepositoryDetailPage />} />
           <Route path="/debug" element={<DebugPage />} />
         </Routes>
       </main>

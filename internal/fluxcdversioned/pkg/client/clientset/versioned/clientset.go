@@ -288,6 +288,7 @@ func (c *kustomizationClient) Patch(ctx context.Context, name string, data []byt
 // FluxCDV1Interface defines the FluxCD kustomize.toolkit.fluxcd.io/v1 API group.
 type FluxCDV1Interface interface {
 	Kustomizations(namespace string) KustomizationInterface
+	GitRepositories(namespace string) GitRepositoryInterface
 }
 
 // fluxCDV1Client implements FluxCDV1Interface.
@@ -298,6 +299,11 @@ type fluxCDV1Client struct {
 // Kustomizations returns a KustomizationInterface for the given namespace.
 func (c *fluxCDV1Client) Kustomizations(namespace string) KustomizationInterface {
 	return &kustomizationClient{restClient: c.restClient, namespace: namespace}
+}
+
+// GitRepositories returns a GitRepositoryInterface for the given namespace.
+func (c *fluxCDV1Client) GitRepositories(namespace string) GitRepositoryInterface {
+	return &gitRepositoryClient{restClient: c.restClient, namespace: namespace}
 }
 
 // Clientset implements a minimal FluxCD Kustomize Controller clientset.
