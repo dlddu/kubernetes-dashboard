@@ -943,4 +943,200 @@ describe('PodsTab Component', () => {
       });
     });
   });
+
+  describe('Hide Completed Pods Toggle', () => {
+    const mockPodsWithCompleted = [
+      {
+        name: 'running-pod',
+        namespace: 'default',
+        status: 'Running',
+        restarts: 0,
+        node: 'node-1',
+        age: '1h',
+        containers: ['main'],
+      },
+      {
+        name: 'succeeded-pod',
+        namespace: 'default',
+        status: 'Succeeded',
+        restarts: 0,
+        node: 'node-1',
+        age: '2h',
+        containers: ['main'],
+      },
+      {
+        name: 'completed-pod',
+        namespace: 'default',
+        status: 'Completed',
+        restarts: 0,
+        node: 'node-2',
+        age: '3h',
+        containers: ['main'],
+      },
+    ];
+
+    it('should show toggle button when completed pods exist', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPodsWithCompleted,
+      });
+
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('hide-completed-toggle')).toBeInTheDocument();
+      });
+    });
+
+    it('should not show toggle button when no completed pods exist', async () => {
+      const nonCompletedPods = [
+        {
+          name: 'running-pod',
+          namespace: 'default',
+          status: 'Running',
+          restarts: 0,
+          node: 'node-1',
+          age: '1h',
+          containers: ['main'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => nonCompletedPods,
+      });
+
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pod-card')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('hide-completed-toggle')).not.toBeInTheDocument();
+    });
+
+    it('should show completed count in toggle button', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPodsWithCompleted,
+      });
+
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        const toggle = screen.getByTestId('hide-completed-toggle');
+        expect(toggle.textContent).toMatch(/2/);
+      });
+    });
+
+    it('should show all pods by default', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPodsWithCompleted,
+      });
+
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        const podCards = screen.getAllByTestId('pod-card');
+        expect(podCards).toHaveLength(3);
+      });
+    });
+
+    it('should hide completed pods when toggle is clicked', async () => {
+      const user = userEvent.setup();
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPodsWithCompleted,
+      });
+
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('pod-card')).toHaveLength(3);
+      });
+
+      await user.click(screen.getByTestId('hide-completed-toggle'));
+
+      await waitFor(() => {
+        const podCards = screen.getAllByTestId('pod-card');
+        expect(podCards).toHaveLength(1);
+      });
+
+      expect(screen.getByText('running-pod')).toBeInTheDocument();
+      expect(screen.queryByText('succeeded-pod')).not.toBeInTheDocument();
+      expect(screen.queryByText('completed-pod')).not.toBeInTheDocument();
+    });
+
+    it('should show completed pods again when toggle is clicked twice', async () => {
+      const user = userEvent.setup();
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPodsWithCompleted,
+      });
+
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('pod-card')).toHaveLength(3);
+      });
+
+      // Toggle on
+      await user.click(screen.getByTestId('hide-completed-toggle'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('pod-card')).toHaveLength(1);
+      });
+
+      // Toggle off
+      await user.click(screen.getByTestId('hide-completed-toggle'));
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('pod-card')).toHaveLength(3);
+      });
+    });
+
+    it('should show empty state when all pods are completed and toggle is on', async () => {
+      const user = userEvent.setup();
+      const allCompletedPods = [
+        {
+          name: 'done-pod-1',
+          namespace: 'default',
+          status: 'Succeeded',
+          restarts: 0,
+          node: 'node-1',
+          age: '1h',
+          containers: ['main'],
+        },
+        {
+          name: 'done-pod-2',
+          namespace: 'default',
+          status: 'Completed',
+          restarts: 0,
+          node: 'node-1',
+          age: '2h',
+          containers: ['main'],
+        },
+      ];
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => allCompletedPods,
+      });
+
+      render(<PodsTab />);
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('pod-card')).toHaveLength(2);
+      });
+
+      await user.click(screen.getByTestId('hide-completed-toggle'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('no-visible-pods-message')).toBeInTheDocument();
+      });
+    });
+  });
 });
