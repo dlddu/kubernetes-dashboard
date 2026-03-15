@@ -1,0 +1,17 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: app-source
+  namespace: dashboard-test
+spec:
+  interval: 5m
+  url: https://github.com/example/app-source
+  ref:
+    branch: develop
+status:
+  conditions:
+    - type: Ready
+      status: "False"
+      lastTransitionTime: "2026-03-14T05:30:00Z"
+      reason: GitOperationFailed
+      message: "failed to checkout and determine revision: unable to clone"

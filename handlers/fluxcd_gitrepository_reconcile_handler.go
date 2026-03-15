@@ -11,17 +11,17 @@ import (
 	versioned "github.com/dlddu/kubernetes-dashboard/internal/fluxcdversioned/pkg/client/clientset/versioned"
 )
 
-// KustomizationReconcileHandler handles POST /api/fluxcd/kustomizations/{namespace}/{name}/reconcile
-func KustomizationReconcileHandler(w http.ResponseWriter, r *http.Request) {
+// GitRepositoryReconcileHandler handles POST /api/fluxcd/gitrepositories/{namespace}/{name}/reconcile
+func GitRepositoryReconcileHandler(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodPost) {
 		return
 	}
 
 	r = withTimeout(r)
 
-	namespace, name, err := parseResourcePath(r.URL.Path, fluxcdKustomizationsPathPrefix, reconcilePathSuffix)
+	namespace, name, err := parseResourcePath(r.URL.Path, fluxcdGitRepositoriesPathPrefix, reconcilePathSuffix)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid path format. Expected /api/fluxcd/kustomizations/{namespace}/{name}/reconcile")
+		writeError(w, http.StatusBadRequest, "Invalid path format. Expected /api/fluxcd/gitrepositories/{namespace}/{name}/reconcile")
 		return
 	}
 
@@ -32,14 +32,14 @@ func KustomizationReconcileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = reconcileKustomization(r.Context(), clientset, namespace, name)
+	err = reconcileGitRepository(r.Context(), clientset, namespace, name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			writeError(w, http.StatusNotFound, errMsgKustomizationNotFound)
+			writeError(w, http.StatusNotFound, errMsgGitRepositoryNotFound)
 			return
 		}
-		slog.Error("Failed to reconcile Kustomization", "error", err, "namespace", namespace, "name", name)
-		writeError(w, http.StatusInternalServerError, errMsgKustomizationReconcile)
+		slog.Error("Failed to reconcile GitRepository", "error", err, "namespace", namespace, "name", name)
+		writeError(w, http.StatusInternalServerError, errMsgGitRepositoryReconcile)
 		return
 	}
 
@@ -48,9 +48,9 @@ func KustomizationReconcileHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// reconcileKustomization triggers a reconciliation of the given Kustomization
+// reconcileGitRepository triggers a reconciliation of the given GitRepository
 // by patching the reconcile.fluxcd.io/requestedAt annotation with the current time.
-func reconcileKustomization(ctx context.Context, clientset *versioned.Clientset, namespace, name string) error {
+func reconcileGitRepository(ctx context.Context, clientset *versioned.Clientset, namespace, name string) error {
 	patchData := map[string]interface{}{
 		"metadata": map[string]interface{}{
 			"annotations": map[string]string{
@@ -63,5 +63,5 @@ func reconcileKustomization(ctx context.Context, clientset *versioned.Clientset,
 		return err
 	}
 
-	return clientset.FluxCDV1().Kustomizations(namespace).Patch(ctx, name, data)
+	return clientset.FluxCDV1().GitRepositories(namespace).Patch(ctx, name, data)
 }

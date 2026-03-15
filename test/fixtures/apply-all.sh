@@ -218,3 +218,71 @@ kubectl patch kustomization backend-app -n default --type=merge --subresource=st
 }'
 
 log_info "FluxCD Kustomization status patching completed"
+
+# 9. Apply FluxCD GitRepository fixtures
+log_info "Applying FluxCD GitRepository fixtures..."
+kubectl apply -f "$SCRIPT_DIR/gitrepository-ready.yaml"
+kubectl apply -f "$SCRIPT_DIR/gitrepository-not-ready.yaml"
+kubectl apply -f "$SCRIPT_DIR/gitrepository-suspended.yaml"
+
+# Patch FluxCD GitRepository status subresources
+log_info "Patching FluxCD GitRepository status subresources..."
+
+# flux-system (dashboard-test): Ready=True, artifact with revision
+kubectl patch gitrepository flux-system -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:00:00Z",
+        "reason": "Succeeded",
+        "message": "stored artifact for revision '\''main@sha1:abc123def456'\''"
+      }
+    ],
+    "artifact": {
+      "revision": "main@sha1:abc123def456",
+      "lastUpdateTime": "2026-03-14T06:00:00Z",
+      "url": "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/flux-system/main@sha1:abc123def456.tar.gz",
+      "path": "gitrepository/dashboard-test/flux-system/abc123def456.tar.gz"
+    }
+  }
+}'
+
+# app-source (dashboard-test): Ready=False
+kubectl patch gitrepository app-source -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "False",
+        "lastTransitionTime": "2026-03-14T05:30:00Z",
+        "reason": "GitOperationFailed",
+        "message": "failed to checkout and determine revision: unable to clone"
+      }
+    ]
+  }
+}'
+
+# infra-repo (dashboard-test): Ready=True (but spec.suspend=true)
+kubectl patch gitrepository infra-repo -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T04:00:00Z",
+        "reason": "Succeeded",
+        "message": "stored artifact for revision '\''v1.0.0@sha1:fed9876'\''"
+      }
+    ],
+    "artifact": {
+      "revision": "v1.0.0@sha1:fed9876",
+      "lastUpdateTime": "2026-03-14T04:00:00Z",
+      "url": "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/infra-repo/v1.0.0@sha1:fed9876.tar.gz",
+      "path": "gitrepository/dashboard-test/infra-repo/fed9876.tar.gz"
+    }
+  }
+}'
+
+log_info "FluxCD GitRepository status patching completed"

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -78,6 +79,7 @@ var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http
 
 	clientset, err := getArgoClient()
 	if err != nil {
+		slog.Error("Failed to create Argo client", "error", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Argo client")
 		return
 	}
@@ -89,6 +91,7 @@ var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http
 			writeError(w, http.StatusNotFound, fmt.Sprintf("workflow %q not found", name))
 			return
 		}
+		slog.Error("Failed to fetch workflow detail", "error", err, "name", name)
 		writeError(w, http.StatusInternalServerError, "Failed to fetch workflow detail")
 		return
 	}

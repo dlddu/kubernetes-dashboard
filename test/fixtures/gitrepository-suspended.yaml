@@ -1,0 +1,23 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: infra-repo
+  namespace: dashboard-test
+spec:
+  interval: 10m
+  url: https://github.com/example/infra-repo
+  ref:
+    tag: v1.0.0
+  suspend: true
+status:
+  conditions:
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2026-03-14T04:00:00Z"
+      reason: Succeeded
+      message: "stored artifact for revision 'v1.0.0@sha1:fed9876'"
+  artifact:
+    revision: "v1.0.0@sha1:fed9876"
+    lastUpdateTime: "2026-03-14T04:00:00Z"
+    url: "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/infra-repo/v1.0.0@sha1:fed9876.tar.gz"
+    path: "gitrepository/dashboard-test/infra-repo/fed9876.tar.gz"

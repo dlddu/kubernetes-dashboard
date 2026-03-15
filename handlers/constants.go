@@ -47,7 +47,8 @@ const (
 
 // FluxCD API path prefixes.
 const (
-	fluxcdKustomizationsPathPrefix = "/api/fluxcd/kustomizations/"
+	fluxcdKustomizationsPathPrefix  = "/api/fluxcd/kustomizations/"
+	fluxcdGitRepositoriesPathPrefix = "/api/fluxcd/gitrepositories/"
 )
 
 // FluxCD error messages.
@@ -57,4 +58,9 @@ const (
 	errMsgKustomizationFetch     = "Failed to fetch kustomization"
 	errMsgKustomizationListFetch = "Failed to fetch kustomization list"
 	errMsgKustomizationReconcile = "Failed to reconcile kustomization"
+
+	errMsgGitRepositoryNotFound  = "GitRepository not found"
+	errMsgGitRepositoryFetch     = "Failed to fetch git repository"
+	errMsgGitRepositoryListFetch = "Failed to fetch git repository list"
+	errMsgGitRepositoryReconcile = "Failed to reconcile git repository"
 )

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -55,6 +56,7 @@ func WorkflowSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	// Get Argo client
 	clientset, err := getArgoClient()
 	if err != nil {
+		slog.Error("Failed to create Argo client", "error", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create Argo client")
 		return
 	}
@@ -66,6 +68,7 @@ func WorkflowSubmitHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, fmt.Sprintf("WorkflowTemplate %q not found", templateName))
 			return
 		}
+		slog.Error("Failed to submit workflow", "error", err, "template", templateName)
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

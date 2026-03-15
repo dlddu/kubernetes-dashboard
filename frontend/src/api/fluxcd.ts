@@ -62,3 +62,72 @@ export async function reconcileKustomization(
     method: 'POST',
   });
 }
+
+// GitRepository types and API functions
+
+export interface GitRepositoryInfo {
+  name: string;
+  namespace: string;
+  url: string;
+  ready: boolean;
+  suspended: boolean;
+  revision: string;
+  interval: string;
+  branch: string;
+  tag: string;
+}
+
+export async function fetchGitRepositories(namespace?: string): Promise<GitRepositoryInfo[]> {
+  const url = buildURL('/api/fluxcd/gitrepositories', { ns: namespace });
+  return fetchJSON<GitRepositoryInfo[]>(url);
+}
+
+export interface GitRepositoryDetailInfo {
+  name: string;
+  namespace: string;
+  suspended: boolean;
+  spec: {
+    url: string;
+    interval: string;
+    ref: {
+      branch?: string;
+      tag?: string;
+      semver?: string;
+      commit?: string;
+    };
+    secretRef?: {
+      name: string;
+    };
+  };
+  status: {
+    conditions: Array<{
+      type: string;
+      status: string;
+      reason: string;
+      message: string;
+      lastTransitionTime: string;
+    }>;
+    artifact?: {
+      revision: string;
+      lastUpdateTime: string;
+    };
+  };
+}
+
+export async function fetchGitRepositoryDetail(
+  namespace: string,
+  name: string
+): Promise<GitRepositoryDetailInfo> {
+  return fetchJSON<GitRepositoryDetailInfo>(
+    `/api/fluxcd/gitrepositories/${namespace}/${name}`
+  );
+}
+
+export async function reconcileGitRepository(
+  namespace: string,
+  name: string
+): Promise<void> {
+  await fetchJSON(`/api/fluxcd/gitrepositories/${namespace}/${name}/reconcile`, {
+    method: 'POST',
+  });
+}
