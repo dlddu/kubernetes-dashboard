@@ -165,7 +165,7 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
               key={`${k.namespace}-${k.name}`}
               data-testid="kustomization-card"
               className="bg-white rounded-lg shadow p-6 space-y-2 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/fluxcd/${k.namespace}/${k.name}`)}
+              onClick={() => navigate(`/fluxcd/kustomization/${k.namespace}/${k.name}`)}
             >
               <div className="flex items-center justify-between">
                 <div data-testid="kustomization-name" className="text-lg font-semibold text-gray-900">

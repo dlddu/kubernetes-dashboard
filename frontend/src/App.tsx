@@ -37,7 +37,7 @@ function AppContent() {
           <Route path="/secrets" element={<SecretsTab namespace={namespaceParam} />} />
           <Route path="/argo/*" element={<ArgoTab namespace={namespaceParam} />} />
           <Route path="/flux" element={<FluxCDTab namespace={namespaceParam} />} />
-          <Route path="/fluxcd/:namespace/:name" element={<KustomizationDetailPage />} />
+          <Route path="/fluxcd/kustomization/:namespace/:name" element={<KustomizationDetailPage />} />
           <Route path="/fluxcd/gitrepository/:namespace/:name" element={<GitRepositoryDetailPage />} />
           <Route path="/debug" element={<DebugPage />} />
         </Routes>
