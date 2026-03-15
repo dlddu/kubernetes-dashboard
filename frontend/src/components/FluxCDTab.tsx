@@ -25,8 +25,6 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
     [namespace],
   );
 
-  const isLoading = isLoadingKustomizations || isLoadingGitRepos;
-
   // Kustomization summary counts
   const kustomizationReadyCount = kustomizations.filter((k) => k.ready && !k.suspended).length;
   const kustomizationNotReadyCount = kustomizations.filter((k) => !k.ready && !k.suspended).length;

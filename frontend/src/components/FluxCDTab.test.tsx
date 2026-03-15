@@ -21,7 +21,7 @@ import { fetchKustomizations, fetchGitRepositories } from '../api/fluxcd';
 import { useDataFetch } from '../hooks/useDataFetch';
 
 const mockFetchKustomizations = fetchKustomizations as ReturnType<typeof vi.fn>;
-const mockFetchGitRepositories = fetchGitRepositories as ReturnType<typeof vi.fn>;
+const _mockFetchGitRepositories = fetchGitRepositories as ReturnType<typeof vi.fn>;
 const mockUseDataFetch = useDataFetch as ReturnType<typeof vi.fn>;
 
 const emptyResult = {
