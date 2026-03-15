@@ -293,7 +293,8 @@ type FluxCDV1Interface interface {
 
 // fluxCDV1Client implements FluxCDV1Interface.
 type fluxCDV1Client struct {
-	restClient rest.Interface
+	restClient       rest.Interface
+	sourceRestClient rest.Interface
 }
 
 // Kustomizations returns a KustomizationInterface for the given namespace.
@@ -303,13 +304,14 @@ func (c *fluxCDV1Client) Kustomizations(namespace string) KustomizationInterface
 
 // GitRepositories returns a GitRepositoryInterface for the given namespace.
 func (c *fluxCDV1Client) GitRepositories(namespace string) GitRepositoryInterface {
-	return &gitRepositoryClient{restClient: c.restClient, namespace: namespace}
+	return &gitRepositoryClient{restClient: c.sourceRestClient, namespace: namespace}
 }
 
 // Clientset implements a minimal FluxCD Kustomize Controller clientset.
 type Clientset struct {
-	config     *rest.Config
-	restClient rest.Interface
+	config           *rest.Config
+	restClient       rest.Interface
+	sourceRestClient rest.Interface
 }
 
 // NewForConfig creates a new FluxCD Clientset from the given REST config.
@@ -326,7 +328,18 @@ func NewForConfig(config *rest.Config) (*Clientset, error) {
 		return nil, fmt.Errorf("failed to create REST client for FluxCD Kustomize Controller: %w", err)
 	}
 
-	return &Clientset{config: config, restClient: restClient}, nil
+	sourceConfigCopy := rest.CopyConfig(config)
+	sourceConfigCopy.APIPath = "/apis"
+	sourceGV := schema.GroupVersion{Group: "source.toolkit.fluxcd.io", Version: "v1"}
+	sourceConfigCopy.GroupVersion = &sourceGV
+	sourceConfigCopy.NegotiatedSerializer = serializer.NewCodecFactory(s).WithoutConversion()
+
+	sourceRestClient, err := rest.RESTClientFor(sourceConfigCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create REST client for FluxCD Source Controller: %w", err)
+	}
+
+	return &Clientset{config: config, restClient: restClient, sourceRestClient: sourceRestClient}, nil
 }
 
 // NewForConfigOrDie creates a new FluxCD Clientset from the given REST config
@@ -341,5 +354,5 @@ func NewForConfigOrDie(config *rest.Config) *Clientset {
 
 // FluxCDV1 returns a FluxCDV1Interface for the given clientset.
 func (c *Clientset) FluxCDV1() FluxCDV1Interface {
-	return &fluxCDV1Client{restClient: c.restClient}
+	return &fluxCDV1Client{restClient: c.restClient, sourceRestClient: c.sourceRestClient}
 }
