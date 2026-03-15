@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import type { UnhealthyPodInfo } from '../api/overview';
 import { StatusBadge } from './StatusBadge';
 import { useDashboard } from '../contexts/DashboardContext';
 
 export function UnhealthyPodPreview() {
   const { overviewData, isLoading, error } = useDashboard();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const unhealthyPods: UnhealthyPodInfo[] = overviewData?.unhealthyPodsList ?? [];
 
@@ -45,9 +46,9 @@ export function UnhealthyPodPreview() {
     );
   }
 
-  // Display up to 3 pods
-  const displayPods = unhealthyPods.slice(0, 3);
+  // Display up to 3 pods when collapsed, all when expanded
   const hasMorePods = unhealthyPods.length > 3;
+  const displayPods = isExpanded ? unhealthyPods : unhealthyPods.slice(0, 3);
 
   return (
     <section
@@ -101,13 +102,16 @@ export function UnhealthyPodPreview() {
 
       {hasMorePods && (
         <div className="mt-4 text-center">
-          <Link
+          <button
             data-testid="view-more-link"
-            to="/pods"
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
           >
-            View all pods ({unhealthyPods.length} total)
-          </Link>
+            {isExpanded
+              ? 'Show less'
+              : `View all pods (${unhealthyPods.length} total)`}
+          </button>
         </div>
       )}
     </section>

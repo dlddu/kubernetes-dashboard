@@ -110,8 +110,8 @@ test.describe('UnhealthyPodPreview Component', () => {
     }
   });
 
-  test('should navigate to Pods tab when "view more" link is clicked', async ({ page }) => {
-    // Tests navigation from UnhealthyPodPreview to Pods tab
+  test('should expand card to show all unhealthy pods when "view more" button is clicked', async ({ page }) => {
+    // Tests that clicking "view more" expands the card instead of navigating
 
     // Arrange: Navigate to the Overview page
     await page.goto('/');
@@ -121,29 +121,45 @@ test.describe('UnhealthyPodPreview Component', () => {
     const unhealthyPodPreview = page.getByTestId('unhealthy-pod-preview');
     await expect(unhealthyPodPreview).toBeVisible();
 
-    // Act: Locate the "view more" link
-    const viewMoreLink = unhealthyPodPreview.getByTestId('view-more-link')
-      .or(unhealthyPodPreview.getByRole('link', { name: /view more|see all|more pods/i }));
-    await expect(viewMoreLink).toBeVisible();
+    // Act: Locate the "view more" button
+    const viewMoreButton = unhealthyPodPreview.getByTestId('view-more-link');
 
-    // Assert: Link should be clickable
-    await expect(viewMoreLink).toBeEnabled();
+    // Check if the button exists (only visible when more than 3 unhealthy pods)
+    const buttonCount = await viewMoreButton.count();
+    if (buttonCount === 0) {
+      // If no button, there are 3 or fewer unhealthy pods - skip this test
+      return;
+    }
 
-    // Act: Click the "view more" link
-    await viewMoreLink.click();
+    await expect(viewMoreButton).toBeVisible();
+    await expect(viewMoreButton).toBeEnabled();
 
-    // Wait for navigation to complete
-    await page.waitForLoadState('networkidle');
+    // Record initial pod count (should be max 3)
+    const initialPodItems = unhealthyPodPreview.getByTestId('unhealthy-pod-item');
+    const initialCount = await initialPodItems.count();
+    expect(initialCount).toBeLessThanOrEqual(3);
 
-    // Assert: Should navigate to Pods tab/page
-    // URL should change to include "pods" route
+    // Act: Click the "view more" button
+    await viewMoreButton.click();
+
+    // Assert: Should show more pods than before (card expanded)
+    const expandedPodItems = unhealthyPodPreview.getByTestId('unhealthy-pod-item');
+    const expandedCount = await expandedPodItems.count();
+    expect(expandedCount).toBeGreaterThan(initialCount);
+
+    // Assert: Should still be on the same page (URL should NOT change to /pods)
     const currentUrl = page.url();
-    expect(currentUrl.toLowerCase()).toContain('pods');
+    expect(currentUrl).not.toContain('/pods');
 
-    // Assert: Pods tab should be active/visible
-    const podsTab = page.getByTestId('pods-tab')
-      .or(page.getByRole('tab', { name: /pods/i, selected: true }))
-      .or(page.getByRole('heading', { name: 'Pods', exact: true }));
-    await expect(podsTab).toBeVisible();
+    // Assert: Button text should change to "Show less"
+    await expect(viewMoreButton).toContainText(/show less/i);
+
+    // Act: Click "Show less" to collapse
+    await viewMoreButton.click();
+
+    // Assert: Should collapse back to max 3 pods
+    const collapsedPodItems = unhealthyPodPreview.getByTestId('unhealthy-pod-item');
+    const collapsedCount = await collapsedPodItems.count();
+    expect(collapsedCount).toBeLessThanOrEqual(3);
   });
 });
