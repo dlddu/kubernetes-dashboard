@@ -234,8 +234,7 @@ test.describe('FluxCD Tab - Kustomization List - Namespace Filtering', () => {
     for (let i = 0; i < filteredCount; i++) {
       const card = filteredCards.nth(i);
       const namespaceElement = card.getByTestId('kustomization-namespace');
-      const namespaceText = await namespaceElement.innerText();
-      expect(namespaceText).toBe('dashboard-test');
+      await expect(namespaceElement).toHaveText('dashboard-test');
     }
   });
 });
@@ -264,8 +263,8 @@ test.describe('FluxCD Tab - Kustomization List - Loading, Empty & Error States',
     await emptyNamespaceOption.click();
     await page.waitForLoadState('networkidle');
 
-    // Assert: EmptyState component is visible
-    const emptyState = page.getByTestId('empty-state');
+    // Assert: EmptyState component is visible (both GitRepository and Kustomization sections show empty state)
+    const emptyState = page.getByTestId('empty-state').first();
     await expect(emptyState).toBeVisible();
 
     // Assert: No Kustomization cards are shown
@@ -323,7 +322,7 @@ test.describe('FluxCD Tab - Kustomization List - Loading, Empty & Error States',
   test('should display LoadingSkeleton with aria-busy="true" while Kustomizations are being fetched', async ({ page }) => {
     // Tests that LoadingSkeleton is shown during the API request.
 
-    // Arrange: Intercept the kustomizations API and delay the response to observe loading state
+    // Arrange: Intercept both APIs and delay responses to observe loading state
     await page.route('**/api/fluxcd/kustomizations**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.fulfill({
@@ -332,12 +331,16 @@ test.describe('FluxCD Tab - Kustomization List - Loading, Empty & Error States',
         body: JSON.stringify([]),
       });
     });
+    await page.route('**/api/fluxcd/gitrepositories**', async route => {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      await route.continue();
+    });
 
     // Act: Navigate to the FluxCD tab (do not wait for networkidle — need to observe loading state)
     await page.goto('/flux');
 
     // Assert: LoadingSkeleton is visible before the response arrives
-    const loadingSkeleton = page.getByTestId('loading-skeleton');
+    const loadingSkeleton = page.getByTestId('loading-skeleton').first();
     await expect(loadingSkeleton).toBeVisible();
 
     // Assert: LoadingSkeleton has aria-busy="true" for accessibility
