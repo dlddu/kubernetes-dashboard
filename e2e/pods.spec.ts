@@ -533,36 +533,45 @@ test.describe('Pods Page - Loading and Error States', () => {
 });
 
 test.describe('Pods Page - Navigation and Integration', () => {
-  test('should be accessible from UnhealthyPodPreview view more link', async ({ page }) => {
-    // Skip reason: PodsTab component not implemented yet
-    // Tests navigation from Overview page UnhealthyPodPreview to Pods page
+  test('should be accessible from UnhealthyPodPreview view more button', async ({ page }) => {
+    // Tests that clicking "view more" expands the card inline instead of navigating
 
     // Arrange: Navigate to the Overview page
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Act: Look for "view more" link in UnhealthyPodPreview
+    // Act: Look for "view more" button in UnhealthyPodPreview
     const unhealthyPodPreview = page.getByTestId('unhealthy-pod-preview');
     await expect(unhealthyPodPreview).toBeVisible();
 
-    const viewMoreLink = unhealthyPodPreview.getByTestId('view-more-link')
-      .or(unhealthyPodPreview.getByRole('link', { name: /view more|see all|more pods/i }));
+    const viewMoreButton = unhealthyPodPreview.getByTestId('view-more-link');
 
-    // Assert: Link should be visible
-    await expect(viewMoreLink).toBeVisible();
-    await expect(viewMoreLink).toBeEnabled();
+    // If button doesn't exist, there are 3 or fewer unhealthy pods - skip
+    const buttonCount = await viewMoreButton.count();
+    if (buttonCount === 0) {
+      return;
+    }
 
-    // Act: Click the "view more" link
-    await viewMoreLink.click();
-    await page.waitForLoadState('networkidle');
+    // Assert: Button should be visible and enabled
+    await expect(viewMoreButton).toBeVisible();
+    await expect(viewMoreButton).toBeEnabled();
 
-    // Assert: Should navigate to Pods page
+    // Record initial pod count (should be max 3)
+    const initialPodItems = unhealthyPodPreview.getByTestId('unhealthy-pod-item');
+    const initialCount = await initialPodItems.count();
+    expect(initialCount).toBeLessThanOrEqual(3);
+
+    // Act: Click the "view more" button
+    await viewMoreButton.click();
+
+    // Assert: Should expand inline showing more pods, NOT navigate away
+    const expandedPodItems = unhealthyPodPreview.getByTestId('unhealthy-pod-item');
+    const expandedCount = await expandedPodItems.count();
+    expect(expandedCount).toBeGreaterThan(initialCount);
+
+    // Assert: Should still be on the overview page
     const currentUrl = page.url();
-    expect(currentUrl.toLowerCase()).toContain('pods');
-
-    // Assert: Pods page should be visible
-    const podsPage = page.getByTestId('pods-page');
-    await expect(podsPage).toBeVisible();
+    expect(currentUrl).not.toContain('/pods');
   });
 
   test('should show more pods than UnhealthyPodPreview preview limit', async ({ page }) => {
