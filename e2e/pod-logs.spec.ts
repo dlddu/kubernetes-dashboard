@@ -1061,6 +1061,31 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     // Assert: New lines should have been added (streaming is active again)
     const lineCountAfterReOn = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
     expect(lineCountAfterReOn).toBeGreaterThan(lineCountStillOff);
+
+    // ---- Log order consistency check ----
+    // verbose-log-test outputs lines with ISO timestamps at the start:
+    //   "2026-03-22T10:00:00Z INFO [stream] live log event 1742644800"
+    // Extract all timestamps and verify they are in non-decreasing order.
+    const timestamps = await logViewer.evaluate((el) => {
+      const lines = el.innerText.split('\n').filter((l: string) => l.trim().length > 0);
+      const isoRegex = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/;
+      return lines
+        .map((l: string) => {
+          const m = l.match(isoRegex);
+          return m ? m[1] : null;
+        })
+        .filter((t: string | null): t is string => t !== null);
+    });
+
+    // Must have enough timestamped lines to make the check meaningful
+    expect(timestamps.length).toBeGreaterThanOrEqual(3);
+
+    // Assert: Every timestamp must be >= the previous one (chronological order)
+    for (let i = 1; i < timestamps.length; i++) {
+      const prev = new Date(timestamps[i - 1]).getTime();
+      const curr = new Date(timestamps[i]).getTime();
+      expect(curr).toBeGreaterThanOrEqual(prev);
+    }
   });
 
   test('should display live streamed log content from the pod during follow mode', async ({ page }) => {
