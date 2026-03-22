@@ -994,6 +994,75 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     expect(resetClasses).not.toContain('animate-pulse');
   });
 
+  test('should re-enable streaming when Follow is toggled on → off → on again', async ({ page }) => {
+    // Arrange: Open verbose-log-test pod (outputs 1 line/sec while streaming)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+
+    // ---- Phase 1: Follow ON ----
+    await followButton.click();
+
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+    await expect(followButton).toContainText('Unfollow');
+
+    // Wait for streaming lines to arrive
+    await page.waitForTimeout(2000);
+
+    // ---- Phase 2: Follow OFF ----
+    await followButton.click();
+
+    await expect(streamingIndicator).not.toBeVisible();
+    await expect(followButton).toContainText('Follow');
+    await expect(followButton).not.toContainText('Unfollow');
+
+    // Record line count while streaming is stopped
+    const lineCountAfterOff = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+
+    // Wait to confirm no new lines while off
+    await page.waitForTimeout(2000);
+    const lineCountStillOff = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+    expect(lineCountStillOff).toBe(lineCountAfterOff);
+
+    // ---- Phase 3: Follow ON again ----
+    await followButton.click();
+
+    await expect(streamingIndicator).toBeVisible();
+    await expect(followButton).toContainText('Unfollow');
+
+    // Assert: Button should have active styling again
+    const reactivatedClasses = await followButton.getAttribute('class');
+    expect(reactivatedClasses).toContain('bg-blue-600');
+    expect(reactivatedClasses).toContain('animate-pulse');
+
+    // Wait for new streaming lines to arrive
+    await page.waitForTimeout(3000);
+
+    // Assert: New lines should have been added (streaming is active again)
+    const lineCountAfterReOn = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+    expect(lineCountAfterReOn).toBeGreaterThan(lineCountStillOff);
+  });
+
   test('should display live streamed log content from the pod during follow mode', async ({ page }) => {
     // Arrange: Open verbose-log-test pod (outputs "[stream] live log event" every 1 second)
     await page.goto('/pods');
