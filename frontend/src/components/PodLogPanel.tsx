@@ -104,7 +104,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
           setLogLines((prev) => [...prev, line]);
         },
         selectedContainer,
-        DEFAULT_TAIL_LINES,
+        0,
       );
       cleanupRef.current = cleanup;
     }
