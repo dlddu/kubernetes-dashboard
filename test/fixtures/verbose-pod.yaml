@@ -16,14 +16,10 @@ spec:
       - -c
       - |
         i=0
-        while [ $i -lt 300 ]; do
+        while true; do
           echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') INFO [line $i] application log message"
           i=$((i + 1))
-        done
-        echo "=== initial batch complete ==="
-        while true; do
-          echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') INFO [stream] live log event $(date +%s)"
-          sleep 1
+          if [ $i -gt 300 ]; then sleep 1; fi
         done
     resources:
       requests:

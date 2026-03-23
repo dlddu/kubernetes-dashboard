@@ -1064,7 +1064,7 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
 
     // ---- Log order consistency check ----
     // verbose-log-test outputs lines with ISO timestamps at the start:
-    //   "2026-03-22T10:00:00Z INFO [stream] live log event 1742644800"
+    //   "2026-03-22T10:00:00Z INFO [line 305] application log message"
     // Extract all timestamps and verify they are in non-decreasing order.
     const timestamps = await logViewer.evaluate((el) => {
       const lines = el.innerText.split('\n').filter((l: string) => l.trim().length > 0);
@@ -1124,21 +1124,17 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     await page.waitForTimeout(3000);
 
     // ---- Phase 2: Capture sentinel lines before toggling off ----
-    // Sample the first, middle, and last lines actually present in the viewer.
-    // We avoid relying on specific "[line N]" markers because tailLines=100
-    // means the initial batch lines may have scrolled out of range.
+    // All lines now contain "[line N]" markers (fixture outputs numbered lines continuously).
+    // Pick first, middle, and last lines in the viewer as sentinels.
     const capturedLines = await logViewer.evaluate((el) => {
-      const allLines = el.innerText.split('\n').filter((l: string) => l.trim().length > 0);
+      const allLines = el.innerText.split('\n').filter((l: string) => l.includes('[line '));
       if (allLines.length === 0) return [];
       const mid = Math.floor(allLines.length / 2);
-      // Pick 3 distinct lines: first, middle, last
-      const sampled = [allLines[0], allLines[mid], allLines[allLines.length - 1]];
-      // De-duplicate in case there are very few lines
-      return [...new Set(sampled)];
+      return [allLines[0], allLines[mid], allLines[allLines.length - 1]];
     });
 
-    // Sanity: viewer must have at least some lines
-    expect(capturedLines.length).toBeGreaterThanOrEqual(1);
+    // Sanity: must have captured at least 3 numbered lines
+    expect(capturedLines.length).toBeGreaterThanOrEqual(3);
 
     const lineCountBeforeOff = await logViewer.evaluate(
       (el) => el.innerText.split('\n').filter((l: string) => l.trim().length > 0).length
@@ -1177,7 +1173,7 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
   });
 
   test('should display live streamed log content from the pod during follow mode', async ({ page }) => {
-    // Arrange: Open verbose-log-test pod (outputs "[stream] live log event" every 1 second)
+    // Arrange: Open verbose-log-test pod (outputs "[line N] application log message" every 1 second)
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
 
@@ -1208,10 +1204,10 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     // Wait for live streaming events to arrive (1 line/sec)
     await page.waitForTimeout(3000);
 
-    // Assert: Log viewer should contain real pod output with "[stream] live log event"
+    // Assert: Log viewer should contain real pod output with numbered lines
     const logViewer = logPanel.getByTestId('log-panel-log-viewer');
     const logContent = await logViewer.innerText();
-    expect(logContent).toContain('[stream] live log event');
+    expect(logContent).toContain('[line ');
   });
 });
 
