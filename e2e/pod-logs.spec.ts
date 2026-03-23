@@ -1088,6 +1088,99 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     }
   });
 
+  test('should preserve all existing log lines after Follow is toggled off then back on', async ({ page }) => {
+    // Arrange: Open verbose-log-test pod (outputs 300 initial lines + 1 line/sec streaming)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+
+    // ---- Phase 1: Enable Follow and let streaming lines accumulate ----
+    await followButton.click();
+
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+    await expect(followButton).toContainText('Unfollow');
+
+    // Wait for streaming lines to arrive beyond the initial batch
+    await page.waitForTimeout(3000);
+
+    // ---- Phase 2: Capture sentinel lines before toggling off ----
+    const capturedLines = await logViewer.evaluate((el) => {
+      const allLines = el.innerText.split('\n').filter((l: string) => l.trim().length > 0);
+      const sampled: string[] = [];
+
+      // Capture initial-batch sentinel lines (contain "[line N]")
+      for (const line of allLines) {
+        if (line.includes('[line 0]')) sampled.push(line);
+        if (line.includes('[line 149]')) sampled.push(line);
+        if (line.includes('[line 299]')) sampled.push(line);
+      }
+
+      // Capture first streamed line (contains "[stream]")
+      const firstStream = allLines.find((l: string) => l.includes('[stream] live log event'));
+      if (firstStream) sampled.push(firstStream);
+
+      return sampled;
+    });
+
+    // Sanity: at least initial line 0 and one stream line must be captured
+    expect(capturedLines.length).toBeGreaterThanOrEqual(2);
+
+    const lineCountBeforeOff = await logViewer.evaluate(
+      (el) => el.innerText.split('\n').filter((l: string) => l.trim().length > 0).length
+    );
+
+    // ---- Phase 3: Toggle Follow OFF ----
+    await followButton.click();
+
+    await expect(streamingIndicator).not.toBeVisible();
+    await expect(followButton).toContainText('Follow');
+    await expect(followButton).not.toContainText('Unfollow');
+
+    // ---- Phase 4: Toggle Follow back ON and wait for new lines ----
+    await followButton.click();
+
+    await expect(streamingIndicator).toBeVisible();
+    await expect(followButton).toContainText('Unfollow');
+
+    await page.waitForTimeout(3000);
+
+    // ---- Assert: Every previously captured sentinel line is still present ----
+    const logContentAfterReOn = await logViewer.innerText();
+
+    for (const line of capturedLines) {
+      expect(logContentAfterReOn).toContain(line);
+    }
+
+    // ---- Assert: Total line count did not decrease (no lines dropped) ----
+    const lineCountAfterReOn = await logViewer.evaluate(
+      (el) => el.innerText.split('\n').filter((l: string) => l.trim().length > 0).length
+    );
+    expect(lineCountAfterReOn).toBeGreaterThanOrEqual(lineCountBeforeOff);
+
+    // ---- Assert: New streaming lines appeared (streaming resumed) ----
+    expect(lineCountAfterReOn).toBeGreaterThan(lineCountBeforeOff);
+  });
+
   test('should display live streamed log content from the pod during follow mode', async ({ page }) => {
     // Arrange: Open verbose-log-test pod (outputs "[stream] live log event" every 1 second)
     await page.goto('/pods');
