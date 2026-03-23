@@ -558,6 +558,40 @@ describe('PodLogPanel', () => {
       });
     });
 
+    it('should resume Follow with tailLines=0 to avoid duplicate historical lines', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const pod = makePod();
+      const mockCleanup = vi.fn();
+      vi.mocked(streamPodLogs).mockReturnValue(mockCleanup);
+
+      // Act
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-follow-button')).toBeInTheDocument();
+      });
+
+      const followButton = screen.getByTestId('log-panel-follow-button');
+
+      // Toggle on → off → on
+      await user.click(followButton);
+      await user.click(followButton);
+      vi.mocked(streamPodLogs).mockClear();
+      await user.click(followButton);
+
+      // Assert: second Follow activation must use tailLines=0
+      await waitFor(() => {
+        expect(streamPodLogs).toHaveBeenCalledWith(
+          pod.namespace,
+          pod.name,
+          expect.any(Function),
+          expect.anything(),
+          0,
+        );
+      });
+    });
+
     it('should clean up streaming when container selection changes while following', async () => {
       // Arrange
       const user = userEvent.setup();
