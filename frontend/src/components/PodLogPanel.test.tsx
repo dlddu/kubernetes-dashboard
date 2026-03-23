@@ -558,6 +558,63 @@ describe('PodLogPanel', () => {
       });
     });
 
+    it('should preserve all log lines when Follow is toggled off and back on', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const pod = makePod();
+
+      let capturedCallback: ((line: string) => void) | null = null;
+      vi.mocked(streamPodLogs).mockImplementation((_ns, _name, callback) => {
+        capturedCallback = callback;
+        return () => { capturedCallback = null; };
+      });
+
+      // Act: render and wait for initial logs
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const viewer = screen.getByTestId('log-panel-log-viewer');
+        expect(viewer.textContent).toContain('INFO Log line 1');
+        expect(viewer.textContent).toContain('INFO Log line 2');
+      });
+
+      const followButton = screen.getByTestId('log-panel-follow-button');
+
+      // First Follow: stream some lines
+      await user.click(followButton);
+      await waitFor(() => expect(capturedCallback).not.toBeNull());
+
+      act(() => {
+        capturedCallback!('STREAM A');
+        capturedCallback!('STREAM B');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-log-viewer').textContent).toContain('STREAM B');
+      });
+
+      // Unfollow
+      await user.click(followButton);
+
+      // Re-follow: stream more lines
+      await user.click(followButton);
+      await waitFor(() => expect(capturedCallback).not.toBeNull());
+
+      act(() => {
+        capturedCallback!('STREAM C');
+      });
+
+      // Assert: every line from initial load and both streaming sessions must be present
+      await waitFor(() => {
+        const text = screen.getByTestId('log-panel-log-viewer').textContent;
+        expect(text).toContain('INFO Log line 1');
+        expect(text).toContain('INFO Log line 2');
+        expect(text).toContain('STREAM A');
+        expect(text).toContain('STREAM B');
+        expect(text).toContain('STREAM C');
+      });
+    });
+
     it('should resume Follow with tailLines=0 to avoid duplicate historical lines', async () => {
       // Arrange
       const user = userEvent.setup();
