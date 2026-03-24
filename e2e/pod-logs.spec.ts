@@ -1163,9 +1163,21 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
       expect(numbersAfter).toContain(n);
     }
 
-    // No gaps: line numbers must be consecutive (no missing lines)
-    for (let i = 1; i < numbersAfter.length; i++) {
-      expect(numbersAfter[i]).toBe(numbersAfter[i - 1] + 1);
+    // Lines emitted while Follow was OFF are naturally missed (SSE was closed).
+    // Verify that within each contiguous segment, numbers are consecutive.
+    const lastBefore = numbersBefore[numbersBefore.length - 1];
+    const newNumbers = numbersAfter.filter((n) => n > lastBefore);
+
+    // The pre-existing segment must be intact (consecutive, no gaps)
+    const oldNumbers = numbersAfter.filter((n) => n <= lastBefore);
+    for (let i = 1; i < oldNumbers.length; i++) {
+      expect(oldNumbers[i]).toBe(oldNumbers[i - 1] + 1);
+    }
+
+    // The newly streamed segment must also be consecutive (no gaps)
+    expect(newNumbers.length).toBeGreaterThanOrEqual(1);
+    for (let i = 1; i < newNumbers.length; i++) {
+      expect(newNumbers[i]).toBe(newNumbers[i - 1] + 1);
     }
   });
 
