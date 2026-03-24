@@ -1139,9 +1139,13 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     const numbersBefore = await extractLineNumbers();
     expect(numbersBefore.length).toBeGreaterThanOrEqual(3);
 
-    // ---- Phase 2: Toggle Follow OFF then back ON ----
+    // ---- Phase 2: Toggle Follow OFF, wait, then back ON ----
     await followButton.click();
     await expect(streamingIndicator).not.toBeVisible();
+
+    // Wait while streaming is off — the pod keeps emitting lines during
+    // this gap, so any lost lines will show up as missing numbers.
+    await page.waitForTimeout(3000);
 
     await followButton.click();
     await expect(streamingIndicator).toBeVisible();
