@@ -558,7 +558,7 @@ describe('PodLogPanel', () => {
       });
     });
 
-    it('should preserve all log lines when Follow is toggled off and back on', async () => {
+    it('should clear and re-stream logs when Follow is toggled off and back on', async () => {
       // Arrange
       const user = userEvent.setup();
       const pod = makePod();
@@ -596,7 +596,7 @@ describe('PodLogPanel', () => {
       // Unfollow
       await user.click(followButton);
 
-      // Re-follow: stream more lines
+      // Re-follow: logs are cleared and stream starts fresh
       await user.click(followButton);
       await waitFor(() => expect(capturedCallback).not.toBeNull());
 
@@ -604,18 +604,17 @@ describe('PodLogPanel', () => {
         capturedCallback!('STREAM C');
       });
 
-      // Assert: every line from initial load and both streaming sessions must be present
+      // Assert: only the re-streamed lines should be present (old lines cleared)
       await waitFor(() => {
         const text = screen.getByTestId('log-panel-log-viewer').textContent;
-        expect(text).toContain('INFO Log line 1');
-        expect(text).toContain('INFO Log line 2');
-        expect(text).toContain('STREAM A');
-        expect(text).toContain('STREAM B');
         expect(text).toContain('STREAM C');
+        expect(text).not.toContain('STREAM A');
+        expect(text).not.toContain('STREAM B');
+        expect(text).not.toContain('INFO Log line 1');
       });
     });
 
-    it('should resume Follow with tailLines=0 to avoid duplicate historical lines', async () => {
+    it('should re-fetch logs from the beginning when Follow is re-enabled', async () => {
       // Arrange
       const user = userEvent.setup();
       const pod = makePod();
@@ -637,14 +636,14 @@ describe('PodLogPanel', () => {
       vi.mocked(streamPodLogs).mockClear();
       await user.click(followButton);
 
-      // Assert: second Follow activation must use tailLines=0
+      // Assert: re-enabled Follow must use DEFAULT_TAIL_LINES (100)
       await waitFor(() => {
         expect(streamPodLogs).toHaveBeenCalledWith(
           pod.namespace,
           pod.name,
           expect.any(Function),
           expect.anything(),
-          0,
+          100,
         );
       });
     });

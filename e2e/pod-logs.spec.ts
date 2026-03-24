@@ -1153,31 +1153,16 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     await page.waitForTimeout(3000);
 
     // ---- Assert: extract line numbers after re-enable ----
+    // Follow re-enable clears the viewer and re-fetches from the backend,
+    // so the gap lines emitted during OFF are included in the fresh fetch.
     const numbersAfter = await extractLineNumbers();
 
     // New lines must have arrived (streaming resumed)
-    expect(numbersAfter.length).toBeGreaterThan(numbersBefore.length);
+    expect(numbersAfter.length).toBeGreaterThanOrEqual(3);
 
-    // All previously displayed line numbers must still be present
-    for (const n of numbersBefore) {
-      expect(numbersAfter).toContain(n);
-    }
-
-    // Lines emitted while Follow was OFF are naturally missed (SSE was closed).
-    // Verify that within each contiguous segment, numbers are consecutive.
-    const lastBefore = numbersBefore[numbersBefore.length - 1];
-    const newNumbers = numbersAfter.filter((n) => n > lastBefore);
-
-    // The pre-existing segment must be intact (consecutive, no gaps)
-    const oldNumbers = numbersAfter.filter((n) => n <= lastBefore);
-    for (let i = 1; i < oldNumbers.length; i++) {
-      expect(oldNumbers[i]).toBe(oldNumbers[i - 1] + 1);
-    }
-
-    // The newly streamed segment must also be consecutive (no gaps)
-    expect(newNumbers.length).toBeGreaterThanOrEqual(1);
-    for (let i = 1; i < newNumbers.length; i++) {
-      expect(newNumbers[i]).toBe(newNumbers[i - 1] + 1);
+    // No gaps: the entire sequence must be consecutive
+    for (let i = 1; i < numbersAfter.length; i++) {
+      expect(numbersAfter[i]).toBe(numbersAfter[i - 1] + 1);
     }
   });
 

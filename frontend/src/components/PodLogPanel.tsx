@@ -96,6 +96,8 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
     } else {
       setIsFollowing(true);
       autoScrollRef.current = true;
+      setLogLines([]);
+      logLineKeyRef.current = 0;
       const cleanup = streamPodLogs(
         pod.namespace,
         pod.name,
@@ -104,7 +106,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
           setLogLines((prev) => [...prev, line]);
         },
         selectedContainer,
-        0,
+        DEFAULT_TAIL_LINES,
       );
       cleanupRef.current = cleanup;
     }
