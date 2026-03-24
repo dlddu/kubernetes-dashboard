@@ -23,6 +23,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const cleanupRef = useRef<(() => void) | null>(null);
   const logViewerRef = useRef<HTMLDivElement>(null);
@@ -112,6 +113,30 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
     }
   };
 
+  const handleCopyLogs = async () => {
+    const text = logLines.join('\n');
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Silently fail if clipboard access is denied
+    }
+  };
+
   const handleClose = () => {
     stopStreaming();
     onClose();
@@ -187,6 +212,19 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
             }`}
           >
             {isFollowing ? 'Unfollow' : 'Follow'}
+          </button>
+
+          <button
+            data-testid="log-panel-copy-button"
+            onClick={handleCopyLogs}
+            disabled={logLines.length === 0}
+            className={`text-sm px-3 py-1 rounded border ${
+              copied
+                ? 'bg-green-600 border-green-500 text-white'
+                : 'bg-gray-700 border-gray-600 text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
+          >
+            {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
 

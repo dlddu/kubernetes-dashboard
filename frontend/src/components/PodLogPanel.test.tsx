@@ -767,6 +767,108 @@ describe('PodLogPanel', () => {
   });
 
   // =========================================================================
+  // Copy button
+  // =========================================================================
+
+  describe('copy button', () => {
+    it('should render the copy button', async () => {
+      // Arrange
+      const pod = makePod();
+
+      // Act
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-copy-button')).toBeInTheDocument();
+      });
+    });
+
+    it('should be disabled when there are no log lines', async () => {
+      // Arrange
+      const pod = makePod();
+      vi.mocked(fetchPodLogs).mockResolvedValue('');
+
+      // Act
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      // Assert
+      await waitFor(() => {
+        const button = screen.getByTestId('log-panel-copy-button');
+        expect(button).toBeDisabled();
+      });
+    });
+
+    it('should be enabled when log lines are present', async () => {
+      // Arrange
+      const pod = makePod();
+      vi.mocked(fetchPodLogs).mockResolvedValue('INFO Log line 1\nINFO Log line 2');
+
+      // Act
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      // Assert
+      await waitFor(() => {
+        const button = screen.getByTestId('log-panel-copy-button');
+        expect(button).not.toBeDisabled();
+      });
+    });
+
+    it('should copy log lines to clipboard when clicked', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const pod = makePod();
+      vi.mocked(fetchPodLogs).mockResolvedValue('INFO Log line 1\nINFO Log line 2');
+
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        writable: true,
+        configurable: true,
+      });
+
+      // Act
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-copy-button')).not.toBeDisabled();
+      });
+
+      await user.click(screen.getByTestId('log-panel-copy-button'));
+
+      // Assert
+      expect(writeText).toHaveBeenCalledWith('INFO Log line 1\nINFO Log line 2');
+    });
+
+    it('should show "Copied!" text after clicking', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const pod = makePod();
+      vi.mocked(fetchPodLogs).mockResolvedValue('INFO Log line 1');
+
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: vi.fn().mockResolvedValue(undefined) },
+        writable: true,
+        configurable: true,
+      });
+
+      // Act
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-copy-button')).not.toBeDisabled();
+      });
+
+      await user.click(screen.getByTestId('log-panel-copy-button'));
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-copy-button')).toHaveTextContent('Copied!');
+      });
+    });
+  });
+
+  // =========================================================================
   // Edge cases
   // =========================================================================
 
