@@ -14,6 +14,9 @@ import { test, expect } from '@playwright/test';
  *   - failed-test-pod-1 (Failed): busybox that runs "exit 1" and fails
  *
  * These pods use restartPolicy: Never, so they will stay in Succeeded/Failed state.
+ *
+ * IMPORTANT: "Cleanup Execution" tests actually delete pods from the cluster,
+ * so they are placed last to avoid affecting other tests.
  */
 
 test.describe('Pod Cleanup - Button Visibility', () => {
@@ -182,113 +185,6 @@ test.describe('Pod Cleanup - Confirmation Dialog', () => {
     // Assert: Dialog should be closed
     await expect(confirmDialog).not.toBeVisible();
   });
-
-  test('should not close dialog when clicking overlay during processing', async ({ page }) => {
-    // Arrange: Navigate to the Pods page and open dialog
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
-
-    const cleanupButton = page.getByTestId('cleanup-pods-button');
-    await cleanupButton.click();
-
-    const confirmDialog = page.getByTestId('cleanup-confirm-dialog');
-    await expect(confirmDialog).toBeVisible();
-
-    // Act: Cancel the dialog without doing cleanup
-    const cancelButton = confirmDialog.getByTestId('cancel-button');
-    await cancelButton.click();
-
-    // Assert: Dialog should be closed
-    await expect(confirmDialog).not.toBeVisible();
-  });
-});
-
-test.describe('Pod Cleanup - Cleanup Execution', () => {
-  test('should execute cleanup and close dialog on success', async ({ page }) => {
-    // Arrange: Navigate to the Pods page
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
-
-    // Get initial cleanup target count
-    const cleanupButton = page.getByTestId('cleanup-pods-button');
-    await expect(cleanupButton).toBeVisible();
-    const initialText = await cleanupButton.innerText();
-    const initialMatch = initialText.match(/\((\d+)\)/);
-    const initialCount = initialMatch ? parseInt(initialMatch[1], 10) : 0;
-    expect(initialCount).toBeGreaterThanOrEqual(1);
-
-    // Act: Click cleanup button and confirm
-    await cleanupButton.click();
-
-    const confirmDialog = page.getByTestId('cleanup-confirm-dialog');
-    await expect(confirmDialog).toBeVisible();
-
-    const confirmButton = confirmDialog.getByTestId('confirm-button');
-    await confirmButton.click();
-
-    // Assert: Dialog should close after successful cleanup
-    await expect(confirmDialog).not.toBeVisible({ timeout: 10000 });
-
-    // Assert: After cleanup, pod list should be refreshed
-    // The cleanup button should either be gone or have a smaller count
-    await page.waitForLoadState('networkidle');
-    const podCards = page.getByTestId('pod-card');
-    await expect(podCards.first()).toBeVisible({ timeout: 5000 }).catch(() => {
-      // It's also valid for there to be no pods left
-    });
-  });
-
-  test('should remove cleaned up pods from the pod list', async ({ page }) => {
-    // Arrange: Navigate to the Pods page
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
-
-    // Check if fixture pods exist before cleanup
-    const podCards = page.getByTestId('pod-card');
-    const cardCount = await podCards.count();
-
-    let hasCompletedFixturePod = false;
-    for (let i = 0; i < cardCount; i++) {
-      const card = podCards.nth(i);
-      const podName = card.getByTestId('pod-name');
-      const nameText = await podName.innerText();
-      if (nameText.startsWith('completed-test-pod-') || nameText === 'failed-test-pod-1') {
-        hasCompletedFixturePod = true;
-        break;
-      }
-    }
-
-    // If no fixture cleanup target pods exist, skip
-    if (!hasCompletedFixturePod) {
-      return;
-    }
-
-    // Act: Click cleanup button and confirm
-    const cleanupButton = page.getByTestId('cleanup-pods-button');
-    await cleanupButton.click();
-
-    const confirmDialog = page.getByTestId('cleanup-confirm-dialog');
-    const confirmButton = confirmDialog.getByTestId('confirm-button');
-    await confirmButton.click();
-
-    // Wait for cleanup to complete and list to refresh
-    await expect(confirmDialog).not.toBeVisible({ timeout: 10000 });
-    await page.waitForLoadState('networkidle');
-
-    // Assert: Fixture cleanup target pods should no longer appear
-    const updatedPodCards = page.getByTestId('pod-card');
-    const updatedCount = await updatedPodCards.count();
-
-    for (let i = 0; i < updatedCount; i++) {
-      const card = updatedPodCards.nth(i);
-      const podName = card.getByTestId('pod-name');
-      const nameText = await podName.innerText();
-      // These pods should have been cleaned up
-      expect(nameText).not.toBe('completed-test-pod-1');
-      expect(nameText).not.toBe('completed-test-pod-2');
-      expect(nameText).not.toBe('failed-test-pod-1');
-    }
-  });
 });
 
 test.describe('Pod Cleanup - Coexistence with Hide Completed Toggle', () => {
@@ -395,5 +291,58 @@ test.describe('Pod Cleanup - Accessibility', () => {
 
     // Assert: Dialog should be closed via keyboard
     await expect(confirmDialog).not.toBeVisible();
+  });
+});
+
+// IMPORTANT: These tests actually delete pods from the cluster.
+// They are placed last to avoid affecting other tests in this file.
+test.describe('Pod Cleanup - Cleanup Execution', () => {
+  test('should execute cleanup and close dialog on success', async ({ page }) => {
+    // Arrange: Navigate to the Pods page
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Get initial cleanup target count
+    const cleanupButton = page.getByTestId('cleanup-pods-button');
+    await expect(cleanupButton).toBeVisible();
+    const initialText = await cleanupButton.innerText();
+    const initialMatch = initialText.match(/\((\d+)\)/);
+    const initialCount = initialMatch ? parseInt(initialMatch[1], 10) : 0;
+    expect(initialCount).toBeGreaterThanOrEqual(1);
+
+    // Act: Click cleanup button and confirm
+    await cleanupButton.click();
+
+    const confirmDialog = page.getByTestId('cleanup-confirm-dialog');
+    await expect(confirmDialog).toBeVisible();
+
+    const confirmButton = confirmDialog.getByTestId('confirm-button');
+    await confirmButton.click();
+
+    // Assert: Dialog should close after successful cleanup
+    await expect(confirmDialog).not.toBeVisible({ timeout: 10000 });
+
+    // Assert: After cleanup, pod list should be refreshed
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should remove cleaned up pods from the pod list', async ({ page }) => {
+    // Arrange: Navigate to the Pods page (after previous test already cleaned up)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Fixture cleanup target pods should no longer appear
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const podName = card.getByTestId('pod-name');
+      const nameText = await podName.innerText();
+      // These pods should have been cleaned up by the previous test
+      expect(nameText).not.toBe('completed-test-pod-1');
+      expect(nameText).not.toBe('completed-test-pod-2');
+      expect(nameText).not.toBe('failed-test-pod-1');
+    }
   });
 });
