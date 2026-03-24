@@ -807,6 +807,56 @@ test.describe('PodLogPanel UI - multi-container pod support', () => {
     expect(updatedLogContent.trim().length).toBeGreaterThan(0);
     expect(updatedLogContent).not.toBe(initialLogContent);
   });
+
+  test('should reset follow state when container is switched during active follow', async ({ page }) => {
+    // Arrange: Navigate to Pods page and find a multi-container pod
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(1);
+
+    let multiContainerCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const containersText = await card.getByTestId('pod-containers').innerText();
+      const containerCount = parseInt(containersText.replace(/\D/g, ''), 10);
+      if (containerCount >= 2) {
+        multiContainerCard = card;
+        break;
+      }
+    }
+
+    expect(multiContainerCard).toBeTruthy();
+    if (!multiContainerCard) return;
+
+    await multiContainerCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const containerSelector = logPanel.getByTestId('log-panel-container-selector');
+    await expect(containerSelector).toBeVisible();
+
+    // Act: Enable Follow mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    // Assert: Streaming indicator should appear
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    // Act: Switch to a different container
+    await containerSelector.selectOption({ index: 1 });
+
+    // Assert: Follow state should be reset — streaming indicator hidden
+    await expect(streamingIndicator).not.toBeVisible();
+
+    // Assert: Follow button should show "Follow" (not "Unfollow")
+    await expect(followButton).toContainText('Follow');
+    await expect(followButton).not.toContainText('Unfollow');
+  });
 });
 
 // ------------------------------------------------------------
@@ -843,6 +893,316 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
     // Assert: Streaming indicator should contain "Streaming live" text
     const indicatorText = await streamingIndicator.innerText();
     expect(indicatorText.toLowerCase()).toContain('streaming live');
+  });
+
+  test('should stop streaming and hide indicator when Follow is toggled off', async ({ page }) => {
+    // Arrange: Open verbose-log-test pod (outputs 1 line/sec while streaming)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Act: Enable Follow mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await expect(followButton).toBeVisible();
+    await followButton.click();
+
+    // Assert: Streaming indicator should appear
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    // Wait for streaming lines to arrive
+    await page.waitForTimeout(2000);
+
+    // Record current line count
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    const lineCountBefore = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+
+    // Act: Toggle Follow off
+    await followButton.click();
+
+    // Assert: Streaming indicator should disappear
+    await expect(streamingIndicator).not.toBeVisible();
+
+    // Assert: Button text should be "Follow" (not "Unfollow")
+    await expect(followButton).toContainText('Follow');
+    await expect(followButton).not.toContainText('Unfollow');
+
+    // Assert: Pulse animation should be removed
+    const buttonClasses = await followButton.getAttribute('class');
+    expect(buttonClasses).not.toContain('animate-pulse');
+
+    // Wait and verify no new lines are added (streaming actually stopped)
+    await page.waitForTimeout(3000);
+    const lineCountAfter = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+    expect(lineCountAfter).toBe(lineCountBefore);
+  });
+
+  test('should toggle button text and styling between Follow and Unfollow states', async ({ page }) => {
+    // Arrange: Open any pod's log panel
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    await expect(firstPodCard).toBeVisible();
+    await firstPodCard.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await expect(followButton).toBeVisible();
+
+    // Assert: Initial state — inactive
+    await expect(followButton).toContainText('Follow');
+    const initialClasses = await followButton.getAttribute('class');
+    expect(initialClasses).toContain('bg-gray-700');
+    expect(initialClasses).not.toContain('animate-pulse');
+
+    // Act: Click Follow to activate
+    await followButton.click();
+
+    // Assert: Active state
+    await expect(followButton).toContainText('Unfollow');
+    const activeClasses = await followButton.getAttribute('class');
+    expect(activeClasses).toContain('bg-blue-600');
+    expect(activeClasses).toContain('animate-pulse');
+
+    // Act: Click again to deactivate
+    await followButton.click();
+
+    // Assert: Back to inactive state
+    await expect(followButton).toContainText('Follow');
+    await expect(followButton).not.toContainText('Unfollow');
+    const resetClasses = await followButton.getAttribute('class');
+    expect(resetClasses).toContain('bg-gray-700');
+    expect(resetClasses).not.toContain('animate-pulse');
+  });
+
+  test('should re-enable streaming when Follow is toggled on → off → on again', async ({ page }) => {
+    // Arrange: Open verbose-log-test pod (outputs 1 line/sec while streaming)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+
+    // ---- Phase 1: Follow ON ----
+    await followButton.click();
+
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+    await expect(followButton).toContainText('Unfollow');
+
+    // Wait for streaming lines to arrive
+    await page.waitForTimeout(2000);
+
+    // ---- Phase 2: Follow OFF ----
+    await followButton.click();
+
+    await expect(streamingIndicator).not.toBeVisible();
+    await expect(followButton).toContainText('Follow');
+    await expect(followButton).not.toContainText('Unfollow');
+
+    // Record line count while streaming is stopped
+    const lineCountAfterOff = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+
+    // Wait to confirm no new lines while off
+    await page.waitForTimeout(2000);
+    const lineCountStillOff = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+    expect(lineCountStillOff).toBe(lineCountAfterOff);
+
+    // ---- Phase 3: Follow ON again ----
+    await followButton.click();
+
+    await expect(streamingIndicator).toBeVisible();
+    await expect(followButton).toContainText('Unfollow');
+
+    // Assert: Button should have active styling again
+    const reactivatedClasses = await followButton.getAttribute('class');
+    expect(reactivatedClasses).toContain('bg-blue-600');
+    expect(reactivatedClasses).toContain('animate-pulse');
+
+    // Wait for new streaming lines to arrive
+    await page.waitForTimeout(3000);
+
+    // Assert: After re-enable, the viewer is rebuilt with fresh logs
+    // (cleared + re-fetched), so we just verify lines are present and growing.
+    const lineCountAfterReOn = await logViewer.evaluate((el) => el.querySelectorAll('div').length);
+    expect(lineCountAfterReOn).toBeGreaterThanOrEqual(1);
+
+    // ---- Log order consistency check ----
+    // verbose-log-test outputs lines with ISO timestamps at the start:
+    //   "2026-03-22T10:00:00Z INFO [line 305] application log message"
+    // Extract all timestamps and verify they are in non-decreasing order.
+    const timestamps = await logViewer.evaluate((el) => {
+      const lines = el.innerText.split('\n').filter((l: string) => l.trim().length > 0);
+      const isoRegex = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/;
+      return lines
+        .map((l: string) => {
+          const m = l.match(isoRegex);
+          return m ? m[1] : null;
+        })
+        .filter((t: string | null): t is string => t !== null);
+    });
+
+    // Must have enough timestamped lines to make the check meaningful
+    expect(timestamps.length).toBeGreaterThanOrEqual(3);
+
+    // Assert: Every timestamp must be >= the previous one (chronological order)
+    for (let i = 1; i < timestamps.length; i++) {
+      const prev = new Date(timestamps[i - 1]).getTime();
+      const curr = new Date(timestamps[i]).getTime();
+      expect(curr).toBeGreaterThanOrEqual(prev);
+    }
+  });
+
+  test('should preserve all existing log lines after Follow is toggled off then back on', async ({ page }) => {
+    // Arrange: Open verbose-log-test pod (outputs numbered lines continuously)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+
+    // Helper: extract sorted line numbers from the log viewer
+    const extractLineNumbers = async () => {
+      return logViewer.evaluate((el) => {
+        const regex = /\[line (\d+)\]/g;
+        const text = el.innerText;
+        const numbers: number[] = [];
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          numbers.push(parseInt(m[1], 10));
+        }
+        return numbers;
+      });
+    };
+
+    // ---- Phase 1: Enable Follow and let streaming lines accumulate ----
+    await followButton.click();
+
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    await page.waitForTimeout(3000);
+
+    // Record line numbers before toggling off
+    const numbersBefore = await extractLineNumbers();
+    expect(numbersBefore.length).toBeGreaterThanOrEqual(3);
+
+    // ---- Phase 2: Toggle Follow OFF, wait, then back ON ----
+    await followButton.click();
+    await expect(streamingIndicator).not.toBeVisible();
+
+    // Wait while streaming is off — the pod keeps emitting lines during
+    // this gap, so any lost lines will show up as missing numbers.
+    await page.waitForTimeout(3000);
+
+    await followButton.click();
+    await expect(streamingIndicator).toBeVisible();
+
+    await page.waitForTimeout(3000);
+
+    // ---- Assert: extract line numbers after re-enable ----
+    // Follow re-enable clears the viewer and re-fetches from the backend,
+    // so the gap lines emitted during OFF are included in the fresh fetch.
+    const numbersAfter = await extractLineNumbers();
+
+    // New lines must have arrived (streaming resumed)
+    expect(numbersAfter.length).toBeGreaterThanOrEqual(3);
+
+    // No gaps: the entire sequence must be consecutive
+    for (let i = 1; i < numbersAfter.length; i++) {
+      expect(numbersAfter[i]).toBe(numbersAfter[i - 1] + 1);
+    }
+  });
+
+  test('should display live streamed log content from the pod during follow mode', async ({ page }) => {
+    // Arrange: Open verbose-log-test pod (outputs "[line N] application log message" every 1 second)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Act: Enable Follow mode and wait for streaming lines
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    // Wait for live streaming events to arrive (1 line/sec)
+    await page.waitForTimeout(3000);
+
+    // Assert: Log viewer should contain real pod output with numbered lines
+    const logViewer = logPanel.getByTestId('log-panel-log-viewer');
+    const logContent = await logViewer.innerText();
+    expect(logContent).toContain('[line ');
   });
 });
 
@@ -1026,5 +1386,60 @@ test.describe('PodLogPanel UI - panel close interactions', () => {
 
     // Assert: The pods page should still be visible after panel is closed
     await expect(page.getByTestId('pod-card').first()).toBeVisible();
+  });
+
+  test('should stop streaming when panel is closed via X button during active follow', async ({ page }) => {
+    // Arrange: Open verbose-log-test pod and start follow mode
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'verbose-log-test') {
+        targetCard = card;
+        break;
+      }
+    }
+    expect(targetCard).toBeTruthy();
+    await targetCard!.click();
+
+    const logPanel = page.getByTestId('log-panel');
+    await expect(logPanel).toBeVisible();
+
+    // Act: Enable Follow mode
+    const followButton = logPanel.getByTestId('log-panel-follow-button');
+    await followButton.click();
+
+    const streamingIndicator = logPanel.getByTestId('log-panel-streaming-indicator');
+    await expect(streamingIndicator).toBeVisible();
+
+    // Wait for streaming to be active
+    await page.waitForTimeout(2000);
+
+    // Act: Close the panel via X button
+    const closeButton = logPanel.getByTestId('log-panel-close-button');
+    await closeButton.click();
+
+    // Assert: Panel should be closed
+    await expect(logPanel).not.toBeVisible();
+
+    // Act: Reopen the same pod to verify state was fully reset
+    await targetCard!.click();
+
+    const reopenedPanel = page.getByTestId('log-panel');
+    await expect(reopenedPanel).toBeVisible();
+
+    // Assert: Follow button should show "Follow" (not "Unfollow") — state was reset
+    const reopenedFollowButton = reopenedPanel.getByTestId('log-panel-follow-button');
+    await expect(reopenedFollowButton).toContainText('Follow');
+    await expect(reopenedFollowButton).not.toContainText('Unfollow');
+
+    // Assert: Streaming indicator should not be present
+    const reopenedIndicator = reopenedPanel.locator('[data-testid="log-panel-streaming-indicator"]');
+    await expect(reopenedIndicator).not.toBeVisible();
   });
 });

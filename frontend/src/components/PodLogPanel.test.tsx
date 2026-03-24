@@ -558,6 +558,96 @@ describe('PodLogPanel', () => {
       });
     });
 
+    it('should clear and re-stream logs when Follow is toggled off and back on', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const pod = makePod();
+
+      let capturedCallback: ((line: string) => void) | null = null;
+      vi.mocked(streamPodLogs).mockImplementation((_ns, _name, callback) => {
+        capturedCallback = callback;
+        return () => { capturedCallback = null; };
+      });
+
+      // Act: render and wait for initial logs
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const viewer = screen.getByTestId('log-panel-log-viewer');
+        expect(viewer.textContent).toContain('INFO Log line 1');
+        expect(viewer.textContent).toContain('INFO Log line 2');
+      });
+
+      const followButton = screen.getByTestId('log-panel-follow-button');
+
+      // First Follow: stream some lines
+      await user.click(followButton);
+      await waitFor(() => expect(capturedCallback).not.toBeNull());
+
+      act(() => {
+        capturedCallback!('STREAM A');
+        capturedCallback!('STREAM B');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-log-viewer').textContent).toContain('STREAM B');
+      });
+
+      // Unfollow
+      await user.click(followButton);
+
+      // Re-follow: logs are cleared and stream starts fresh
+      await user.click(followButton);
+      await waitFor(() => expect(capturedCallback).not.toBeNull());
+
+      act(() => {
+        capturedCallback!('STREAM C');
+      });
+
+      // Assert: only the re-streamed lines should be present (old lines cleared)
+      await waitFor(() => {
+        const text = screen.getByTestId('log-panel-log-viewer').textContent;
+        expect(text).toContain('STREAM C');
+        expect(text).not.toContain('STREAM A');
+        expect(text).not.toContain('STREAM B');
+        expect(text).not.toContain('INFO Log line 1');
+      });
+    });
+
+    it('should re-fetch logs from the beginning when Follow is re-enabled', async () => {
+      // Arrange
+      const user = userEvent.setup();
+      const pod = makePod();
+      const mockCleanup = vi.fn();
+      vi.mocked(streamPodLogs).mockReturnValue(mockCleanup);
+
+      // Act
+      render(<PodLogPanel pod={pod} onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('log-panel-follow-button')).toBeInTheDocument();
+      });
+
+      const followButton = screen.getByTestId('log-panel-follow-button');
+
+      // Toggle on → off → on
+      await user.click(followButton);
+      await user.click(followButton);
+      vi.mocked(streamPodLogs).mockClear();
+      await user.click(followButton);
+
+      // Assert: re-enabled Follow must use DEFAULT_TAIL_LINES (100)
+      await waitFor(() => {
+        expect(streamPodLogs).toHaveBeenCalledWith(
+          pod.namespace,
+          pod.name,
+          expect.any(Function),
+          expect.anything(),
+          100,
+        );
+      });
+    });
+
     it('should clean up streaming when container selection changes while following', async () => {
       // Arrange
       const user = userEvent.setup();
