@@ -44,7 +44,12 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
     try {
       setIsCleaning(true);
       setCleanupError(null);
-      await cleanupPods(namespace);
+      const result = await cleanupPods(namespace);
+      if (result.failed && result.failed.length > 0) {
+        setCleanupError(`Failed to delete ${result.failed.length} pod(s)`);
+        refresh();
+        return;
+      }
       setShowCleanupDialog(false);
       refresh();
     } catch (err) {
