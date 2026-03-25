@@ -322,20 +322,10 @@ test.describe('Pod Cleanup - Cleanup Execution', () => {
     // Assert: Dialog should close after successful cleanup
     await expect(confirmDialog).not.toBeVisible({ timeout: 10000 });
 
-    // Assert: After cleanup, pod list should be refreshed
-    await page.waitForLoadState('networkidle');
-
     // Assert: Fixture cleanup target pods should no longer appear
-    const podCards = page.getByTestId('pod-card');
-    const cardCount = await podCards.count();
-
-    for (let i = 0; i < cardCount; i++) {
-      const card = podCards.nth(i);
-      const podName = card.getByTestId('pod-name');
-      const nameText = await podName.innerText();
-      expect(nameText).not.toBe('completed-test-pod-1');
-      expect(nameText).not.toBe('completed-test-pod-2');
-      expect(nameText).not.toBe('failed-test-pod-1');
-    }
+    // Use Playwright's auto-retrying assertions to wait for pods to be removed from DOM
+    await expect(page.getByTestId('pod-card').filter({ hasText: 'completed-test-pod-1' })).toHaveCount(0, { timeout: 15000 });
+    await expect(page.getByTestId('pod-card').filter({ hasText: 'completed-test-pod-2' })).toHaveCount(0, { timeout: 5000 });
+    await expect(page.getByTestId('pod-card').filter({ hasText: 'failed-test-pod-1' })).toHaveCount(0, { timeout: 5000 });
   });
 });
