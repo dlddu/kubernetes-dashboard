@@ -208,6 +208,86 @@ func listPods(ctx context.Context, clientset kubernetes.Interface, namespace str
 	return pods, nil
 }
 
+// CleanupPodsResult represents the result of a pod cleanup operation.
+type CleanupPodsResult struct {
+	Deleted int      `json:"deleted"`
+	Failed  []string `json:"failed,omitempty"`
+}
+
+// isCleanupTarget returns true if the pod is in a terminal state that should be cleaned up
+// (Failed, Succeeded, or containers in Error/Completed state).
+func isCleanupTarget(pod corev1.Pod) bool {
+	if pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodSucceeded {
+		return true
+	}
+	for _, cs := range pod.Status.ContainerStatuses {
+		if cs.State.Terminated != nil {
+			reason := cs.State.Terminated.Reason
+			if reason == "Error" || reason == "Completed" || reason == "OOMKilled" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// CleanupPodsHandler handles the POST /api/pods/cleanup endpoint.
+// It deletes all pods in terminal states (Failed, Succeeded, Error, Completed).
+func CleanupPodsHandler(w http.ResponseWriter, r *http.Request) {
+	if !requireMethod(w, r, http.MethodPost) {
+		return
+	}
+
+	r = withTimeout(r)
+
+	clientset, err := getKubernetesClient()
+	if err != nil {
+		slog.Error("Failed to create Kubernetes client", "error", err)
+		writeError(w, http.StatusInternalServerError, errMsgClientCreate)
+		return
+	}
+
+	namespace := r.URL.Query().Get("ns")
+
+	result, err := cleanupPods(r.Context(), clientset, namespace)
+	if err != nil {
+		slog.Error("Failed to cleanup pods", "error", err)
+		writeError(w, http.StatusInternalServerError, errMsgPodCleanup)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// cleanupPods lists all pods and deletes those in terminal states.
+func cleanupPods(ctx context.Context, clientset kubernetes.Interface, namespace string) (*CleanupPodsResult, error) {
+	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &CleanupPodsResult{}
+	for _, pod := range podList.Items {
+		if !isCleanupTarget(pod) {
+			continue
+		}
+		err := clientset.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			slog.Error("Failed to delete pod during cleanup", "error", err, "namespace", pod.Namespace, "name", pod.Name)
+			result.Failed = append(result.Failed, fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
+			continue
+		}
+		result.Deleted++
+	}
+
+	return result, nil
+}
+
+// deletePod deletes a specific pod from Kubernetes.
+func deletePod(ctx context.Context, clientset kubernetes.Interface, namespace, name string) error {
+	return clientset.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+}
+
 // getPodRestartCount calculates the total restart count for all containers in a pod
 func getPodRestartCount(pod corev1.Pod) int32 {
 	var totalRestarts int32

@@ -2157,3 +2157,229 @@ func TestPodLogsHandlerResponseFormat(t *testing.T) {
 		}
 	})
 }
+
+// TestIsCleanupTarget tests the isCleanupTarget function
+func TestIsCleanupTarget(t *testing.T) {
+	t.Run("should return true for Failed pod", func(t *testing.T) {
+		pod := corev1.Pod{
+			Status: corev1.PodStatus{Phase: corev1.PodFailed},
+		}
+		if !isCleanupTarget(pod) {
+			t.Error("expected Failed pod to be a cleanup target")
+		}
+	})
+
+	t.Run("should return true for Succeeded pod", func(t *testing.T) {
+		pod := corev1.Pod{
+			Status: corev1.PodStatus{Phase: corev1.PodSucceeded},
+		}
+		if !isCleanupTarget(pod) {
+			t.Error("expected Succeeded pod to be a cleanup target")
+		}
+	})
+
+	t.Run("should return true for pod with Error terminated container", func(t *testing.T) {
+		pod := corev1.Pod{
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				ContainerStatuses: []corev1.ContainerStatus{
+					{State: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{Reason: "Error"}}},
+				},
+			},
+		}
+		if !isCleanupTarget(pod) {
+			t.Error("expected pod with Error container to be a cleanup target")
+		}
+	})
+
+	t.Run("should return true for pod with OOMKilled container", func(t *testing.T) {
+		pod := corev1.Pod{
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				ContainerStatuses: []corev1.ContainerStatus{
+					{State: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{Reason: "OOMKilled"}}},
+				},
+			},
+		}
+		if !isCleanupTarget(pod) {
+			t.Error("expected pod with OOMKilled container to be a cleanup target")
+		}
+	})
+
+	t.Run("should return true for pod with Completed container", func(t *testing.T) {
+		pod := corev1.Pod{
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				ContainerStatuses: []corev1.ContainerStatus{
+					{State: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{Reason: "Completed"}}},
+				},
+			},
+		}
+		if !isCleanupTarget(pod) {
+			t.Error("expected pod with Completed container to be a cleanup target")
+		}
+	})
+
+	t.Run("should return false for Running pod", func(t *testing.T) {
+		pod := corev1.Pod{
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				ContainerStatuses: []corev1.ContainerStatus{
+					{State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}},
+				},
+			},
+		}
+		if isCleanupTarget(pod) {
+			t.Error("expected Running pod to NOT be a cleanup target")
+		}
+	})
+
+	t.Run("should return false for Pending pod", func(t *testing.T) {
+		pod := corev1.Pod{
+			Status: corev1.PodStatus{Phase: corev1.PodPending},
+		}
+		if isCleanupTarget(pod) {
+			t.Error("expected Pending pod to NOT be a cleanup target")
+		}
+	})
+}
+
+// TestCleanupPods tests the cleanupPods function
+func TestCleanupPods(t *testing.T) {
+	t.Run("should delete failed and succeeded pods", func(t *testing.T) {
+		failedPod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "failed-pod", Namespace: "default"},
+			Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+		}
+		succeededPod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "succeeded-pod", Namespace: "default"},
+			Status:     corev1.PodStatus{Phase: corev1.PodSucceeded},
+		}
+		runningPod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "running-pod", Namespace: "default"},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				ContainerStatuses: []corev1.ContainerStatus{
+					{State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}},
+				},
+			},
+		}
+
+		clientset := fake.NewSimpleClientset(&failedPod, &succeededPod, &runningPod)
+
+		result, err := cleanupPods(context.Background(), clientset, "default")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.Deleted != 2 {
+			t.Errorf("expected 2 deleted, got %d", result.Deleted)
+		}
+		if len(result.Failed) != 0 {
+			t.Errorf("expected 0 failed, got %d", len(result.Failed))
+		}
+
+		// Verify running pod still exists
+		pods, _ := clientset.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{})
+		if len(pods.Items) != 1 {
+			t.Errorf("expected 1 remaining pod, got %d", len(pods.Items))
+		}
+		if pods.Items[0].Name != "running-pod" {
+			t.Errorf("expected remaining pod to be 'running-pod', got '%s'", pods.Items[0].Name)
+		}
+	})
+
+	t.Run("should return zero when no cleanup targets exist", func(t *testing.T) {
+		runningPod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "running-pod", Namespace: "default"},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				ContainerStatuses: []corev1.ContainerStatus{
+					{State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}},
+				},
+			},
+		}
+
+		clientset := fake.NewSimpleClientset(&runningPod)
+
+		result, err := cleanupPods(context.Background(), clientset, "default")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.Deleted != 0 {
+			t.Errorf("expected 0 deleted, got %d", result.Deleted)
+		}
+	})
+
+	t.Run("should filter by namespace", func(t *testing.T) {
+		failedPodA := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "failed-a", Namespace: "ns-a"},
+			Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+		}
+		failedPodB := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "failed-b", Namespace: "ns-b"},
+			Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+		}
+
+		clientset := fake.NewSimpleClientset(&failedPodA, &failedPodB)
+
+		result, err := cleanupPods(context.Background(), clientset, "ns-a")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.Deleted != 1 {
+			t.Errorf("expected 1 deleted, got %d", result.Deleted)
+		}
+
+		// Pod in ns-b should still exist
+		pods, _ := clientset.CoreV1().Pods("ns-b").List(context.Background(), metav1.ListOptions{})
+		if len(pods.Items) != 1 {
+			t.Errorf("expected 1 pod in ns-b, got %d", len(pods.Items))
+		}
+	})
+
+	t.Run("should report failed deletions", func(t *testing.T) {
+		failedPod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "failed-pod", Namespace: "default"},
+			Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+		}
+
+		clientset := fake.NewSimpleClientset(&failedPod)
+		// Inject delete failure
+		clientset.PrependReactor("delete", "pods", func(action ktesting.Action) (bool, runtime.Object, error) {
+			return true, nil, k8serrors.NewNotFound(schema.GroupResource{Resource: "pods"}, "failed-pod")
+		})
+
+		result, err := cleanupPods(context.Background(), clientset, "default")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.Deleted != 0 {
+			t.Errorf("expected 0 deleted, got %d", result.Deleted)
+		}
+		if len(result.Failed) != 1 {
+			t.Errorf("expected 1 failed, got %d", len(result.Failed))
+		}
+	})
+}
+
+// TestCleanupPodsHandler tests the CleanupPodsHandler HTTP handler
+func TestCleanupPodsHandler(t *testing.T) {
+	t.Run("should reject non-POST methods", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete}
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				req := httptest.NewRequest(method, "/api/pods/cleanup", nil)
+				w := httptest.NewRecorder()
+
+				CleanupPodsHandler(w, req)
+
+				res := w.Result()
+				defer res.Body.Close()
+
+				if res.StatusCode != http.StatusMethodNotAllowed {
+					t.Errorf("expected 405 for %s, got %d", method, res.StatusCode)
+				}
+			})
+		}
+	})
+}

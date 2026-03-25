@@ -23,6 +23,16 @@ export async function fetchUnhealthyPods(namespace?: string): Promise<UnhealthyP
   return fetchJSON<UnhealthyPodDetails[]>(url);
 }
 
+export interface CleanupPodsResult {
+  deleted: number;
+  failed?: string[];
+}
+
+export async function cleanupPods(namespace?: string): Promise<CleanupPodsResult> {
+  const url = buildURL('/api/pods/cleanup', { ns: namespace });
+  return fetchJSON<CleanupPodsResult>(url, { method: 'POST' });
+}
+
 export async function fetchPodLogs(
   namespace: string,
   name: string,

@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: completed-test-pod-1
+  namespace: dashboard-test
+  labels:
+    app: completed-test
+    env: test
+    type: completed
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "echo done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: completed-test-pod-2
+  namespace: dashboard-test
+  labels:
+    app: completed-test
+    env: test
+    type: completed
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "echo done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: failed-test-pod-1
+  namespace: dashboard-test
+  labels:
+    app: failed-test
+    env: test
+    type: failed
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "exit 1"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Never
