@@ -297,7 +297,7 @@ test.describe('Pod Cleanup - Accessibility', () => {
 // IMPORTANT: These tests actually delete pods from the cluster.
 // They are placed last to avoid affecting other tests in this file.
 test.describe('Pod Cleanup - Cleanup Execution', () => {
-  test('should execute cleanup and close dialog on success', async ({ page }) => {
+  test('should execute cleanup and remove terminal pods from the list', async ({ page }) => {
     // Arrange: Navigate to the Pods page
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
@@ -324,12 +324,6 @@ test.describe('Pod Cleanup - Cleanup Execution', () => {
 
     // Assert: After cleanup, pod list should be refreshed
     await page.waitForLoadState('networkidle');
-  });
-
-  test('should remove cleaned up pods from the pod list', async ({ page }) => {
-    // Arrange: Navigate to the Pods page (after previous test already cleaned up)
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
 
     // Assert: Fixture cleanup target pods should no longer appear
     const podCards = page.getByTestId('pod-card');
@@ -339,7 +333,6 @@ test.describe('Pod Cleanup - Cleanup Execution', () => {
       const card = podCards.nth(i);
       const podName = card.getByTestId('pod-name');
       const nameText = await podName.innerText();
-      // These pods should have been cleaned up by the previous test
       expect(nameText).not.toBe('completed-test-pod-1');
       expect(nameText).not.toBe('completed-test-pod-2');
       expect(nameText).not.toBe('failed-test-pod-1');
