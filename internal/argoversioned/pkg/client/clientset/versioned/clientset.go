@@ -535,7 +535,8 @@ func (c *workflowClient) Delete(ctx context.Context, name string, _ metav1.Delet
 	path := fmt.Sprintf("/apis/argoproj.io/v1alpha1/namespaces/%s/workflows/%s", c.namespace, name)
 
 	result := c.restClient.Delete().AbsPath(path).Do(ctx)
-	if err := result.Error(); err != nil {
+	_, err := result.Raw()
+	if err != nil {
 		return fmt.Errorf("failed to delete Workflow %q: %w", name, err)
 	}
 	return nil

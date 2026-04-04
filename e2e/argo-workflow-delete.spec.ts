@@ -256,27 +256,65 @@ test.describe('Argo Workflow Delete - Accessibility', () => {
 // ---------------------------------------------------------------------------
 // Group 4: Delete Execution
 // IMPORTANT: This test actually deletes a workflow from the cluster.
-// It is placed last to avoid affecting other tests.
+// To avoid breaking other tests that depend on shared fixtures, it first
+// submits a NEW workflow via the API, then navigates to it and deletes it.
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Workflow Delete - Execution', () => {
   test('should delete workflow and navigate back to workflow list', async ({ page }) => {
-    // Arrange: Navigate to the succeeded workflow detail
-    // (using succeeded workflow to avoid deleting a running one)
-    await gotoWorkflowDetail(page, 'data-processing-succeeded');
+    // Step 1: Create a new workflow via API so we don't touch shared fixtures
+    await page.goto('/argo');
+    await page.waitForLoadState('networkidle');
 
+    const submitResult = await page.evaluate(async () => {
+      const response = await fetch('/api/argo/workflow-templates/simple-template/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parameters: {} }),
+      });
+      return response.json() as Promise<{ name: string; namespace: string }>;
+    });
+
+    const createdWorkflowName = submitResult.name;
+    expect(createdWorkflowName).toBeTruthy();
+
+    // Step 2: Navigate to the newly created workflow's detail page
+    // Go to the simple-template runs page to find the workflow
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'simple-template' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByTestId('workflow-runs-page')).toBeVisible();
+
+    // Find and click the created workflow card
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
+    const workflowCards = page.getByTestId('workflow-run-card');
+    const cardCount = await workflowCards.count();
+    let found = false;
+    for (let i = 0; i < cardCount; i++) {
+      const card = workflowCards.nth(i);
+      const nameText = await card.getByTestId('workflow-run-name').innerText();
+      if (nameText === createdWorkflowName) {
+        await card.click();
+        found = true;
+        break;
+      }
+    }
+    expect(found).toBe(true);
+    await page.waitForLoadState('networkidle');
+
+    // Step 3: Delete the workflow from the detail page
     const detailPage = page.getByTestId('workflow-detail-page');
     await expect(detailPage).toBeVisible();
 
-    // Act: Click Delete button
     const deleteButton = page.getByTestId('workflow-delete-button');
     await deleteButton.click();
 
-    // Assert: Dialog should appear
     const confirmDialog = page.getByTestId('workflow-delete-confirm-dialog');
     await expect(confirmDialog).toBeVisible();
 
-    // Act: Confirm deletion
+    // Confirm deletion
     const confirmButton = confirmDialog.getByTestId('confirm-button');
     await confirmButton.click();
 
@@ -288,13 +326,13 @@ test.describe('Argo Workflow Delete - Execution', () => {
 
     // Assert: The deleted workflow should no longer appear in the list
     await page.waitForLoadState('networkidle');
-    const workflowCards = page.getByTestId('workflow-run-card');
-    const cardCount = await workflowCards.count();
+    const remainingCards = page.getByTestId('workflow-run-card');
+    const remainingCount = await remainingCards.count();
 
     let foundDeleted = false;
-    for (let i = 0; i < cardCount; i++) {
-      const nameText = await workflowCards.nth(i).getByTestId('workflow-run-name').innerText();
-      if (nameText === 'data-processing-succeeded') {
+    for (let i = 0; i < remainingCount; i++) {
+      const nameText = await remainingCards.nth(i).getByTestId('workflow-run-name').innerText();
+      if (nameText === createdWorkflowName) {
         foundDeleted = true;
         break;
       }
