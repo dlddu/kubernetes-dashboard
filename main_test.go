@@ -192,10 +192,10 @@ func TestArgoWorkflowDetailRoute(t *testing.T) {
 		}
 	})
 
-	t.Run("should reject non-GET methods on workflow detail route", func(t *testing.T) {
+	t.Run("should reject non-GET/DELETE methods on workflow detail route", func(t *testing.T) {
 		// Arrange
 		router := setupRouter()
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodPatch}
 
 		for _, method := range methods {
 			t.Run(method, func(t *testing.T) {
