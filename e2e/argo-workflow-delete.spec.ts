@@ -254,45 +254,62 @@ test.describe('Argo Workflow Delete - Accessibility', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Group 4: Delete Execution (Frontend Flow)
-// Uses API interception to verify the full frontend delete flow:
-// button click → confirm dialog → API call → navigation back to list.
-// Backend deletion is covered by handler-level unit tests.
+// Group 4: Delete Execution
+// IMPORTANT: This test creates a new workflow and then deletes it.
+// It does NOT touch shared fixtures used by other parallel tests.
 // ---------------------------------------------------------------------------
 
 test.describe('Argo Workflow Delete - Execution', () => {
-  test('should send DELETE request and navigate back to workflow list on success', async ({ page }) => {
-    // Arrange: Navigate to a workflow detail page
-    await gotoWorkflowDetail(page, 'data-processing-succeeded');
+  test('should delete workflow and navigate back to workflow list', async ({ page }) => {
+    // Step 1: Create a new workflow via the API so we don't touch shared fixtures
+    await page.goto('/argo');
+    await page.waitForLoadState('networkidle');
 
+    const submitResult = await page.evaluate(async () => {
+      const res = await fetch('/api/argo/workflow-templates/simple-template/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parameters: {} }),
+      });
+      return res.json() as Promise<{ name: string; namespace: string }>;
+    });
+
+    const createdName = submitResult.name;
+    expect(createdName).toBeTruthy();
+
+    // Step 2: Navigate to the created workflow's detail page
+    const templateCard = page.getByTestId('workflow-template-card').filter({ hasText: 'simple-template' });
+    await expect(templateCard).toBeVisible();
+    await templateCard.click();
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByTestId('workflow-runs-page')).toBeVisible();
+
+    // Find and click the created workflow card
+    await expect(page.getByTestId('workflow-run-card').first()).toBeVisible();
+    const workflowCards = page.getByTestId('workflow-run-card');
+    const cardCount = await workflowCards.count();
+    let found = false;
+    for (let i = 0; i < cardCount; i++) {
+      const card = workflowCards.nth(i);
+      const nameText = await card.getByTestId('workflow-run-name').innerText();
+      if (nameText === createdName) {
+        await card.click();
+        found = true;
+        break;
+      }
+    }
+    expect(found).toBe(true);
+    await page.waitForLoadState('networkidle');
+
+    // Step 3: Delete the workflow via the UI
     const detailPage = page.getByTestId('workflow-detail-page');
     await expect(detailPage).toBeVisible();
 
-    // Intercept the DELETE request and return a success response
-    let deleteRequestUrl = '';
-    await page.route('**/api/argo/workflows/**', async (route) => {
-      if (route.request().method() === 'DELETE') {
-        deleteRequestUrl = route.request().url();
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ message: 'Workflow deleted successfully' }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Act: Click Delete button
-    const deleteButton = page.getByTestId('workflow-delete-button');
-    await deleteButton.click();
+    await page.getByTestId('workflow-delete-button').click();
 
     const confirmDialog = page.getByTestId('workflow-delete-confirm-dialog');
     await expect(confirmDialog).toBeVisible();
-
-    // Act: Confirm deletion
-    const confirmButton = confirmDialog.getByTestId('confirm-button');
-    await confirmButton.click();
+    await confirmDialog.getByTestId('confirm-button').click();
 
     // Assert: Should navigate back to the workflow list page
     await expect(page.getByTestId('workflow-runs-page')).toBeVisible({ timeout: 15000 });
@@ -300,18 +317,28 @@ test.describe('Argo Workflow Delete - Execution', () => {
     // Assert: Detail page should no longer be visible
     await expect(detailPage).not.toBeVisible();
 
-    // Assert: The DELETE request was sent to the correct URL
-    expect(deleteRequestUrl).toContain('/api/argo/workflows/data-processing-succeeded');
+    // Assert: The deleted workflow should no longer appear in the list
+    await page.waitForLoadState('networkidle');
+    const remainingCards = page.getByTestId('workflow-run-card');
+    const remainingCount = await remainingCards.count();
+    let foundDeleted = false;
+    for (let i = 0; i < remainingCount; i++) {
+      const nameText = await remainingCards.nth(i).getByTestId('workflow-run-name').innerText();
+      if (nameText === createdName) {
+        foundDeleted = true;
+        break;
+      }
+    }
+    expect(foundDeleted).toBe(false);
   });
 
-  test('should display error message in dialog when delete fails', async ({ page }) => {
-    // Arrange: Navigate to a workflow detail page
+  test('should display error message in dialog when delete API fails', async ({ page }) => {
+    // This test uses API interception to simulate a server error
     await gotoWorkflowDetail(page, 'data-processing-running');
 
     const detailPage = page.getByTestId('workflow-detail-page');
     await expect(detailPage).toBeVisible();
 
-    // Intercept the DELETE request and return an error
     await page.route('**/api/argo/workflows/**', async (route) => {
       if (route.request().method() === 'DELETE') {
         await route.fulfill({
@@ -324,7 +351,6 @@ test.describe('Argo Workflow Delete - Execution', () => {
       }
     });
 
-    // Act: Click Delete and confirm
     await page.getByTestId('workflow-delete-button').click();
 
     const confirmDialog = page.getByTestId('workflow-delete-confirm-dialog');
@@ -335,7 +361,7 @@ test.describe('Argo Workflow Delete - Execution', () => {
     const errorMessage = confirmDialog.getByTestId('error-message');
     await expect(errorMessage).toBeVisible({ timeout: 5000 });
 
-    // Assert: Should remain on the detail page (not navigate away)
+    // Assert: Should remain on the detail page
     await expect(detailPage).toBeVisible();
   });
 });
