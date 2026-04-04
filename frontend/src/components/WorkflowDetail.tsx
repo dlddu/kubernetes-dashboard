@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchWorkflowDetail, WorkflowDetailInfo, WorkflowDetailStepInfo } from '../api/argo';
+import { fetchWorkflowDetail, deleteWorkflow, WorkflowDetailInfo, WorkflowDetailStepInfo } from '../api/argo';
 import { usePolling } from '../hooks/usePolling';
+import { useConfirmAction } from '../hooks/useConfirmAction';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { StepIO } from './StepIO';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export interface WorkflowDetailProps {
   namespace: string;
@@ -111,6 +113,15 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
   const [showParams, setShowParams] = useState(false);
   const hasLoadedRef = useRef(false);
 
+  const deleteAction = useConfirmAction(
+    useCallback(
+      (target: { name: string; namespace: string }) => deleteWorkflow(target.name),
+      [],
+    ),
+    onBack,
+    'Failed to delete workflow',
+  );
+
   const load = useCallback(async () => {
     if (!hasLoadedRef.current) {
       setIsLoading(true);
@@ -166,6 +177,23 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
         />
       )}
 
+      <ConfirmDialog
+        isOpen={deleteAction.showDialog}
+        title="Confirm Workflow Deletion"
+        resourceName={deleteAction.target?.name ?? ''}
+        resourceNamespace={deleteAction.target?.namespace ?? ''}
+        description="Are you sure you want to delete the workflow:"
+        warning="This action cannot be undone."
+        confirmLabel="Delete"
+        confirmingLabel="Deleting..."
+        confirmColor="red"
+        onConfirm={deleteAction.confirm}
+        onCancel={deleteAction.cancel}
+        isProcessing={deleteAction.isProcessing}
+        error={deleteAction.error ?? undefined}
+        testId="workflow-delete-confirm-dialog"
+      />
+
       {/* Detail content */}
       {!isLoading && !error && detail && (
         <>
@@ -181,12 +209,21 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
               >
                 {detail.name}
               </h2>
-              <span
-                data-testid="workflow-detail-phase"
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPhaseColorClass(detail.phase)}`}
-              >
-                {detail.phase}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  data-testid="workflow-detail-phase"
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPhaseColorClass(detail.phase)}`}
+                >
+                  {detail.phase}
+                </span>
+                <button
+                  data-testid="workflow-delete-button"
+                  onClick={() => deleteAction.requestAction({ name: detail.name, namespace: detail.namespace })}
+                  className="px-3 py-1 text-sm font-medium text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">

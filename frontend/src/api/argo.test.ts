@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchWorkflowTemplates, submitWorkflow, fetchWorkflows, fetchWorkflowDetail } from './argo';
+import { fetchWorkflowTemplates, submitWorkflow, fetchWorkflows, fetchWorkflowDetail, deleteWorkflow } from './argo';
 
 // Mock fetch globally with proper typing
 const mockFetch = vi.fn();
@@ -1351,6 +1351,52 @@ describe('Argo API', () => {
       expect(node.inputs?.parameters).toHaveLength(3);
       expect(node.outputs?.parameters).toHaveLength(1);
       expect(node.outputs?.artifacts).toHaveLength(1);
+    });
+  });
+
+  describe('deleteWorkflow', () => {
+    it('should call DELETE /api/argo/workflows/:name', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Workflow deleted successfully' }),
+      });
+
+      // Act
+      await deleteWorkflow('my-workflow');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows/my-workflow', {
+        method: 'DELETE',
+      });
+    });
+
+    it('should throw error on non-ok response', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'Workflow not found' }),
+      });
+
+      // Act & Assert
+      await expect(deleteWorkflow('non-existent')).rejects.toThrow();
+    });
+
+    it('should handle workflow names with special characters', async () => {
+      // Arrange
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Workflow deleted successfully' }),
+      });
+
+      // Act
+      await deleteWorkflow('data-processing-abc12');
+
+      // Assert
+      expect(mockFetch).toHaveBeenCalledWith('/api/argo/workflows/data-processing-abc12', {
+        method: 'DELETE',
+      });
     });
   });
 });

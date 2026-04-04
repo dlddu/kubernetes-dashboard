@@ -89,6 +89,11 @@ export async function fetchWorkflows(namespace?: string, templateName?: string):
   return fetchJSON<WorkflowInfo[]>(url);
 }
 
+export async function deleteWorkflow(name: string): Promise<void> {
+  const url = `/api/argo/workflows/${name}`;
+  return fetchJSON(url, { method: 'DELETE' });
+}
+
 export async function submitWorkflow(
   templateName: string,
   _namespace: string,

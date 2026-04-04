@@ -57,25 +57,40 @@ type WorkflowDetailInfo struct {
 	Nodes        []WorkflowDetailStepInfo `json:"nodes"`
 }
 
-// WorkflowDetailHandler handles GET /api/argo/workflows/{name}.
+// WorkflowDetailHandler handles GET and DELETE /api/argo/workflows/{name}.
 var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
-	// Content-Type is always JSON
 	w.Header().Set("Content-Type", "application/json")
+	r = withTimeout(r)
 
-	if !requireMethod(w, r, http.MethodGet) {
-		return
+	switch r.Method {
+	case http.MethodGet:
+		handleGetWorkflowDetail(w, r)
+	case http.MethodDelete:
+		handleDeleteWorkflow(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
 
-	// Parse name from the path: strip prefix, remainder is the name
+// parseWorkflowName extracts and validates the workflow name from the request path.
+// Returns the name and true on success; writes an error response and returns false on failure.
+func parseWorkflowName(w http.ResponseWriter, r *http.Request) (string, bool) {
 	name := strings.TrimPrefix(r.URL.Path, workflowDetailPathPrefix)
 	name = strings.TrimRight(name, "/")
 	if name == "" || strings.Contains(name, "/") {
 		writeError(w, http.StatusBadRequest,
 			fmt.Sprintf("invalid path format, expected %s{name}", workflowDetailPathPrefix))
+		return "", false
+	}
+	return name, true
+}
+
+// handleGetWorkflowDetail handles GET /api/argo/workflows/{name}.
+func handleGetWorkflowDetail(w http.ResponseWriter, r *http.Request) {
+	name, ok := parseWorkflowName(w, r)
+	if !ok {
 		return
 	}
-
-	r = withTimeout(r)
 
 	clientset, err := getArgoClient()
 	if err != nil {
@@ -99,28 +114,71 @@ var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http
 	writeJSON(w, http.StatusOK, detail)
 }
 
+// handleDeleteWorkflow handles DELETE /api/argo/workflows/{name}.
+func handleDeleteWorkflow(w http.ResponseWriter, r *http.Request) {
+	name, ok := parseWorkflowName(w, r)
+	if !ok {
+		return
+	}
+
+	clientset, err := getArgoClient()
+	if err != nil {
+		slog.Error("Failed to create Argo client", "error", err)
+		writeError(w, http.StatusInternalServerError, "Failed to create Argo client")
+		return
+	}
+
+	namespace, err := findWorkflowNamespace(r.Context(), clientset, name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			writeError(w, http.StatusNotFound, errMsgWorkflowNotFound)
+			return
+		}
+		slog.Error("Failed to find workflow namespace", "error", err, "name", name)
+		writeError(w, http.StatusInternalServerError, errMsgWorkflowDelete)
+		return
+	}
+
+	err = clientset.ArgoprojV1alpha1().Workflows(namespace).Delete(r.Context(), name, metav1.DeleteOptions{})
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") ||
+			strings.Contains(err.Error(), "404") {
+			writeError(w, http.StatusNotFound, errMsgWorkflowNotFound)
+			return
+		}
+		slog.Error("Failed to delete workflow", "error", err, "name", name, "namespace", namespace)
+		writeError(w, http.StatusInternalServerError, errMsgWorkflowDelete)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "Workflow deleted successfully",
+	})
+}
+
+// findWorkflowNamespace searches all namespaces for a workflow by name and returns its namespace.
+func findWorkflowNamespace(ctx context.Context, clientset *versioned.Clientset, name string) (string, error) {
+	workflowList, err := clientset.ArgoprojV1alpha1().Workflows("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, wf := range workflowList.Items {
+		if wf.Name == name {
+			return wf.Namespace, nil
+		}
+	}
+	return "", fmt.Errorf("workflow %q not found", name)
+}
+
 // getWorkflowDetailData fetches the detailed workflow data from Argo by name,
 // searching across all namespaces.
 func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, name string) (*WorkflowDetailInfo, error) {
-	// Step 1: List all workflows to find the namespace for the given name.
-	workflowList, err := clientset.ArgoprojV1alpha1().Workflows("").List(ctx, metav1.ListOptions{})
+	namespace, err := findWorkflowNamespace(ctx, clientset, name)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 2: Find the workflow's namespace by matching the name.
-	namespace := ""
-	for _, wf := range workflowList.Items {
-		if wf.Name == name {
-			namespace = wf.Namespace
-			break
-		}
-	}
-	if namespace == "" {
-		return nil, fmt.Errorf("workflow %q not found", name)
-	}
-
-	// Step 3: Get the detailed workflow using the resolved namespace.
+	// Get the detailed workflow using the resolved namespace.
 	wfDetail, err := clientset.ArgoprojV1alpha1().Workflows(namespace).Get(ctx, name)
 	if err != nil {
 		return nil, err

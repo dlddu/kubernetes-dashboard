@@ -47,12 +47,11 @@ func TestWorkflowDetailHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("should reject non-GET methods", func(t *testing.T) {
+	t.Run("should reject non-GET/DELETE methods", func(t *testing.T) {
 		// Arrange
 		methods := []string{
 			http.MethodPost,
 			http.MethodPut,
-			http.MethodDelete,
 			http.MethodPatch,
 		}
 
@@ -72,6 +71,44 @@ func TestWorkflowDetailHandler(t *testing.T) {
 					t.Errorf("expected status 405 for %s, got %d", method, res.StatusCode)
 				}
 			})
+		}
+	})
+
+	t.Run("should accept DELETE method", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodDelete, "/api/argo/workflows/my-workflow", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// In CI without a cluster, 500 is acceptable.
+		// When a cluster is present, 200 or 404 is expected.
+		if res.StatusCode != http.StatusOK &&
+			res.StatusCode != http.StatusInternalServerError &&
+			res.StatusCode != http.StatusNotFound {
+			t.Errorf("expected status 200, 404, or 500 for DELETE, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should return 400 for DELETE with missing name", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodDelete, "/api/argo/workflows/", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected status 400 for DELETE with missing name, got %d", res.StatusCode)
 		}
 	})
 

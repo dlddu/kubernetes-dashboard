@@ -45,6 +45,9 @@ const (
 	errMsgPodLogsFetch = "Failed to fetch pod logs"
 	errMsgPodDelete    = "Failed to delete pod"
 	errMsgPodCleanup   = "Failed to cleanup pods"
+
+	errMsgWorkflowNotFound = "Workflow not found"
+	errMsgWorkflowDelete   = "Failed to delete workflow"
 )
 
 // FluxCD API path prefixes.

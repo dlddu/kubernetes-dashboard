@@ -296,6 +296,7 @@ type WorkflowInterface interface {
 	Create(ctx context.Context, templateName string, parameters []map[string]string) (*Workflow, error)
 	List(ctx context.Context, opts metav1.ListOptions) (*WorkflowList, error)
 	Get(ctx context.Context, name string) (*WorkflowDetail, error)
+	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 }
 
 // workflowClient implements WorkflowInterface using a REST client.
@@ -524,6 +525,20 @@ func (c *workflowClient) Get(ctx context.Context, name string) (*WorkflowDetail,
 		Parameters:   wfParams,
 		Nodes:        nodes,
 	}, nil
+}
+
+// Delete removes a Workflow by name from the Kubernetes API.
+func (c *workflowClient) Delete(ctx context.Context, name string, _ metav1.DeleteOptions) error {
+	if c.namespace == "" {
+		return fmt.Errorf("namespace is required to delete a Workflow")
+	}
+	path := fmt.Sprintf("/apis/argoproj.io/v1alpha1/namespaces/%s/workflows/%s", c.namespace, name)
+
+	result := c.restClient.Delete().AbsPath(path).Do(ctx)
+	if err := result.Error(); err != nil {
+		return fmt.Errorf("failed to delete Workflow %q: %w", name, err)
+	}
+	return nil
 }
 
 // Create creates a new Workflow from a WorkflowTemplate.
