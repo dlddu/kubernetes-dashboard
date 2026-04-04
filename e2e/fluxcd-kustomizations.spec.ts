@@ -212,6 +212,7 @@ test.describe('FluxCD Tab - Kustomization List - Namespace Filtering', () => {
 
     // Act: Record total card count before filtering
     const allKustomizationCards = page.getByTestId('kustomization-card');
+    await expect(allKustomizationCards.first()).toBeVisible();
     const totalCount = await allKustomizationCards.count();
     expect(totalCount).toBeGreaterThanOrEqual(1);
 
