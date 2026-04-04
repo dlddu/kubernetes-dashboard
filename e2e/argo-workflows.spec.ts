@@ -110,6 +110,7 @@ test.describe('Argo Tab - Workflow List - Basic Rendering', () => {
 
     // Assert: At least one workflow-run-card is rendered
     const workflowCards = page.getByTestId('workflow-run-card');
+    await expect(workflowCards.first()).toBeVisible();
     const cardCount = await workflowCards.count();
     expect(cardCount).toBeGreaterThanOrEqual(3);
   });
