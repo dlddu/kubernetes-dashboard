@@ -43,8 +43,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kubernetes-dashbo
 # Stage 3: Final Runtime Image
 FROM alpine:3.19
 
-# Add ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates
+# Add ca-certificates for HTTPS and git for branch listing
+RUN apk --no-cache add ca-certificates git
 
 # Create non-root user
 RUN addgroup -g 1000 appuser && \
