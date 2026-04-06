@@ -59,6 +59,14 @@ func GitRepositoryDetailHandler(w http.ResponseWriter, r *http.Request) {
 		GitRepositoryReconcileHandler(w, r)
 		return
 	}
+	if strings.HasSuffix(r.URL.Path, updateBranchPathSuffix) {
+		GitRepositoryUpdateBranchHandler(w, r)
+		return
+	}
+	if strings.HasSuffix(r.URL.Path, branchesPathSuffix) {
+		GitRepositoryBranchesHandler(w, r)
+		return
+	}
 
 	r = withTimeout(r)
 

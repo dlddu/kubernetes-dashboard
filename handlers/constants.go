@@ -6,7 +6,9 @@ const (
 	secretsPathPrefix     = "/api/secrets/"
 	podLogsPathPrefix     = "/api/pods/logs/"
 	restartPathSuffix     = "/restart"
-	reconcilePathSuffix   = "/reconcile"
+	reconcilePathSuffix    = "/reconcile"
+	updateBranchPathSuffix = "/update-branch"
+	branchesPathSuffix     = "/branches"
 )
 
 // Kubernetes annotation keys.
@@ -67,5 +69,7 @@ const (
 	errMsgGitRepositoryNotFound  = "GitRepository not found"
 	errMsgGitRepositoryFetch     = "Failed to fetch git repository"
 	errMsgGitRepositoryListFetch = "Failed to fetch git repository list"
-	errMsgGitRepositoryReconcile = "Failed to reconcile git repository"
+	errMsgGitRepositoryReconcile    = "Failed to reconcile git repository"
+	errMsgGitRepositoryUpdateBranch = "Failed to update git repository branch"
+	errMsgGitRepositoryBranches     = "Failed to fetch git repository branches"
 )
