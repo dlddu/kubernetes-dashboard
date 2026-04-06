@@ -27,7 +27,7 @@ import { test, expect } from '@playwright/test';
  *
  * Test Fixtures (test/fixtures/):
  * - gitrepository-ready.yaml:     flux-system (dashboard-test), Ready=True,
- *                                 url: https://github.com/example/flux-system,
+ *                                 url: https://github.com/dlddu/kubernetes-dashboard,
  *                                 branch: main, interval: 1m,
  *                                 artifact.revision: "main@sha1:abc123def456"
  * - gitrepository-not-ready.yaml: app-source (dashboard-test), Ready=False,
@@ -126,7 +126,7 @@ test.describe('FluxCD Tab - GitRepository List - Basic Rendering', () => {
     // Assert: Card displays the URL
     const gitRepoUrl = fluxSystemCard.getByTestId('gitrepository-url');
     await expect(gitRepoUrl).toBeVisible();
-    await expect(gitRepoUrl).toContainText('github.com/example/flux-system');
+    await expect(gitRepoUrl).toContainText('github.com/dlddu/kubernetes-dashboard');
 
     // Assert: Card displays the ref (branch)
     const gitRepoRef = fluxSystemCard.getByTestId('gitrepository-ref');
@@ -369,7 +369,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Spec Information', () => {
     // Assert: URL is displayed
     const specUrl = detailPage.getByTestId('gitrepository-detail-spec-url');
     await expect(specUrl).toBeVisible();
-    await expect(specUrl).toContainText('github.com/example/flux-system');
+    await expect(specUrl).toContainText('github.com/dlddu/kubernetes-dashboard');
 
     // Assert: Ref is displayed (branch: main)
     const specRef = detailPage.getByTestId('gitrepository-detail-spec-ref');
@@ -659,7 +659,7 @@ test.describe('FluxCD API - GET /api/fluxcd/gitrepositories/{namespace}/{name}',
 
     // Assert: Spec fields are present
     expect(body.spec).toBeDefined();
-    expect(body.spec.url).toBe('https://github.com/example/flux-system');
+    expect(body.spec.url).toBe('https://github.com/dlddu/kubernetes-dashboard');
     expect(body.spec.interval).toBe('1m');
     expect(body.spec.ref).toBeDefined();
     expect(body.spec.ref.branch).toBe('main');
@@ -894,7 +894,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Branch Edit Mode', () => {
     await expect(editButton).not.toBeVisible();
   });
 
-  test('should show dropdown with current branch as fallback option after branches API responds', async ({ page }) => {
+  test('should show dropdown with remote branches including "main" and the CI branch', async ({ page }) => {
     await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
     await page.waitForLoadState('networkidle');
 
@@ -904,16 +904,16 @@ test.describe('FluxCD Tab - GitRepository Detail - Branch Edit Mode', () => {
     const editButton = detailPage.getByTestId('edit-branch-button');
     await editButton.click();
 
-    // Assert: After branches API responds (success or failure),
-    // the dropdown should appear with at least the current branch as an option
+    // Assert: Dropdown appears with branches fetched from the real repository
     const branchSelect = detailPage.getByTestId('branch-select');
     await expect(branchSelect).toBeVisible({ timeout: 15000 });
     await expect(branchSelect).toHaveValue('main');
 
-    // Assert: Current branch "main" is present as an option
+    // Assert: Dropdown contains "main" and the CI branch from the real remote
     const options = branchSelect.locator('option');
     const optionTexts = await options.allTextContents();
     expect(optionTexts).toContain('main');
+    expect(optionTexts).toContain('claude/flux-gitrepository-ref-branch-7Glvk');
   });
 
   test('should exit edit mode and restore original display when Cancel is clicked', async ({ page }) => {
@@ -1095,25 +1095,34 @@ test.describe('FluxCD API - GET /api/fluxcd/gitrepositories/{namespace}/{name}/b
     expect(body).toHaveProperty('error');
   });
 
-  test('should return a JSON response for an existing GitRepository', async ({ request }) => {
+  test('should return branches array including "main" for the dlddu/kubernetes-dashboard repository', async ({ request }) => {
     const response = await request.get(
       '/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches'
     );
 
-    // The response should always be JSON regardless of whether git ls-remote succeeds
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('application/json');
 
-    if (response.ok()) {
-      // If the git remote is reachable, response contains a branches array
-      const body = await response.json();
-      expect(body).toHaveProperty('branches');
-      expect(Array.isArray(body.branches)).toBeTruthy();
-    } else {
-      // If the git remote is unreachable (e.g. example URL in fixtures), expect 500 with error
-      expect(response.status()).toBe(500);
-      const body = await response.json();
-      expect(body).toHaveProperty('error');
-    }
+    const body = await response.json();
+    expect(body).toHaveProperty('branches');
+    expect(Array.isArray(body.branches)).toBeTruthy();
+
+    // Assert: "main" branch exists in the real repository
+    expect(body.branches).toContain('main');
+  });
+
+  test('should return branches array including the current CI branch', async ({ request }) => {
+    const response = await request.get(
+      '/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches'
+    );
+
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(Array.isArray(body.branches)).toBeTruthy();
+
+    // Assert: The CI branch that triggered this test run should exist
+    expect(body.branches).toContain('claude/flux-gitrepository-ref-branch-7Glvk');
   });
 
   test('should only accept GET method', async ({ request }) => {

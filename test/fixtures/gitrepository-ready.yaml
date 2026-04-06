@@ -5,7 +5,7 @@ metadata:
   namespace: dashboard-test
 spec:
   interval: 1m
-  url: https://github.com/example/flux-system
+  url: https://github.com/dlddu/kubernetes-dashboard
   ref:
     branch: main
 status:
