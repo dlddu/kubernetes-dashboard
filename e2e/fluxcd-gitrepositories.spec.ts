@@ -825,3 +825,416 @@ test.describe('FluxCD API - POST /api/fluxcd/gitrepositories/{namespace}/{name}/
     expect(body).toHaveProperty('error');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Group 16: UI — Edit Branch 버튼 및 드롭다운 표시
+// ---------------------------------------------------------------------------
+
+test.describe('FluxCD Tab - GitRepository Detail - Edit Branch Button', () => {
+  test('should display "Edit" button next to the branch ref on the detail page', async ({ page }) => {
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Assert: Ref displays the current branch
+    const specRef = detailPage.getByTestId('gitrepository-detail-spec-ref');
+    await expect(specRef).toBeVisible();
+    await expect(specRef).toContainText('main');
+
+    // Assert: Edit button is visible
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await expect(editButton).toBeVisible();
+    await expect(editButton).toContainText(/edit/i);
+  });
+
+  test('should show branch dropdown with loading state when Edit is clicked', async ({ page }) => {
+    // Arrange: Delay the branches API to observe loading state
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches', async route => {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ branches: ['main', 'develop', 'feature/test'] }),
+      });
+    });
+
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Act: Click the Edit button
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    // Assert: Loading text is shown while fetching branches
+    await expect(page.getByText(/loading branches/i)).toBeVisible();
+
+    // Assert: Save and Cancel buttons appear
+    const saveButton = detailPage.getByTestId('save-branch-button');
+    await expect(saveButton).toBeVisible();
+    await expect(saveButton).toBeDisabled(); // disabled while loading
+
+    const cancelButton = detailPage.getByTestId('cancel-branch-button');
+    await expect(cancelButton).toBeVisible();
+  });
+
+  test('should show branch dropdown with branch options after loading completes', async ({ page }) => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ branches: ['develop', 'feature/test', 'main'] }),
+      });
+    });
+
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    // Assert: Dropdown select appears with the current branch selected
+    const branchSelect = detailPage.getByTestId('branch-select');
+    await expect(branchSelect).toBeVisible({ timeout: 5000 });
+    await expect(branchSelect).toHaveValue('main');
+
+    // Assert: All branches are available as options
+    const options = branchSelect.locator('option');
+    const optionTexts = await options.allTextContents();
+    expect(optionTexts).toContain('main');
+    expect(optionTexts).toContain('develop');
+    expect(optionTexts).toContain('feature/test');
+
+    // Assert: Edit button is no longer visible (replaced by dropdown)
+    await expect(editButton).not.toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 17: UI — 브랜치 변경 저장 및 취소
+// ---------------------------------------------------------------------------
+
+test.describe('FluxCD Tab - GitRepository Detail - Save and Cancel Branch Edit', () => {
+  test('should call update-branch API and exit edit mode when Save is clicked', async ({ page }) => {
+    let updateBranchCalled = false;
+    let updateBranchBody: { branch?: string } = {};
+
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ branches: ['develop', 'main', 'release/v1'] }),
+      });
+    });
+
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/update-branch', async route => {
+      updateBranchCalled = true;
+      updateBranchBody = JSON.parse(route.request().postData() || '{}');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Branch updated successfully' }),
+      });
+    });
+
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Act: Enter edit mode
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    const branchSelect = detailPage.getByTestId('branch-select');
+    await expect(branchSelect).toBeVisible({ timeout: 5000 });
+
+    // Act: Select a different branch
+    await branchSelect.selectOption('develop');
+    expect(await branchSelect.inputValue()).toBe('develop');
+
+    // Act: Click Save
+    const saveButton = detailPage.getByTestId('save-branch-button');
+    await saveButton.click();
+
+    // Assert: update-branch API was called with the selected branch
+    await expect(async () => {
+      expect(updateBranchCalled).toBeTruthy();
+    }).toPass({ timeout: 5000 });
+    expect(updateBranchBody.branch).toBe('develop');
+
+    // Assert: Edit mode exited — Edit button is visible again
+    await expect(editButton).toBeVisible({ timeout: 5000 });
+
+    // Assert: Dropdown is no longer visible
+    await expect(branchSelect).not.toBeVisible();
+  });
+
+  test('should exit edit mode without calling update-branch API when Cancel is clicked', async ({ page }) => {
+    let updateBranchCalled = false;
+
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ branches: ['develop', 'main'] }),
+      });
+    });
+
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/update-branch', async route => {
+      updateBranchCalled = true;
+      await route.continue();
+    });
+
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Act: Enter edit mode
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    const branchSelect = detailPage.getByTestId('branch-select');
+    await expect(branchSelect).toBeVisible({ timeout: 5000 });
+
+    // Act: Select a different branch, then cancel
+    await branchSelect.selectOption('develop');
+    const cancelButton = detailPage.getByTestId('cancel-branch-button');
+    await cancelButton.click();
+
+    // Assert: Edit mode exited
+    await expect(editButton).toBeVisible({ timeout: 5000 });
+    await expect(branchSelect).not.toBeVisible();
+
+    // Assert: update-branch API was NOT called
+    expect(updateBranchCalled).toBeFalsy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 18: UI — 브랜치 편집 에러 처리
+// ---------------------------------------------------------------------------
+
+test.describe('FluxCD Tab - GitRepository Detail - Branch Edit Error Handling', () => {
+  test('should display error message when branches API fails', async ({ page }) => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches', async route => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Failed to fetch git repository branches' }),
+      });
+    });
+
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    // Assert: Error message is displayed
+    const branchError = detailPage.getByTestId('branch-error');
+    await expect(branchError).toBeVisible({ timeout: 5000 });
+
+    // Assert: Cancel button still works to exit edit mode
+    const cancelButton = detailPage.getByTestId('cancel-branch-button');
+    await cancelButton.click();
+    await expect(editButton).toBeVisible();
+    await expect(branchError).not.toBeVisible();
+  });
+
+  test('should display error message when update-branch API fails', async ({ page }) => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ branches: ['develop', 'main'] }),
+      });
+    });
+
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/update-branch', async route => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Failed to update git repository branch' }),
+      });
+    });
+
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Act: Enter edit mode and save
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    const branchSelect = detailPage.getByTestId('branch-select');
+    await expect(branchSelect).toBeVisible({ timeout: 5000 });
+    await branchSelect.selectOption('develop');
+
+    const saveButton = detailPage.getByTestId('save-branch-button');
+    await saveButton.click();
+
+    // Assert: Error message is displayed
+    const branchError = detailPage.getByTestId('branch-error');
+    await expect(branchError).toBeVisible({ timeout: 5000 });
+
+    // Assert: Still in edit mode (dropdown still visible)
+    await expect(branchSelect).toBeVisible();
+
+    // Assert: Save button is re-enabled after error
+    await expect(saveButton).toBeEnabled();
+  });
+
+  test('should show "Saving..." text on Save button while update-branch API is in progress', async ({ page }) => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ branches: ['develop', 'main'] }),
+      });
+    });
+
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/update-branch', async route => {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Branch updated successfully' }),
+      });
+    });
+
+    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    const branchSelect = detailPage.getByTestId('branch-select');
+    await expect(branchSelect).toBeVisible({ timeout: 5000 });
+
+    const saveButton = detailPage.getByTestId('save-branch-button');
+    await saveButton.click();
+
+    // Assert: Save button shows "Saving..." and is disabled
+    await expect(saveButton).toContainText(/saving/i);
+    await expect(saveButton).toBeDisabled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 19: 백엔드 API — POST /api/fluxcd/gitrepositories/{namespace}/{name}/update-branch
+// ---------------------------------------------------------------------------
+
+test.describe('FluxCD API - POST /api/fluxcd/gitrepositories/{namespace}/{name}/update-branch', () => {
+  test('should return 200 and update branch when the GitRepository exists', async ({ request }) => {
+    const response = await request.post(
+      '/api/fluxcd/gitrepositories/dashboard-test/flux-system/update-branch',
+      {
+        data: { branch: 'main' },
+      }
+    );
+
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    const body = await response.json();
+    expect(body).toHaveProperty('message');
+    expect(body.message).toMatch(/branch updated/i);
+  });
+
+  test('should return 404 when the GitRepository does not exist', async ({ request }) => {
+    const response = await request.post(
+      '/api/fluxcd/gitrepositories/dashboard-test/non-existent-resource/update-branch',
+      {
+        data: { branch: 'main' },
+      }
+    );
+
+    expect(response.status()).toBe(404);
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    const body = await response.json();
+    expect(body).toHaveProperty('error');
+  });
+
+  test('should return 400 when branch name is empty', async ({ request }) => {
+    const response = await request.post(
+      '/api/fluxcd/gitrepositories/dashboard-test/flux-system/update-branch',
+      {
+        data: { branch: '' },
+      }
+    );
+
+    expect(response.status()).toBe(400);
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    const body = await response.json();
+    expect(body).toHaveProperty('error');
+  });
+
+  test('should return 400 when request body is invalid JSON', async ({ request }) => {
+    const response = await request.post(
+      '/api/fluxcd/gitrepositories/dashboard-test/flux-system/update-branch',
+      {
+        headers: { 'Content-Type': 'application/json' },
+        data: 'not json',
+      }
+    );
+
+    // Should return 400 for invalid body
+    expect(response.status()).toBe(400);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Group 20: 백엔드 API — GET /api/fluxcd/gitrepositories/{namespace}/{name}/branches
+// ---------------------------------------------------------------------------
+
+test.describe('FluxCD API - GET /api/fluxcd/gitrepositories/{namespace}/{name}/branches', () => {
+  test('should return 404 when the GitRepository does not exist', async ({ request }) => {
+    const response = await request.get(
+      '/api/fluxcd/gitrepositories/dashboard-test/non-existent-resource/branches'
+    );
+
+    expect(response.status()).toBe(404);
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    const body = await response.json();
+    expect(body).toHaveProperty('error');
+  });
+
+  test('should return a JSON response with branches array for an existing GitRepository', async ({ request }) => {
+    const response = await request.get(
+      '/api/fluxcd/gitrepositories/dashboard-test/flux-system/branches'
+    );
+
+    // Note: This test may return 500 if the git remote is not reachable in CI,
+    // but the response format should still be JSON
+    expect(response.headers()['content-type']).toContain('application/json');
+
+    if (response.ok()) {
+      const body = await response.json();
+      expect(body).toHaveProperty('branches');
+      expect(Array.isArray(body.branches)).toBeTruthy();
+    }
+  });
+});
