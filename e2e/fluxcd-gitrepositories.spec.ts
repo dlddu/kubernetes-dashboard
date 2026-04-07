@@ -849,7 +849,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Edit Branch Button', () => {
     await expect(editButton).toContainText(/edit/i);
   });
 
-  test('should NOT display "Edit" button for a tag-based GitRepository', async ({ page }) => {
+  test('should also display "Edit" button for a tag-based GitRepository (no branch set)', async ({ page }) => {
     await page.goto('/fluxcd/gitrepository/dashboard-test/infra-repo');
     await page.waitForLoadState('networkidle');
 
@@ -861,9 +861,36 @@ test.describe('FluxCD Tab - GitRepository Detail - Edit Branch Button', () => {
     await expect(specRef).toBeVisible();
     await expect(specRef).toContainText('v1.0.0');
 
-    // Assert: Edit button is NOT visible for tag-based refs
+    // Assert: Edit button is visible even when ref has no branch
+    // (allows switching from tag to branch)
     const editButton = detailPage.getByTestId('edit-branch-button');
-    await expect(editButton).not.toBeVisible();
+    await expect(editButton).toBeVisible();
+    await expect(editButton).toContainText(/edit/i);
+  });
+
+  test('should allow setting a branch on a tag-based GitRepository through the Edit flow', async ({ page }) => {
+    await page.goto('/fluxcd/gitrepository/dashboard-test/infra-repo');
+    await page.waitForLoadState('networkidle');
+
+    const detailPage = page.getByTestId('gitrepository-detail-page');
+    await expect(detailPage).toBeVisible();
+
+    // Act: Click Edit on the tag-based repository
+    const editButton = detailPage.getByTestId('edit-branch-button');
+    await editButton.click();
+
+    // Assert: Dropdown appears with placeholder since no branch is currently set
+    const branchSelect = detailPage.getByTestId('branch-select');
+    await expect(branchSelect).toBeVisible({ timeout: 15000 });
+
+    // Assert: Save button is initially disabled (no branch selected)
+    const saveButton = detailPage.getByTestId('save-branch-button');
+    await expect(saveButton).toBeDisabled();
+
+    // Cancel out so we don't mutate the fixture for other tests
+    const cancelButton = detailPage.getByTestId('cancel-branch-button');
+    await cancelButton.click();
+    await expect(editButton).toBeVisible();
   });
 });
 

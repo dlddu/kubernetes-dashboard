@@ -177,15 +177,13 @@ export function GitRepositoryDetailPage() {
                     <span data-testid="gitrepository-detail-spec-ref">
                       {getRefDisplay()}
                     </span>
-                    {detail.spec.ref.branch && (
-                      <button
-                        data-testid="edit-branch-button"
-                        onClick={handleEditBranch}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Edit
-                      </button>
-                    )}
+                    <button
+                      data-testid="edit-branch-button"
+                      onClick={handleEditBranch}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Edit
+                    </button>
                   </span>
                 ) : (
                   <div className="inline-flex flex-col gap-2 mt-1">
@@ -200,6 +198,11 @@ export function GitRepositoryDetailPage() {
                           className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           disabled={isUpdatingBranch}
                         >
+                          {!selectedBranch && (
+                            <option value="" disabled>
+                              Select a branch
+                            </option>
+                          )}
                           {selectedBranch && !branches.includes(selectedBranch) && (
                             <option value={selectedBranch}>{selectedBranch}</option>
                           )}
