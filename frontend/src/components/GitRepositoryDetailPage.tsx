@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchGitRepositoryDetail, reconcileGitRepository, GitRepositoryDetailInfo } from '../api/fluxcd';
+import { fetchGitRepositoryDetail, reconcileGitRepository, fetchGitRepositoryBranches, updateGitRepositoryBranch, GitRepositoryDetailInfo } from '../api/fluxcd';
 import { usePolling } from '../hooks/usePolling';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
@@ -34,6 +34,12 @@ export function GitRepositoryDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const [isEditingBranch, setIsEditingBranch] = useState(false);
+  const [branches, setBranches] = useState<string[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [isFetchingBranches, setIsFetchingBranches] = useState(false);
+  const [isUpdatingBranch, setIsUpdatingBranch] = useState(false);
+  const [branchError, setBranchError] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -79,6 +85,42 @@ export function GitRepositoryDetailPage() {
 
   const handleBack = () => {
     navigate('/flux');
+  };
+
+  const handleEditBranch = async () => {
+    if (!namespace || !name) return;
+    setIsEditingBranch(true);
+    setBranchError(null);
+    setIsFetchingBranches(true);
+    setSelectedBranch(detail?.spec.ref.branch || '');
+    try {
+      const branchList = await fetchGitRepositoryBranches(namespace, name);
+      setBranches(branchList);
+    } catch (err) {
+      setBranchError(err instanceof Error ? err.message : 'Failed to fetch branches');
+    } finally {
+      setIsFetchingBranches(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingBranch(false);
+    setBranchError(null);
+  };
+
+  const handleSaveBranch = async () => {
+    if (!namespace || !name || !selectedBranch) return;
+    setIsUpdatingBranch(true);
+    setBranchError(null);
+    try {
+      await updateGitRepositoryBranch(namespace, name, selectedBranch);
+      setIsEditingBranch(false);
+      await load();
+    } catch (err) {
+      setBranchError(err instanceof Error ? err.message : 'Failed to update branch');
+    } finally {
+      setIsUpdatingBranch(false);
+    }
   };
 
   const getRefDisplay = () => {
@@ -130,9 +172,69 @@ export function GitRepositoryDetailPage() {
 
               <div>
                 <span className="font-medium">Ref: </span>
-                <span data-testid="gitrepository-detail-spec-ref">
-                  {getRefDisplay()}
-                </span>
+                {!isEditingBranch ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span data-testid="gitrepository-detail-spec-ref">
+                      {getRefDisplay()}
+                    </span>
+                    <button
+                      data-testid="edit-branch-button"
+                      onClick={handleEditBranch}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Edit
+                    </button>
+                  </span>
+                ) : (
+                  <div className="inline-flex flex-col gap-2 mt-1">
+                    <div className="flex items-center gap-2">
+                      {isFetchingBranches ? (
+                        <span className="text-sm text-gray-500">Loading branches...</span>
+                      ) : (
+                        <select
+                          data-testid="branch-select"
+                          value={selectedBranch}
+                          onChange={(e) => setSelectedBranch(e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={isUpdatingBranch}
+                        >
+                          {!selectedBranch && (
+                            <option value="" disabled>
+                              Select a branch
+                            </option>
+                          )}
+                          {selectedBranch && !branches.includes(selectedBranch) && (
+                            <option value={selectedBranch}>{selectedBranch}</option>
+                          )}
+                          {branches.map((b) => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                      )}
+                      <button
+                        data-testid="save-branch-button"
+                        onClick={handleSaveBranch}
+                        disabled={isUpdatingBranch || isFetchingBranches || !selectedBranch}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                      >
+                        {isUpdatingBranch ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        data-testid="cancel-branch-button"
+                        onClick={handleCancelEdit}
+                        disabled={isUpdatingBranch}
+                        className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded text-sm border border-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {branchError && (
+                      <span data-testid="branch-error" className="text-red-600 text-xs">
+                        {branchError}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>

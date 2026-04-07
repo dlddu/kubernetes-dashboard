@@ -131,3 +131,25 @@ export async function reconcileGitRepository(
     method: 'POST',
   });
 }
+
+export async function fetchGitRepositoryBranches(
+  namespace: string,
+  name: string
+): Promise<string[]> {
+  const result = await fetchJSON<{ branches: string[] }>(
+    `/api/fluxcd/gitrepositories/${namespace}/${name}/branches`
+  );
+  return result.branches;
+}
+
+export async function updateGitRepositoryBranch(
+  namespace: string,
+  name: string,
+  branch: string
+): Promise<void> {
+  await fetchJSON(`/api/fluxcd/gitrepositories/${namespace}/${name}/update-branch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ branch }),
+  });
+}
