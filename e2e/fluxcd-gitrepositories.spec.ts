@@ -1,4 +1,41 @@
 import { test, expect } from '@playwright/test';
+import { execSync } from 'child_process';
+
+/**
+ * Resolve the current CI branch name so tests can verify that the branch
+ * which triggered the test run is present in the real remote's branch list.
+ *
+ * Resolution order:
+ *   1. GITHUB_HEAD_REF — set by GitHub Actions on `pull_request` events to
+ *      the source branch (e.g. "claude/my-feature").
+ *   2. GITHUB_REF_NAME — set by GitHub Actions on `push` / `workflow_dispatch`
+ *      events to the branch that triggered the workflow (e.g. "main").
+ *   3. Local `git branch --show-current` — for developers running e2e tests
+ *      outside of CI.
+ *   4. Final fallback: "main".
+ */
+function getCurrentCIBranch(): string {
+  const headRef = process.env.GITHUB_HEAD_REF;
+  if (headRef && headRef.trim()) {
+    return headRef.trim();
+  }
+
+  const refName = process.env.GITHUB_REF_NAME;
+  if (refName && refName.trim() && !refName.includes('/merge')) {
+    return refName.trim();
+  }
+
+  try {
+    const branch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+    if (branch) {
+      return branch;
+    }
+  } catch {
+    // Ignore and fall through
+  }
+
+  return 'main';
+}
 
 /**
  * E2E Tests for FluxCD GitRepository List and Detail
@@ -936,11 +973,11 @@ test.describe('FluxCD Tab - GitRepository Detail - Branch Edit Mode', () => {
     await expect(branchSelect).toBeVisible({ timeout: 15000 });
     await expect(branchSelect).toHaveValue('main');
 
-    // Assert: Dropdown contains "main" and the CI branch from the real remote
+    // Assert: Dropdown contains "main" and the current CI branch from the real remote
     const options = branchSelect.locator('option');
     const optionTexts = await options.allTextContents();
     expect(optionTexts).toContain('main');
-    expect(optionTexts).toContain('claude/flux-gitrepository-ref-branch-7Glvk');
+    expect(optionTexts).toContain(getCurrentCIBranch());
   });
 
   test('should exit edit mode and restore original display when Cancel is clicked', async ({ page }) => {
@@ -1149,7 +1186,7 @@ test.describe('FluxCD API - GET /api/fluxcd/gitrepositories/{namespace}/{name}/b
     expect(Array.isArray(body.branches)).toBeTruthy();
 
     // Assert: The CI branch that triggered this test run should exist
-    expect(body.branches).toContain('claude/flux-gitrepository-ref-branch-7Glvk');
+    expect(body.branches).toContain(getCurrentCIBranch());
   });
 
   test('should only accept GET method', async ({ request }) => {
