@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchKustomizationDetail, reconcileKustomization, KustomizationDetailInfo } from '../api/fluxcd';
+import {
+  fetchKustomizationDetail,
+  reconcileKustomization,
+  suspendKustomization,
+  resumeKustomization,
+  KustomizationDetailInfo,
+} from '../api/fluxcd';
 import { usePolling } from '../hooks/usePolling';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
@@ -34,6 +40,8 @@ export function KustomizationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const [isTogglingSuspend, setIsTogglingSuspend] = useState(false);
+  const [suspendError, setSuspendError] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -74,6 +82,24 @@ export function KustomizationDetailPage() {
       setReconcileError(err instanceof Error ? err.message : 'Failed to reconcile');
     } finally {
       setIsReconciling(false);
+    }
+  };
+
+  const handleToggleSuspend = async () => {
+    if (!namespace || !name || !detail) return;
+    setIsTogglingSuspend(true);
+    setSuspendError(null);
+    try {
+      if (detail.suspended) {
+        await resumeKustomization(namespace, name);
+      } else {
+        await suspendKustomization(namespace, name);
+      }
+      await load(); // re-fetch after toggle
+    } catch (err) {
+      setSuspendError(err instanceof Error ? err.message : 'Failed to toggle suspend');
+    } finally {
+      setIsTogglingSuspend(false);
     }
   };
 
@@ -242,6 +268,37 @@ export function KustomizationDetailPage() {
               ))}
             </div>
           </div>
+
+          {/* Suspend / Resume Toggle Button */}
+          <button
+            data-testid="suspend-toggle-button"
+            onClick={handleToggleSuspend}
+            disabled={isTogglingSuspend}
+            className={`w-full text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+              detail.suspended
+                ? 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+                : 'bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400'
+            }`}
+          >
+            {isTogglingSuspend
+              ? detail.suspended
+                ? 'Resuming...'
+                : 'Suspending...'
+              : detail.suspended
+              ? 'Resume'
+              : 'Suspend'}
+          </button>
+
+          {/* Suspend Error */}
+          {suspendError && (
+            <div
+              data-testid="suspend-error"
+              role="alert"
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+            >
+              {suspendError}
+            </div>
+          )}
 
           {/* Reconcile Button */}
           <button

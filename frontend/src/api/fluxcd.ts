@@ -63,6 +63,24 @@ export async function reconcileKustomization(
   });
 }
 
+export async function suspendKustomization(
+  namespace: string,
+  name: string
+): Promise<void> {
+  await fetchJSON(`/api/fluxcd/kustomizations/${namespace}/${name}/suspend`, {
+    method: 'POST',
+  });
+}
+
+export async function resumeKustomization(
+  namespace: string,
+  name: string
+): Promise<void> {
+  await fetchJSON(`/api/fluxcd/kustomizations/${namespace}/${name}/resume`, {
+    method: 'POST',
+  });
+}
+
 // GitRepository types and API functions
 
 export interface GitRepositoryInfo {

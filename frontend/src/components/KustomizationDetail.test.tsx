@@ -14,6 +14,8 @@ vi.mock('../api/fluxcd', () => ({
   fetchKustomizationDetail: vi.fn(),
   fetchKustomizations: vi.fn(),
   reconcileKustomization: vi.fn(),
+  suspendKustomization: vi.fn(),
+  resumeKustomization: vi.fn(),
 }));
 
 vi.mock('../hooks/usePolling', () => ({
@@ -21,7 +23,12 @@ vi.mock('../hooks/usePolling', () => ({
 }));
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchKustomizationDetail, reconcileKustomization } from '../api/fluxcd';
+import {
+  fetchKustomizationDetail,
+  reconcileKustomization,
+  suspendKustomization,
+  resumeKustomization,
+} from '../api/fluxcd';
 import { KustomizationDetailPage } from './KustomizationDetailPage';
 
 // ---------------------------------------------------------------------------
@@ -32,6 +39,8 @@ const mockUseParams = useParams as ReturnType<typeof vi.fn>;
 const mockUseNavigate = useNavigate as ReturnType<typeof vi.fn>;
 const mockFetchKustomizationDetail = fetchKustomizationDetail as ReturnType<typeof vi.fn>;
 const mockReconcileKustomization = reconcileKustomization as ReturnType<typeof vi.fn>;
+const mockSuspendKustomization = suspendKustomization as ReturnType<typeof vi.fn>;
+const mockResumeKustomization = resumeKustomization as ReturnType<typeof vi.fn>;
 
 // ---------------------------------------------------------------------------
 // Fixture data
@@ -756,6 +765,206 @@ describe('KustomizationDetailPage', () => {
       // Assert
       await waitFor(() => {
         expect(screen.queryByTestId('reconcile-spinner')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Suspend / Resume Toggle Button
+  // -------------------------------------------------------------------------
+  describe('Suspend / Resume Toggle Button', () => {
+    it('should render Suspend button when kustomization is not suspended', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const button = screen.getByTestId('suspend-toggle-button');
+      expect(button).toBeInTheDocument();
+      expect(button.textContent).toMatch(/^Suspend$/);
+    });
+
+    it('should render Resume button when kustomization is suspended', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetailSuspended);
+
+      // Act
+      await renderAndWait();
+
+      // Assert
+      const button = screen.getByTestId('suspend-toggle-button');
+      expect(button).toBeInTheDocument();
+      expect(button.textContent).toMatch(/^Resume$/);
+    });
+
+    it('should call suspendKustomization when clicked while not suspended', async () => {
+      // Arrange
+      mockUseParams.mockReturnValue({ namespace: 'flux-system', name: 'flux-system' });
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+      mockSuspendKustomization.mockResolvedValue(undefined);
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      expect(mockSuspendKustomization).toHaveBeenCalledWith('flux-system', 'flux-system');
+      expect(mockResumeKustomization).not.toHaveBeenCalled();
+    });
+
+    it('should call resumeKustomization when clicked while suspended', async () => {
+      // Arrange
+      mockUseParams.mockReturnValue({ namespace: 'flux-system', name: 'suspended-app' });
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetailSuspended);
+      mockResumeKustomization.mockResolvedValue(undefined);
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      expect(mockResumeKustomization).toHaveBeenCalledWith('flux-system', 'suspended-app');
+      expect(mockSuspendKustomization).not.toHaveBeenCalled();
+    });
+
+    it('should show Suspending... text and disable button when suspending', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+      mockSuspendKustomization.mockReturnValue(new Promise(() => {}));
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      const button = screen.getByTestId('suspend-toggle-button');
+      expect(button.textContent).toMatch(/Suspending\.\.\./i);
+      expect(button).toBeDisabled();
+    });
+
+    it('should show Resuming... text and disable button when resuming', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetailSuspended);
+      mockResumeKustomization.mockReturnValue(new Promise(() => {}));
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      const button = screen.getByTestId('suspend-toggle-button');
+      expect(button.textContent).toMatch(/Resuming\.\.\./i);
+      expect(button).toBeDisabled();
+    });
+
+    it('should re-enable button after successful suspend', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+      mockSuspendKustomization.mockResolvedValue(undefined);
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('suspend-toggle-button')).not.toBeDisabled();
+      });
+    });
+
+    it('should refresh detail data after successful suspend', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+      mockSuspendKustomization.mockResolvedValue(undefined);
+
+      await renderAndWait();
+
+      const initialCallCount = mockFetchKustomizationDetail.mock.calls.length;
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      await waitFor(() => {
+        expect(mockFetchKustomizationDetail.mock.calls.length).toBeGreaterThan(initialCallCount);
+      });
+    });
+
+    it('should show error message when suspend fails', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+      mockSuspendKustomization.mockRejectedValue(new Error('Suspend failed'));
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      await waitFor(() => {
+        const errorEl = screen.getByTestId('suspend-error');
+        expect(errorEl).toBeInTheDocument();
+        expect(errorEl).toHaveAttribute('role', 'alert');
+        expect(errorEl.textContent).toContain('Suspend failed');
+      });
+    });
+
+    it('should show error message when resume fails', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetailSuspended);
+      mockResumeKustomization.mockRejectedValue(new Error('Resume failed'));
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      await waitFor(() => {
+        const errorEl = screen.getByTestId('suspend-error');
+        expect(errorEl).toBeInTheDocument();
+        expect(errorEl.textContent).toContain('Resume failed');
+      });
+    });
+
+    it('should re-enable button after suspend failure', async () => {
+      // Arrange
+      mockFetchKustomizationDetail.mockResolvedValue(mockDetail);
+      mockSuspendKustomization.mockRejectedValue(new Error('Suspend failed'));
+
+      await renderAndWait();
+
+      // Act
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('suspend-toggle-button'));
+      });
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId('suspend-toggle-button')).not.toBeDisabled();
       });
     });
   });

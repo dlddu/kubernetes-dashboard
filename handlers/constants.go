@@ -9,6 +9,8 @@ const (
 	reconcilePathSuffix    = "/reconcile"
 	updateBranchPathSuffix = "/update-branch"
 	branchesPathSuffix     = "/branches"
+	suspendPathSuffix      = "/suspend"
+	resumePathSuffix       = "/resume"
 )
 
 // Kubernetes annotation keys.
@@ -65,6 +67,8 @@ const (
 	errMsgKustomizationFetch     = "Failed to fetch kustomization"
 	errMsgKustomizationListFetch = "Failed to fetch kustomization list"
 	errMsgKustomizationReconcile = "Failed to reconcile kustomization"
+	errMsgKustomizationSuspend   = "Failed to suspend kustomization"
+	errMsgKustomizationResume    = "Failed to resume kustomization"
 
 	errMsgGitRepositoryNotFound  = "GitRepository not found"
 	errMsgGitRepositoryFetch     = "Failed to fetch git repository"

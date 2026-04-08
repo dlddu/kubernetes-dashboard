@@ -57,9 +57,17 @@ type ConditionInfo struct {
 }
 
 // KustomizationDetailHandler handles GET /api/fluxcd/kustomizations/{namespace}/{name}
-// and dispatches POST .../reconcile requests to KustomizationReconcileHandler.
+// and dispatches POST .../suspend, .../resume, and .../reconcile requests to their handlers.
 func KustomizationDetailHandler(w http.ResponseWriter, r *http.Request) {
-	// Dispatch to reconcile handler if the path ends with /reconcile
+	// Dispatch to action handlers based on path suffix
+	if strings.HasSuffix(r.URL.Path, suspendPathSuffix) {
+		KustomizationSuspendHandler(w, r)
+		return
+	}
+	if strings.HasSuffix(r.URL.Path, resumePathSuffix) {
+		KustomizationResumeHandler(w, r)
+		return
+	}
 	if strings.HasSuffix(r.URL.Path, reconcilePathSuffix) {
 		KustomizationReconcileHandler(w, r)
 		return
