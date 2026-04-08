@@ -1226,114 +1226,123 @@ test.describe('FluxCD Tab - Kustomization Detail - Suspend/Resume Button', () =>
     await expect(suspendButton).toHaveText(/^Resume$/);
   });
 
-  test('should transition to "Suspending..." loading state and disable button after clicking Suspend', async ({ page }) => {
+  test('should transition to "Suspending..." loading state and disable button after clicking Suspend', async ({ page, request }) => {
     // Tests that clicking the Suspend button disables the button and changes
     // the label to "Suspending..." while the API request is in-flight.
     // Fixture: app-ready (namespace: dashboard-test)
+    //
+    // No 200 mocking: the request is forwarded to the real backend through
+    // page.route() with an added delay so the intermediate loading state is
+    // observable. Cleanup resumes the fixture after the test.
 
-    // Arrange: Intercept the suspend API to hold the loading state long enough to observe it
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready/suspend', async route => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Suspended' }),
+    try {
+      // Arrange: Delay the suspend request (but forward to the real backend)
+      await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready/suspend', async route => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await route.continue();
       });
-    });
 
-    // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
-    await page.waitForLoadState('networkidle');
+      // Arrange: Navigate directly to the detail page
+      await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
+      await page.waitForLoadState('networkidle');
 
-    const detailPage = page.getByTestId('kustomization-detail-page');
-    await expect(detailPage).toBeVisible();
+      const detailPage = page.getByTestId('kustomization-detail-page');
+      await expect(detailPage).toBeVisible();
 
-    // Act: Click the Suspend button
-    const suspendButton = detailPage.getByTestId('suspend-toggle-button');
-    await expect(suspendButton).toBeEnabled();
-    await suspendButton.click();
+      // Act: Click the Suspend button
+      const suspendButton = detailPage.getByTestId('suspend-toggle-button');
+      await expect(suspendButton).toBeEnabled();
+      await suspendButton.click();
 
-    // Assert: Button is disabled while request is in-flight
-    await expect(suspendButton).toBeDisabled();
+      // Assert: Button is disabled while request is in-flight
+      await expect(suspendButton).toBeDisabled();
 
-    // Assert: Button text changes to "Suspending..."
-    await expect(suspendButton).toContainText(/suspending/i);
+      // Assert: Button text changes to "Suspending..."
+      await expect(suspendButton).toContainText(/suspending/i);
+    } finally {
+      // Cleanup: Resume the Kustomization so the fixture state is restored
+      await request.post('/api/fluxcd/kustomizations/dashboard-test/app-ready/resume');
+    }
   });
 
-  test('should transition to "Resuming..." loading state and disable button after clicking Resume', async ({ page }) => {
+  test('should transition to "Resuming..." loading state and disable button after clicking Resume', async ({ page, request }) => {
     // Tests that clicking the Resume button disables the button and changes
     // the label to "Resuming..." while the API request is in-flight.
     // Fixture: app-suspended (namespace: dashboard-test)
+    //
+    // No 200 mocking: the request is forwarded to the real backend through
+    // page.route() with an added delay. Cleanup re-suspends afterward.
 
-    // Arrange: Intercept the resume API to hold the loading state long enough to observe it
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-suspended/resume', async route => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Resumed' }),
+    try {
+      // Arrange: Delay the resume request (but forward to the real backend)
+      await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-suspended/resume', async route => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await route.continue();
       });
-    });
 
-    // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/kustomization/dashboard-test/app-suspended');
-    await page.waitForLoadState('networkidle');
+      // Arrange: Navigate directly to the detail page
+      await page.goto('/fluxcd/kustomization/dashboard-test/app-suspended');
+      await page.waitForLoadState('networkidle');
 
-    const detailPage = page.getByTestId('kustomization-detail-page');
-    await expect(detailPage).toBeVisible();
+      const detailPage = page.getByTestId('kustomization-detail-page');
+      await expect(detailPage).toBeVisible();
 
-    // Act: Click the Resume button
-    const suspendButton = detailPage.getByTestId('suspend-toggle-button');
-    await expect(suspendButton).toBeEnabled();
-    await suspendButton.click();
+      // Act: Click the Resume button
+      const suspendButton = detailPage.getByTestId('suspend-toggle-button');
+      await expect(suspendButton).toBeEnabled();
+      await suspendButton.click();
 
-    // Assert: Button is disabled while request is in-flight
-    await expect(suspendButton).toBeDisabled();
+      // Assert: Button is disabled while request is in-flight
+      await expect(suspendButton).toBeDisabled();
 
-    // Assert: Button text changes to "Resuming..."
-    await expect(suspendButton).toContainText(/resuming/i);
+      // Assert: Button text changes to "Resuming..."
+      await expect(suspendButton).toContainText(/resuming/i);
+    } finally {
+      // Cleanup: Re-suspend the Kustomization so the fixture state is restored
+      await request.post('/api/fluxcd/kustomizations/dashboard-test/app-suspended/suspend');
+    }
   });
 
-  test('should restore button to enabled state and refresh detail data after a successful Suspend', async ({ page }) => {
+  test('should restore button to enabled state and refresh detail data after a successful Suspend', async ({ page, request }) => {
     // Tests that after a successful suspend API response:
     //   - the button returns to enabled state
     //   - the detail data is re-fetched (detail API called again)
     // Fixture: app-ready (namespace: dashboard-test)
+    //
+    // No 200 mocking: the suspend call hits the real backend. The detail
+    // route is only a pass-through counter, not a mock. Cleanup resumes
+    // the fixture after the test.
 
-    // Arrange: Track how many times the detail API is called to verify re-fetch
-    let detailFetchCount = 0;
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready', async route => {
-      detailFetchCount += 1;
-      await route.continue();
-    });
-
-    // Arrange: Suspend API responds immediately with 200
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready/suspend', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Suspended' }),
+    try {
+      // Arrange: Track how many times the detail API is called to verify re-fetch
+      let detailFetchCount = 0;
+      await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready', async route => {
+        detailFetchCount += 1;
+        await route.continue();
       });
-    });
 
-    // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
-    await page.waitForLoadState('networkidle');
+      // Arrange: Navigate directly to the detail page
+      await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
+      await page.waitForLoadState('networkidle');
 
-    // Assert: Detail page is rendered (initial fetch counted)
-    const detailPage = page.getByTestId('kustomization-detail-page');
-    await expect(detailPage).toBeVisible();
-    const fetchCountBeforeSuspend = detailFetchCount;
+      // Assert: Detail page is rendered (initial fetch counted)
+      const detailPage = page.getByTestId('kustomization-detail-page');
+      await expect(detailPage).toBeVisible();
+      const fetchCountBeforeSuspend = detailFetchCount;
 
-    // Act: Click the Suspend button
-    const suspendButton = detailPage.getByTestId('suspend-toggle-button');
-    await suspendButton.click();
+      // Act: Click the Suspend button (real backend handles it)
+      const suspendButton = detailPage.getByTestId('suspend-toggle-button');
+      await suspendButton.click();
 
-    // Assert: Wait for the button to return to its enabled state
-    await expect(suspendButton).toBeEnabled({ timeout: 10000 });
+      // Assert: Wait for the button to return to its enabled state
+      await expect(suspendButton).toBeEnabled({ timeout: 10000 });
 
-    // Assert: Detail data was re-fetched after successful suspend
-    expect(detailFetchCount).toBeGreaterThan(fetchCountBeforeSuspend);
+      // Assert: Detail data was re-fetched after successful suspend
+      expect(detailFetchCount).toBeGreaterThan(fetchCountBeforeSuspend);
+    } finally {
+      // Cleanup: Resume the Kustomization so the fixture state is restored
+      await request.post('/api/fluxcd/kustomizations/dashboard-test/app-ready/resume');
+    }
   });
 
   test('should display an error message when the Suspend API returns an error', async ({ page }) => {
