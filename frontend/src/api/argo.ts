@@ -94,6 +94,11 @@ export async function deleteWorkflow(name: string): Promise<void> {
   return fetchJSON(url, { method: 'DELETE' });
 }
 
+export async function resubmitWorkflow(name: string): Promise<SubmitWorkflowResult> {
+  const url = `/api/argo/workflows/${name}/resubmit`;
+  return fetchJSON<SubmitWorkflowResult>(url, { method: 'POST' });
+}
+
 export async function submitWorkflow(
   templateName: string,
   _namespace: string,

@@ -11,6 +11,7 @@ const (
 	branchesPathSuffix     = "/branches"
 	suspendPathSuffix      = "/suspend"
 	resumePathSuffix       = "/resume"
+	resubmitPathSuffix     = "/resubmit"
 )
 
 // Kubernetes annotation keys.
@@ -50,8 +51,9 @@ const (
 	errMsgPodDelete    = "Failed to delete pod"
 	errMsgPodCleanup   = "Failed to cleanup pods"
 
-	errMsgWorkflowNotFound = "Workflow not found"
-	errMsgWorkflowDelete   = "Failed to delete workflow"
+	errMsgWorkflowNotFound  = "Workflow not found"
+	errMsgWorkflowDelete    = "Failed to delete workflow"
+	errMsgWorkflowResubmit  = "Failed to resubmit workflow"
 )
 
 // FluxCD API path prefixes.

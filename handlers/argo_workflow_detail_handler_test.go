@@ -648,6 +648,147 @@ func TestWorkflowDetailHandlerRouting(t *testing.T) {
 	})
 }
 
+// TestWorkflowResubmitHandler tests the POST /api/argo/workflows/{name}/resubmit endpoint.
+func TestWorkflowResubmitHandler(t *testing.T) {
+	t.Run("should accept POST method for resubmit", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodPost, "/api/argo/workflows/my-workflow/resubmit", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		// In CI without a cluster, 500 is acceptable.
+		// When a cluster is present, 200 or 404 is expected.
+		if res.StatusCode != http.StatusOK &&
+			res.StatusCode != http.StatusInternalServerError &&
+			res.StatusCode != http.StatusNotFound {
+			t.Errorf("expected status 200, 404, or 500 for POST resubmit, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should reject non-POST methods for resubmit", func(t *testing.T) {
+		methods := []string{
+			http.MethodGet,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodPatch,
+		}
+
+		for _, method := range methods {
+			t.Run(method, func(t *testing.T) {
+				req := httptest.NewRequest(method, "/api/argo/workflows/my-workflow/resubmit", nil)
+				w := httptest.NewRecorder()
+
+				// Act
+				WorkflowDetailHandler(w, req)
+
+				// Assert
+				res := w.Result()
+				defer res.Body.Close()
+
+				if res.StatusCode != http.StatusMethodNotAllowed {
+					t.Errorf("expected status 405 for %s resubmit, got %d", method, res.StatusCode)
+				}
+			})
+		}
+	})
+
+	t.Run("should return 400 for resubmit with missing name", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodPost, "/api/argo/workflows//resubmit", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected status 400 for resubmit with missing name, got %d", res.StatusCode)
+		}
+	})
+
+	t.Run("should set Content-Type to application/json for resubmit", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodPost, "/api/argo/workflows/my-workflow/resubmit", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowDetailHandler(w, req)
+
+		// Assert
+		contentType := w.Header().Get("Content-Type")
+		if contentType != "application/json" {
+			t.Errorf("expected Content-Type 'application/json', got '%s'", contentType)
+		}
+	})
+
+	t.Run("should return valid JSON on resubmit response", func(t *testing.T) {
+		// Arrange
+		req := httptest.NewRequest(http.MethodPost, "/api/argo/workflows/my-workflow/resubmit", nil)
+		w := httptest.NewRecorder()
+
+		// Act
+		WorkflowDetailHandler(w, req)
+
+		// Assert
+		res := w.Result()
+		defer res.Body.Close()
+
+		var result interface{}
+		if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+			t.Errorf("response body is not valid JSON: %v", err)
+		}
+	})
+}
+
+// TestParseWorkflowResubmitName tests the path parsing logic for the resubmit endpoint.
+func TestParseWorkflowResubmitName(t *testing.T) {
+	t.Run("should parse name correctly from resubmit path", func(t *testing.T) {
+		// Arrange
+		path := "/api/argo/workflows/my-workflow/resubmit"
+		name := strings.TrimPrefix(path, "/api/argo/workflows/")
+		name = strings.TrimSuffix(name, "/resubmit")
+
+		// Assert
+		if name != "my-workflow" {
+			t.Errorf("expected name 'my-workflow', got '%s'", name)
+		}
+	})
+
+	t.Run("should parse name with hyphens from resubmit path", func(t *testing.T) {
+		// Arrange
+		path := "/api/argo/workflows/data-processing-abc12/resubmit"
+		name := strings.TrimPrefix(path, "/api/argo/workflows/")
+		name = strings.TrimSuffix(name, "/resubmit")
+
+		// Assert
+		if name != "data-processing-abc12" {
+			t.Errorf("expected name 'data-processing-abc12', got '%s'", name)
+		}
+	})
+
+	t.Run("should return empty string when name is missing", func(t *testing.T) {
+		// Arrange
+		path := "/api/argo/workflows//resubmit"
+		name := strings.TrimPrefix(path, "/api/argo/workflows/")
+		name = strings.TrimSuffix(name, "/resubmit")
+		name = strings.TrimRight(name, "/")
+
+		// Assert
+		if name != "" {
+			t.Errorf("expected empty name for missing-name path, got '%s'", name)
+		}
+	})
+}
+
 // TestGetWorkflowDetailData tests the internal getWorkflowDetailData helper
 // using a real cluster, when available.
 func TestGetWorkflowDetailData(t *testing.T) {
