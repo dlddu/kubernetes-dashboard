@@ -57,8 +57,15 @@ type WorkflowDetailInfo struct {
 	Nodes        []WorkflowDetailStepInfo `json:"nodes"`
 }
 
-// WorkflowDetailHandler handles GET and DELETE /api/argo/workflows/{name}.
+// WorkflowDetailHandler handles GET and DELETE /api/argo/workflows/{name}
+// and dispatches POST .../resubmit requests to the resubmit handler.
 var WorkflowDetailHandler http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
+	// Dispatch to resubmit handler if path ends with /resubmit
+	if strings.HasSuffix(r.URL.Path, resubmitPathSuffix) {
+		handleResubmitWorkflow(w, r)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	r = withTimeout(r)
 
@@ -239,4 +246,85 @@ func getWorkflowDetailData(ctx context.Context, clientset *versioned.Clientset, 
 		Parameters:   wfParams,
 		Nodes:        nodes,
 	}, nil
+}
+
+// parseWorkflowResubmitName extracts the workflow name from a resubmit request path.
+// Expected format: /api/argo/workflows/{name}/resubmit
+func parseWorkflowResubmitName(w http.ResponseWriter, r *http.Request) (string, bool) {
+	name := strings.TrimPrefix(r.URL.Path, workflowDetailPathPrefix)
+	name = strings.TrimSuffix(name, resubmitPathSuffix)
+	name = strings.TrimRight(name, "/")
+	if name == "" || strings.Contains(name, "/") {
+		writeError(w, http.StatusBadRequest,
+			fmt.Sprintf("invalid path format, expected %s{name}%s", workflowDetailPathPrefix, resubmitPathSuffix))
+		return "", false
+	}
+	return name, true
+}
+
+// handleResubmitWorkflow handles POST /api/argo/workflows/{name}/resubmit.
+// It creates a new workflow from the same template and parameters as the original.
+func handleResubmitWorkflow(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if !requireMethod(w, r, http.MethodPost) {
+		return
+	}
+
+	r = withTimeout(r)
+
+	name, ok := parseWorkflowResubmitName(w, r)
+	if !ok {
+		return
+	}
+
+	clientset, err := getArgoClient()
+	if err != nil {
+		slog.Error("Failed to create Argo client", "error", err)
+		writeError(w, http.StatusInternalServerError, "Failed to create Argo client")
+		return
+	}
+
+	// Find the workflow's namespace.
+	namespace, err := findWorkflowNamespace(r.Context(), clientset, name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			writeError(w, http.StatusNotFound, errMsgWorkflowNotFound)
+			return
+		}
+		slog.Error("Failed to find workflow namespace", "error", err, "name", name)
+		writeError(w, http.StatusInternalServerError, errMsgWorkflowResubmit)
+		return
+	}
+
+	// Get the original workflow's details to extract template name and parameters.
+	wfDetail, err := clientset.ArgoprojV1alpha1().Workflows(namespace).Get(r.Context(), name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "404") {
+			writeError(w, http.StatusNotFound, errMsgWorkflowNotFound)
+			return
+		}
+		slog.Error("Failed to fetch workflow detail for resubmit", "error", err, "name", name)
+		writeError(w, http.StatusInternalServerError, errMsgWorkflowResubmit)
+		return
+	}
+
+	// Build parameter list from the original workflow.
+	params := make([]map[string]string, 0, len(wfDetail.Parameters))
+	for _, p := range wfDetail.Parameters {
+		params = append(params, map[string]string{"name": p.Name, "value": p.Value})
+	}
+
+	// Create a new workflow from the same template.
+	created, err := clientset.ArgoprojV1alpha1().Workflows(namespace).Create(r.Context(), wfDetail.TemplateName, params)
+	if err != nil {
+		slog.Error("Failed to resubmit workflow", "error", err, "name", name, "template", wfDetail.TemplateName)
+		writeError(w, http.StatusInternalServerError, errMsgWorkflowResubmit)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, submitResponse{
+		Name:      created.Name,
+		Namespace: created.Namespace,
+	})
 }

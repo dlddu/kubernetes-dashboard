@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchWorkflowDetail, deleteWorkflow, WorkflowDetailInfo, WorkflowDetailStepInfo } from '../api/argo';
+import { fetchWorkflowDetail, deleteWorkflow, resubmitWorkflow, WorkflowDetailInfo, WorkflowDetailStepInfo, SubmitWorkflowResult } from '../api/argo';
 import { usePolling } from '../hooks/usePolling';
 import { useConfirmAction } from '../hooks/useConfirmAction';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -11,6 +11,7 @@ export interface WorkflowDetailProps {
   namespace: string;
   name: string;
   onBack: () => void;
+  onResubmitSuccess?: (workflowName: string) => void;
 }
 
 function getPhaseColorClass(phase: string): string {
@@ -106,12 +107,13 @@ function WorkflowDetailStep({ node }: { node: WorkflowDetailStepInfo }) {
   );
 }
 
-export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps) {
+export function WorkflowDetail({ namespace, name, onBack, onResubmitSuccess }: WorkflowDetailProps) {
   const [detail, setDetail] = useState<WorkflowDetailInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showParams, setShowParams] = useState(false);
   const hasLoadedRef = useRef(false);
+  const resubmitResultRef = useRef<SubmitWorkflowResult | null>(null);
 
   const deleteAction = useConfirmAction(
     useCallback(
@@ -120,6 +122,23 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
     ),
     onBack,
     'Failed to delete workflow',
+  );
+
+  const resubmitAction = useConfirmAction(
+    useCallback(
+      async (target: { name: string; namespace: string }) => {
+        const result = await resubmitWorkflow(target.name);
+        resubmitResultRef.current = result;
+      },
+      [],
+    ),
+    useCallback(() => {
+      if (resubmitResultRef.current && onResubmitSuccess) {
+        onResubmitSuccess(resubmitResultRef.current.name);
+        resubmitResultRef.current = null;
+      }
+    }, [onResubmitSuccess]),
+    'Failed to resubmit workflow',
   );
 
   const load = useCallback(async () => {
@@ -194,6 +213,22 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
         testId="workflow-delete-confirm-dialog"
       />
 
+      <ConfirmDialog
+        isOpen={resubmitAction.showDialog}
+        title="Confirm Workflow Resubmit"
+        resourceName={resubmitAction.target?.name ?? ''}
+        resourceNamespace={resubmitAction.target?.namespace ?? ''}
+        description="A new workflow will be created with the same template and parameters as:"
+        confirmLabel="Resubmit"
+        confirmingLabel="Resubmitting..."
+        confirmColor="blue"
+        onConfirm={resubmitAction.confirm}
+        onCancel={resubmitAction.cancel}
+        isProcessing={resubmitAction.isProcessing}
+        error={resubmitAction.error ?? undefined}
+        testId="workflow-resubmit-confirm-dialog"
+      />
+
       {/* Detail content */}
       {!isLoading && !error && detail && (
         <>
@@ -216,6 +251,13 @@ export function WorkflowDetail({ namespace, name, onBack }: WorkflowDetailProps)
                 >
                   {detail.phase}
                 </span>
+                <button
+                  data-testid="workflow-resubmit-button"
+                  onClick={() => resubmitAction.requestAction({ name: detail.name, namespace: detail.namespace })}
+                  className="px-3 py-1 text-sm font-medium text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition-colors"
+                >
+                  Resubmit
+                </button>
                 <button
                   data-testid="workflow-delete-button"
                   onClick={() => deleteAction.requestAction({ name: detail.name, namespace: detail.namespace })}
