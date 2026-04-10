@@ -263,14 +263,11 @@ test.describe('Argo Workflow Resubmit - Execution', () => {
     // Act: Confirm resubmit
     await confirmDialog.getByTestId('confirm-button').click();
 
-    // Assert: Should navigate to the new workflow's detail page
-    await expect(page.getByTestId('workflow-detail-page')).toBeVisible({ timeout: 15000 });
-
-    // Assert: The new workflow should have a different name than the original
-    const newName = await page.getByTestId('workflow-detail-name').innerText();
-    expect(newName).not.toBe(originalName);
+    // Assert: Wait for the workflow detail name to change (navigation + data load)
+    await expect(page.getByTestId('workflow-detail-name')).not.toHaveText(originalName, { timeout: 15000 });
 
     // Assert: The new workflow name should start with the template name prefix
+    const newName = await page.getByTestId('workflow-detail-name').innerText();
     expect(newName).toMatch(/^data-processing-with-params-/);
   });
 
