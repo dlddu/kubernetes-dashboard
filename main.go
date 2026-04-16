@@ -37,6 +37,7 @@ func setupRouter() http.Handler {
 	mux.HandleFunc("/api/pods/all", handlers.AllPodsHandler)
 	mux.HandleFunc("/api/pods/cleanup", handlers.CleanupPodsHandler)
 	mux.HandleFunc("/api/pods/logs/", handlers.PodLogsHandler)
+	mux.HandleFunc("/api/pods/exec/", handlers.PodExecHandler)
 	mux.HandleFunc("/api/deployments", handlers.DeploymentsHandler)
 	mux.HandleFunc("/api/deployments/", handlers.DeploymentRestartHandler)
 	mux.HandleFunc("/api/secrets/", handlers.SecretDetailHandler)

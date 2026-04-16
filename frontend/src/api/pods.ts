@@ -55,6 +55,15 @@ export async function fetchPodLogs(
   return response.text();
 }
 
+export function buildExecWebSocketURL(
+  namespace: string,
+  name: string,
+  container: string,
+): string {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/api/pods/exec/${namespace}/${name}?container=${encodeURIComponent(container)}`;
+}
+
 export function streamPodLogs(
   namespace: string,
   name: string,

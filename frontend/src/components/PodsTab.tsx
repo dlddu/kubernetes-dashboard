@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { fetchAllPods, cleanupPods, PodDetails } from '../api/pods';
 import { UnhealthyPodCard } from './UnhealthyPodCard';
 import { PodLogPanel } from './PodLogPanel';
+import { PodExecPanel } from './PodExecPanel';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
@@ -23,6 +24,7 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
   );
 
   const [selectedPod, setSelectedPod] = useState<PodDetails | null>(null);
+  const [shellPod, setShellPod] = useState<PodDetails | null>(null);
   const [hideCompleted, setHideCompleted] = useState(false);
   const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
@@ -139,6 +141,7 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
                 key={`${pod.namespace}-${pod.name}`}
                 pod={pod}
                 onClick={(p) => setSelectedPod(p)}
+                onExec={(p) => { setSelectedPod(null); setShellPod(p); }}
                 isSelected={
                   selectedPod?.name === pod.name &&
                   selectedPod?.namespace === pod.namespace
@@ -153,6 +156,13 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
         <PodLogPanel
           pod={selectedPod}
           onClose={() => setSelectedPod(null)}
+        />
+      )}
+
+      {shellPod && (
+        <PodExecPanel
+          pod={shellPod}
+          onClose={() => setShellPod(null)}
         />
       )}
 
