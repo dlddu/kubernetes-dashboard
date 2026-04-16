@@ -5,6 +5,7 @@ const (
 	deploymentsPathPrefix = "/api/deployments/"
 	secretsPathPrefix     = "/api/secrets/"
 	podLogsPathPrefix     = "/api/pods/logs/"
+	podExecPathPrefix     = "/api/pods/exec/"
 	restartPathSuffix     = "/restart"
 	reconcilePathSuffix    = "/reconcile"
 	updateBranchPathSuffix = "/update-branch"
@@ -46,10 +47,13 @@ const (
 
 	errMsgDeploymentNotFound = "Deployment not found"
 
-	errMsgPodNotFound  = "Pod not found"
-	errMsgPodLogsFetch = "Failed to fetch pod logs"
-	errMsgPodDelete    = "Failed to delete pod"
-	errMsgPodCleanup   = "Failed to cleanup pods"
+	errMsgPodNotFound       = "Pod not found"
+	errMsgPodLogsFetch     = "Failed to fetch pod logs"
+	errMsgPodDelete        = "Failed to delete pod"
+	errMsgPodCleanup       = "Failed to cleanup pods"
+	errMsgPodExecFailed    = "Failed to exec into pod"
+	errMsgPodExecUpgrade   = "Failed to upgrade to WebSocket"
+	errMsgContainerRequired = "Container name is required"
 
 	errMsgWorkflowNotFound  = "Workflow not found"
 	errMsgWorkflowDelete    = "Failed to delete workflow"
