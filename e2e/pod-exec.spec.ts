@@ -497,7 +497,7 @@ test.describe('PodExecPanel UI - panel close interactions', () => {
 // ------------------------------------------------------------
 
 test.describe('PodExecPanel UI - WebSocket connection', () => {
-  test('should attempt WebSocket connection and transition from Connecting state', async ({ page }) => {
+  test('should show Connected status for a running pod with shell', async ({ page }) => {
     // Arrange: Find the busybox-test pod (running, has /bin/sh)
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
@@ -525,10 +525,10 @@ test.describe('PodExecPanel UI - WebSocket connection', () => {
     const execPanel = page.getByTestId('exec-panel');
     await expect(execPanel).toBeVisible();
 
-    // Assert: Status should transition from "Connecting" to either "Connected" or "Disconnected"
-    // (exec may fail in CI environments due to RBAC or network configuration)
+    // Assert: Status should eventually show "Connected"
+    // (requires pods/exec RBAC permission in k8s/rbac.yaml)
     const statusIndicator = execPanel.getByTestId('exec-panel-status');
-    await expect(statusIndicator).toHaveText(/Connected|Disconnected/, { timeout: 10000 });
+    await expect(statusIndicator).toContainText('Connected', { timeout: 10000 });
   });
 
   test('should show Disconnected or error status for a non-running pod', async ({ page }) => {
