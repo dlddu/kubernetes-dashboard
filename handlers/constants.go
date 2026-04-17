@@ -57,7 +57,8 @@ const (
 	errMsgContainerRequired = "Container name is required"
 
 	errMsgPodDebugFailed     = "Failed to add ephemeral container"
-	errMsgPodDebugForbidden  = "Ephemeral containers not enabled on cluster"
+	errMsgPodDebugForbidden  = "Ephemeral containers not supported by the API server"
+	errMsgPodDebugRBACDenied = "Permission denied: service account lacks update on pods/ephemeralcontainers"
 	errMsgPodDebugInvalidReq = "Invalid debug request"
 	errMsgPodDebugNameTaken  = "Container name already in use"
 	errMsgPodDebugNotReady   = "Ephemeral container did not become ready in time"

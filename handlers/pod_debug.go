@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -159,7 +160,7 @@ func addEphemeralContainer(
 		}
 
 		if k8serrors.IsForbidden(err) {
-			return &debugError{status: http.StatusBadRequest, message: errMsgPodDebugForbidden}
+			return classifyForbidden(err)
 		}
 		if k8serrors.IsConflict(err) && attempt < maxAttempts-1 {
 			continue
@@ -239,6 +240,21 @@ func waitForEphemeralContainerReady(
 		case <-time.After(debugReadyPollInterval):
 		}
 	}
+}
+
+// classifyForbidden distinguishes an RBAC denial from a cluster-side feature rejection.
+// RBAC denials from the authorizer always contain the phrase "cannot ... pods/ephemeralcontainers"
+// along with the service account identity; anything else is treated as "feature not supported".
+func classifyForbidden(err error) *debugError {
+	msg := err.Error()
+	lower := strings.ToLower(msg)
+	if strings.Contains(lower, "pods/ephemeralcontainers") && strings.Contains(lower, "cannot") {
+		return &debugError{
+			status:  http.StatusForbidden,
+			message: fmt.Sprintf("%s: %s", errMsgPodDebugRBACDenied, msg),
+		}
+	}
+	return &debugError{status: http.StatusBadRequest, message: errMsgPodDebugForbidden}
 }
 
 // isFatalWaitingReason returns true for waiting reasons that are not expected to recover

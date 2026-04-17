@@ -164,13 +164,14 @@ func TestPodDebugHandler_NameCollision(t *testing.T) {
 	}
 }
 
-func TestPodDebugHandler_ForbiddenOnUpdate(t *testing.T) {
+func TestPodDebugHandler_ForbiddenFeatureDisabled(t *testing.T) {
+	// Feature-gate rejection: Forbidden without the RBAC-style "cannot ... pods/ephemeralcontainers" phrase.
 	pod := newRunningPod("default", "my-pod")
 	cs := fake.NewSimpleClientset(pod)
 	cs.PrependReactor("update", "pods", func(action clienttesting.Action) (bool, runtime.Object, error) {
 		if action.GetSubresource() == "ephemeralcontainers" {
 			return true, nil, k8serrors.NewForbidden(schema.GroupResource{Resource: "pods"}, "my-pod",
-				fmt.Errorf("ephemeral containers disabled"))
+				fmt.Errorf("EphemeralContainers feature is disabled"))
 		}
 		return false, nil, nil
 	})
@@ -182,8 +183,36 @@ func TestPodDebugHandler_ForbiddenOnUpdate(t *testing.T) {
 	if w.Result().StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Result().StatusCode)
 	}
-	if !strings.Contains(w.Body.String(), "Ephemeral containers not enabled") {
-		t.Errorf("expected forbidden message, got %q", w.Body.String())
+	if !strings.Contains(w.Body.String(), "not supported by the API server") {
+		t.Errorf("expected feature-disabled message, got %q", w.Body.String())
+	}
+}
+
+func TestPodDebugHandler_ForbiddenRBAC(t *testing.T) {
+	// Classic RBAC denial wording produced by the authorizer.
+	pod := newRunningPod("default", "my-pod")
+	cs := fake.NewSimpleClientset(pod)
+	cs.PrependReactor("update", "pods", func(action clienttesting.Action) (bool, runtime.Object, error) {
+		if action.GetSubresource() == "ephemeralcontainers" {
+			return true, nil, k8serrors.NewForbidden(schema.GroupResource{Resource: "pods"}, "my-pod",
+				fmt.Errorf(`User "system:serviceaccount:default:dash" cannot update resource "pods/ephemeralcontainers" in API group "" in the namespace "default"`))
+		}
+		return false, nil, nil
+	})
+	withDebugClientset(t, cs)
+
+	req := newDebugRequest(t, "default", "my-pod", debugPodRequest{Image: "nicolaka/netshoot:latest"})
+	w := httptest.NewRecorder()
+	PodDebugHandler(w, req)
+	if w.Result().StatusCode != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d", w.Result().StatusCode)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Permission denied") {
+		t.Errorf("expected RBAC message, got %q", body)
+	}
+	if !strings.Contains(body, "pods/ephemeralcontainers") {
+		t.Errorf("expected error detail to surface resource, got %q", body)
 	}
 }
 
