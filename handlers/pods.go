@@ -19,14 +19,15 @@ import (
 
 // PodDetails represents detailed information about a pod
 type PodDetails struct {
-	Name           string   `json:"name"`
-	Namespace      string   `json:"namespace"`
-	Status         string   `json:"status"`
-	Restarts       int32    `json:"restarts"`
-	Node           string   `json:"node"`
-	Age            string   `json:"age"`
-	Containers     []string `json:"containers"`
-	InitContainers []string `json:"initContainers"`
+	Name                string   `json:"name"`
+	Namespace           string   `json:"namespace"`
+	Status              string   `json:"status"`
+	Restarts            int32    `json:"restarts"`
+	Node                string   `json:"node"`
+	Age                 string   `json:"age"`
+	Containers          []string `json:"containers"`
+	InitContainers      []string `json:"initContainers"`
+	EphemeralContainers []string `json:"ephemeralContainers"`
 }
 
 // podFilter is a predicate used to select which pods to include in results.
@@ -193,15 +194,21 @@ func listPods(ctx context.Context, clientset kubernetes.Interface, namespace str
 			initContainerNames = append(initContainerNames, c.Name)
 		}
 
+		ephemeralContainerNames := make([]string, 0, len(pod.Spec.EphemeralContainers))
+		for _, c := range pod.Spec.EphemeralContainers {
+			ephemeralContainerNames = append(ephemeralContainerNames, c.Name)
+		}
+
 		pods = append(pods, PodDetails{
-			Name:           pod.Name,
-			Namespace:      pod.Namespace,
-			Status:         getPodStatus(pod),
-			Restarts:       getPodRestartCount(pod),
-			Node:           nodeName,
-			Age:            formatPodAge(pod.CreationTimestamp.Time),
-			Containers:     containerNames,
-			InitContainers: initContainerNames,
+			Name:                pod.Name,
+			Namespace:           pod.Namespace,
+			Status:              getPodStatus(pod),
+			Restarts:            getPodRestartCount(pod),
+			Node:                nodeName,
+			Age:                 formatPodAge(pod.CreationTimestamp.Time),
+			Containers:          containerNames,
+			InitContainers:      initContainerNames,
+			EphemeralContainers: ephemeralContainerNames,
 		})
 	}
 

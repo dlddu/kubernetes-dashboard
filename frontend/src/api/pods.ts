@@ -9,6 +9,7 @@ export interface UnhealthyPodDetails {
   age: string;
   containers: string[];
   initContainers: string[];
+  ephemeralContainers?: string[];
 }
 
 export type PodDetails = UnhealthyPodDetails;
@@ -53,6 +54,30 @@ export async function fetchPodLogs(
   }
 
   return response.text();
+}
+
+export interface DebugPodRequest {
+  image: string;
+  targetContainer?: string;
+  name?: string;
+  allowPtrace?: boolean;
+}
+
+export interface DebugPodResult {
+  container: string;
+  ready: boolean;
+}
+
+export async function debugPod(
+  namespace: string,
+  name: string,
+  request: DebugPodRequest,
+): Promise<DebugPodResult> {
+  return fetchJSON<DebugPodResult>(`/api/pods/debug/${namespace}/${name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
 }
 
 export function buildExecWebSocketURL(

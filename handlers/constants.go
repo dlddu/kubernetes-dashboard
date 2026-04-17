@@ -6,6 +6,7 @@ const (
 	secretsPathPrefix     = "/api/secrets/"
 	podLogsPathPrefix     = "/api/pods/logs/"
 	podExecPathPrefix     = "/api/pods/exec/"
+	podDebugPathPrefix    = "/api/pods/debug/"
 	restartPathSuffix     = "/restart"
 	reconcilePathSuffix    = "/reconcile"
 	updateBranchPathSuffix = "/update-branch"
@@ -54,6 +55,14 @@ const (
 	errMsgPodExecFailed    = "Failed to exec into pod"
 	errMsgPodExecUpgrade   = "Failed to upgrade to WebSocket"
 	errMsgContainerRequired = "Container name is required"
+
+	errMsgPodDebugFailed     = "Failed to add ephemeral container"
+	errMsgPodDebugForbidden  = "Ephemeral containers not supported by the API server"
+	errMsgPodDebugRBACDenied = "Permission denied: service account lacks update on pods/ephemeralcontainers"
+	errMsgPodDebugInvalidReq = "Invalid debug request"
+	errMsgPodDebugNameTaken  = "Container name already in use"
+	errMsgPodDebugNotReady   = "Ephemeral container did not become ready in time"
+	errMsgPodDebugImagePull  = "Ephemeral container image pull failed"
 
 	errMsgWorkflowNotFound  = "Workflow not found"
 	errMsgWorkflowDelete    = "Failed to delete workflow"

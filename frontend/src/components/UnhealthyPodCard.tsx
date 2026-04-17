@@ -1,4 +1,4 @@
-import { TerminalSquare } from 'lucide-react';
+import { Bug, TerminalSquare } from 'lucide-react';
 import { UnhealthyPodDetails } from '../api/pods';
 import { StatusBadge } from './StatusBadge';
 
@@ -6,10 +6,11 @@ interface UnhealthyPodCardProps {
   pod: UnhealthyPodDetails;
   onClick?: (pod: UnhealthyPodDetails) => void;
   onExec?: (pod: UnhealthyPodDetails) => void;
+  onDebug?: (pod: UnhealthyPodDetails) => void;
   isSelected?: boolean;
 }
 
-export function UnhealthyPodCard({ pod, onClick, onExec, isSelected }: UnhealthyPodCardProps) {
+export function UnhealthyPodCard({ pod, onClick, onExec, onDebug, isSelected }: UnhealthyPodCardProps) {
   // Determine if restart count should be highlighted (> 10)
   const isHighRestartCount = pod.restarts > 10;
 
@@ -97,18 +98,31 @@ export function UnhealthyPodCard({ pod, onClick, onExec, isSelected }: Unhealthy
         </div>
       </div>
 
-      {/* Shell Button */}
-      {onExec && (
-        <div className="pt-2 border-t border-gray-100">
-          <button
-            data-testid="pod-exec-button"
-            onClick={(e) => { e.stopPropagation(); onExec(pod); }}
-            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
-            title="Open shell"
-          >
-            <TerminalSquare size={14} />
-            Shell
-          </button>
+      {/* Action Buttons */}
+      {(onExec || onDebug) && (
+        <div className="pt-2 border-t border-gray-100 flex items-center gap-2">
+          {onExec && (
+            <button
+              data-testid="pod-exec-button"
+              onClick={(e) => { e.stopPropagation(); onExec(pod); }}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
+              title="Open shell"
+            >
+              <TerminalSquare size={14} />
+              Shell
+            </button>
+          )}
+          {onDebug && (
+            <button
+              data-testid="pod-debug-button"
+              onClick={(e) => { e.stopPropagation(); onDebug(pod); }}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 transition-colors"
+              title="Attach ephemeral debug container"
+            >
+              <Bug size={14} />
+              Debug
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -43,6 +43,13 @@ rules:
   - create
 - apiGroups: [""]
   resources:
+  - pods/ephemeralcontainers
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups: [""]
+  resources:
   - secrets
   verbs:
   - get
