@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
+import { execSync } from 'child_process';
 
 /**
  * E2E Tests for Pod Debug (Ephemeral Container) Feature
@@ -172,6 +173,24 @@ test.describe('DebugPodDialog UI - fields', () => {
     await dialog.getByTestId('debug-pod-cancel').click();
     await expect(dialog).not.toBeVisible();
   });
+
+  test('renders the SYS_PTRACE checkbox unchecked by default', async ({ page }) => {
+    const dialog = await openDebugDialogForBusybox(page);
+    const checkbox = dialog.getByTestId('debug-ptrace-checkbox');
+    await expect(checkbox).toBeVisible();
+    await expect(checkbox).not.toBeChecked();
+  });
+
+  test('toggles the SYS_PTRACE checkbox when clicked', async ({ page }) => {
+    const dialog = await openDebugDialogForBusybox(page);
+    const checkbox = dialog.getByTestId('debug-ptrace-checkbox');
+
+    await checkbox.check();
+    await expect(checkbox).toBeChecked();
+
+    await checkbox.uncheck();
+    await expect(checkbox).not.toBeChecked();
+  });
 });
 
 // ---------------------------------------------------------------
@@ -214,6 +233,59 @@ test.describe('DebugPodDialog UI - success flow', () => {
 // ---------------------------------------------------------------
 // UI: Failure flow — image pull failure surfaces in the dialog
 // ---------------------------------------------------------------
+
+test.describe('Pod Debug API - SYS_PTRACE capability', () => {
+  test('attaches SYS_PTRACE capability when allowPtrace is true', async ({
+    request,
+  }) => {
+    const containerName = `debugger-ptrace-${Date.now()}`;
+    const response = await request.post(
+      '/api/pods/debug/dashboard-test/busybox-test',
+      {
+        data: {
+          image: 'busybox:1.36',
+          targetContainer: 'busybox',
+          name: containerName,
+          allowPtrace: true,
+        },
+      },
+    );
+    expect(response.status(), await response.text()).toBe(200);
+
+    // Verify against the live cluster that SYS_PTRACE was recorded on the
+    // ephemeral container spec. This requires KUBECONFIG to be set (which
+    // the e2e harness already does — see e2e/README.md).
+    const jsonpath = `{.spec.ephemeralContainers[?(@.name=="${containerName}")].securityContext.capabilities.add}`;
+    const output = execSync(
+      `kubectl -n dashboard-test get pod busybox-test -o jsonpath='${jsonpath}'`,
+      { encoding: 'utf8' },
+    ).trim();
+    expect(output).toContain('SYS_PTRACE');
+  });
+
+  test('omits securityContext when allowPtrace is false', async ({ request }) => {
+    const containerName = `debugger-noptrace-${Date.now()}`;
+    const response = await request.post(
+      '/api/pods/debug/dashboard-test/busybox-test',
+      {
+        data: {
+          image: 'busybox:1.36',
+          targetContainer: 'busybox',
+          name: containerName,
+          allowPtrace: false,
+        },
+      },
+    );
+    expect(response.status(), await response.text()).toBe(200);
+
+    const jsonpath = `{.spec.ephemeralContainers[?(@.name=="${containerName}")].securityContext}`;
+    const output = execSync(
+      `kubectl -n dashboard-test get pod busybox-test -o jsonpath='${jsonpath}'`,
+      { encoding: 'utf8' },
+    ).trim();
+    expect(output).toBe('');
+  });
+});
 
 test.describe('DebugPodDialog UI - failure flow', () => {
   test('shows an inline error when the image fails to pull', async ({ page }) => {
