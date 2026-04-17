@@ -769,4 +769,59 @@ test.describe('PodExecPanel UI - paste button', () => {
     // Assert: Feedback reverts to "Paste" after the 1.5s timeout
     await expect(pasteButton).toContainText('Paste', { timeout: 3000 });
   });
+
+  test('should display an error message when clipboard read fails', async ({ page }) => {
+    // Arrange: Find the busybox-test pod (running, has /bin/sh)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'busybox-test') {
+        targetCard = card;
+        break;
+      }
+    }
+
+    // Skip if busybox-test not found
+    if (!targetCard) return;
+
+    // Act: Open exec panel and wait for Connected
+    const shellButton = targetCard.getByTestId('pod-exec-button');
+    await shellButton.click();
+
+    const execPanel = page.getByTestId('exec-panel');
+    await expect(execPanel).toBeVisible();
+
+    const statusIndicator = execPanel.getByTestId('exec-panel-status');
+    await expect(statusIndicator).toContainText('Connected', { timeout: 10000 });
+
+    // Force navigator.clipboard.readText to reject so the error branch runs.
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          readText: () => Promise.reject(new Error('Clipboard permission denied by test')),
+        },
+      });
+    });
+
+    // Act: Click Paste — expected to fail
+    const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
+    await expect(pasteButton).toBeEnabled();
+    await pasteButton.click();
+
+    // Assert: Error message is shown with the failure reason
+    const errorMessage = execPanel.getByTestId('exec-panel-paste-error');
+    await expect(errorMessage).toBeVisible();
+    await expect(errorMessage).toContainText('Clipboard permission denied by test');
+
+    // Assert: Button stays on "Paste" (no success feedback)
+    await expect(pasteButton).toContainText('Paste');
+  });
 });

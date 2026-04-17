@@ -19,6 +19,7 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
   );
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [pasted, setPasted] = useState(false);
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
@@ -147,8 +148,14 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
   };
 
   const handlePaste = async () => {
+    setPasteError(null);
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!navigator.clipboard?.readText) {
+      setPasteError('Clipboard API is not available in this browser.');
+      setTimeout(() => setPasteError(null), 5000);
+      return;
+    }
     try {
       const text = await navigator.clipboard.readText();
       if (!text) return;
@@ -156,8 +163,10 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
       xtermRef.current?.focus();
       setPasted(true);
       setTimeout(() => setPasted(false), 1500);
-    } catch {
-      // Clipboard access denied or unavailable.
+    } catch (err) {
+      const reason = err instanceof Error && err.message ? err.message : 'Unable to read clipboard.';
+      setPasteError(`Paste failed: ${reason}`);
+      setTimeout(() => setPasteError(null), 5000);
     }
   };
 
@@ -269,6 +278,17 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
           >
             Reconnect
           </button>
+
+          {pasteError && (
+            <span
+              data-testid="exec-panel-paste-error"
+              role="alert"
+              title={pasteError}
+              className="text-xs text-red-400 truncate max-w-xs"
+            >
+              {pasteError}
+            </span>
+          )}
         </div>
 
         {/* Terminal */}
