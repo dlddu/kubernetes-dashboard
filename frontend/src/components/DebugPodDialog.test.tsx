@@ -94,6 +94,7 @@ describe('DebugPodDialog', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       image: 'busybox:1.36',
       targetContainer: 'app',
+      allowPtrace: undefined,
     });
   });
 
@@ -115,7 +116,24 @@ describe('DebugPodDialog', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       image: 'my/custom:tag',
       targetContainer: undefined,
+      allowPtrace: undefined,
     });
+  });
+
+  it('forwards allowPtrace=true when the checkbox is ticked', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn(() => Promise.resolve(successResult()));
+    render(
+      <DebugPodDialog isOpen pod={samplePod} onCancel={vi.fn()} onSubmit={onSubmit} />,
+    );
+
+    await user.click(screen.getByTestId('debug-ptrace-checkbox'));
+    await user.click(screen.getByTestId('debug-pod-submit'));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ allowPtrace: true }),
+    );
   });
 
   it('disables submit when custom image is empty', async () => {

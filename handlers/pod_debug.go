@@ -21,6 +21,9 @@ type debugPodRequest struct {
 	Image           string `json:"image"`
 	TargetContainer string `json:"targetContainer,omitempty"`
 	Name            string `json:"name,omitempty"`
+	// AllowPtrace grants CAP_SYS_PTRACE so the debug shell can follow
+	// /proc/<pid>/root into the target container's filesystem.
+	AllowPtrace bool `json:"allowPtrace,omitempty"`
 }
 
 // debugPodResponse is returned to the client when an ephemeral container has been created.
@@ -150,6 +153,13 @@ func addEphemeralContainer(
 		}
 		if req.TargetContainer != "" {
 			ec.TargetContainerName = req.TargetContainer
+		}
+		if req.AllowPtrace {
+			ec.SecurityContext = &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Add: []corev1.Capability{"SYS_PTRACE"},
+				},
+			}
 		}
 
 		pod.Spec.EphemeralContainers = append(pod.Spec.EphemeralContainers, ec)

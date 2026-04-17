@@ -60,6 +60,7 @@ export interface DebugPodRequest {
   image: string;
   targetContainer?: string;
   name?: string;
+  allowPtrace?: boolean;
 }
 
 export interface DebugPodResult {

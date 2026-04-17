@@ -383,6 +383,80 @@ func TestPodDebugHandler_ReadinessTimeout(t *testing.T) {
 	}
 }
 
+func TestPodDebugHandler_AllowPtraceAddsCapability(t *testing.T) {
+	pod := newRunningPod("default", "my-pod", "app")
+	cs := fake.NewSimpleClientset(pod)
+	withDebugClientset(t, cs)
+	withFastPolling(t, 500*time.Millisecond, 5*time.Millisecond)
+
+	req := newDebugRequest(t, "default", "my-pod", debugPodRequest{
+		Image:       "nicolaka/netshoot:latest",
+		Name:        "debugger-p",
+		AllowPtrace: true,
+	})
+	w := httptest.NewRecorder()
+
+	go func() {
+		time.Sleep(15 * time.Millisecond)
+		setEphemeralContainerRunning(t, cs, "default", "my-pod", "debugger-p")
+	}()
+
+	PodDebugHandler(w, req)
+	if w.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Result().StatusCode, w.Body.String())
+	}
+
+	final, err := cs.CoreV1().Pods("default").Get(context.Background(), "my-pod", metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("get pod: %v", err)
+	}
+	if len(final.Spec.EphemeralContainers) != 1 {
+		t.Fatalf("expected 1 ephemeral container, got %d", len(final.Spec.EphemeralContainers))
+	}
+	sc := final.Spec.EphemeralContainers[0].SecurityContext
+	if sc == nil || sc.Capabilities == nil {
+		t.Fatalf("expected SecurityContext.Capabilities to be set")
+	}
+	found := false
+	for _, c := range sc.Capabilities.Add {
+		if c == "SYS_PTRACE" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected SYS_PTRACE capability, got %v", sc.Capabilities.Add)
+	}
+}
+
+func TestPodDebugHandler_OmitsCapabilityByDefault(t *testing.T) {
+	pod := newRunningPod("default", "my-pod", "app")
+	cs := fake.NewSimpleClientset(pod)
+	withDebugClientset(t, cs)
+	withFastPolling(t, 500*time.Millisecond, 5*time.Millisecond)
+
+	req := newDebugRequest(t, "default", "my-pod", debugPodRequest{
+		Image: "nicolaka/netshoot:latest",
+		Name:  "debugger-q",
+	})
+	w := httptest.NewRecorder()
+
+	go func() {
+		time.Sleep(15 * time.Millisecond)
+		setEphemeralContainerRunning(t, cs, "default", "my-pod", "debugger-q")
+	}()
+
+	PodDebugHandler(w, req)
+	if w.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	}
+
+	final, _ := cs.CoreV1().Pods("default").Get(context.Background(), "my-pod", metav1.GetOptions{})
+	if final.Spec.EphemeralContainers[0].SecurityContext != nil {
+		t.Errorf("expected nil SecurityContext when AllowPtrace=false, got %+v",
+			final.Spec.EphemeralContainers[0].SecurityContext)
+	}
+}
+
 func TestHasContainer_MatchesEphemeral(t *testing.T) {
 	pod := &corev1.Pod{
 		Spec: corev1.PodSpec{

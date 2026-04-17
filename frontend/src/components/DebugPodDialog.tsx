@@ -30,6 +30,7 @@ export function DebugPodDialog({
   const [imageSelection, setImageSelection] = useState<string>(DEBUG_IMAGE_PRESETS[0].value);
   const [customImage, setCustomImage] = useState<string>('');
   const [targetContainer, setTargetContainer] = useState<string>('');
+  const [allowPtrace, setAllowPtrace] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +40,7 @@ export function DebugPodDialog({
       setImageSelection(DEBUG_IMAGE_PRESETS[0].value);
       setCustomImage('');
       setTargetContainer('');
+      setAllowPtrace(false);
       setError(null);
       setIsSubmitting(false);
     }
@@ -74,6 +76,7 @@ export function DebugPodDialog({
       await onSubmit({
         image: resolvedImage,
         targetContainer: targetContainer || undefined,
+        allowPtrace: allowPtrace || undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start debug container');
@@ -166,6 +169,23 @@ export function DebugPodDialog({
               ))}
             </select>
           </div>
+
+          <label className="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              data-testid="debug-ptrace-checkbox"
+              checked={allowPtrace}
+              onChange={(e) => setAllowPtrace(e.target.checked)}
+              disabled={isSubmitting}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">Allow ptrace (SYS_PTRACE)</span>
+              <span className="block text-xs text-gray-500">
+                Required to follow /proc/&lt;pid&gt;/root and inspect the target container&apos;s filesystem.
+              </span>
+            </span>
+          </label>
 
           {error && (
             <div
