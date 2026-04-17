@@ -18,6 +18,7 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
     initialContainer ?? pod.containers?.[0] ?? ''
   );
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
+  const [pasted, setPasted] = useState(false);
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
@@ -145,6 +146,21 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
     onClose();
   };
 
+  const handlePaste = async () => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) return;
+      ws.send(JSON.stringify({ type: 'stdin', data: text }));
+      xtermRef.current?.focus();
+      setPasted(true);
+      setTimeout(() => setPasted(false), 1500);
+    } catch {
+      // Clipboard access denied or unavailable.
+    }
+  };
+
   const statusColor = {
     connecting: 'text-yellow-400',
     connected: 'text-green-400',
@@ -231,6 +247,20 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
               </optgroup>
             )}
           </select>
+
+          <button
+            data-testid="exec-panel-paste-button"
+            onClick={handlePaste}
+            disabled={status !== 'connected'}
+            title="Paste clipboard contents into the shell"
+            className={`text-sm px-3 py-1 rounded border ${
+              pasted
+                ? 'bg-green-600 border-green-500 text-white'
+                : 'bg-gray-700 border-gray-600 text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
+          >
+            {pasted ? 'Pasted!' : 'Paste'}
+          </button>
 
           <button
             data-testid="exec-panel-reconnect-button"
