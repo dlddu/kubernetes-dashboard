@@ -591,6 +591,7 @@ test.describe('PodExecPanel UI - complete panel structure', () => {
 
     // Toolbar elements
     await expect(execPanel.getByTestId('exec-panel-container-selector')).toBeVisible();
+    await expect(execPanel.getByTestId('exec-panel-paste-button')).toBeVisible();
     await expect(execPanel.getByTestId('exec-panel-reconnect-button')).toBeVisible();
 
     // Terminal
@@ -599,5 +600,173 @@ test.describe('PodExecPanel UI - complete panel structure', () => {
     // Footer elements
     await expect(execPanel.getByTestId('exec-panel-footer')).toBeVisible();
     await expect(execPanel.getByTestId('exec-panel-status')).toBeVisible();
+  });
+});
+
+// ------------------------------------------------------------
+// UI Tests: PodExecPanel — clipboard paste button
+// ------------------------------------------------------------
+
+test.describe('PodExecPanel UI - paste button', () => {
+  test('should display the Paste button in the toolbar', async ({ page }) => {
+    // Arrange: Open exec panel for any pod
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const firstPodCard = page.getByTestId('pod-card').first();
+    const shellButton = firstPodCard.getByTestId('pod-exec-button');
+    await shellButton.click();
+
+    // Assert: Paste button should be visible with default label
+    const execPanel = page.getByTestId('exec-panel');
+    await expect(execPanel).toBeVisible();
+
+    const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
+    await expect(pasteButton).toBeVisible();
+    await expect(pasteButton).toContainText('Paste');
+  });
+
+  test('should disable the Paste button when the shell is not connected', async ({ page }) => {
+    // Arrange: Find an unhealthy pod whose WebSocket will not reach Connected state
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'unhealthy-test-pod-2') {
+        targetCard = card;
+        break;
+      }
+    }
+
+    // Skip if unhealthy pod not found
+    if (!targetCard) return;
+
+    // Act: Open exec panel
+    const shellButton = targetCard.getByTestId('pod-exec-button');
+    await shellButton.click();
+
+    const execPanel = page.getByTestId('exec-panel');
+    await expect(execPanel).toBeVisible();
+
+    // Assert: Paste button should be disabled while not connected
+    const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
+    await expect(pasteButton).toBeVisible();
+    await expect(pasteButton).toBeDisabled();
+  });
+
+  test('should enable the Paste button once the shell reaches Connected status', async ({ page }) => {
+    // Arrange: Find the busybox-test pod (running, has /bin/sh)
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'busybox-test') {
+        targetCard = card;
+        break;
+      }
+    }
+
+    // Skip if busybox-test not found
+    if (!targetCard) return;
+
+    // Act: Open exec panel
+    const shellButton = targetCard.getByTestId('pod-exec-button');
+    await shellButton.click();
+
+    const execPanel = page.getByTestId('exec-panel');
+    await expect(execPanel).toBeVisible();
+
+    // Wait for the shell to connect
+    const statusIndicator = execPanel.getByTestId('exec-panel-status');
+    await expect(statusIndicator).toContainText('Connected', { timeout: 10000 });
+
+    // Assert: Paste button should become enabled
+    const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
+    await expect(pasteButton).toBeEnabled();
+  });
+
+  test('should send clipboard contents as stdin and show "Pasted!" feedback when clicked', async ({ page, context }) => {
+    // Arrange: Grant clipboard permissions so navigator.clipboard.readText works
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    // Capture WebSocket frames sent by the page so we can assert the paste payload.
+    const sentFrames: string[] = [];
+    page.on('websocket', (ws) => {
+      if (!ws.url().includes('/api/pods/exec/')) return;
+      ws.on('framesent', (payload) => {
+        if (typeof payload.payload === 'string') {
+          sentFrames.push(payload.payload);
+        }
+      });
+    });
+
+    // Arrange: Find the busybox-test pod
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    let targetCard = null;
+    for (let i = 0; i < cardCount; i++) {
+      const card = podCards.nth(i);
+      const nameText = await card.getByTestId('pod-name').innerText();
+      if (nameText === 'busybox-test') {
+        targetCard = card;
+        break;
+      }
+    }
+
+    // Skip if busybox-test not found
+    if (!targetCard) return;
+
+    // Act: Open exec panel and wait for Connected
+    const shellButton = targetCard.getByTestId('pod-exec-button');
+    await shellButton.click();
+
+    const execPanel = page.getByTestId('exec-panel');
+    await expect(execPanel).toBeVisible();
+
+    const statusIndicator = execPanel.getByTestId('exec-panel-status');
+    await expect(statusIndicator).toContainText('Connected', { timeout: 10000 });
+
+    // Seed the clipboard with a known value
+    const clipboardText = 'echo hello-from-clipboard\n';
+    await page.evaluate((text) => navigator.clipboard.writeText(text), clipboardText);
+
+    // Act: Click Paste
+    const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
+    await expect(pasteButton).toBeEnabled();
+    await pasteButton.click();
+
+    // Assert: Button shows "Pasted!" feedback
+    await expect(pasteButton).toContainText('Pasted!');
+
+    // Assert: A stdin frame carrying the clipboard text was sent over the WebSocket
+    await expect.poll(() =>
+      sentFrames.some((frame) => {
+        try {
+          const msg = JSON.parse(frame);
+          return msg.type === 'stdin' && msg.data === clipboardText;
+        } catch {
+          return false;
+        }
+      })
+    ).toBe(true);
+
+    // Assert: Feedback reverts to "Paste" after the 1.5s timeout
+    await expect(pasteButton).toContainText('Paste', { timeout: 3000 });
   });
 });
