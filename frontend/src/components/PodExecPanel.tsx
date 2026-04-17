@@ -147,8 +147,7 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
     onClose();
   };
 
-  const handlePaste = async () => {
-    setPasteError(null);
+  const handlePaste = () => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     if (!navigator.clipboard?.readText) {
@@ -156,18 +155,23 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
       setTimeout(() => setPasteError(null), 5000);
       return;
     }
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text) return;
-      ws.send(JSON.stringify({ type: 'stdin', data: text }));
-      xtermRef.current?.focus();
-      setPasted(true);
-      setTimeout(() => setPasted(false), 1500);
-    } catch (err) {
-      const reason = err instanceof Error && err.message ? err.message : 'Unable to read clipboard.';
-      setPasteError(`Paste failed: ${reason}`);
-      setTimeout(() => setPasteError(null), 5000);
-    }
+    setPasteError(null);
+    // Safari requires navigator.clipboard.readText() to be invoked synchronously
+    // inside the user-gesture call stack. Do NOT add await/setTimeout/other async
+    // work before this line or Safari will reject with NotAllowedError.
+    navigator.clipboard.readText()
+      .then((text) => {
+        if (!text) return;
+        ws.send(JSON.stringify({ type: 'stdin', data: text }));
+        xtermRef.current?.focus();
+        setPasted(true);
+        setTimeout(() => setPasted(false), 1500);
+      })
+      .catch((err) => {
+        const reason = err instanceof Error && err.message ? err.message : 'Unable to read clipboard.';
+        setPasteError(`Paste failed: ${reason}`);
+        setTimeout(() => setPasteError(null), 5000);
+      });
   };
 
   const statusColor = {
