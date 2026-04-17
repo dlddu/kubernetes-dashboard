@@ -697,7 +697,12 @@ test.describe('PodExecPanel UI - paste button', () => {
     await expect(pasteButton).toBeEnabled();
   });
 
-  test('should send clipboard contents as stdin and show "Pasted!" feedback when clicked', async ({ page, context }) => {
+  test('should send clipboard contents as stdin and show "Pasted!" feedback when clicked', async ({ page, context, browserName }) => {
+    // context.grantPermissions for clipboard is Chromium-only. WebKit has no
+    // automated path to pre-authorize navigator.clipboard.readText, so skip
+    // the real-clipboard flow on Safari/Mobile Safari projects.
+    test.skip(browserName === 'webkit', 'Clipboard permissions API is Chromium-only');
+
     // Arrange: Grant clipboard permissions so navigator.clipboard.readText works
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
@@ -770,7 +775,12 @@ test.describe('PodExecPanel UI - paste button', () => {
     await expect(pasteButton).toContainText('Paste', { timeout: 3000 });
   });
 
-  test('should display an error message when clipboard read fails', async ({ page }) => {
+  test('should display an error message when clipboard read fails', async ({ page, browserName }) => {
+    // Overriding navigator.clipboard via Object.defineProperty is unreliable
+    // in WebKit where the clipboard descriptor may not be configurable.
+    // The error UI itself is browser-agnostic and is exercised on Chromium.
+    test.skip(browserName === 'webkit', 'navigator.clipboard override is unreliable in WebKit');
+
     // Arrange: Find the busybox-test pod (running, has /bin/sh)
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
