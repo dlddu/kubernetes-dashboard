@@ -61,6 +61,7 @@ export interface DebugPodRequest {
   targetContainer?: string;
   name?: string;
   allowPtrace?: boolean;
+  allowSysAdmin?: boolean;
 }
 
 export interface DebugPodResult {
