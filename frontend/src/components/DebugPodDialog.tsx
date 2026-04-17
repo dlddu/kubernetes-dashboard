@@ -31,6 +31,7 @@ export function DebugPodDialog({
   const [customImage, setCustomImage] = useState<string>('');
   const [targetContainer, setTargetContainer] = useState<string>('');
   const [allowPtrace, setAllowPtrace] = useState<boolean>(false);
+  const [allowSysAdmin, setAllowSysAdmin] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +42,7 @@ export function DebugPodDialog({
       setCustomImage('');
       setTargetContainer('');
       setAllowPtrace(false);
+      setAllowSysAdmin(false);
       setError(null);
       setIsSubmitting(false);
     }
@@ -77,6 +79,7 @@ export function DebugPodDialog({
         image: resolvedImage,
         targetContainer: targetContainer || undefined,
         allowPtrace: allowPtrace || undefined,
+        allowSysAdmin: allowSysAdmin || undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start debug container');
@@ -183,6 +186,23 @@ export function DebugPodDialog({
               <span className="font-medium">Allow ptrace (SYS_PTRACE)</span>
               <span className="block text-xs text-gray-500">
                 Required to follow /proc/&lt;pid&gt;/root and inspect the target container&apos;s filesystem.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              data-testid="debug-sysadmin-checkbox"
+              checked={allowSysAdmin}
+              onChange={(e) => setAllowSysAdmin(e.target.checked)}
+              disabled={isSubmitting}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">Allow sys admin (SYS_ADMIN)</span>
+              <span className="block text-xs text-gray-500">
+                Grants broad privileged operations (mount, setns, etc.). Use with caution.
               </span>
             </span>
           </label>

@@ -428,6 +428,86 @@ func TestPodDebugHandler_AllowPtraceAddsCapability(t *testing.T) {
 	}
 }
 
+func TestPodDebugHandler_AllowSysAdminAddsCapability(t *testing.T) {
+	pod := newRunningPod("default", "my-pod", "app")
+	cs := fake.NewSimpleClientset(pod)
+	withDebugClientset(t, cs)
+	withFastPolling(t, 500*time.Millisecond, 5*time.Millisecond)
+
+	req := newDebugRequest(t, "default", "my-pod", debugPodRequest{
+		Image:         "nicolaka/netshoot:latest",
+		Name:          "debugger-a",
+		AllowSysAdmin: true,
+	})
+	w := httptest.NewRecorder()
+
+	go func() {
+		time.Sleep(15 * time.Millisecond)
+		setEphemeralContainerRunning(t, cs, "default", "my-pod", "debugger-a")
+	}()
+
+	PodDebugHandler(w, req)
+	if w.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Result().StatusCode, w.Body.String())
+	}
+
+	final, err := cs.CoreV1().Pods("default").Get(context.Background(), "my-pod", metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("get pod: %v", err)
+	}
+	sc := final.Spec.EphemeralContainers[0].SecurityContext
+	if sc == nil || sc.Capabilities == nil {
+		t.Fatalf("expected SecurityContext.Capabilities to be set")
+	}
+	found := false
+	for _, c := range sc.Capabilities.Add {
+		if c == "SYS_ADMIN" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected SYS_ADMIN capability, got %v", sc.Capabilities.Add)
+	}
+}
+
+func TestPodDebugHandler_AllowBothCapabilities(t *testing.T) {
+	pod := newRunningPod("default", "my-pod", "app")
+	cs := fake.NewSimpleClientset(pod)
+	withDebugClientset(t, cs)
+	withFastPolling(t, 500*time.Millisecond, 5*time.Millisecond)
+
+	req := newDebugRequest(t, "default", "my-pod", debugPodRequest{
+		Image:         "nicolaka/netshoot:latest",
+		Name:          "debugger-both",
+		AllowPtrace:   true,
+		AllowSysAdmin: true,
+	})
+	w := httptest.NewRecorder()
+
+	go func() {
+		time.Sleep(15 * time.Millisecond)
+		setEphemeralContainerRunning(t, cs, "default", "my-pod", "debugger-both")
+	}()
+
+	PodDebugHandler(w, req)
+	if w.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Result().StatusCode, w.Body.String())
+	}
+
+	final, _ := cs.CoreV1().Pods("default").Get(context.Background(), "my-pod", metav1.GetOptions{})
+	sc := final.Spec.EphemeralContainers[0].SecurityContext
+	if sc == nil || sc.Capabilities == nil {
+		t.Fatalf("expected SecurityContext.Capabilities to be set")
+	}
+	got := map[corev1.Capability]bool{}
+	for _, c := range sc.Capabilities.Add {
+		got[c] = true
+	}
+	if !got["SYS_PTRACE"] || !got["SYS_ADMIN"] {
+		t.Errorf("expected both SYS_PTRACE and SYS_ADMIN, got %v", sc.Capabilities.Add)
+	}
+}
+
 func TestPodDebugHandler_OmitsCapabilityByDefault(t *testing.T) {
 	pod := newRunningPod("default", "my-pod", "app")
 	cs := fake.NewSimpleClientset(pod)

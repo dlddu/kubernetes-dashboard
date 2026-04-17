@@ -24,6 +24,9 @@ type debugPodRequest struct {
 	// AllowPtrace grants CAP_SYS_PTRACE so the debug shell can follow
 	// /proc/<pid>/root into the target container's filesystem.
 	AllowPtrace bool `json:"allowPtrace,omitempty"`
+	// AllowSysAdmin grants CAP_SYS_ADMIN so the debug shell can perform
+	// privileged administrative operations (e.g. mount, setns).
+	AllowSysAdmin bool `json:"allowSysAdmin,omitempty"`
 }
 
 // debugPodResponse is returned to the client when an ephemeral container has been created.
@@ -154,11 +157,16 @@ func addEphemeralContainer(
 		if req.TargetContainer != "" {
 			ec.TargetContainerName = req.TargetContainer
 		}
+		var caps []corev1.Capability
 		if req.AllowPtrace {
+			caps = append(caps, "SYS_PTRACE")
+		}
+		if req.AllowSysAdmin {
+			caps = append(caps, "SYS_ADMIN")
+		}
+		if len(caps) > 0 {
 			ec.SecurityContext = &corev1.SecurityContext{
-				Capabilities: &corev1.Capabilities{
-					Add: []corev1.Capability{"SYS_PTRACE"},
-				},
+				Capabilities: &corev1.Capabilities{Add: caps},
 			}
 		}
 
