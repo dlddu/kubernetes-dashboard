@@ -8,13 +8,14 @@ import { StatusBadge } from './StatusBadge';
 interface PodExecPanelProps {
   pod: PodDetails;
   onClose: () => void;
+  initialContainer?: string;
 }
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
-export function PodExecPanel({ pod, onClose }: PodExecPanelProps) {
+export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelProps) {
   const [selectedContainer, setSelectedContainer] = useState<string>(
-    pod.containers?.[0] ?? ''
+    initialContainer ?? pod.containers?.[0] ?? ''
   );
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
 
@@ -220,6 +221,15 @@ export function PodExecPanel({ pod, onClose }: PodExecPanelProps) {
                 </option>
               ))}
             </optgroup>
+            {(pod.ephemeralContainers ?? []).length > 0 && (
+              <optgroup label="Ephemeral Containers">
+                {pod.ephemeralContainers!.map((c) => (
+                  <option key={`eph-${c}`} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
 
           <button

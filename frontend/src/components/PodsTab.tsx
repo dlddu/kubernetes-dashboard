@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { fetchAllPods, cleanupPods, PodDetails } from '../api/pods';
+import { fetchAllPods, cleanupPods, debugPod, PodDetails, DebugPodRequest } from '../api/pods';
 import { UnhealthyPodCard } from './UnhealthyPodCard';
 import { PodLogPanel } from './PodLogPanel';
 import { PodExecPanel } from './PodExecPanel';
@@ -7,6 +7,7 @@ import { LoadingSkeleton } from './LoadingSkeleton';
 import { ErrorRetry } from './ErrorRetry';
 import { EmptyState } from './EmptyState';
 import { ConfirmDialog } from './ConfirmDialog';
+import { DebugPodDialog } from './DebugPodDialog';
 import { useDataFetch } from '../hooks/useDataFetch';
 
 interface PodsTabProps {
@@ -25,6 +26,8 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
 
   const [selectedPod, setSelectedPod] = useState<PodDetails | null>(null);
   const [shellPod, setShellPod] = useState<PodDetails | null>(null);
+  const [shellInitialContainer, setShellInitialContainer] = useState<string | null>(null);
+  const [debugPodTarget, setDebugPodTarget] = useState<PodDetails | null>(null);
   const [hideCompleted, setHideCompleted] = useState(false);
   const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
@@ -41,6 +44,31 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
   const cleanupTargetCount = pods.filter((pod) =>
     CLEANUP_TARGET_STATUSES.includes(pod.status.toLowerCase()),
   ).length;
+
+  const handleDebugSubmit = useCallback(
+    async (request: DebugPodRequest) => {
+      if (!debugPodTarget) {
+        throw new Error('No pod selected');
+      }
+      const pod = debugPodTarget;
+      const result = await debugPod(pod.namespace, pod.name, request);
+      await refresh();
+      setDebugPodTarget(null);
+      setSelectedPod(null);
+      setShellInitialContainer(result.container);
+      setShellPod({
+        ...pod,
+        ephemeralContainers: [...(pod.ephemeralContainers ?? []), result.container],
+      });
+      return result;
+    },
+    [debugPodTarget, refresh],
+  );
+
+  const handleShellClose = useCallback(() => {
+    setShellPod(null);
+    setShellInitialContainer(null);
+  }, []);
 
   const handleCleanup = useCallback(async () => {
     try {
@@ -141,7 +169,8 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
                 key={`${pod.namespace}-${pod.name}`}
                 pod={pod}
                 onClick={(p) => setSelectedPod(p)}
-                onExec={(p) => { setSelectedPod(null); setShellPod(p); }}
+                onExec={(p) => { setSelectedPod(null); setShellInitialContainer(null); setShellPod(p); }}
+                onDebug={(p) => { setSelectedPod(null); setDebugPodTarget(p); }}
                 isSelected={
                   selectedPod?.name === pod.name &&
                   selectedPod?.namespace === pod.namespace
@@ -162,9 +191,17 @@ export function PodsTab({ namespace }: PodsTabProps = {}) {
       {shellPod && (
         <PodExecPanel
           pod={shellPod}
-          onClose={() => setShellPod(null)}
+          onClose={handleShellClose}
+          initialContainer={shellInitialContainer ?? undefined}
         />
       )}
+
+      <DebugPodDialog
+        isOpen={debugPodTarget !== null}
+        pod={debugPodTarget}
+        onCancel={() => setDebugPodTarget(null)}
+        onSubmit={handleDebugSubmit}
+      />
 
       <ConfirmDialog
         isOpen={showCleanupDialog}

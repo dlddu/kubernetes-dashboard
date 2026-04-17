@@ -772,6 +772,38 @@ describe('UnhealthyPodCard Component', () => {
   // isSelected prop
   // =========================================================================
 
+  describe('onDebug prop', () => {
+    it('should render the Debug button when onDebug is provided', () => {
+      render(<UnhealthyPodCard pod={mockPod} onDebug={vi.fn()} />);
+      expect(screen.getByTestId('pod-debug-button')).toBeInTheDocument();
+      expect(screen.getByTestId('pod-debug-button')).toHaveTextContent(/debug/i);
+    });
+
+    it('should not render the Debug button when onDebug is omitted', () => {
+      render(<UnhealthyPodCard pod={mockPod} />);
+      expect(screen.queryByTestId('pod-debug-button')).not.toBeInTheDocument();
+    });
+
+    it('should call onDebug with the pod when the Debug button is clicked', async () => {
+      const user = userEvent.setup();
+      const onDebug = vi.fn();
+      render(<UnhealthyPodCard pod={mockPod} onDebug={onDebug} />);
+      await user.click(screen.getByTestId('pod-debug-button'));
+      expect(onDebug).toHaveBeenCalledTimes(1);
+      expect(onDebug).toHaveBeenCalledWith(mockPod);
+    });
+
+    it('should not trigger onClick when the Debug button is clicked (stopPropagation)', async () => {
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+      const onDebug = vi.fn();
+      render(<UnhealthyPodCard pod={mockPod} onClick={onClick} onDebug={onDebug} />);
+      await user.click(screen.getByTestId('pod-debug-button'));
+      expect(onDebug).toHaveBeenCalledTimes(1);
+      expect(onClick).not.toHaveBeenCalled();
+    });
+  });
+
   describe('isSelected prop', () => {
     it('should apply ring-2 ring-blue-500 styling when isSelected is true', () => {
       // Arrange & Act
