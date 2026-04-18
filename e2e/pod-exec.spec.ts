@@ -697,15 +697,10 @@ test.describe('PodExecPanel UI - paste button', () => {
     await expect(pasteButton).toBeEnabled();
   });
 
-  test('should send clipboard contents as stdin and show "Pasted!" feedback when clicked', async ({ page, context, browserName }) => {
-    // Chromium requires explicit clipboard permissions on the browser context
-    // for navigator.clipboard.readText / writeText to succeed. Playwright's
-    // WebKit does not recognise the 'clipboard-read' / 'clipboard-write'
-    // permission names but allows clipboard API calls inside the automation
-    // context, so we skip grantPermissions there.
-    if (browserName === 'chromium') {
-      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    }
+  test('should send clipboard contents as stdin and show "Pasted!" feedback when clicked', async ({ page, context }) => {
+    // Grant clipboard permissions on all supported projects. Playwright >= 1.46
+    // accepts clipboard-read / clipboard-write for WebKit as well as Chromium.
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
     // Capture WebSocket frames sent by the page so we can assert the paste payload.
     const sentFrames: string[] = [];

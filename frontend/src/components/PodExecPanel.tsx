@@ -227,7 +227,7 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-4 px-6 py-3 border-b border-gray-700 bg-gray-800">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 border-b border-gray-700 bg-gray-800">
           <select
             data-testid="exec-panel-container-selector"
             value={selectedContainer}
