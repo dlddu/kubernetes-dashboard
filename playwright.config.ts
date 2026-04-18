@@ -50,10 +50,15 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      // Safari engines are only scheduled against the pod shell suite where
+      // the Clipboard API gesture behavior we care about lives. Running the
+      // whole suite here blew past the 30 min CI timeout.
+      testMatch: /pod-exec\.spec\.ts/,
     },
     {
       name: 'mobile-safari',
       use: { ...devices['iPhone 13'] },
+      testMatch: /pod-exec\.spec\.ts/,
     },
     // Uncomment to test on other browsers
     // {
