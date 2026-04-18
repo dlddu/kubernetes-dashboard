@@ -698,13 +698,14 @@ test.describe('PodExecPanel UI - paste button', () => {
   });
 
   test('should send clipboard contents as stdin and show "Pasted!" feedback when clicked', async ({ page, context, browserName }) => {
-    // context.grantPermissions for clipboard is Chromium-only. WebKit has no
-    // automated path to pre-authorize navigator.clipboard.readText, so skip
-    // the real-clipboard flow on Safari/Mobile Safari projects.
-    test.skip(browserName === 'webkit', 'Clipboard permissions API is Chromium-only');
-
-    // Arrange: Grant clipboard permissions so navigator.clipboard.readText works
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    // Chromium requires explicit clipboard permissions on the browser context
+    // for navigator.clipboard.readText / writeText to succeed. Playwright's
+    // WebKit does not recognise the 'clipboard-read' / 'clipboard-write'
+    // permission names but allows clipboard API calls inside the automation
+    // context, so we skip grantPermissions there.
+    if (browserName === 'chromium') {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    }
 
     // Capture WebSocket frames sent by the page so we can assert the paste payload.
     const sentFrames: string[] = [];
@@ -747,11 +748,11 @@ test.describe('PodExecPanel UI - paste button', () => {
     const statusIndicator = execPanel.getByTestId('exec-panel-status');
     await expect(statusIndicator).toContainText('Connected', { timeout: 10000 });
 
-    // Seed the clipboard with a known value
+    // Seed the real system clipboard via navigator.clipboard.writeText.
     const clipboardText = 'echo hello-from-clipboard\n';
-    await page.evaluate((text) => navigator.clipboard.writeText(text), clipboardText);
+    await page.evaluate((t) => navigator.clipboard.writeText(t), clipboardText);
 
-    // Act: Click Paste
+    // Act: Click Paste — the handler calls the real navigator.clipboard.readText.
     const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
     await expect(pasteButton).toBeEnabled();
     await pasteButton.click();
@@ -775,13 +776,11 @@ test.describe('PodExecPanel UI - paste button', () => {
     await expect(pasteButton).toContainText('Paste', { timeout: 3000 });
   });
 
-  test('should display an error message when clipboard read fails', async ({ page, browserName }) => {
-    // Overriding navigator.clipboard via Object.defineProperty is unreliable
-    // in WebKit where the clipboard descriptor may not be configurable.
-    // The error UI itself is browser-agnostic and is exercised on Chromium.
-    test.skip(browserName === 'webkit', 'navigator.clipboard override is unreliable in WebKit');
-
+  test('should display an error message when clipboard read fails', async ({ page }) => {
     // Arrange: Find the busybox-test pod (running, has /bin/sh)
+    // Note: we intentionally do NOT call context.grantPermissions here so that
+    // navigator.clipboard.readText will reject when invoked outside a user
+    // activation (see the programmatic click below).
     await page.goto('/pods');
     await page.waitForLoadState('networkidle');
 
@@ -811,25 +810,22 @@ test.describe('PodExecPanel UI - paste button', () => {
     const statusIndicator = execPanel.getByTestId('exec-panel-status');
     await expect(statusIndicator).toContainText('Connected', { timeout: 10000 });
 
-    // Force navigator.clipboard.readText to reject so the error branch runs.
-    await page.evaluate(() => {
-      Object.defineProperty(navigator, 'clipboard', {
-        configurable: true,
-        value: {
-          readText: () => Promise.reject(new Error('Clipboard permission denied by test')),
-        },
-      });
-    });
-
-    // Act: Click Paste — expected to fail
     const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
     await expect(pasteButton).toBeEnabled();
-    await pasteButton.click();
 
-    // Assert: Error message is shown with the failure reason
+    // Trigger paste via HTMLElement.click() so the handler runs WITHOUT user
+    // activation. On Chromium (no clipboard-read permission granted) and on
+    // WebKit (no user gesture), navigator.clipboard.readText rejects with a
+    // real browser error; handlePaste catches it and renders the reason.
+    await page.evaluate(() => {
+      const btn = document.querySelector<HTMLButtonElement>('[data-testid="exec-panel-paste-button"]');
+      btn?.click();
+    });
+
+    // Assert: Error message appears with the browser-reported reason.
     const errorMessage = execPanel.getByTestId('exec-panel-paste-error');
     await expect(errorMessage).toBeVisible();
-    await expect(errorMessage).toContainText('Clipboard permission denied by test');
+    await expect(errorMessage).toContainText('Paste failed:');
 
     // Assert: Button stays on "Paste" (no success feedback)
     await expect(pasteButton).toContainText('Paste');
