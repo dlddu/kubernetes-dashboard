@@ -698,9 +698,12 @@ test.describe('PodExecPanel UI - paste button', () => {
   });
 
   test('should send clipboard contents as stdin and show "Pasted!" feedback when clicked', async ({ page, context }) => {
-    // Grant clipboard permissions on all supported projects. Playwright >= 1.46
-    // accepts clipboard-read / clipboard-write for WebKit as well as Chromium.
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    // Grant clipboard-read so navigator.clipboard.readText() inside the Paste
+    // button's click handler can return the system clipboard contents. Both
+    // Chromium and WebKit (Playwright >= 1.46) accept this permission name;
+    // 'clipboard-write' is Chromium-only, so we don't grant it here and use
+    // document.execCommand('copy') below to seed the clipboard portably.
+    await context.grantPermissions(['clipboard-read']);
 
     // Capture WebSocket frames sent by the page so we can assert the paste payload.
     const sentFrames: string[] = [];
@@ -743,9 +746,24 @@ test.describe('PodExecPanel UI - paste button', () => {
     const statusIndicator = execPanel.getByTestId('exec-panel-status');
     await expect(statusIndicator).toContainText('Connected', { timeout: 10000 });
 
-    // Seed the real system clipboard via navigator.clipboard.writeText.
+    // Seed the real system clipboard. We use document.execCommand('copy') on
+    // a hidden textarea instead of navigator.clipboard.writeText because the
+    // async writeText API requires a user activation on WebKit, which a plain
+    // page.evaluate call does not have. execCommand('copy') works without a
+    // gesture in Playwright automation contexts on Chromium, WebKit, and
+    // Mobile Safari, and writes to the same system clipboard that
+    // navigator.clipboard.readText reads from.
     const clipboardText = 'echo hello-from-clipboard\n';
-    await page.evaluate((t) => navigator.clipboard.writeText(t), clipboardText);
+    await page.evaluate((text) => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }, clipboardText);
 
     // Act: Click Paste — the handler calls the real navigator.clipboard.readText.
     const pasteButton = execPanel.getByTestId('exec-panel-paste-button');
