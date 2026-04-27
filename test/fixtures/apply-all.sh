@@ -298,3 +298,80 @@ kubectl patch gitrepository infra-repo -n dashboard-test --type=merge --subresou
 }'
 
 log_info "FluxCD GitRepository status patching completed"
+
+# 10. Apply External Secrets Operator fixtures
+log_info "Applying External Secrets Operator fixtures..."
+kubectl apply -f "$SCRIPT_DIR/externalsecret-ready.yaml"
+kubectl apply -f "$SCRIPT_DIR/externalsecret-not-ready.yaml"
+kubectl apply -f "$SCRIPT_DIR/externalsecret-multi-ns.yaml"
+
+# Patch ExternalSecret status subresources
+log_info "Patching ExternalSecret status subresources..."
+
+# app-secrets-ready (dashboard-test): Ready=True
+kubectl patch externalsecret app-secrets-ready -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:00:00Z",
+        "reason": "SecretSynced",
+        "message": "Secret was synced"
+      }
+    ],
+    "refreshTime": "2026-03-14T06:00:00Z",
+    "syncedResourceVersion": "1-abc123"
+  }
+}'
+
+# app-secrets-failing (dashboard-test): Ready=False
+kubectl patch externalsecret app-secrets-failing -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "False",
+        "lastTransitionTime": "2026-03-14T05:30:00Z",
+        "reason": "SecretSyncedError",
+        "message": "could not get secret data from provider: SecretStore \"missing-store\" not found"
+      }
+    ]
+  }
+}'
+
+# frontend-secrets (dashboard-test): Ready=True
+kubectl patch externalsecret frontend-secrets -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:05:00Z",
+        "reason": "SecretSynced",
+        "message": "Secret was synced"
+      }
+    ],
+    "refreshTime": "2026-03-14T06:05:00Z",
+    "syncedResourceVersion": "1-frontend"
+  }
+}'
+
+# backend-secrets (default): Ready=True
+kubectl patch externalsecret backend-secrets -n default --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:10:00Z",
+        "reason": "SecretSynced",
+        "message": "Secret was synced"
+      }
+    ],
+    "refreshTime": "2026-03-14T06:10:00Z",
+    "syncedResourceVersion": "1-backend"
+  }
+}'
+
+log_info "ExternalSecret status patching completed"

@@ -11,6 +11,7 @@ import { NodesTab } from './components/NodesTab';
 import { WorkloadsTab } from './components/WorkloadsTab';
 import { PodsTab } from './components/PodsTab';
 import { SecretsTab } from './components/SecretsTab';
+import { ExternalSecretsTab } from './components/ExternalSecretsTab';
 import { ArgoTab } from './components/ArgoTab';
 import { FluxCDTab } from './components/FluxCDTab';
 import { KustomizationDetailPage } from './components/KustomizationDetailPage';
@@ -35,6 +36,7 @@ function AppContent() {
           <Route path="/pods" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/pods/*" element={<PodsTab namespace={namespaceParam} />} />
           <Route path="/secrets" element={<SecretsTab namespace={namespaceParam} />} />
+          <Route path="/external-secrets" element={<ExternalSecretsTab namespace={namespaceParam} />} />
           <Route path="/argo/*" element={<ArgoTab namespace={namespaceParam} />} />
           <Route path="/flux" element={<FluxCDTab namespace={namespaceParam} />} />
           <Route path="/fluxcd/kustomization/:namespace/:name" element={<KustomizationDetailPage />} />

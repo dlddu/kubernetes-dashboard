@@ -68,6 +68,16 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
       ),
     },
     {
+      id: 'external-secrets',
+      label: 'ExtSecrets',
+      path: '/external-secrets',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h.01M11 15h.01M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
       id: 'argo',
       label: 'Argo',
       path: '/argo',
@@ -119,7 +129,7 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
       data-testid="bottom-tab-bar"
       className="fixed bottom-0 w-full bg-white border-t border-gray-200 shadow-lg z-50 pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="flex justify-around items-center">
+      <div className="flex items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => {
           const isActive = isTabActive(tab.path);
 
@@ -131,7 +141,7 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
               aria-current={isActive ? 'page' : undefined}
               className={`
                 flex flex-col items-center justify-center
-                min-h-[56px] flex-1 relative
+                min-h-[56px] min-w-[64px] flex-1 flex-shrink-0 relative
                 transition-colors duration-200
                 ${isActive
                   ? 'text-blue-600 font-semibold'

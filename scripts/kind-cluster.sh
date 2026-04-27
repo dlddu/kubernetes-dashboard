@@ -93,6 +93,9 @@ create_cluster() {
 
     # Install FluxCD Kustomization CRD
     install_fluxcd_crds
+
+    # Install External Secrets Operator CRDs
+    install_external_secrets_crds
 }
 
 # Install metrics-server for real CPU/Memory metrics
@@ -147,6 +150,19 @@ install_fluxcd_crds() {
     kubectl wait --for=condition=Established crd/gitrepositories.source.toolkit.fluxcd.io --timeout=60s || true
 
     log_info "FluxCD CRDs installed successfully"
+}
+
+# Install External Secrets Operator CRDs for e2e test environment.
+# The dashboard lists ExternalSecret resources via the dynamic client, so only
+# the ExternalSecret CRD is required (no controller/webhook).
+install_external_secrets_crds() {
+    log_info "Installing External Secrets Operator ExternalSecret CRD..."
+    kubectl apply -f "https://raw.githubusercontent.com/external-secrets/external-secrets/v0.18.2/config/crds/bases/external-secrets.io_externalsecrets.yaml"
+
+    log_info "Waiting for ExternalSecret CRD to be established..."
+    kubectl wait --for=condition=Established crd/externalsecrets.external-secrets.io --timeout=60s || true
+
+    log_info "External Secrets Operator CRDs installed successfully"
 }
 
 # Delete kind cluster
