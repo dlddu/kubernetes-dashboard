@@ -129,7 +129,7 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
       data-testid="bottom-tab-bar"
       className="fixed bottom-0 w-full bg-white border-t border-gray-200 shadow-lg z-50 pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="flex justify-around items-center">
+      <div className="flex items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => {
           const isActive = isTabActive(tab.path);
 
@@ -141,7 +141,7 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
               aria-current={isActive ? 'page' : undefined}
               className={`
                 flex flex-col items-center justify-center
-                min-h-[56px] flex-1 relative
+                min-h-[56px] min-w-[64px] flex-1 flex-shrink-0 relative
                 transition-colors duration-200
                 ${isActive
                   ? 'text-blue-600 font-semibold'

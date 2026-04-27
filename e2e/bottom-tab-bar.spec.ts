@@ -30,8 +30,10 @@ test.describe('BottomTabBar - Tab Navigation', () => {
     const workloadsTab = page.getByTestId('tab-workloads')
       .or(page.getByRole('button', { name: /workloads/i }));
     const podsTab = page.getByTestId('tab-pods');
-    const secretsTab = page.getByTestId('tab-secrets')
-      .or(page.getByRole('button', { name: /secrets/i }));
+    // Use exact testid only — getByRole(/secrets/i) also matches the
+    // tab-external-secrets button (label "ExtSecrets"), which would trigger
+    // a strict-mode violation.
+    const secretsTab = page.getByTestId('tab-secrets');
 
     await expect(overviewTab).toBeVisible();
     await expect(nodesTab).toBeVisible();
@@ -149,8 +151,10 @@ test.describe('BottomTabBar - Tab Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Act: Click Secrets tab
-    const secretsTab = page.getByTestId('tab-secrets')
-      .or(page.getByRole('button', { name: /secrets/i }));
+    // Use exact testid only — getByRole(/secrets/i) also matches the
+    // tab-external-secrets button (label "ExtSecrets"), which would trigger
+    // a strict-mode violation.
+    const secretsTab = page.getByTestId('tab-secrets');
     await secretsTab.click();
     await page.waitForLoadState('networkidle');
 
