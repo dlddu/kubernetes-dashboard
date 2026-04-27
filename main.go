@@ -51,6 +51,7 @@ func setupRouter() http.Handler {
 	mux.HandleFunc("/api/fluxcd/kustomizations/", handlers.KustomizationDetailHandler)
 	mux.HandleFunc("/api/fluxcd/gitrepositories", handlers.GitRepositoriesHandler)
 	mux.HandleFunc("/api/fluxcd/gitrepositories/", handlers.GitRepositoryDetailHandler)
+	mux.HandleFunc("/api/external-secrets", handlers.ExternalSecretsHandler)
 
 	// Serve frontend static files
 	frontendHandler := createFrontendHandler()

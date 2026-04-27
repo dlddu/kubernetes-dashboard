@@ -68,6 +68,16 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
       ),
     },
     {
+      id: 'external-secrets',
+      label: 'ExtSecrets',
+      path: '/external-secrets',
+      icon: (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h.01M11 15h.01M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
       id: 'argo',
       label: 'Argo',
       path: '/argo',

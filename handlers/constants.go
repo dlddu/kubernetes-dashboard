@@ -92,3 +92,8 @@ const (
 	errMsgGitRepositoryUpdateBranch = "Failed to update git repository branch"
 	errMsgGitRepositoryBranches     = "Failed to fetch git repository branches"
 )
+
+// External Secrets Operator error messages.
+const (
+	errMsgExternalSecretListFetch = "Failed to fetch external secret list"
+)
