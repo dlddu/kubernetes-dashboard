@@ -12,10 +12,10 @@ import (
 )
 
 // externalSecretsGVR is the GroupVersionResource used by the External Secrets Operator
-// for the ExternalSecret CRD.
+// for the ExternalSecret CRD. v1 is the served/storage version as of ESO v0.18.
 var externalSecretsGVR = schema.GroupVersionResource{
 	Group:    "external-secrets.io",
-	Version:  "v1beta1",
+	Version:  "v1",
 	Resource: "externalsecrets",
 }
 

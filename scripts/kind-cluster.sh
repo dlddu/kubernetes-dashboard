@@ -157,7 +157,7 @@ install_fluxcd_crds() {
 # the ExternalSecret CRD is required (no controller/webhook).
 install_external_secrets_crds() {
     log_info "Installing External Secrets Operator ExternalSecret CRD..."
-    kubectl apply -f "https://raw.githubusercontent.com/external-secrets/external-secrets/v0.10.4/config/crds/bases/external-secrets.io_externalsecrets.yaml"
+    kubectl apply -f "https://raw.githubusercontent.com/external-secrets/external-secrets/v0.18.2/config/crds/bases/external-secrets.io_externalsecrets.yaml"
 
     log_info "Waiting for ExternalSecret CRD to be established..."
     kubectl wait --for=condition=Established crd/externalsecrets.external-secrets.io --timeout=60s || true
