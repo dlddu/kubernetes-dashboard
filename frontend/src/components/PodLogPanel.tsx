@@ -143,7 +143,7 @@ export function PodLogPanel({ pod, onClose }: PodLogPanelProps) {
   };
 
   return (
-    <div data-testid="log-panel" className="fixed inset-0 z-50 flex justify-end">
+    <div data-testid="log-panel" className="fixed top-0 right-0 left-0 bottom-16 z-50 flex justify-end">
       {/* Backdrop */}
       <div
         data-testid="log-panel-backdrop"

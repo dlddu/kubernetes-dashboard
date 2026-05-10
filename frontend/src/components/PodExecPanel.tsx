@@ -164,7 +164,7 @@ export function PodExecPanel({ pod, onClose, initialContainer }: PodExecPanelPro
   }[status];
 
   return (
-    <div data-testid="exec-panel" className="fixed inset-0 z-50 flex justify-end">
+    <div data-testid="exec-panel" className="fixed top-0 right-0 left-0 bottom-16 z-50 flex justify-end">
       {/* Backdrop */}
       <div
         data-testid="exec-panel-backdrop"
