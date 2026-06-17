@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { FluxCDTab } from './FluxCDTab';
 
 vi.mock('react-router-dom', () => ({
@@ -41,6 +41,25 @@ function mockBothFetches(
     .mockReturnValueOnce(gitRepoResult);
 }
 
+/**
+ * Like mockBothFetches but persists across re-renders. Interaction tests (e.g.
+ * clicking a filter card) trigger state-driven re-renders, which call
+ * useDataFetch again — mockReturnValueOnce would run out of queued values.
+ * useDataFetch is always called kustomizations-first, then git-repos, so we
+ * alternate by call parity.
+ */
+function mockBothFetchesPersistent(
+  kustomizationResult: object = emptyResult,
+  gitRepoResult: object = emptyResult,
+) {
+  let call = 0;
+  mockUseDataFetch.mockImplementation(() => {
+    const result = call % 2 === 0 ? kustomizationResult : gitRepoResult;
+    call += 1;
+    return result;
+  });
+}
+
 // Sample fixture data
 const mockKustomizations = [
   {
@@ -80,6 +99,46 @@ const mockKustomizations = [
     path: './infrastructure',
   },
 ];
+
+const mockGitRepositories = [
+  {
+    name: 'gr-ready',
+    namespace: 'flux-system',
+    ready: true,
+    suspended: false,
+    url: 'https://github.com/example/ready',
+    branch: 'main',
+    revision: 'main@sha1:aaa1111',
+    interval: '1m0s',
+  },
+  {
+    name: 'gr-not-ready',
+    namespace: 'flux-system',
+    ready: false,
+    suspended: false,
+    url: 'https://github.com/example/not-ready',
+    branch: 'main',
+    revision: 'main@sha1:bbb2222',
+    interval: '5m0s',
+  },
+  {
+    name: 'gr-suspended',
+    namespace: 'flux-system',
+    ready: true,
+    suspended: true,
+    url: 'https://github.com/example/suspended',
+    branch: 'main',
+    revision: 'main@sha1:ccc3333',
+    interval: '10m0s',
+  },
+];
+
+const loadedResult = (data: object[]) => ({
+  data,
+  isLoading: false,
+  error: null,
+  refresh: vi.fn(),
+});
 
 describe('FluxCDTab Component', () => {
   beforeEach(() => {
@@ -280,6 +339,118 @@ describe('FluxCDTab Component', () => {
       const summaryCardValues = screen.getAllByTestId('summary-card-value');
       const values = summaryCardValues.map((el) => el.textContent);
       expect(values).toContain('1'); // 1 suspended kustomization
+    });
+  });
+
+  describe('Status Filtering', () => {
+    const kustomizationNames = () =>
+      screen.getAllByTestId('kustomization-name').map((el) => el.textContent);
+    const gitRepositoryNames = () =>
+      screen.getAllByTestId('gitrepository-name').map((el) => el.textContent);
+
+    it('should filter kustomizations to only Ready when the Ready card is clicked', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations));
+      render(<FluxCDTab />);
+
+      // All three are shown before filtering.
+      expect(screen.getAllByTestId('kustomization-card')).toHaveLength(3);
+
+      fireEvent.click(screen.getByTestId('summary-card-ready'));
+
+      const cards = screen.getAllByTestId('kustomization-card');
+      expect(cards).toHaveLength(1);
+      expect(kustomizationNames()).toEqual(['flux-system']);
+    });
+
+    it('should filter kustomizations to only Not Ready when the Not Ready card is clicked', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations));
+      render(<FluxCDTab />);
+
+      fireEvent.click(screen.getByTestId('summary-card-not-ready'));
+
+      expect(screen.getAllByTestId('kustomization-card')).toHaveLength(1);
+      expect(kustomizationNames()).toEqual(['apps']);
+    });
+
+    it('should filter kustomizations to only Suspended when the Suspended card is clicked', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations));
+      render(<FluxCDTab />);
+
+      fireEvent.click(screen.getByTestId('summary-card-suspended'));
+
+      expect(screen.getAllByTestId('kustomization-card')).toHaveLength(1);
+      expect(kustomizationNames()).toEqual(['infra']);
+    });
+
+    it('should clear the kustomization filter when the active card is clicked again', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations));
+      render(<FluxCDTab />);
+
+      const readyCard = screen.getByTestId('summary-card-ready');
+      fireEvent.click(readyCard);
+      expect(screen.getAllByTestId('kustomization-card')).toHaveLength(1);
+
+      fireEvent.click(readyCard);
+      expect(screen.getAllByTestId('kustomization-card')).toHaveLength(3);
+    });
+
+    it('should switch the kustomization filter when a different card is clicked', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations));
+      render(<FluxCDTab />);
+
+      fireEvent.click(screen.getByTestId('summary-card-ready'));
+      expect(kustomizationNames()).toEqual(['flux-system']);
+
+      fireEvent.click(screen.getByTestId('summary-card-suspended'));
+      expect(kustomizationNames()).toEqual(['infra']);
+    });
+
+    it('should mark the active kustomization filter card with aria-pressed', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations));
+      render(<FluxCDTab />);
+
+      const readyCard = screen.getByTestId('summary-card-ready');
+      expect(readyCard).toHaveAttribute('aria-pressed', 'false');
+
+      fireEvent.click(readyCard);
+      expect(readyCard).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('should show a filtered-empty message when no kustomization matches the filter', () => {
+      // Only Ready kustomizations exist — filtering by Suspended yields none.
+      const onlyReady = [mockKustomizations[0]];
+      mockBothFetchesPersistent(loadedResult(onlyReady));
+      render(<FluxCDTab />);
+
+      fireEvent.click(screen.getByTestId('summary-card-suspended'));
+
+      expect(screen.queryAllByTestId('kustomization-card')).toHaveLength(0);
+      expect(screen.getByText(/no kustomizations match the selected filter/i)).toBeInTheDocument();
+    });
+
+    it('should filter git repositories independently from kustomizations', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations), loadedResult(mockGitRepositories));
+      render(<FluxCDTab />);
+
+      expect(screen.getAllByTestId('gitrepository-card')).toHaveLength(3);
+
+      // Filtering git repos should not affect the kustomization list.
+      fireEvent.click(screen.getByTestId('summary-card-gitrepo-not-ready'));
+
+      expect(gitRepositoryNames()).toEqual(['gr-not-ready']);
+      expect(screen.getAllByTestId('kustomization-card')).toHaveLength(3);
+    });
+
+    it('should support keyboard activation (Enter) of a filter card', () => {
+      mockBothFetchesPersistent(loadedResult(mockKustomizations));
+      render(<FluxCDTab />);
+
+      const readyCard = screen.getByTestId('summary-card-ready');
+      fireEvent.keyDown(readyCard, { key: 'Enter' });
+
+      const cards = within(screen.getByTestId('flux-page')).getAllByTestId('kustomization-card');
+      expect(cards).toHaveLength(1);
+      expect(kustomizationNames()).toEqual(['flux-system']);
     });
   });
 
