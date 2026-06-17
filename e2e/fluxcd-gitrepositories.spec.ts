@@ -213,6 +213,129 @@ test.describe('FluxCD Tab - GitRepository List - Summary Cards', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Group 2b: UI — 상태 필터 (Ready / Not Ready / Suspended 요약 카드 클릭)
+// ---------------------------------------------------------------------------
+
+test.describe('FluxCD Tab - GitRepository List - Status Filtering', () => {
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
+  // Fixtures: flux-system (Ready), app-source (Not Ready), infra-repo (Suspended).
+
+  test('should show only Ready GitRepositories when the Ready summary card is clicked', async ({ page }) => {
+    // Arrange
+    await gotoFluxGitRepositories(page);
+
+    const allCards = page.getByTestId('gitrepository-card');
+    await expect(allCards.first()).toBeVisible();
+    const totalCount = await allCards.count();
+    expect(totalCount).toBeGreaterThanOrEqual(1);
+
+    // Act: Click the Ready summary card
+    await page.getByTestId('summary-card-gitrepo-ready').click();
+
+    // Assert: The Ready filter card is marked active
+    await expect(page.getByTestId('summary-card-gitrepo-ready')).toHaveAttribute('aria-pressed', 'true');
+
+    // Assert: Every visible card has a Ready badge
+    const filtered = page.getByTestId('gitrepository-card');
+    const filteredCount = await filtered.count();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
+    expect(filteredCount).toBeLessThanOrEqual(totalCount);
+    for (let i = 0; i < filteredCount; i++) {
+      await expect(filtered.nth(i).getByTestId('status-badge')).toHaveText('Ready');
+    }
+
+    // Assert: The known Not Ready fixture is no longer shown
+    expect(await findGitRepositoryCardByName(page, 'app-source')).toBeNull();
+  });
+
+  test('should show only Not Ready GitRepositories when the Not Ready summary card is clicked', async ({ page }) => {
+    // Arrange
+    await gotoFluxGitRepositories(page);
+    await expect(page.getByTestId('gitrepository-card').first()).toBeVisible();
+
+    // Act: Click the Not Ready summary card
+    await page.getByTestId('summary-card-gitrepo-not-ready').click();
+
+    // Assert: Every visible card has a NotReady badge
+    const filtered = page.getByTestId('gitrepository-card');
+    const filteredCount = await filtered.count();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < filteredCount; i++) {
+      await expect(filtered.nth(i).getByTestId('status-badge')).toHaveText('NotReady');
+    }
+
+    // Assert: The app-source fixture is present in the filtered list
+    expect(await findGitRepositoryCardByName(page, 'app-source')).toBeTruthy();
+  });
+
+  test('should show only Suspended GitRepositories when the Suspended summary card is clicked', async ({ page }) => {
+    // Arrange
+    await gotoFluxGitRepositories(page);
+    await expect(page.getByTestId('gitrepository-card').first()).toBeVisible();
+
+    // Act: Click the Suspended summary card
+    await page.getByTestId('summary-card-gitrepo-suspended').click();
+
+    // Assert: Every visible card has a Suspended badge
+    const filtered = page.getByTestId('gitrepository-card');
+    const filteredCount = await filtered.count();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < filteredCount; i++) {
+      await expect(filtered.nth(i).getByTestId('status-badge')).toHaveText('Suspended');
+    }
+
+    // Assert: The infra-repo fixture is present in the filtered list
+    expect(await findGitRepositoryCardByName(page, 'infra-repo')).toBeTruthy();
+  });
+
+  test('should clear the filter and show all GitRepositories when the active summary card is clicked again', async ({ page }) => {
+    // Tests the toggle behaviour: clicking the active filter card again restores the full list.
+
+    // Arrange
+    await gotoFluxGitRepositories(page);
+    const allCards = page.getByTestId('gitrepository-card');
+    await expect(allCards.first()).toBeVisible();
+    const totalCount = await allCards.count();
+
+    // Act: Apply the Ready filter, then toggle it off
+    const readyCard = page.getByTestId('summary-card-gitrepo-ready');
+    await readyCard.click();
+    await expect(readyCard).toHaveAttribute('aria-pressed', 'true');
+    await readyCard.click();
+
+    // Assert: Filter cleared and all cards visible again
+    await expect(readyCard).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByTestId('gitrepository-card')).toHaveCount(totalCount);
+  });
+
+  test('should filter GitRepositories independently from the Kustomizations section', async ({ page }) => {
+    // Tests that the two sections keep separate filter state: filtering GitRepositories
+    // by status must not change the Kustomizations list (or its filter cards).
+
+    // Arrange: Capture the Kustomization list size before filtering
+    await gotoFluxGitRepositories(page);
+    const kustomizationCards = page.getByTestId('kustomization-card');
+    await expect(kustomizationCards.first()).toBeVisible();
+    const kustomizationTotal = await kustomizationCards.count();
+
+    // Act: Filter GitRepositories by Suspended
+    await page.getByTestId('summary-card-gitrepo-suspended').click();
+
+    // Assert: GitRepository cards are filtered to Suspended only
+    const grCards = page.getByTestId('gitrepository-card');
+    const grCount = await grCards.count();
+    expect(grCount).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < grCount; i++) {
+      await expect(grCards.nth(i).getByTestId('status-badge')).toHaveText('Suspended');
+    }
+
+    // Assert: The Kustomization list is unchanged and its Suspended filter stays inactive
+    await expect(page.getByTestId('kustomization-card')).toHaveCount(kustomizationTotal);
+    await expect(page.getByTestId('summary-card-suspended')).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Group 3: UI — Loading, Empty & Error States
 // ---------------------------------------------------------------------------
 
