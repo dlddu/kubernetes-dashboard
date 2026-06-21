@@ -5,7 +5,7 @@
 
 ## 달성 가치
 
-- **V4: GitOps 워크플로우 직접 제어** — GitRepository/Kustomization reconcile, Kustomization suspend/resume, GitRepository 브랜치 전환을 대시보드에서 트리거한다. (AC3, AC4, AC5)
+- **V4: GitOps·reconciliation 직접 제어** — GitRepository/Kustomization reconcile, Kustomization suspend/resume, GitRepository 브랜치 전환을 대시보드에서 트리거한다. (AC3, AC4, AC5)
 - **V1: 클러스터 상태를 한눈에** — GitRepository·Kustomization의 Ready/NotReady/Suspended 요약과 리소스 메타데이터를 표시한다. (AC1, AC2)
 - **V6: 실시간 최신 상태 유지** — 상세 페이지에서 reconcile 진행 상태를 폴링으로 갱신한다. (AC6)
 - **V7: 네임스페이스 포커스/개인화** — 선택된 네임스페이스 기준으로 스코프한다. (AC1, AC2)

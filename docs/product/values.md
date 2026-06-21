@@ -24,10 +24,10 @@
 - **설명**: 로그 조회, 인터랙티브 셸 실행, ephemeral 컨테이너 디버그, 파드 정리(cleanup)를 한 흐름에서 처리해 외부 도구로의 컨텍스트 전환을 최소화한다.
 - **근거(코드)**: `handlers/pods.go`, `pod_exec.go`, `pod_debug.go`, `frontend/src/components/DebugPage.tsx`, `PodLogPanel.tsx`
 
-### V4: GitOps 워크플로우 직접 제어
+### V4: GitOps·reconciliation 직접 제어
 - **유형**: 추상적
-- **설명**: FluxCD Kustomization/GitRepository의 reconcile·suspend·resume, GitRepository 브랜치 업데이트, Argo Workflow 템플릿 제출·재제출을 대시보드에서 직접 트리거한다.
-- **근거(코드)**: `handlers/fluxcd_*`, `handlers/argo_*`, `frontend/src/components/FluxCDTab.tsx`, `ArgoWorkflowsPage.tsx`
+- **설명**: 선언적으로 관리되는 리소스의 재동기화(reconcile)를 운영자가 대시보드에서 직접 유도한다. FluxCD Kustomization/GitRepository의 reconcile·suspend·resume, GitRepository 브랜치 업데이트, Argo Workflow 템플릿 제출·재제출, 그리고 External Secrets Operator(ESO)가 관리하는 대상 Secret 삭제를 통한 External Secret 강제 재동기화를 포함한다.
+- **근거(코드)**: `handlers/fluxcd_*`, `handlers/argo_*`, `handlers/secrets.go`(deleteSecret → ESO re-sync 유도), `frontend/src/components/FluxCDTab.tsx`, `ArgoWorkflowsPage.tsx`, `SecretsTab.tsx`
 
 ### V5: 민감 리소스 안전 열람
 - **유형**: 추상적
