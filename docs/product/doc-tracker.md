@@ -7,63 +7,56 @@
 
 - 정의된 가치: **7개** (V1~V7) — 소유자: 클러스터 운영자
 - PRD: **9개** (탭별 8개 + 공통 셸 1개)
-- Acceptance Criteria: **49개** (가치 연결됨: 49 / 미연결: 0) ✅ 전부 연결
-- 테스트 문서: **4개** (AC 커버됨: 27 / 미커버: 22)
-- 자동화 공백(테스트 문서는 있으나 e2e 미비): **7개 AC**
-- **건강 상태**: 🟡 위험 있음(경미) — 모든 가치·AC가 연결됨. 남은 것은 커버리지뿐: 22개 AC 테스트 문서 미작성 🟢, 자동화 공백 7개 🟢.
+- Acceptance Criteria: **49개** (가치 연결됨: 49 / 미연결: 0)
+- 테스트 문서: **9개** (AC 커버됨: 49 / 미커버: 0)
+- **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). 남은 것은 **자동화 공백 8개**(테스트 문서는 있으나 e2e 미작성)로, 문서 체계 외부의 구현 백로그.
 
-## PRD 인덱스
+## PRD ↔ 테스트 문서 인덱스
 
-| 코드 | PRD | 위치 | 달성 가치 | AC 수 | 테스트 문서 |
-|------|-----|------|-----------|-------|-------------|
-| OV | `prd-overview.md` | `/` | V1, V6, V7 | 7 | ✅ `test-overview.md` |
-| ND | `prd-nodes.md` | `/nodes` | V1 | 3 | — |
-| WL | `prd-workloads.md` | `/workloads` | V1, V3, V7 | 4 | — |
-| PD | `prd-pods.md` | `/pods` | V1, V3, V6, V7 | 7 | ✅ `test-pods.md` |
-| SC | `prd-secrets.md` | `/secrets` | V4, V5, V7 | 4 | — |
-| ES | `prd-external-secrets.md` | `/external-secrets` | V5, V7 | 4 | — |
-| AR | `prd-argo.md` | `/argo` | V1, V4, V6, V7 | 7 | — |
-| FX | `prd-fluxcd.md` | `/flux` | V1, V4, V6, V7 | 7 | ✅ `test-fluxcd.md` |
-| CM | `prd-common.md` | 앱 셸(전역) | V1, V2, V6, V7 | 6 | ✅ `test-common.md` |
+| 코드 | PRD | 위치 | 달성 가치 | AC | 테스트 문서 | 자동화 공백 |
+|------|-----|------|-----------|----|-------------|-------------|
+| OV | `prd-overview.md` | `/` | V1, V6, V7 | 7 | `test-overview.md` | OV7 |
+| ND | `prd-nodes.md` | `/nodes` | V1 | 3 | `test-nodes.md` | — |
+| WL | `prd-workloads.md` | `/workloads` | V1, V3, V7 | 4 | `test-workloads.md` | — |
+| PD | `prd-pods.md` | `/pods` | V1, V3, V6, V7 | 7 | `test-pods.md` | PD6 |
+| SC | `prd-secrets.md` | `/secrets` | V4, V5, V7 | 4 | `test-secrets.md` | SC3 |
+| ES | `prd-external-secrets.md` | `/external-secrets` | V5, V7 | 4 | `test-external-secrets.md` | — |
+| AR | `prd-argo.md` | `/argo` | V1, V4, V6, V7 | 7 | `test-argo.md` | (AR4 폴링 보강) |
+| FX | `prd-fluxcd.md` | `/flux` | V1, V4, V6, V7 | 7 | `test-fluxcd.md` | FX3·FX4·FX5·FX6 |
+| CM | `prd-common.md` | 앱 셸(전역) | V1, V2, V6, V7 | 6 | `test-common.md` | CM3 |
 
 ## 가치 커버리지 매트릭스
 
-| 가치 | 커버 PRD | 연결된 AC | 테스트 문서 | 상태 |
-|------|----------|-----------|-------------|------|
-| V1: 클러스터 상태를 한눈에 | OV, ND, WL, PD, AR, FX, CM | OV1·OV2·OV3·OV7, ND1·ND2·ND3, WL1·WL4, PD1·PD7, AR1·AR3·AR4·AR7, FX1·FX2·FX6·FX7, CM2·CM3 | OV·PD·FX·CM ✓ / ND·WL·AR ✗ | ⚠️ 일부 검증 |
-| V2: 모바일에서 즉시 운영 대응 | CM | CM1·CM2·CM3 | CM ✓ | ✅ 검증(문서) |
-| V3: 파드 문제를 앱 안에서 진단·조치 | WL, PD | WL2·WL3, PD2·PD3·PD4·PD5 | PD ✓ / WL ✗ | ⚠️ 일부 검증 |
-| V4: GitOps·reconciliation 직접 제어 | AR, FX, SC | AR2·AR5·AR6, FX3·FX4·FX5, SC3 | FX ✓ / AR·SC ✗ | ⚠️ 일부 검증 |
-| V5: 민감 리소스 안전 열람 | SC, ES | SC1·SC2·SC4, ES1·ES2·ES3·ES4 | ✗ | ❌ 미검증 |
-| V6: 실시간 최신 상태 유지 | OV, PD, AR, FX, CM | OV4·OV5, PD2·PD3, AR4, FX6, CM4 | OV·PD·FX·CM ✓ / AR ✗ | ⚠️ 일부 검증 |
-| V7: 네임스페이스 포커스/개인화 | OV, WL, PD, SC, ES, AR, FX, CM | OV6, WL1, PD1·PD6, SC1, ES1, AR1, FX1·FX2, CM5·CM6 | OV·PD·FX·CM ✓ / WL·SC·ES·AR ✗ | ⚠️ 일부 검증 |
-
-## 테스트 문서 인덱스
-
-| 테스트 문서 | 대상 PRD | 커버 AC | 자동화 공백 |
-|-------------|----------|---------|-------------|
-| `test-overview.md` | OV | OV1~OV7 | OV7(메트릭 폴백) |
-| `test-pods.md` | PD | PD1~PD7 | PD6(완료 숨김 토글) |
-| `test-common.md` | CM | CM1~CM6 | CM3(상단 바 전용) |
-| `test-fluxcd.md` | FX | FX1~FX7 | FX3·FX4·FX5·FX6(상세 액션·폴링) |
+| 가치 | 커버 PRD | 연결된 AC | 테스트 | 상태 |
+|------|----------|-----------|--------|------|
+| V1: 클러스터 상태를 한눈에 | OV, ND, WL, PD, AR, FX, CM | OV1·OV2·OV3·OV7, ND1·ND2·ND3, WL1·WL4, PD1·PD7, AR1·AR3·AR4·AR7, FX1·FX2·FX6·FX7, CM2·CM3 | ✓ | ✅ 검증(문서) |
+| V2: 모바일에서 즉시 운영 대응 | CM | CM1·CM2·CM3 | ✓ | ✅ 검증(문서) |
+| V3: 파드 문제를 앱 안에서 진단·조치 | WL, PD | WL2·WL3, PD2·PD3·PD4·PD5 | ✓ | ✅ 검증(문서) |
+| V4: GitOps·reconciliation 직접 제어 | AR, FX, SC | AR2·AR5·AR6, FX3·FX4·FX5, SC3 | ✓ | ✅ 검증(문서) |
+| V5: 민감 리소스 안전 열람 | SC, ES | SC1·SC2·SC4, ES1·ES2·ES3·ES4 | ✓ | ✅ 검증(문서) |
+| V6: 실시간 최신 상태 유지 | OV, PD, AR, FX, CM | OV4·OV5, PD2·PD3, AR4, FX6, CM4 | ✓ | ✅ 검증(문서) |
+| V7: 네임스페이스 포커스/개인화 | OV, WL, PD, SC, ES, AR, FX, CM | OV6, WL1, PD1·PD6, SC1, ES1, AR1, FX1·FX2, CM5·CM6 | ✓ | ✅ 검증(문서) |
 
 ## 위험 진단
 
-### 고아 가치 / 미정렬 문서 / 무가치 PRD / AC 없는 PRD / 미연결 AC / 고아 테스트
-- (모두 없음) — SC3은 V4(External Secret 재동기화 유도)로 연결되어 미연결 해소.
+### 건강한 문서 체계의 7개 조건 — 모두 충족 ✅
+1. 모든 가치에 소유자 있음 ✅ · 2. 모든 문서가 가치 참조 ✅ · 3. 모든 PRD가 가치 달성 ✅ · 4. 모든 PRD에 AC 있음 ✅ · 5. 모든 AC가 가치 달성 ✅ · 6. 모든 AC에 테스트 문서 있음 ✅ · 7. 모든 테스트가 AC 참조 ✅
 
-### 미검증 AC (테스트 문서 없는 AC) 🟢
-- **22개** — ND(3), WL(4), SC(4), ES(4), AR(7). 테스트 문서 미작성.
-- 참고: SC3(재동기화 유도)은 대응 e2e가 없어, SC 테스트 문서 작성 시 자동화 공백으로 표시될 예정.
-
-### 자동화 공백 (테스트 문서는 있으나 e2e 미비) 🟢
-- **OV7**(메트릭 폴백), **PD6**(완료 숨김 토글), **CM3**(상단 바 전용 검증), **FX3·FX4·FX5·FX6**(FluxCD 상세 페이지 액션·폴링).
-- FluxCD 상세 페이지(reconcile/suspend/branch/polling)는 e2e 스펙 자체가 없어 우선 보강 권장.
+### 자동화 공백 (테스트 문서는 있으나 e2e 미작성) 🟢
+문서 체계 건강과는 별개인 **e2e 구현 백로그**:
+- **SC3** — ESO 대상 Secret 삭제 → External Secret 재동기화 (ESO 연동 e2e 필요)
+- **FX3·FX4·FX5·FX6** — FluxCD 상세 페이지 reconcile/suspend/branch/polling (상세 페이지 e2e 스펙 자체 부재)
+- **OV7** — 메트릭 서버 부재 시 폴백 (metrics 비활성 시나리오)
+- **PD6** — 완료 파드 숨김 토글
+- **CM3** — 상단 바 전용 검증 (현재 탭 뷰포트 테스트로 간접 커버)
+- (보강 권장) **AR4** — 워크플로우 상세 라이브 폴링 자동 갱신
 
 ## 다음 단계 제안
 
-1. 🟢 **남은 테스트 문서 5종** — ND·WL·SC·ES·AR (액션 있는 WL·AR·SC 우선).
-2. 🟢 **자동화 공백 보강** — FluxCD 상세 e2e 우선, 이어 OV7·PD6·CM3, 그리고 SC3(재동기화 유도) e2e.
+문서 체계는 완성. 남은 것은 자동화 백로그(우선순위):
+1. **FluxCD 상세 e2e** (FX3~FX6) — 상세 페이지 스펙이 통째로 없어 영향 가장 큼.
+2. **SC3 ESO 재동기화 e2e** — 외부 저장소 연동 통합 테스트.
+3. **OV7·PD6·CM3·AR4** — 단위/시나리오 보강.
 
 ## 변경 이력
 
@@ -74,5 +67,6 @@
 | 2026-06-20 | 탭별 PRD 7종 추가 | PRD 1개, AC 7개 | PRD 8개, AC 43개 |
 | 2026-06-21 | 공통 셸 PRD(CM) 추가 — V2 커버 | PRD 8개, AC 43개 | PRD 9개, AC 49개 |
 | 2026-06-21 | main 푸시 (문서 11종) | 로컬 전용 | origin/main 반영 |
-| 2026-06-22 | 테스트 문서 4종 추가 (OV·PD·CM·FX) | 테스트 0개 | 테스트 4개, AC 27개 커버 |
-| 2026-06-22 | SC3 재정의 — "시크릿 삭제"→"ESO 대상 Secret 삭제를 통한 External Secret 재동기화 유도", V4로 연결. V4를 "GitOps·reconciliation 직접 제어"로 확장 | 미연결 AC 1개 | 미연결 AC 0개 (전 AC 연결) |
+| 2026-06-22 | 테스트 문서 4종 (OV·PD·CM·FX) | 테스트 0개 | 테스트 4개, AC 27개 커버 |
+| 2026-06-22 | SC3 재정의 → V4 연결, V4 확장 (reconciliation 포함) | 미연결 1개 | 미연결 0개 |
+| 2026-06-22 | 테스트 문서 5종 추가 (ND·WL·SC·ES·AR) | 테스트 4개, AC 27개 커버 | 테스트 9개, AC 49개 전부 커버, **문서 체계 건강** |
