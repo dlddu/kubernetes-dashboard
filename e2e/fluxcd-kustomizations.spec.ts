@@ -241,6 +241,115 @@ test.describe('FluxCD Tab - Kustomization List - Namespace Filtering', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Group 3b: UI — 상태 필터 (Ready / Not Ready / Suspended 요약 카드 클릭)
+// Activation: status filter toggles on the FluxCD list summary cards.
+// ---------------------------------------------------------------------------
+
+test.describe('FluxCD Tab - Kustomization List - Status Filtering', () => {
+  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
+  // Fixtures: app-ready (Ready), app-not-ready (Not Ready), app-suspended (Suspended).
+
+  test('should show only Ready Kustomizations when the Ready summary card is clicked', async ({ page }) => {
+    // Tests that clicking the Ready summary card filters the list to Ready cards only
+    // and marks the card as the active filter.
+
+    // Arrange: Navigate to the list with all statuses visible
+    await gotoFluxKustomizations(page);
+
+    const allCards = page.getByTestId('kustomization-card');
+    await expect(allCards.first()).toBeVisible();
+    const totalCount = await allCards.count();
+    expect(totalCount).toBeGreaterThanOrEqual(1);
+
+    // Act: Click the Ready summary card
+    await page.getByTestId('summary-card-ready').click();
+
+    // Assert: The Ready filter card is marked active
+    await expect(page.getByTestId('summary-card-ready')).toHaveAttribute('aria-pressed', 'true');
+
+    // Assert: At least one card remains and every visible card has a Ready badge
+    const filtered = page.getByTestId('kustomization-card');
+    const filteredCount = await filtered.count();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
+    expect(filteredCount).toBeLessThanOrEqual(totalCount);
+    for (let i = 0; i < filteredCount; i++) {
+      await expect(filtered.nth(i).getByTestId('status-badge')).toHaveText('Ready');
+    }
+
+    // Assert: The known Not Ready fixture is no longer shown
+    expect(await findKustomizationCardByName(page, 'app-not-ready')).toBeNull();
+  });
+
+  test('should show only Not Ready Kustomizations when the Not Ready summary card is clicked', async ({ page }) => {
+    // Tests that the Not Ready summary card filters the list to Not Ready cards only.
+    // Fixture: app-not-ready (dashboard-test).
+
+    // Arrange
+    await gotoFluxKustomizations(page);
+    await expect(page.getByTestId('kustomization-card').first()).toBeVisible();
+
+    // Act: Click the Not Ready summary card
+    await page.getByTestId('summary-card-not-ready').click();
+
+    // Assert: Every visible card has a NotReady badge
+    const filtered = page.getByTestId('kustomization-card');
+    const filteredCount = await filtered.count();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < filteredCount; i++) {
+      await expect(filtered.nth(i).getByTestId('status-badge')).toHaveText('NotReady');
+    }
+
+    // Assert: The app-not-ready fixture is present in the filtered list
+    expect(await findKustomizationCardByName(page, 'app-not-ready')).toBeTruthy();
+  });
+
+  test('should show only Suspended Kustomizations when the Suspended summary card is clicked', async ({ page }) => {
+    // Tests that the Suspended summary card filters the list to Suspended cards only.
+    // Fixture: app-suspended (dashboard-test).
+
+    // Arrange
+    await gotoFluxKustomizations(page);
+    await expect(page.getByTestId('kustomization-card').first()).toBeVisible();
+
+    // Act: Click the Suspended summary card
+    await page.getByTestId('summary-card-suspended').click();
+
+    // Assert: Every visible card has a Suspended badge
+    const filtered = page.getByTestId('kustomization-card');
+    const filteredCount = await filtered.count();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < filteredCount; i++) {
+      await expect(filtered.nth(i).getByTestId('status-badge')).toHaveText('Suspended');
+    }
+
+    // Assert: The app-suspended fixture is present in the filtered list
+    expect(await findKustomizationCardByName(page, 'app-suspended')).toBeTruthy();
+  });
+
+  test('should clear the filter and show all Kustomizations when the active summary card is clicked again', async ({ page }) => {
+    // Tests the toggle behaviour: clicking the active filter card again restores the full list.
+
+    // Arrange
+    await gotoFluxKustomizations(page);
+    const allCards = page.getByTestId('kustomization-card');
+    await expect(allCards.first()).toBeVisible();
+    const totalCount = await allCards.count();
+
+    // Act: Apply the Ready filter
+    const readyCard = page.getByTestId('summary-card-ready');
+    await readyCard.click();
+    await expect(readyCard).toHaveAttribute('aria-pressed', 'true');
+
+    // Act: Click the active card again to clear the filter
+    await readyCard.click();
+
+    // Assert: Filter cleared and all cards visible again
+    await expect(readyCard).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByTestId('kustomization-card')).toHaveCount(totalCount);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Group 4: UI — EmptyState / ErrorRetry / LoadingSkeleton (테스트 5, 6, 7)
 // TODO: Activate when DLD-744 is implemented.
 // ---------------------------------------------------------------------------

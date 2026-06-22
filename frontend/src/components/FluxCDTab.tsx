@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchKustomizations, KustomizationInfo, fetchGitRepositories, GitRepositoryInfo } from '../api/fluxcd';
 import { useDataFetch } from '../hooks/useDataFetch';
@@ -11,8 +12,26 @@ interface FluxCDTabProps {
   namespace?: string;
 }
 
+type StatusFilter = 'ready' | 'notready' | 'suspended';
+
+/** Maps a FluxCD resource's flags to the status bucket used for filtering. */
+function getStatusKey(item: { ready: boolean; suspended: boolean }): StatusFilter {
+  if (item.suspended) return 'suspended';
+  return item.ready ? 'ready' : 'notready';
+}
+
 export function FluxCDTab({ namespace }: FluxCDTabProps) {
   const navigate = useNavigate();
+
+  // Status filters, independent per section. `null` means "show all".
+  const [gitRepoFilter, setGitRepoFilter] = useState<StatusFilter | null>(null);
+  const [kustomizationFilter, setKustomizationFilter] = useState<StatusFilter | null>(null);
+
+  // Clicking the active filter again clears it (toggle behaviour).
+  const toggleGitRepoFilter = (filter: StatusFilter) =>
+    setGitRepoFilter((current) => (current === filter ? null : filter));
+  const toggleKustomizationFilter = (filter: StatusFilter) =>
+    setKustomizationFilter((current) => (current === filter ? null : filter));
   const { data: kustomizations, isLoading: isLoadingKustomizations, error: kustomizationsError, refresh: refreshKustomizations } = useDataFetch<KustomizationInfo>(
     () => fetchKustomizations(namespace),
     'Failed to fetch kustomizations',
@@ -35,6 +54,14 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
   const gitRepoNotReadyCount = gitRepositories.filter((g) => !g.ready && !g.suspended).length;
   const gitRepoSuspendedCount = gitRepositories.filter((g) => g.suspended).length;
 
+  // Apply the active status filter to each section's list.
+  const filteredGitRepositories = gitRepoFilter
+    ? gitRepositories.filter((g) => getStatusKey(g) === gitRepoFilter)
+    : gitRepositories;
+  const filteredKustomizations = kustomizationFilter
+    ? kustomizations.filter((k) => getStatusKey(k) === kustomizationFilter)
+    : kustomizations;
+
   // Status determination for each card
   const getStatus = (item: { ready: boolean; suspended: boolean }): string => {
     if (item.suspended) return 'Suspended';
@@ -51,16 +78,22 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
           label="Ready"
           value={String(gitRepoReadyCount)}
           testId="summary-card-gitrepo-ready"
+          onClick={() => toggleGitRepoFilter('ready')}
+          active={gitRepoFilter === 'ready'}
         />
         <SummaryCard
           label="Not Ready"
           value={String(gitRepoNotReadyCount)}
           testId="summary-card-gitrepo-not-ready"
+          onClick={() => toggleGitRepoFilter('notready')}
+          active={gitRepoFilter === 'notready'}
         />
         <SummaryCard
           label="Suspended"
           value={String(gitRepoSuspendedCount)}
           testId="summary-card-gitrepo-suspended"
+          onClick={() => toggleGitRepoFilter('suspended')}
+          active={gitRepoFilter === 'suspended'}
         />
       </div>
 
@@ -80,9 +113,13 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
         <EmptyState message="No git repositories found" />
       )}
 
-      {gitRepositories.length > 0 && (
+      {gitRepositories.length > 0 && filteredGitRepositories.length === 0 && (
+        <EmptyState message="No git repositories match the selected filter" />
+      )}
+
+      {filteredGitRepositories.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {gitRepositories.map((gr) => (
+          {filteredGitRepositories.map((gr) => (
             <div
               key={`${gr.namespace}-${gr.name}`}
               data-testid="gitrepository-card"
@@ -127,16 +164,22 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
           label="Ready"
           value={String(kustomizationReadyCount)}
           testId="summary-card-ready"
+          onClick={() => toggleKustomizationFilter('ready')}
+          active={kustomizationFilter === 'ready'}
         />
         <SummaryCard
           label="Not Ready"
           value={String(kustomizationNotReadyCount)}
           testId="summary-card-not-ready"
+          onClick={() => toggleKustomizationFilter('notready')}
+          active={kustomizationFilter === 'notready'}
         />
         <SummaryCard
           label="Suspended"
           value={String(kustomizationSuspendedCount)}
           testId="summary-card-suspended"
+          onClick={() => toggleKustomizationFilter('suspended')}
+          active={kustomizationFilter === 'suspended'}
         />
       </div>
 
@@ -156,9 +199,13 @@ export function FluxCDTab({ namespace }: FluxCDTabProps) {
         <EmptyState message="No kustomizations found" />
       )}
 
-      {kustomizations.length > 0 && (
+      {kustomizations.length > 0 && filteredKustomizations.length === 0 && (
+        <EmptyState message="No kustomizations match the selected filter" />
+      )}
+
+      {filteredKustomizations.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {kustomizations.map((k) => (
+          {filteredKustomizations.map((k) => (
             <div
               key={`${k.namespace}-${k.name}`}
               data-testid="kustomization-card"
