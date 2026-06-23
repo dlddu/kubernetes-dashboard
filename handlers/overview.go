@@ -54,7 +54,7 @@ var OverviewHandler = handleGet("Failed to fetch overview data", func(r *http.Re
 })
 
 // getOverviewData fetches overview data from Kubernetes
-func getOverviewData(ctx context.Context, clientset *kubernetes.Clientset, metricsClient *metricsv.Clientset, namespace string) (*OverviewResponse, error) {
+func getOverviewData(ctx context.Context, clientset kubernetes.Interface, metricsClient *metricsv.Clientset, namespace string) (*OverviewResponse, error) {
 
 	nodeList, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {

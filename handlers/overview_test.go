@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 // skipIfNoCluster skips the test if no Kubernetes cluster is available.
@@ -584,4 +585,81 @@ func TestCalculateNodeResourceUsageFallback(t *testing.T) {
 			t.Errorf("expected ~25%% memory, got %f", mem)
 		}
 	})
+}
+
+// TestGetOverviewData_MetricsUnavailable verifies OV7: when metrics-server is
+// unavailable (getMetricsClientSafe returns nil), getOverviewData still produces
+// a complete OverviewResponse and CPU/memory usage falls back to
+// capacity-allocatable instead of erroring or returning empty values.
+func TestGetOverviewData_MetricsUnavailable(t *testing.T) {
+	readyNode := func(name, cpuCap, cpuAlloc, memCap, memAlloc string) *corev1.Node {
+		return &corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Status: corev1.NodeStatus{
+				Conditions: []corev1.NodeCondition{
+					{Type: corev1.NodeReady, Status: corev1.ConditionTrue},
+				},
+				Capacity: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse(cpuCap),
+					corev1.ResourceMemory: resource.MustParse(memCap),
+				},
+				Allocatable: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse(cpuAlloc),
+					corev1.ResourceMemory: resource.MustParse(memAlloc),
+				},
+			},
+		}
+	}
+
+	healthyPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "default"},
+		Status:     corev1.PodStatus{Phase: corev1.PodRunning},
+	}
+	failedPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "broken", Namespace: "default"},
+		Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+	}
+
+	clientset := fake.NewSimpleClientset(
+		readyNode("node-1", "4000m", "3800m", "8Gi", "7Gi"),
+		healthyPod,
+		failedPod,
+	)
+
+	// metricsClient is nil -> simulates metrics-server being unavailable.
+	resp, err := getOverviewData(context.Background(), clientset, nil, "")
+	if err != nil {
+		t.Fatalf("getOverviewData returned error with nil metricsClient: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected non-nil OverviewResponse when metrics-server is unavailable")
+	}
+
+	// Node counts are still populated.
+	if resp.Nodes.Total != 1 || resp.Nodes.Ready != 1 {
+		t.Errorf("expected nodes ready/total 1/1, got %d/%d", resp.Nodes.Ready, resp.Nodes.Total)
+	}
+
+	// Unhealthy pods are still detected.
+	if resp.UnhealthyPods != 1 {
+		t.Errorf("expected 1 unhealthy pod, got %d", resp.UnhealthyPods)
+	}
+
+	// Usage falls back to capacity-allocatable:
+	// cpu (4000m-3800m)/4000m = 5%, mem (8Gi-7Gi)/8Gi = 12.5%.
+	if resp.AvgCpuPercent < 4.9 || resp.AvgCpuPercent > 5.1 {
+		t.Errorf("expected ~5%% CPU fallback, got %f", resp.AvgCpuPercent)
+	}
+	if resp.AvgMemoryPercent < 12.0 || resp.AvgMemoryPercent > 13.0 {
+		t.Errorf("expected ~12.5%% memory fallback, got %f", resp.AvgMemoryPercent)
+	}
+
+	// Per-node list is populated with fallback percentages, not zeroed out.
+	if len(resp.NodesList) != 1 {
+		t.Fatalf("expected 1 node in NodesList, got %d", len(resp.NodesList))
+	}
+	if resp.NodesList[0].CpuPercent <= 0 || resp.NodesList[0].MemoryPercent <= 0 {
+		t.Errorf("expected positive fallback per-node usage, got cpu=%f mem=%f",
+			resp.NodesList[0].CpuPercent, resp.NodesList[0].MemoryPercent)
+	}
 }

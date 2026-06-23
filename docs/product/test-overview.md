@@ -55,8 +55,8 @@
 - **실행 단계**: 오버뷰 진입 → 화면이 정상 렌더되고 사용률이 폴백 값으로 표시되는지 확인.
 - **기대 결과**: 빈 화면/에러 없이 capacity-allocatable 기반 폴백 사용률 표시.
 - **검증 AC**: OV7
-- **자동화**: ⚠️ **공백** — 메트릭 부재 시나리오 전용 테스트 없음. `getMetricsClientSafe` 분기에 대한 Go 핸들러 테스트 또는 metrics 비활성 e2e 신규 필요.
+- **자동화**: `handlers/overview_test.go` → `TestGetOverviewData_MetricsUnavailable` (metricsClient=nil로 `getOverviewData` 호출 시 응답이 정상 생성되고 사용률이 capacity-allocatable 폴백으로 계산되는지 검증).
 
 ## 커버리지 요약
-- 자동화 연결됨: OV1·OV2·OV3·OV4·OV5·OV6
-- 자동화 공백: **OV7**(메트릭 폴백)
+- 자동화 연결됨: OV1·OV2·OV3·OV4·OV5·OV6·OV7
+- 자동화 공백: 없음
