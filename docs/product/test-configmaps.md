@@ -1,0 +1,34 @@
+# 테스트 문서: ConfigMaps 탭
+
+> `prd-configmaps.md`의 AC를 검증하는 테스트 문서.
+> 상위: `docs/product/values.md` · 대상 PRD: `prd-configmaps.md`
+
+## 검증 대상 AC
+- CF1 컨피그맵 목록(네임스페이스 스코프) · CF2 아코디언 키/값 인라인 열람 · CF3 데이터 상태 처리
+
+## 테스트 시나리오
+
+### 시나리오 1: 컨피그맵 목록·네임스페이스 스코프
+- **사전 조건**: 테스트 네임스페이스에 컨피그맵 존재(`test-config`, `app-settings`).
+- **실행 단계**: `/configmaps`로 이동 → 아코디언 목록 확인 → 각 아코디언이 네임스페이스(`dashboard-test`)를 표시하는지 확인.
+- **기대 결과**: 선택 네임스페이스의 컨피그맵만 아코디언으로 표시된다.
+- **검증 AC**: CF1
+- **자동화**: `e2e/configmaps-tab.spec.ts` (Basic Rendering / Namespace Filtering)
+
+### 시나리오 2: 아코디언 키/값 인라인 열람
+- **사전 조건**: 키/값이 있는 컨피그맵 존재.
+- **실행 단계**: 항목 펼쳐 키 목록 확인 → 값이 `<pre>`로 즉시(인라인) 표시되는지 확인 → 다른 항목 펼치면 이전 항목 닫힘 확인.
+- **기대 결과**: 한 번에 하나의 아코디언만 열리고, 값이 마스킹 없이 인라인 표시되며 Copy 버튼이 동작한다(Reveal/Hide 없음).
+- **검증 AC**: CF2
+- **자동화**: `e2e/configmaps-tab.spec.ts` (Accordion Expand/Collapse / Multi-Accordion)
+
+### 시나리오 3: 데이터 상태 처리
+- **사전 조건**: 로딩/실패/빈 상태(네임스페이스명 포함 빈 메시지).
+- **실행 단계**: 각 상태 확인.
+- **기대 결과**: 스켈레톤 / 재시도 가능한 에러 / 네임스페이스명을 포함한 빈 상태 메시지가 표시된다.
+- **검증 AC**: CF3
+- **자동화**: `e2e/configmaps-tab.spec.ts` (Loading and Error States), 단위: `ConfigMapsTab.test.tsx`
+
+## 커버리지 요약
+- 자동화 연결됨: CF1·CF2·CF3
+- 자동화 공백: 없음

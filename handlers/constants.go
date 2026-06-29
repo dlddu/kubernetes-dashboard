@@ -2,12 +2,13 @@ package handlers
 
 // API path prefixes used in URL parsing.
 const (
-	deploymentsPathPrefix = "/api/deployments/"
-	secretsPathPrefix     = "/api/secrets/"
-	podLogsPathPrefix     = "/api/pods/logs/"
-	podExecPathPrefix     = "/api/pods/exec/"
-	podDebugPathPrefix    = "/api/pods/debug/"
-	restartPathSuffix     = "/restart"
+	deploymentsPathPrefix  = "/api/deployments/"
+	secretsPathPrefix      = "/api/secrets/"
+	configMapsPathPrefix   = "/api/configmaps/"
+	podLogsPathPrefix      = "/api/pods/logs/"
+	podExecPathPrefix      = "/api/pods/exec/"
+	podDebugPathPrefix     = "/api/pods/debug/"
+	restartPathSuffix      = "/restart"
 	reconcilePathSuffix    = "/reconcile"
 	updateBranchPathSuffix = "/update-branch"
 	branchesPathSuffix     = "/branches"
@@ -42,18 +43,21 @@ const podNodePending = "Pending"
 const (
 	errMsgClientCreate = "Failed to create Kubernetes client"
 
-	errMsgSecretNotFound  = "Secret not found"
-	errMsgSecretFetch     = "Failed to fetch secret detail"
-	errMsgSecretDelete    = "Failed to delete secret"
+	errMsgSecretNotFound = "Secret not found"
+	errMsgSecretFetch    = "Failed to fetch secret detail"
+	errMsgSecretDelete   = "Failed to delete secret"
+
+	errMsgConfigMapNotFound = "ConfigMap not found"
+	errMsgConfigMapFetch    = "Failed to fetch configmap detail"
 
 	errMsgDeploymentNotFound = "Deployment not found"
 
 	errMsgPodNotFound       = "Pod not found"
-	errMsgPodLogsFetch     = "Failed to fetch pod logs"
-	errMsgPodDelete        = "Failed to delete pod"
-	errMsgPodCleanup       = "Failed to cleanup pods"
-	errMsgPodExecFailed    = "Failed to exec into pod"
-	errMsgPodExecUpgrade   = "Failed to upgrade to WebSocket"
+	errMsgPodLogsFetch      = "Failed to fetch pod logs"
+	errMsgPodDelete         = "Failed to delete pod"
+	errMsgPodCleanup        = "Failed to cleanup pods"
+	errMsgPodExecFailed     = "Failed to exec into pod"
+	errMsgPodExecUpgrade    = "Failed to upgrade to WebSocket"
 	errMsgContainerRequired = "Container name is required"
 
 	errMsgPodDebugFailed     = "Failed to add ephemeral container"
@@ -64,9 +68,9 @@ const (
 	errMsgPodDebugNotReady   = "Ephemeral container did not become ready in time"
 	errMsgPodDebugImagePull  = "Ephemeral container image pull failed"
 
-	errMsgWorkflowNotFound  = "Workflow not found"
-	errMsgWorkflowDelete    = "Failed to delete workflow"
-	errMsgWorkflowResubmit  = "Failed to resubmit workflow"
+	errMsgWorkflowNotFound = "Workflow not found"
+	errMsgWorkflowDelete   = "Failed to delete workflow"
+	errMsgWorkflowResubmit = "Failed to resubmit workflow"
 )
 
 // FluxCD API path prefixes.
@@ -85,9 +89,9 @@ const (
 	errMsgKustomizationSuspend   = "Failed to suspend kustomization"
 	errMsgKustomizationResume    = "Failed to resume kustomization"
 
-	errMsgGitRepositoryNotFound  = "GitRepository not found"
-	errMsgGitRepositoryFetch     = "Failed to fetch git repository"
-	errMsgGitRepositoryListFetch = "Failed to fetch git repository list"
+	errMsgGitRepositoryNotFound     = "GitRepository not found"
+	errMsgGitRepositoryFetch        = "Failed to fetch git repository"
+	errMsgGitRepositoryListFetch    = "Failed to fetch git repository list"
 	errMsgGitRepositoryReconcile    = "Failed to reconcile git repository"
 	errMsgGitRepositoryUpdateBranch = "Failed to update git repository branch"
 	errMsgGitRepositoryBranches     = "Failed to fetch git repository branches"
