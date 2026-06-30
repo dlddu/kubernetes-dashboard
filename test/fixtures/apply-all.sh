@@ -45,6 +45,7 @@ kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-empty -
 # 2. Apply secrets and configmaps
 log_info "Creating secrets and configmaps..."
 kubectl apply -f "$SCRIPT_DIR/secret.yaml"
+kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 
 # 3. Apply pods
 log_info "Creating standalone pods..."
