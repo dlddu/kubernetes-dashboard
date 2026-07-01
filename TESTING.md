@@ -20,6 +20,7 @@ kubernetes-dashboard/
 │       ├── deployment.yaml
 │       ├── pod.yaml
 │       ├── secret.yaml
+│       ├── configmap.yaml
 │       └── apply-all.sh
 ├── scripts/
 │   └── kind-cluster.sh         # Kind cluster management
@@ -128,7 +129,8 @@ Test fixtures are Kubernetes manifests used for E2E testing:
 - `namespace.yaml` - Test namespace (dashboard-test)
 - `deployment.yaml` - Sample nginx deployment
 - `pod.yaml` - Standalone busybox pod
-- `secret.yaml` - Sample secrets and configmap
+- `secret.yaml` - Sample secrets (Opaque, TLS)
+- `configmap.yaml` - Sample configmaps (test-config, app-settings)
 
 Apply all fixtures:
 ```bash

@@ -43,6 +43,8 @@ func setupRouter() http.Handler {
 	mux.HandleFunc("/api/deployments/", handlers.DeploymentRestartHandler)
 	mux.HandleFunc("/api/secrets/", handlers.SecretDetailHandler)
 	mux.HandleFunc("/api/secrets", handlers.SecretsHandler)
+	mux.HandleFunc("/api/configmaps/", handlers.ConfigMapDetailHandler)
+	mux.HandleFunc("/api/configmaps", handlers.ConfigMapsHandler)
 	mux.HandleFunc("/api/argo/workflow-templates", handlers.WorkflowTemplatesHandler)
 	mux.HandleFunc("/api/argo/workflow-templates/", handlers.WorkflowSubmitHandler)
 	mux.HandleFunc("/api/argo/workflows/", handlers.WorkflowDetailHandler)
