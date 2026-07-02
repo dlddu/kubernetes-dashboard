@@ -4,6 +4,7 @@ import {
   ALL_NAMESPACES,
   buildNamespacePath,
   isNamespaceScopedPath,
+  parseInitialNamespaceFromPath,
   parseNamespaceFromPath,
 } from '../utils/namespacePath';
 
@@ -26,9 +27,11 @@ export function NamespaceProvider({ children }: { children: ReactNode }) {
 
   // Last known selection. Pages without a selector-owned segment (e.g.
   // /nodes, FluxCD detail) fall back to this instead of resetting while the
-  // user is there.
+  // user is there. On first load there is no remembered selection, so any
+  // namespace in the URL — including a resource-pinned one — seeds it; after
+  // that, resource-pinned URLs never override an explicit selection.
   const [fallbackNamespace, setFallbackNamespace] = useState<string>(
-    () => urlNamespace ?? ALL_NAMESPACES
+    () => parseInitialNamespaceFromPath(location.pathname) ?? ALL_NAMESPACES
   );
   const selectedNamespace = urlNamespace ?? fallbackNamespace;
 

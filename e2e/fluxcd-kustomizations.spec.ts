@@ -570,6 +570,10 @@ test.describe('FluxCD Tab - Kustomization Detail - Navigation', () => {
     // Assert: List page is no longer visible (view swap)
     const listPage = page.getByTestId('flux-page').or(page.getByTestId('fluxcd-page'));
     await expect(listPage).not.toBeVisible();
+
+    // Assert: Entering a detail page does not change the global namespace filter
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await expect(namespaceSelector).toContainText(/all namespaces/i);
   });
 });
 
@@ -983,6 +987,28 @@ test.describe('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
     const statusRevision = detailPage.getByTestId('kustomization-detail-status-revision');
     await expect(statusRevision).toBeVisible();
     await expect(statusRevision).toContainText('main@sha1:abc123def456');
+  });
+
+  test('should seed the namespace selector from the resource namespace on direct load', async ({ page }) => {
+    // Deep link / refresh on a detail page has no remembered selection; the
+    // resource's namespace becomes the global filter instead of "all".
+
+    // Act: Load the canonical detail URL directly
+    await page.goto('/namespaces/dashboard-test/fluxcd/kustomization/app-ready');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Detail page renders and the selector shows the resource namespace
+    const detailPage = page.getByTestId('kustomization-detail-page');
+    await expect(detailPage).toBeVisible();
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await expect(namespaceSelector).toContainText(/^dashboard-test$/i);
+
+    // Act: Reload the page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Selection survives the refresh
+    await expect(namespaceSelector).toContainText(/^dashboard-test$/i);
   });
 
   test('should navigate back to the list when back button is clicked from a deep-linked detail page', async ({ page }) => {

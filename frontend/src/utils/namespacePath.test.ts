@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildNamespacePath,
   isNamespaceScopedPath,
+  parseInitialNamespaceFromPath,
   parseNamespaceFromPath,
   stripNamespaceFromPath,
 } from './namespacePath';
@@ -21,6 +22,24 @@ describe('parseNamespaceFromPath', () => {
 
   it('should decode percent-encoded namespace segments', () => {
     expect(parseNamespaceFromPath('/namespaces/te%61m-a/pods')).toBe('team-a');
+  });
+});
+
+describe('parseInitialNamespaceFromPath', () => {
+  it('should read the namespace from selector-owned and resource-pinned paths', () => {
+    expect(parseInitialNamespaceFromPath('/namespaces/team-a/pods')).toBe('team-a');
+    expect(parseInitialNamespaceFromPath('/namespaces/ns/fluxcd/kustomization/name')).toBe('ns');
+  });
+
+  it('should read the namespace from the legacy FluxCD detail form', () => {
+    expect(parseInitialNamespaceFromPath('/fluxcd/kustomization/ns/name')).toBe('ns');
+    expect(parseInitialNamespaceFromPath('/fluxcd/gitrepository/ns/name')).toBe('ns');
+  });
+
+  it('should return null when the path carries no namespace', () => {
+    expect(parseInitialNamespaceFromPath('/pods')).toBeNull();
+    expect(parseInitialNamespaceFromPath('/nodes')).toBeNull();
+    expect(parseInitialNamespaceFromPath('/flux')).toBeNull();
   });
 });
 

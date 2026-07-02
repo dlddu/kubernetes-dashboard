@@ -11,16 +11,37 @@ const RESOURCE_PINNED_PREFIXES = ['/fluxcd'];
 
 const NAMESPACE_PATH_PATTERN = /^\/namespaces\/([^/]+)(\/.*)?$/;
 
+// Legacy FluxCD detail form (/fluxcd/<kind>/<ns>/<name>); only consulted to
+// seed the initial selection before the route redirects to the kube-style URL.
+const LEGACY_FLUXCD_DETAIL_PATTERN = /^\/fluxcd\/[^/]+\/([^/]+)\/[^/]+$/;
+
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 export function parseNamespaceFromPath(pathname: string): string | null {
   const match = NAMESPACE_PATH_PATTERN.exec(pathname);
   if (!match) {
     return null;
   }
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return match[1];
+  return decodeSegment(match[1]);
+}
+
+// Namespace to seed the global filter with on first load. Unlike the
+// selector-driven sync, this also reads resource-pinned forms: when landing
+// directly on a detail page (deep link or refresh) there is no remembered
+// selection, and the resource's namespace is the best initial filter.
+export function parseInitialNamespaceFromPath(pathname: string): string | null {
+  const canonical = parseNamespaceFromPath(pathname);
+  if (canonical) {
+    return canonical;
   }
+  const legacy = LEGACY_FLUXCD_DETAIL_PATTERN.exec(pathname);
+  return legacy ? decodeSegment(legacy[1]) : null;
 }
 
 export function stripNamespaceFromPath(pathname: string): string {

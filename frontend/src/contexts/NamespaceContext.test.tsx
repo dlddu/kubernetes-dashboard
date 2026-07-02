@@ -179,14 +179,26 @@ describe('NamespaceContext - kube-style URL deep link', () => {
     expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^all$/);
   });
 
-  it('should not derive the selection from a resource-pinned FluxCD detail URL', () => {
-    // Arrange & Act - the segment identifies the resource, not the filter
+  it('should seed the selection from the resource namespace when loading a detail URL directly', () => {
+    // Arrange & Act - deep link / refresh on a FluxCD detail page: there is no
+    // remembered selection, so the resource's namespace becomes the filter
     renderAt('/namespaces/dashboard-test/fluxcd/kustomization/app');
 
     // Assert
-    expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^all$/);
+    expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^dashboard-test$/);
     expect(screen.getByTestId('url-pathname')).toHaveTextContent(
       /^\/namespaces\/dashboard-test\/fluxcd\/kustomization\/app$/
+    );
+  });
+
+  it('should seed the selection from the legacy FluxCD detail URL form as well', () => {
+    // Arrange & Act - old bookmarks load the legacy form before the redirect
+    renderAt('/fluxcd/kustomization/dashboard-test/app');
+
+    // Assert - selection seeded, URL untouched by the selector logic
+    expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^dashboard-test$/);
+    expect(screen.getByTestId('url-pathname')).toHaveTextContent(
+      /^\/fluxcd\/kustomization\/dashboard-test\/app$/
     );
   });
 
