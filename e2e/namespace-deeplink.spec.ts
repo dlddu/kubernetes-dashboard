@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Namespace URL Deep Link', () => {
-  test('should select the namespace from the URL query param on load', async ({ page }) => {
-    // Tests that a shared/bookmarked URL restores the namespace selection
+  test('should select the namespace from the /namespaces/<ns> path segment on load', async ({ page }) => {
+    // Tests that a shared/bookmarked kube-style URL restores the namespace selection
 
-    // Arrange & Act: Open a deep link with the namespace query param
-    await page.goto('/pods?namespace=kube-system');
+    // Arrange & Act: Open a deep link with the namespace path segment
+    await page.goto('/namespaces/kube-system/pods');
     await page.waitForLoadState('networkidle');
 
     // Assert: Selector shows the namespace from the URL
@@ -17,10 +17,10 @@ test.describe('Namespace URL Deep Link', () => {
     await expect(podsPage).toBeVisible();
   });
 
-  test('should write the selected namespace to the URL query param', async ({ page }) => {
+  test('should rewrite the path to /namespaces/<ns> when a namespace is selected', async ({ page }) => {
     // Tests that picking a namespace produces a shareable URL
 
-    // Arrange: Navigate to home page with no query param
+    // Arrange: Navigate to the overview with no namespace segment
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -31,15 +31,15 @@ test.describe('Namespace URL Deep Link', () => {
       .or(page.getByTestId('namespace-option-kube-system'));
     await kubeSystemOption.click();
 
-    // Assert: URL contains the namespace query param
-    await expect(page).toHaveURL(/[?&]namespace=kube-system/);
+    // Assert: URL carries the namespace as a path segment (kube API style)
+    await expect(page).toHaveURL(/\/namespaces\/kube-system$/);
   });
 
-  test('should remove the namespace query param when "All Namespaces" is selected', async ({ page }) => {
+  test('should drop the namespace segment when "All Namespaces" is selected', async ({ page }) => {
     // Tests that the default scope keeps the URL clean
 
     // Arrange: Open a deep link with a namespace selected
-    await page.goto('/pods?namespace=kube-system');
+    await page.goto('/namespaces/kube-system/pods');
     await page.waitForLoadState('networkidle');
 
     // Act: Switch to "All Namespaces"
@@ -49,41 +49,57 @@ test.describe('Namespace URL Deep Link', () => {
       .or(page.getByTestId('namespace-option-all'));
     await allNamespacesOption.click();
 
-    // Assert: Selector shows "All Namespaces" and the param is gone
+    // Assert: Selector shows "All Namespaces" and the segment is gone
     await expect(namespaceSelector).toContainText(/all namespaces/i);
-    await expect(page).not.toHaveURL(/[?&]namespace=/);
+    await expect(page).toHaveURL(/\/pods$/);
   });
 
-  test('should keep the namespace query param in the URL when switching tabs', async ({ page }) => {
+  test('should keep the namespace segment in the URL when switching tabs', async ({ page }) => {
     // Tests that the URL stays a shareable deep link during in-app navigation
 
-    // Arrange: Navigate to home page and select "kube-system"
-    await page.goto('/');
+    // Arrange: Open the Pods tab scoped to kube-system
+    await page.goto('/namespaces/kube-system/pods');
     await page.waitForLoadState('networkidle');
-
-    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
-    await namespaceSelector.click();
-    const kubeSystemOption = page.getByRole('option', { name: /^kube-system$/i })
-      .or(page.getByTestId('namespace-option-kube-system'));
-    await kubeSystemOption.click();
-    await expect(page).toHaveURL(/[?&]namespace=kube-system/);
-
-    // Act: Navigate to Pods tab
-    await page.getByTestId('tab-pods').click();
-    await page.waitForLoadState('networkidle');
-
-    // Assert: Path changes but the namespace param is restored
-    await expect(page).toHaveURL(/\/pods\?.*namespace=kube-system/);
 
     // Act: Navigate to Workloads tab
     await page.getByTestId('tab-workloads').click();
     await page.waitForLoadState('networkidle');
 
-    // Assert: Param follows the navigation again
-    await expect(page).toHaveURL(/\/workloads\?.*namespace=kube-system/);
+    // Assert: The namespace segment follows the navigation
+    await expect(page).toHaveURL(/\/namespaces\/kube-system\/workloads$/);
 
-    // Assert: Selection is still applied
+    // Act: Navigate to Secrets tab
+    await page.getByTestId('tab-secrets').click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Segment follows again and the selection is still applied
+    await expect(page).toHaveURL(/\/namespaces\/kube-system\/secrets$/);
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
     await expect(namespaceSelector).toContainText(/^kube-system$/i);
+  });
+
+  test('should keep cluster-scoped tabs unprefixed while preserving the selection', async ({ page }) => {
+    // Tests kube API server semantics: nodes are not namespaced
+
+    // Arrange: Open the Pods tab scoped to kube-system
+    await page.goto('/namespaces/kube-system/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Navigate to the cluster-scoped Nodes tab
+    await page.getByTestId('tab-nodes').click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: No namespace segment on /nodes, but the selection is kept
+    await expect(page).toHaveURL(/\/nodes$/);
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await expect(namespaceSelector).toContainText(/^kube-system$/i);
+
+    // Act: Return to a namespaced tab
+    await page.getByTestId('tab-pods').click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: The deep link picks the selection up again
+    await expect(page).toHaveURL(/\/namespaces\/kube-system\/pods$/);
   });
 
   test('should scope resource tabs to the namespace given in the URL', async ({ page }) => {
@@ -94,7 +110,7 @@ test.describe('Namespace URL Deep Link', () => {
     const podsRequest = page.waitForRequest((request) =>
       request.url().includes('/api/pods') && request.url().includes('ns=kube-system')
     );
-    await page.goto('/pods?namespace=kube-system');
+    await page.goto('/namespaces/kube-system/pods');
     await page.waitForLoadState('networkidle');
 
     // Assert: The pods API was queried with the namespace from the URL

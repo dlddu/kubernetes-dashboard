@@ -50,9 +50,9 @@
 - **검증 방법**: `toggleFavorite`/`isFavorite` 동작, 즐겨찾기 섹션 분리 표시, `localStorage`(`namespace-favorites`) 영속 확인. 접근성: 토글 `aria-pressed`. (e2e: `e2e/namespace-favorites.spec.ts`)
 
 ### AC7: 네임스페이스 URL 딥링크
-- **설명**: 선택된 네임스페이스를 URL 쿼리 파라미터(`?namespace=<이름>`)에 반영해, 현재 화면을 공유·북마크할 수 있는 딥링크로 만든다. 해당 URL로 접속하거나 새로고침하면 그 네임스페이스가 선택된 상태로 로드되어 모든 탭의 데이터 스코프에 반영되고, 탭을 이동해도 파라미터가 URL에 유지된다. 기본값인 "All Namespaces" 선택 시에는 파라미터를 제거해 URL을 깨끗하게 유지한다.
+- **설명**: 선택된 네임스페이스를 kube API server 컨벤션을 따르는 URL 경로 세그먼트(`/namespaces/<이름>/pods` 등)에 반영해, 현재 화면을 공유·북마크할 수 있는 딥링크로 만든다. 해당 URL로 접속하거나 새로고침하면 그 네임스페이스가 선택된 상태로 로드되어 모든 탭의 데이터 스코프에 반영되고, 탭을 이동해도 세그먼트가 URL에 유지된다. 기본값인 "All Namespaces" 선택 시에는 세그먼트를 제거해 URL을 깨끗하게 유지하고, 클러스터 스코프 화면(Nodes·Debug·FluxCD 상세)은 kube 의미론대로 세그먼트 없이 유지하되 선택 상태는 보존한다.
 - **달성 가치**: V7
-- **검증 방법**: `NamespaceContext`의 URL 동기화 — 파라미터로 초기 선택 로드·조회 API 스코프 반영, 선택 변경 시 URL 갱신(all이면 제거), 탭 이동·새로고침 시 유지 확인. (단위: `NamespaceContext.test.tsx`, e2e: `e2e/namespace-deeplink.spec.ts`, `e2e/namespace-context-integration.spec.ts`)
+- **검증 방법**: `NamespaceContext`·`namespacePath` 유틸의 URL 동기화 — 경로 세그먼트로 초기 선택 로드·조회 API 스코프 반영, 선택 변경 시 경로 재작성(all이면 제거), 탭 이동·새로고침 시 유지, 클러스터 스코프 경로 미접두 확인. (단위: `NamespaceContext.test.tsx`·`namespacePath.test.ts`, e2e: `e2e/namespace-deeplink.spec.ts`, `e2e/namespace-context-integration.spec.ts`)
 
 ---
 

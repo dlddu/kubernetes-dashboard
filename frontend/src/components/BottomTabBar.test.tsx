@@ -1066,4 +1066,95 @@ describe('BottomTabBar Component', () => {
       expect(screen.queryByTestId('overview-badge')).not.toBeInTheDocument();
     });
   });
+
+  describe('Namespace Deep Link', () => {
+    it('should mark the tab active when the path has a /namespaces/<ns> prefix', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/namespaces/team-a/pods',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Assert
+      expect(screen.getByTestId('tab-pods')).toHaveAttribute('aria-current', 'page');
+      expect(screen.getByTestId('tab-overview')).not.toHaveAttribute('aria-current');
+    });
+
+    it('should mark the Overview tab active on the namespace-only path', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/namespaces/team-a',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+
+      // Act
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Assert
+      expect(screen.getByTestId('tab-overview')).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('should keep the namespace segment when navigating to another namespaced tab', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/namespaces/team-a/pods',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Act
+      fireEvent.click(screen.getByTestId('tab-workloads'));
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith('/namespaces/team-a/workloads');
+    });
+
+    it('should navigate to the bare path for cluster-scoped tabs', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/namespaces/team-a/pods',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Act - nodes are cluster-scoped and never carry a namespace segment
+      fireEvent.click(screen.getByTestId('tab-nodes'));
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith('/nodes');
+    });
+
+    it('should navigate without a namespace segment when no namespace is in the path', () => {
+      // Arrange
+      vi.mocked(useLocation).mockReturnValue({
+        pathname: '/pods',
+        search: '',
+        hash: '',
+        state: null,
+        key: 'default',
+      });
+      render(<BottomTabBar unhealthyPodCount={0} />);
+
+      // Act
+      fireEvent.click(screen.getByTestId('tab-workloads'));
+
+      // Assert
+      expect(mockNavigate).toHaveBeenCalledWith('/workloads');
+    });
+  });
 });

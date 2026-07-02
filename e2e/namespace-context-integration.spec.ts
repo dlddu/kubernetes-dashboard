@@ -166,7 +166,7 @@ test.describe('Namespace Context Integration', () => {
 test.describe('Namespace Context Integration - Edge Cases', () => {
   test('should preserve namespace selection after page refresh via URL deep link', async ({ page }) => {
     // Tests that NamespaceContext persists state across refresh
-    // (the selection is stored in the ?namespace= URL query param)
+    // (the selection is stored in the /namespaces/<ns> path segment)
 
     // Arrange: Navigate to home page and select a namespace
     await page.goto('/');
@@ -182,7 +182,7 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
 
     // Assert: Verify selection and URL before refresh
     await expect(namespaceSelector).toContainText(/^kube-system$/i);
-    await expect(page).toHaveURL(/[?&]namespace=kube-system/);
+    await expect(page).toHaveURL(/\/namespaces\/kube-system/);
 
     // Act: Reload the page
     await page.reload();

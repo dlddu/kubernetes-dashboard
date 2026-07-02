@@ -1,4 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  ALL_NAMESPACES,
+  buildNamespacePath,
+  parseNamespaceFromPath,
+  stripNamespaceFromPath,
+} from '../utils/namespacePath';
 
 interface BottomTabBarProps {
   unhealthyPodCount: number;
@@ -110,7 +116,8 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
   ];
 
   const isTabActive = (tabPath: string): boolean => {
-    const pathname = location.pathname;
+    // Ignore the /namespaces/<ns> deep-link segment when matching tabs
+    const pathname = stripNamespaceFromPath(location.pathname);
 
     if (tabPath === '/') {
       return pathname === '/';
@@ -124,7 +131,9 @@ export function BottomTabBar({ unhealthyPodCount, onTabChange }: BottomTabBarPro
   };
 
   const handleTabClick = (path: string) => {
-    navigate(path);
+    // Carry the current namespace segment over to the target tab
+    const namespace = parseNamespaceFromPath(location.pathname) ?? ALL_NAMESPACES;
+    navigate(buildNamespacePath(path, namespace));
     if (onTabChange) {
       onTabChange(path);
     }

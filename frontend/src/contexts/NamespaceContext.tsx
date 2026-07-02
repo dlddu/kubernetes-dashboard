@@ -1,8 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, ReactNode } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
-
-export const NAMESPACE_QUERY_PARAM = 'namespace';
-const ALL_NAMESPACES = 'all';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  ALL_NAMESPACES,
+  buildNamespacePath,
+  isNamespaceScopedPath,
+  parseNamespaceFromPath,
+} from '../utils/namespacePath';
 
 interface NamespaceContextType {
   selectedNamespace: string;
@@ -13,53 +16,55 @@ const NamespaceContext = createContext<NamespaceContextType | undefined>(undefin
 
 export function NamespaceProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const urlNamespace = searchParams.get(NAMESPACE_QUERY_PARAM);
+  const navigate = useNavigate();
+  const urlNamespace = parseNamespaceFromPath(location.pathname);
 
-  // Last known selection. In-app links drop the query string, so when the
-  // param is absent the selection falls back to this instead of resetting.
-  const lastSelectedRef = useRef<string>(urlNamespace ?? ALL_NAMESPACES);
-  const selectedNamespace = urlNamespace ?? lastSelectedRef.current;
+  // Last known selection. Cluster-scoped pages (e.g. /nodes) carry no
+  // namespace segment, so the selection falls back to this instead of
+  // resetting while the user is there.
+  const [fallbackNamespace, setFallbackNamespace] = useState<string>(
+    urlNamespace ?? ALL_NAMESPACES
+  );
+  const selectedNamespace = urlNamespace ?? fallbackNamespace;
 
   useEffect(() => {
     if (urlNamespace) {
-      lastSelectedRef.current = urlNamespace;
+      setFallbackNamespace(urlNamespace);
     }
   }, [urlNamespace]);
 
   const setSelectedNamespace = useCallback(
     (namespace: string) => {
-      lastSelectedRef.current = namespace;
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (namespace === ALL_NAMESPACES) {
-            next.delete(NAMESPACE_QUERY_PARAM);
-          } else {
-            next.set(NAMESPACE_QUERY_PARAM, namespace);
-          }
-          return next;
-        },
-        { replace: true }
-      );
+      setFallbackNamespace(namespace);
+      const target = buildNamespacePath(location.pathname, namespace);
+      if (target !== location.pathname) {
+        navigate(
+          { pathname: target, search: location.search, hash: location.hash },
+          { replace: true }
+        );
+      }
     },
-    [setSearchParams]
+    [location, navigate]
   );
 
-  // Put the namespace back into the URL after navigation drops it, so the
-  // address bar always holds a shareable deep link to the current view.
+  // In-app links use bare tab paths; put the namespace segment back so the
+  // URL stays a shareable kube-style deep link (/namespaces/<ns>/...).
   useEffect(() => {
-    if (!urlNamespace && lastSelectedRef.current !== ALL_NAMESPACES) {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          next.set(NAMESPACE_QUERY_PARAM, lastSelectedRef.current);
-          return next;
-        },
-        { replace: true }
-      );
+    if (urlNamespace || fallbackNamespace === ALL_NAMESPACES) {
+      return;
     }
-  }, [location, urlNamespace, setSearchParams]);
+    if (!isNamespaceScopedPath(location.pathname)) {
+      return;
+    }
+    navigate(
+      {
+        pathname: buildNamespacePath(location.pathname, fallbackNamespace),
+        search: location.search,
+        hash: location.hash,
+      },
+      { replace: true }
+    );
+  }, [location, urlNamespace, fallbackNamespace, navigate]);
 
   const value = useMemo(
     () => ({ selectedNamespace, setSelectedNamespace }),
