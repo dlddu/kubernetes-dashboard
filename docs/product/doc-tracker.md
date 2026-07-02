@@ -7,8 +7,8 @@
 
 - 정의된 가치: **7개** (V1~V7) — 소유자: 클러스터 운영자
 - PRD: **10개** (탭별 9개 + 공통 셸 1개)
-- Acceptance Criteria: **52개** (가치 연결됨: 52 / 미연결: 0)
-- 테스트 문서: **10개** (AC 커버됨: 52 / 미커버: 0)
+- Acceptance Criteria: **53개** (가치 연결됨: 53 / 미연결: 0)
+- 테스트 문서: **10개** (AC 커버됨: 53 / 미커버: 0)
 - **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). 남은 것은 **자동화 공백 8개**(테스트 문서는 있으나 e2e 미작성)로, 문서 체계 외부의 구현 백로그.
 
 ## PRD ↔ 테스트 문서 인덱스
@@ -24,7 +24,7 @@
 | ES | `prd-external-secrets.md` | `/external-secrets` | V5, V7 | 4 | `test-external-secrets.md` | — |
 | AR | `prd-argo.md` | `/argo` | V1, V4, V6, V7 | 7 | `test-argo.md` | (AR4 폴링 보강) |
 | FX | `prd-fluxcd.md` | `/flux` | V1, V4, V6, V7 | 7 | `test-fluxcd.md` | FX3·FX4·FX5·FX6 |
-| CM | `prd-common.md` | 앱 셸(전역) | V1, V2, V6, V7 | 6 | `test-common.md` | CM3 |
+| CM | `prd-common.md` | 앱 셸(전역) | V1, V2, V6, V7 | 7 | `test-common.md` | CM3 |
 
 ## 가치 커버리지 매트릭스
 
@@ -36,7 +36,7 @@
 | V4: GitOps·reconciliation 직접 제어 | AR, FX, SC | AR2·AR5·AR6, FX3·FX4·FX5, SC3 | ✓ | ✅ 검증(문서) |
 | V5: 민감 리소스 안전 열람 | SC, ES | SC1·SC2·SC4, ES1·ES2·ES3·ES4 | ✓ | ✅ 검증(문서) |
 | V6: 실시간 최신 상태 유지 | OV, PD, AR, FX, CM | OV4·OV5, PD2·PD3, AR4, FX6, CM4 | ✓ | ✅ 검증(문서) |
-| V7: 네임스페이스 포커스/개인화 | OV, WL, PD, SC, CF, ES, AR, FX, CM | OV6, WL1, PD1·PD6, SC1, CF1, ES1, AR1, FX1·FX2, CM5·CM6 | ✓ | ✅ 검증(문서) |
+| V7: 네임스페이스 포커스/개인화 | OV, WL, PD, SC, CF, ES, AR, FX, CM | OV6, WL1, PD1·PD6, SC1, CF1, ES1, AR1, FX1·FX2, CM5·CM6·CM7 | ✓ | ✅ 검증(문서) |
 
 ## 위험 진단
 
@@ -72,3 +72,4 @@
 | 2026-06-22 | SC3 재정의 → V4 연결, V4 확장 (reconciliation 포함) | 미연결 1개 | 미연결 0개 |
 | 2026-06-22 | 테스트 문서 5종 추가 (ND·WL·SC·ES·AR) | 테스트 4개, AC 27개 커버 | 테스트 9개, AC 49개 전부 커버, **문서 체계 건강** |
 | 2026-06-29 | ConfigMaps PRD(CF)·테스트 문서 추가 — V1·V7 커버, e2e 포함 | PRD 9개, AC 49개, 테스트 9개 | PRD 10개, AC 52개 전부 커버, 테스트 10개, **문서 체계 건강 유지** |
+| 2026-07-02 | 공통 셸 CM7(네임스페이스 URL 딥링크) AC·테스트 시나리오 추가 — V7 커버, 단위·e2e 포함 | AC 52개 | AC 53개 전부 커버, **문서 체계 건강 유지** |
