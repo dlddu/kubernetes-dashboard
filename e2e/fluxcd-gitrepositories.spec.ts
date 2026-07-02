@@ -46,7 +46,8 @@ function getCurrentCIBranch(): string {
  * Covers happy path, summary cards, namespace filtering, loading, empty, and error states.
  *
  * Also covers the GitRepository detail view:
- * - Card click → detail page navigation (URL: /fluxcd/gitrepository/{namespace}/{name})
+ * - Card click → detail page navigation (URL: /namespaces/{namespace}/fluxcd/gitrepository/{name},
+ *   legacy /fluxcd/gitrepository/{namespace}/{name} redirects there)
  * - Back button → list page return
  * - Spec info: URL, Ref (branch/tag), Interval, Suspended, SecretRef
  * - Status info: Revision (mono font), Last Update
@@ -457,7 +458,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: URL navigated to the detail route
-    expect(page.url()).toContain('/fluxcd/gitrepository/dashboard-test/flux-system');
+    expect(page.url()).toContain('/namespaces/dashboard-test/fluxcd/gitrepository/flux-system');
 
     // Assert: Detail page container is visible
     const detailPage = page.getByTestId('gitrepository-detail-page');
@@ -772,8 +773,11 @@ test.describe('FluxCD Tab - GitRepository Detail - Error State', () => {
 
 test.describe('FluxCD Tab - GitRepository Detail - Deep Linking', () => {
   test('should render gitrepository-detail-page when navigating directly to /fluxcd/gitrepository/{namespace}/{name}', async ({ page }) => {
+    // The legacy URL form redirects to the kube-style route
     await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
     await page.waitForLoadState('networkidle');
+
+    await expect(page).toHaveURL(/\/namespaces\/dashboard-test\/fluxcd\/gitrepository\/flux-system$/);
 
     const detailPage = page.getByTestId('gitrepository-detail-page');
     await expect(detailPage).toBeVisible();

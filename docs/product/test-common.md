@@ -52,10 +52,10 @@
 
 ### 시나리오 7: 네임스페이스 URL 딥링크
 - **사전 조건**: 네임스페이스 목록 존재(예: kube-system).
-- **실행 단계**: `/namespaces/kube-system/pods` 딥링크로 접속 → 셀렉터 선택 상태·조회 API 스코프 확인 → 네임스페이스 선택 → 경로가 `/namespaces/<이름>/...`로 재작성되는지 확인 → 탭 이동 → 세그먼트 유지 확인 → Nodes(클러스터 스코프) 이동 → 세그먼트 없이 선택 유지 확인 → 새로고침 → 선택 유지 확인 → "All Namespaces" 선택 → 세그먼트 제거 확인.
-- **기대 결과**: URL 경로의 네임스페이스가 선택된 상태로 로드되고(조회 API도 해당 네임스페이스로 스코프), 선택 변경·탭 이동·새로고침에 걸쳐 URL과 선택 상태가 일치한다. 기본값(All Namespaces)과 클러스터 스코프 화면에서는 세그먼트가 없다.
+- **실행 단계**: `/namespaces/kube-system/pods` 딥링크로 접속 → 셀렉터 선택 상태·조회 API 스코프 확인 → 네임스페이스 선택 → 경로가 `/namespaces/<이름>/...`로 재작성되는지 확인 → 탭 이동 → 세그먼트 유지 확인 → Nodes(클러스터 스코프) 이동 → 세그먼트 없이 선택 유지 확인 → FluxCD 상세 진입 → 리소스 네임스페이스가 경로에 고정되고 전역 선택은 그대로인지 확인(구 경로는 리다이렉트) → 새로고침 → 선택 유지 확인 → "All Namespaces" 선택 → 세그먼트 제거 확인.
+- **기대 결과**: URL 경로의 네임스페이스가 선택된 상태로 로드되고(조회 API도 해당 네임스페이스로 스코프), 선택 변경·탭 이동·새로고침에 걸쳐 URL과 선택 상태가 일치한다. 기본값(All Namespaces)과 클러스터 스코프 화면(Nodes·Debug)에서는 세그먼트가 없고, FluxCD 상세의 세그먼트는 전역 필터가 아닌 리소스 식별자다.
 - **검증 AC**: CM7
-- **자동화**: `e2e/namespace-deeplink.spec.ts`, `e2e/namespace-context-integration.spec.ts`(새로고침 유지), 단위 `frontend/src/contexts/NamespaceContext.test.tsx`·`frontend/src/utils/namespacePath.test.ts`
+- **자동화**: `e2e/namespace-deeplink.spec.ts`, `e2e/namespace-context-integration.spec.ts`(새로고침 유지), `e2e/fluxcd-kustomizations.spec.ts`·`e2e/fluxcd-gitrepositories.spec.ts`(상세 URL·리다이렉트), 단위 `frontend/src/contexts/NamespaceContext.test.tsx`·`frontend/src/utils/namespacePath.test.ts`
 
 ## 커버리지 요약
 - 자동화 연결됨: CM1·CM2·CM4·CM5·CM6·CM7

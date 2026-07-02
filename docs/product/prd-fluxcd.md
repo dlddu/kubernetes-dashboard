@@ -1,7 +1,7 @@
 # PRD: FluxCD 탭
 
 > FluxCD GitRepository와 Kustomization의 동기화 상태를 보고, reconcile·suspend·브랜치 전환으로 GitOps를 직접 제어하는 화면.
-> 상위 기준: `docs/product/values.md` · 탭 경로: `/flux` + 상세 `/fluxcd/{kustomization,gitrepository}/:ns/:name` (`FluxCDTab`, 상세 페이지)
+> 상위 기준: `docs/product/values.md` · 탭 경로: `/flux` + 상세 `/namespaces/:ns/fluxcd/{kustomization,gitrepository}/:name` (구 `/fluxcd/{kustomization,gitrepository}/:ns/:name`은 리다이렉트) (`FluxCDTab`, 상세 페이지)
 
 ## 달성 가치
 

@@ -45,11 +45,17 @@ describe('isNamespaceScopedPath', () => {
     expect(isNamespaceScopedPath('/namespaces/team-a/pods')).toBe(true);
   });
 
-  it('should treat cluster-scoped paths as not namespaced', () => {
+  it('should treat cluster-scoped paths as not selector-owned', () => {
     expect(isNamespaceScopedPath('/nodes')).toBe(false);
     expect(isNamespaceScopedPath('/debug')).toBe(false);
+  });
+
+  it('should treat resource-pinned FluxCD detail paths as not selector-owned', () => {
+    // The /namespaces/<ns> segment on these identifies the resource itself
+    expect(isNamespaceScopedPath('/namespaces/ns/fluxcd/kustomization/name')).toBe(false);
+    expect(isNamespaceScopedPath('/namespaces/ns/fluxcd/gitrepository/name')).toBe(false);
+    // Legacy form without the prefix
     expect(isNamespaceScopedPath('/fluxcd/kustomization/ns/name')).toBe(false);
-    expect(isNamespaceScopedPath('/fluxcd/gitrepository/ns/name')).toBe(false);
   });
 });
 
@@ -78,6 +84,16 @@ describe('buildNamespacePath', () => {
   it('should leave cluster-scoped paths unprefixed', () => {
     expect(buildNamespacePath('/nodes', 'team-a')).toBe('/nodes');
     expect(buildNamespacePath('/debug', 'team-a')).toBe('/debug');
+  });
+
+  it('should leave resource-pinned FluxCD detail paths untouched', () => {
+    // The resource's own namespace segment must survive selector changes
+    expect(buildNamespacePath('/namespaces/ns/fluxcd/kustomization/name', 'team-a')).toBe(
+      '/namespaces/ns/fluxcd/kustomization/name'
+    );
+    expect(buildNamespacePath('/namespaces/ns/fluxcd/kustomization/name', 'all')).toBe(
+      '/namespaces/ns/fluxcd/kustomization/name'
+    );
     expect(buildNamespacePath('/fluxcd/kustomization/ns/name', 'team-a')).toBe(
       '/fluxcd/kustomization/ns/name'
     );

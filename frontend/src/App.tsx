@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { NamespaceProvider, useNamespace } from './contexts/NamespaceContext';
 import { DebugProvider } from './contexts/DebugContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
@@ -20,6 +20,13 @@ import { KustomizationDetailPage } from './components/KustomizationDetailPage';
 import { GitRepositoryDetailPage } from './components/GitRepositoryDetailPage';
 import { DebugPage } from './components/DebugPage';
 
+// FluxCD detail pages moved to kube-style /namespaces/<ns>/fluxcd/... paths;
+// redirect the legacy /fluxcd/<kind>/<ns>/<name> form to keep old links alive.
+function LegacyFluxCDDetailRedirect({ kind }: { kind: 'kustomization' | 'gitrepository' }) {
+  const { namespace, name } = useParams();
+  return <Navigate to={`/namespaces/${namespace}/fluxcd/${kind}/${name}`} replace />;
+}
+
 // Tab route table. Mounted at the root and under /namespaces/:namespace so
 // every namespaced view is addressable as a kube-style deep link
 // (/namespaces/<ns>/pods), while cluster-scoped views stay unprefixed.
@@ -40,8 +47,14 @@ function TabRoutes() {
       <Route path="/external-secrets" element={<ExternalSecretsTab namespace={namespaceParam} />} />
       <Route path="/argo/*" element={<ArgoTab namespace={namespaceParam} />} />
       <Route path="/flux" element={<FluxCDTab namespace={namespaceParam} />} />
-      <Route path="/fluxcd/kustomization/:namespace/:name" element={<KustomizationDetailPage />} />
-      <Route path="/fluxcd/gitrepository/:namespace/:name" element={<GitRepositoryDetailPage />} />
+      <Route
+        path="/fluxcd/kustomization/:namespace/:name"
+        element={<LegacyFluxCDDetailRedirect kind="kustomization" />}
+      />
+      <Route
+        path="/fluxcd/gitrepository/:namespace/:name"
+        element={<LegacyFluxCDDetailRedirect kind="gitrepository" />}
+      />
       <Route path="/debug" element={<DebugPage />} />
     </Routes>
   );
@@ -57,6 +70,15 @@ function AppContent() {
       <TopBar />
       <main className="container mx-auto px-4 py-8">
         <Routes>
+          {/* FluxCD detail: the namespace segment pins the resource itself */}
+          <Route
+            path="/namespaces/:namespace/fluxcd/kustomization/:name"
+            element={<KustomizationDetailPage />}
+          />
+          <Route
+            path="/namespaces/:namespace/fluxcd/gitrepository/:name"
+            element={<GitRepositoryDetailPage />}
+          />
           <Route path="/namespaces/:namespace/*" element={<TabRoutes />} />
           <Route path="*" element={<TabRoutes />} />
         </Routes>

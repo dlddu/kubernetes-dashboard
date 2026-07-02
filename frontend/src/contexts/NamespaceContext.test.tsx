@@ -16,6 +16,7 @@ function Probe() {
       <button onClick={() => setSelectedNamespace('all')}>select-all</button>
       <Link to="/workloads">go-workloads</Link>
       <Link to="/nodes">go-nodes</Link>
+      <Link to="/namespaces/other-ns/fluxcd/kustomization/app">go-fluxcd-detail</Link>
     </div>
   );
 }
@@ -176,6 +177,59 @@ describe('NamespaceContext - kube-style URL deep link', () => {
       expect(screen.getByTestId('url-pathname')).toHaveTextContent(/^\/workloads$/);
     });
     expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^all$/);
+  });
+
+  it('should not derive the selection from a resource-pinned FluxCD detail URL', () => {
+    // Arrange & Act - the segment identifies the resource, not the filter
+    renderAt('/namespaces/dashboard-test/fluxcd/kustomization/app');
+
+    // Assert
+    expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^all$/);
+    expect(screen.getByTestId('url-pathname')).toHaveTextContent(
+      /^\/namespaces\/dashboard-test\/fluxcd\/kustomization\/app$/
+    );
+  });
+
+  it('should keep the selection and the resource URL when entering a FluxCD detail page', async () => {
+    // Arrange - list scoped to team-a, detail resource lives in other-ns
+    renderAt('/namespaces/team-a/flux');
+
+    // Act
+    fireEvent.click(screen.getByText('go-fluxcd-detail'));
+
+    // Assert - resource namespace stays in the URL, global selection untouched
+    await waitFor(() => {
+      expect(screen.getByTestId('url-pathname')).toHaveTextContent(
+        /^\/namespaces\/other-ns\/fluxcd\/kustomization\/app$/
+      );
+    });
+    expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^team-a$/);
+  });
+
+  it('should update the selection without rewriting the URL on a FluxCD detail page', async () => {
+    // Arrange
+    renderAt('/namespaces/dashboard-test/fluxcd/kustomization/app');
+
+    // Act
+    fireEvent.click(screen.getByText('select-team-a'));
+
+    // Assert - selection changes, resource URL stays intact
+    await waitFor(() => {
+      expect(screen.getByTestId('selected-namespace')).toHaveTextContent(/^team-a$/);
+    });
+    expect(screen.getByTestId('url-pathname')).toHaveTextContent(
+      /^\/namespaces\/dashboard-test\/fluxcd\/kustomization\/app$/
+    );
+
+    // Act - going back to a namespaced tab applies the pending selection
+    fireEvent.click(screen.getByText('go-workloads'));
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByTestId('url-pathname')).toHaveTextContent(
+        /^\/namespaces\/team-a\/workloads$/
+      );
+    });
   });
 
   it('should throw when useNamespace is used outside NamespaceProvider', () => {

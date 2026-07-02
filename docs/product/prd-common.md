@@ -50,9 +50,9 @@
 - **검증 방법**: `toggleFavorite`/`isFavorite` 동작, 즐겨찾기 섹션 분리 표시, `localStorage`(`namespace-favorites`) 영속 확인. 접근성: 토글 `aria-pressed`. (e2e: `e2e/namespace-favorites.spec.ts`)
 
 ### AC7: 네임스페이스 URL 딥링크
-- **설명**: 선택된 네임스페이스를 kube API server 컨벤션을 따르는 URL 경로 세그먼트(`/namespaces/<이름>/pods` 등)에 반영해, 현재 화면을 공유·북마크할 수 있는 딥링크로 만든다. 해당 URL로 접속하거나 새로고침하면 그 네임스페이스가 선택된 상태로 로드되어 모든 탭의 데이터 스코프에 반영되고, 탭을 이동해도 세그먼트가 URL에 유지된다. 기본값인 "All Namespaces" 선택 시에는 세그먼트를 제거해 URL을 깨끗하게 유지하고, 클러스터 스코프 화면(Nodes·Debug·FluxCD 상세)은 kube 의미론대로 세그먼트 없이 유지하되 선택 상태는 보존한다.
+- **설명**: 선택된 네임스페이스를 kube API server 컨벤션을 따르는 URL 경로 세그먼트(`/namespaces/<이름>/pods` 등)에 반영해, 현재 화면을 공유·북마크할 수 있는 딥링크로 만든다. 해당 URL로 접속하거나 새로고침하면 그 네임스페이스가 선택된 상태로 로드되어 모든 탭의 데이터 스코프에 반영되고, 탭을 이동해도 세그먼트가 URL에 유지된다. 기본값인 "All Namespaces" 선택 시에는 세그먼트를 제거해 URL을 깨끗하게 유지한다. 클러스터 스코프 화면(Nodes·Debug)은 kube 의미론대로 세그먼트 없이 유지하고, FluxCD 상세 페이지는 리소스 자신의 네임스페이스를 `/namespaces/<이름>/fluxcd/kustomization/<이름>` 형태로 경로에 고정한다(전역 필터와 독립적이며, 구 경로 `/fluxcd/<종류>/<네임스페이스>/<이름>`은 새 경로로 리다이렉트). 두 경우 모두 전역 선택 상태는 보존된다.
 - **달성 가치**: V7
-- **검증 방법**: `NamespaceContext`·`namespacePath` 유틸의 URL 동기화 — 경로 세그먼트로 초기 선택 로드·조회 API 스코프 반영, 선택 변경 시 경로 재작성(all이면 제거), 탭 이동·새로고침 시 유지, 클러스터 스코프 경로 미접두 확인. (단위: `NamespaceContext.test.tsx`·`namespacePath.test.ts`, e2e: `e2e/namespace-deeplink.spec.ts`, `e2e/namespace-context-integration.spec.ts`)
+- **검증 방법**: `NamespaceContext`·`namespacePath` 유틸의 URL 동기화 — 경로 세그먼트로 초기 선택 로드·조회 API 스코프 반영, 선택 변경 시 경로 재작성(all이면 제거), 탭 이동·새로고침 시 유지, 클러스터 스코프 경로 미접두, FluxCD 상세의 리소스 네임스페이스 고정·레거시 리다이렉트 확인. (단위: `NamespaceContext.test.tsx`·`namespacePath.test.ts`, e2e: `e2e/namespace-deeplink.spec.ts`, `e2e/namespace-context-integration.spec.ts`, `e2e/fluxcd-kustomizations.spec.ts`·`e2e/fluxcd-gitrepositories.spec.ts` 상세 진입·딥링크)
 
 ---
 

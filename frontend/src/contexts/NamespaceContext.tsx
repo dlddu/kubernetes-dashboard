@@ -17,13 +17,18 @@ const NamespaceContext = createContext<NamespaceContextType | undefined>(undefin
 export function NamespaceProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const urlNamespace = parseNamespaceFromPath(location.pathname);
+  // The URL namespace drives the selection only on paths the selector owns.
+  // On resource-pinned paths (FluxCD detail) the segment identifies the
+  // resource and must not touch the global filter.
+  const urlNamespace = isNamespaceScopedPath(location.pathname)
+    ? parseNamespaceFromPath(location.pathname)
+    : null;
 
-  // Last known selection. Cluster-scoped pages (e.g. /nodes) carry no
-  // namespace segment, so the selection falls back to this instead of
-  // resetting while the user is there.
+  // Last known selection. Pages without a selector-owned segment (e.g.
+  // /nodes, FluxCD detail) fall back to this instead of resetting while the
+  // user is there.
   const [fallbackNamespace, setFallbackNamespace] = useState<string>(
-    urlNamespace ?? ALL_NAMESPACES
+    () => urlNamespace ?? ALL_NAMESPACES
   );
   const selectedNamespace = urlNamespace ?? fallbackNamespace;
 

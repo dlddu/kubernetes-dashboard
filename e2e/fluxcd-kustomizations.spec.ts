@@ -11,7 +11,8 @@ import { test, expect } from '@playwright/test';
  * Also covers backend API filtering by namespace and CRD-not-installed empty response.
  *
  * Also covers the Kustomization detail view (DLD-746):
- * - Card click → detail page navigation (URL: /fluxcd/kustomization/{namespace}/{name})
+ * - Card click → detail page navigation (URL: /namespaces/{namespace}/fluxcd/kustomization/{name},
+ *   legacy /fluxcd/kustomization/{namespace}/{name} redirects there)
  * - Back button → list page return
  * - Spec info: Source, Path, Interval, Prune, Suspended, DependsOn
  * - Status info: Revision (mono font), Last Applied
@@ -544,7 +545,8 @@ test.describe('FluxCD Tab - Kustomization Detail - Navigation', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should navigate to the detail page with correct URL when a Kustomization card is clicked', async ({ page }) => {
-    // Tests that clicking a kustomization-card navigates to /fluxcd/kustomization/{namespace}/{name}
+    // Tests that clicking a kustomization-card navigates to the kube-style
+    // /namespaces/{namespace}/fluxcd/kustomization/{name} route
     // and renders the detail page container.
     // Fixture: app-ready (namespace: dashboard-test)
 
@@ -559,7 +561,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     // Assert: URL navigated to the detail route
-    expect(page.url()).toContain('/fluxcd/kustomization/dashboard-test/app-ready');
+    expect(page.url()).toContain('/namespaces/dashboard-test/fluxcd/kustomization/app-ready');
 
     // Assert: Detail page container is visible
     const detailPage = page.getByTestId('kustomization-detail-page');
@@ -961,13 +963,17 @@ test.describe('FluxCD Tab - Kustomization Detail - Deep Linking', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
   test('should render kustomization-detail-page when navigating directly to /fluxcd/kustomization/{namespace}/{name}', async ({ page }) => {
-    // Tests that navigating directly to the detail URL renders the detail page
-    // without requiring the user to first visit the list.
+    // Tests that navigating directly to the legacy detail URL redirects to the
+    // kube-style route and renders the detail page without requiring the user
+    // to first visit the list.
     // Fixture: app-ready (namespace: dashboard-test)
 
-    // Act: Navigate directly to the detail page
+    // Act: Navigate directly to the detail page via the legacy URL form
     await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
     await page.waitForLoadState('networkidle');
+
+    // Assert: Legacy URL is canonicalized to the kube-style route
+    await expect(page).toHaveURL(/\/namespaces\/dashboard-test\/fluxcd\/kustomization\/app-ready$/);
 
     // Assert: Detail page is visible
     const detailPage = page.getByTestId('kustomization-detail-page');
