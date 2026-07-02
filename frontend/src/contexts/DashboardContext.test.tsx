@@ -1,5 +1,6 @@
 import { render, screen, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { DashboardProvider, useDashboard } from './DashboardContext';
 import { NamespaceProvider } from './NamespaceContext';
 import { ReactNode } from 'react';
@@ -11,11 +12,13 @@ vi.mock('../api/overview', () => ({
 
 import { fetchOverview } from '../api/overview';
 
-// DashboardProvider requires NamespaceProvider
+// DashboardProvider requires NamespaceProvider (which requires a router for URL sync)
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <NamespaceProvider>
-    <DashboardProvider>{children}</DashboardProvider>
-  </NamespaceProvider>
+  <MemoryRouter>
+    <NamespaceProvider>
+      <DashboardProvider>{children}</DashboardProvider>
+    </NamespaceProvider>
+  </MemoryRouter>
 );
 
 describe('DashboardContext', () => {
@@ -35,11 +38,13 @@ describe('DashboardContext', () => {
 
       // Act
       render(
-        <NamespaceProvider>
-          <DashboardProvider>
-            <div data-testid="test-child">Test</div>
-          </DashboardProvider>
-        </NamespaceProvider>
+        <MemoryRouter>
+          <NamespaceProvider>
+            <DashboardProvider>
+              <div data-testid="test-child">Test</div>
+            </DashboardProvider>
+          </NamespaceProvider>
+        </MemoryRouter>
       );
 
       // Assert
