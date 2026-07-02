@@ -52,10 +52,10 @@
 
 ### 시나리오 7: 네임스페이스 URL 딥링크
 - **사전 조건**: 네임스페이스 목록 존재.
-- **실행 단계**: `?namespace=<이름>` URL로 직접 진입 → 셀렉터 선택 상태 확인 → 셀렉터에서 다른 네임스페이스 선택 → URL 파라미터 갱신 확인 → "All Namespaces" 선택 → 파라미터 제거 확인 → 네임스페이스 선택 상태로 탭 이동 → 파라미터 유지 확인.
-- **기대 결과**: URL 파라미터로 진입 시 해당 네임스페이스가 선택되고, 선택 변경이 URL에 반영되며("all"은 파라미터 제거), 탭 이동 후에도 파라미터가 유지되어 현재 화면을 URL로 공유할 수 있다.
+- **실행 단계**: `?namespace=<이름>` URL로 직접 진입 → 셀렉터 선택 상태 확인 → 셀렉터에서 다른 네임스페이스 선택 → URL 파라미터 갱신 확인 → "All Namespaces" 선택 → 파라미터 제거 확인 → 네임스페이스 선택 상태로 탭 이동 → 파라미터 유지 확인 → 페이지 새로고침 → 선택 유지 확인.
+- **기대 결과**: URL 파라미터로 진입 시 해당 네임스페이스가 선택되고, 선택 변경이 URL에 반영되며("all"은 파라미터 제거), 탭 이동·새로고침 후에도 선택이 유지되어 현재 화면을 URL로 공유할 수 있다.
 - **검증 AC**: CM7
-- **자동화**: `frontend/src/contexts/NamespaceContext.test.tsx`(단위), `e2e/namespace-filter.spec.ts` (URL Deep Link 섹션)
+- **자동화**: `frontend/src/contexts/NamespaceContext.test.tsx`(단위), `e2e/namespace-filter.spec.ts` (URL Deep Link 섹션), `e2e/namespace-context-integration.spec.ts` (새로고침 유지)
 
 ## 커버리지 요약
 - 자동화 연결됨: CM1·CM2·CM4·CM5·CM6·CM7
