@@ -164,9 +164,9 @@ test.describe('Namespace Context Integration', () => {
 });
 
 test.describe('Namespace Context Integration - Edge Cases', () => {
-  test('should reset namespace selection after page refresh', async ({ page }) => {
-    // Tests that NamespaceContext resets state on page refresh
-    // (NamespaceContext uses in-memory state, not localStorage)
+  test('should persist namespace selection after page refresh via URL param', async ({ page }) => {
+    // Tests that the namespace selection survives a page refresh because
+    // NamespaceContext stores the selection in the ?namespace= URL param
 
     // Arrange: Navigate to home page and select a namespace
     await page.goto('/');
@@ -180,16 +180,17 @@ test.describe('Namespace Context Integration - Edge Cases', () => {
     await kubeSystemOption.click();
     await page.waitForLoadState('networkidle');
 
-    // Assert: Verify selection before refresh
+    // Assert: Verify selection is reflected in the selector and the URL
     await expect(namespaceSelector).toContainText(/^kube-system$/i);
+    await expect(page).toHaveURL(/[?&]namespace=kube-system/);
 
     // Act: Reload the page
     await page.reload();
     await page.waitForLoadState('networkidle');
 
-    // Assert: Namespace selection should reset to "All Namespaces" after reload
+    // Assert: Namespace selection should persist after reload (restored from the URL)
     const namespaceSelectorAfterReload = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
-    await expect(namespaceSelectorAfterReload).toContainText(/all namespaces/i);
+    await expect(namespaceSelectorAfterReload).toContainText(/^kube-system$/i);
   });
 
   test('should display available namespaces in dropdown', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { NamespaceSelector } from './NamespaceSelector';
 import { NamespaceProvider } from '../contexts/NamespaceContext';
 import { FavoritesProvider } from '../contexts/FavoritesContext';
@@ -9,16 +10,23 @@ import * as namespacesApi from '../api/namespaces';
 vi.mock('../api/namespaces');
 
 // Helper to render with NamespaceProvider only
+// (NamespaceProvider syncs with the URL, so a router is required)
 const renderWithProvider = (ui: React.ReactElement) => {
-  return render(<NamespaceProvider>{ui}</NamespaceProvider>);
+  return render(
+    <MemoryRouter>
+      <NamespaceProvider>{ui}</NamespaceProvider>
+    </MemoryRouter>
+  );
 };
 
 // Helper to render with both NamespaceProvider and FavoritesProvider
 const renderWithFavoritesProvider = (ui: React.ReactElement) => {
   return render(
-    <FavoritesProvider>
-      <NamespaceProvider>{ui}</NamespaceProvider>
-    </FavoritesProvider>
+    <MemoryRouter>
+      <FavoritesProvider>
+        <NamespaceProvider>{ui}</NamespaceProvider>
+      </FavoritesProvider>
+    </MemoryRouter>
   );
 };
 
