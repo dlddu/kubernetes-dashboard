@@ -38,9 +38,9 @@
 - **검증 방법**: suspend/resume 액션이 리소스의 suspend 상태를 토글하는지 확인. (`handlers/fluxcd_kustomization_suspend_handler.go`)
 
 ### AC5: GitRepository 브랜치 전환
-- **설명**: GitRepository 상세에서 사용 가능한 브랜치 목록을 조회하고, 추적 브랜치를 변경할 수 있다.
+- **설명**: GitRepository 상세에서 사용 가능한 브랜치 목록을 조회하고, 추적 브랜치를 변경할 수 있다. 프라이빗 저장소는 GitRepository의 `secretRef`가 가리키는 Secret으로 인증하며, `username`/`password` 기반 Basic Auth와 `githubAppID`/`githubAppInstallationID`/`githubAppPrivateKey`(선택: `githubAppBaseURL`) 기반 GitHub App 인증을 모두 지원한다.
 - **달성 가치**: V4
-- **검증 방법**: 브랜치 목록 조회와 변경 액션이 동작하는지 확인. (`handlers/fluxcd_gitrepository_branches_handler.go`, `handlers/fluxcd_gitrepository_update_branch_handler.go`)
+- **검증 방법**: 브랜치 목록 조회와 변경 액션이 동작하는지 확인. (`handlers/fluxcd_gitrepository_branches_handler.go`, `handlers/github_app_auth.go`, `handlers/fluxcd_gitrepository_update_branch_handler.go`)
 
 ### AC6: 상세 라이브 상태
 - **설명**: GitRepository/Kustomization 상세에서 동기화·reconcile 진행 상태를 보여주고 폴링으로 자동 갱신한다.
