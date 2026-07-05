@@ -74,8 +74,12 @@ func GitRepositoryBranchesHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			username = string(secret.Data["username"])
-			password = string(secret.Data["password"])
+			username, password, err = resolveGitCredentials(r.Context(), secret.Data)
+			if err != nil {
+				slog.Error("Failed to resolve git credentials from secret", "error", err, "secret", detail.Spec.SecretRef.Name, "namespace", namespace)
+				writeError(w, http.StatusInternalServerError, errMsgGitRepositoryBranches)
+				return
+			}
 		}
 	}
 
@@ -93,6 +97,23 @@ func GitRepositoryBranchesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, branchListResponse{Branches: branches})
+}
+
+// resolveGitCredentials derives the git username and password from a Secret's
+// data. It supports GitHub App authentication (githubAppID / githubAppInstallationID
+// / githubAppPrivateKey), minting a short-lived installation access token used as
+// the password with the "x-access-token" username. When the GitHub App fields are
+// absent it falls back to basic auth using the username/password keys.
+func resolveGitCredentials(ctx context.Context, data map[string][]byte) (username, password string, err error) {
+	if appCreds := parseGitHubAppSecret(data); appCreds != nil {
+		token, err := appCreds.token(ctx)
+		if err != nil {
+			return "", "", err
+		}
+		return gitHubAppTokenUsername, token, nil
+	}
+
+	return string(data["username"]), string(data["password"]), nil
 }
 
 // buildAuthURL injects username:password into an HTTPS git URL.
