@@ -1,3 +1,4 @@
+// Smoke: infra liveness/readiness probe — not a product AC (excluded from AC↔spec matching).
 import { test, expect } from '@playwright/test';
 
 test.describe('Liveness Check', () => {

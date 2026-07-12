@@ -1,3 +1,4 @@
+// Verifies: PD4 (docs/product/prd-pods.md) — sole dedicated e2e spec for this AC.
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import { execSync } from 'child_process';
 
@@ -65,7 +66,6 @@ test.describe('Pod Debug API - parameter validation', () => {
 // ---------------------------------------------------------------
 // UI: Debug button on PodCard
 // ---------------------------------------------------------------
-
 test.describe('PodCard UI - Debug button', () => {
   test('renders a Debug button on every pod card', async ({ page }) => {
     await page.goto('/pods');
@@ -126,7 +126,6 @@ async function openDebugDialogForBusybox(page: Page): Promise<Locator> {
   }
   throw new Error('busybox-test fixture pod not found');
 }
-
 test.describe('DebugPodDialog UI - fields', () => {
   test('shows the preset image dropdown with netshoot selected by default', async ({
     page,
@@ -196,7 +195,6 @@ test.describe('DebugPodDialog UI - fields', () => {
 // ---------------------------------------------------------------
 // UI: Success flow — ephemeral container created and shell opens
 // ---------------------------------------------------------------
-
 test.describe('DebugPodDialog UI - success flow', () => {
   test('creates an ephemeral container and opens the exec panel', async ({
     page,
@@ -233,7 +231,6 @@ test.describe('DebugPodDialog UI - success flow', () => {
 // ---------------------------------------------------------------
 // UI: Failure flow — image pull failure surfaces in the dialog
 // ---------------------------------------------------------------
-
 test.describe('Pod Debug API - SYS_PTRACE capability', () => {
   test('attaches SYS_PTRACE capability when allowPtrace is true', async ({
     request,

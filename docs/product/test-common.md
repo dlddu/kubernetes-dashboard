@@ -13,50 +13,50 @@
 - **실행 단계**: 각 탭 클릭 → 라우팅 및 활성 표시 확인 → 좁은 화면에서 가로 스크롤 확인.
 - **기대 결과**: 8개 탭이 표시되고, 현재 경로(중첩 포함)에 해당하는 탭이 활성(`aria-current`)으로 표시되며, 넘칠 때 가로 스크롤되고 하단 안전 영역을 존중한다.
 - **검증 AC**: CM1
-- **자동화**: `e2e/bottom-tab-bar.spec.ts`
+- **자동화**: `e2e/bottom-tab-bar.spec.ts` (CM1 전용)
 
 ### 시나리오 2: 비정상 파드 배지
 - **사전 조건**: 비정상 파드 수 > 0.
 - **실행 단계**: 다른 탭으로 이동한 상태에서 Overview 탭 아이콘 확인.
 - **기대 결과**: Overview 탭에 비정상 파드 개수 배지가 표시된다. 0이면 미표시.
 - **검증 AC**: CM2
-- **자동화**: `e2e/bottom-tab-bar.spec.ts`
+- **자동화**: `e2e/common-unhealthy-badge.spec.ts` (CM2 전용)
 
 ### 시나리오 3: 상단 바·반응형 셸
 - **사전 조건**: 모바일/데스크톱 뷰포트.
 - **실행 단계**: 각 뷰포트에서 상단 바 레이아웃과 클러스터 연결 표시 확인.
 - **기대 결과**: 모바일 세로/데스크톱(sm+) 가로 배치로 전환되고, 타이틀과 "Cluster Connected" 표시가 보인다.
 - **검증 AC**: CM3
-- **자동화**: ⚠️ **부분 공백** — 상단 바 전용 스펙 없음. 반응형은 탭 스펙의 뷰포트 테스트(`e2e/pods.spec.ts` Responsive Design 등)에서 간접 검증. 상단 바 전용 e2e 보강 권장.
+- **자동화**: ⚠️ **공백** (CM3) — 상단 바 전용 검증 스펙 없음(반응형은 탭 뷰포트 테스트로 간접 커버). 상단 바 전용 e2e 보강 권장.
 
 ### 시나리오 4: 전역 폴링 인디케이터
 - **사전 조건**: 앱 로드.
 - **실행 단계**: 상단 바의 마지막 갱신 시각(상대 시간) 표시 확인 → 시간 경과에 따른 갱신, 툴팁(정확 시각) 확인 → 동기화 중 스피너 확인.
 - **기대 결과**: "just now"/"N seconds ago" 등 사람이 읽는 형식 표시, 매초 갱신, 호버 시 정확 시각 툴팁, 동기화 중 "Syncing..." 노출. 새로고침 버튼은 44px 이상.
 - **검증 AC**: CM4
-- **자동화**: `e2e/polling-indicator.spec.ts` (Time Display Format / Accessibility / 기본 표시)
+- **자동화**: `e2e/polling-indicator.spec.ts` (CM4 전용)
 
 ### 시나리오 5: 네임스페이스 셀렉터
 - **사전 조건**: 네임스페이스 목록 존재.
 - **실행 단계**: 셀렉터 열기 → "All Namespaces" + Favorites + All 섹션 확인 → 항목 선택 → 전역 반영 확인 → 키보드(Enter/Space/Escape), 외부 클릭 닫기 확인 → 조회 실패 시 재시도 확인.
 - **기대 결과**: 선택 시 모든 탭에 스코프가 반영되고, 접근성(combobox/listbox/aria-expanded)과 키보드·외부클릭이 동작한다.
 - **검증 AC**: CM5
-- **자동화**: `e2e/namespace-filter.spec.ts`, `e2e/namespace-context-integration.spec.ts`
+- **자동화**: `e2e/namespace-filter.spec.ts` (CM5 전용)
 
 ### 시나리오 6: 네임스페이스 즐겨찾기
 - **사전 조건**: 네임스페이스 목록 존재.
 - **실행 단계**: 항목의 별(☆) 클릭 → Favorites 섹션 상단 고정 확인 → 페이지 새로고침 후 유지 확인 → 별(★) 다시 클릭으로 해제 확인.
 - **기대 결과**: 즐겨찾기가 상단에 고정되고 브라우저에 영속(`namespace-favorites`)되어 재방문 시 유지된다.
 - **검증 AC**: CM6
-- **자동화**: `e2e/namespace-favorites.spec.ts`
+- **자동화**: `e2e/namespace-favorites.spec.ts` (CM6 전용)
 
 ### 시나리오 7: 네임스페이스 URL 딥링크
 - **사전 조건**: 네임스페이스 목록 존재.
 - **실행 단계**: `?namespace=<이름>` URL로 직접 진입 → 셀렉터 선택 상태 확인 → 셀렉터에서 다른 네임스페이스 선택 → URL 파라미터 갱신 확인 → "All Namespaces" 선택 → 파라미터 제거 확인 → 네임스페이스 선택 상태로 탭 이동 → 파라미터 유지 확인 → 페이지 새로고침 → 선택 유지 확인.
 - **기대 결과**: URL 파라미터로 진입 시 해당 네임스페이스가 선택되고, 선택 변경이 URL에 반영되며("all"은 파라미터 제거), 탭 이동·새로고침 후에도 선택이 유지되어 현재 화면을 URL로 공유할 수 있다.
 - **검증 AC**: CM7
-- **자동화**: `frontend/src/contexts/NamespaceContext.test.tsx`(단위), `e2e/namespace-filter.spec.ts` (URL Deep Link 섹션), `e2e/namespace-context-integration.spec.ts` (새로고침 유지)
+- **자동화**: `e2e/common-namespace-deeplink.spec.ts` (CM7 전용)
 
 ## 커버리지 요약
-- 자동화 연결됨: CM1·CM2·CM4·CM5·CM6·CM7
-- 자동화 공백: **CM3**(상단 바 전용 검증, 현재 간접 커버)
+- 자동화 연결됨(전용 스펙 1:1): CM1·CM2·CM4·CM5·CM6·CM7
+- 자동화 공백: CM3

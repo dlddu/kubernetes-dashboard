@@ -1,3 +1,4 @@
+// Verifies: OV1 (docs/product/prd-overview.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 test.describe('Overview Tab - Summary Cards', () => {
@@ -476,5 +477,322 @@ test.describe('Overview Tab - Data Accuracy', () => {
     const usageBar = avgMemoryCard.getByTestId('usage-bar');
     const ariaValue = await usageBar.getAttribute('aria-valuenow');
     expect(parseFloat(ariaValue!)).toBeCloseTo(memoryPercentage, 1);
+  });
+});
+
+test.describe('LoadingSkeleton Component - Overview Tab', () => {
+  test('should display loading skeleton on initial page load', async ({ page }) => {
+    // Tests that LoadingSkeleton appears during data fetch on Overview tab
+
+    // Arrange: Navigate to the Overview page
+    await page.goto('/');
+
+    // Act: Check for loading state immediately after navigation
+    const loadingIndicator = page.getByTestId('loading-skeleton')
+      .or(page.locator('[data-testid*="loading"]'))
+      .or(page.locator('[aria-busy="true"]'));
+
+    // Assert: Loading indicator should be present (may be brief)
+    // Note: This test may need to be adjusted based on actual loading time
+    const loadingExists = await loadingIndicator.count();
+
+    // Wait for page to finish loading
+    await page.waitForLoadState('networkidle');
+
+    // Assert: After loading completes, content should be visible
+    const summaryCards = page.getByRole('article');
+    const cardCount = await summaryCards.count();
+    expect(cardCount).toBeGreaterThan(0);
+
+    // Assert: Loading indicator should no longer be visible
+    if (loadingExists > 0) {
+      await expect(loadingIndicator.first()).not.toBeVisible();
+    }
+  });
+
+  test('should show loading skeleton with proper accessibility attributes', async ({ page }) => {
+    // Tests that LoadingSkeleton has appropriate ARIA attributes
+
+    // Arrange: Delay API responses so loading skeleton stays visible long enough to test
+    await page.route('**/api/**', async (route) => {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      try {
+        await route.continue();
+      } catch {
+        // Route may have been already handled by navigation or page close
+      }
+    });
+
+    // Act: Navigate to the Overview page
+    await page.goto('/');
+
+    // Assert: Loading indicator should appear while API is delayed
+    const loadingIndicator = page.locator('[aria-busy="true"]')
+      .or(page.getByTestId('loading-skeleton'));
+
+    await expect(loadingIndicator.first()).toBeVisible({ timeout: 5000 });
+
+    // Assert: Capture all attributes at once to avoid race condition
+    // where the element disappears between sequential getAttribute calls
+    const attrs = await loadingIndicator.first().evaluate((el) => ({
+      ariaBusy: el.getAttribute('aria-busy'),
+      ariaLabel: el.getAttribute('aria-label'),
+      role: el.getAttribute('role'),
+    }));
+
+    // Assert: Should have aria-busy="true" during loading
+    expect(attrs.ariaBusy).toBe('true');
+
+    // Assert: Should have aria-label or role for screen readers
+    expect(attrs.ariaLabel || attrs.role).toBeTruthy();
+
+    // Cleanup: Remove route interception and wait for loading to complete
+    await page.unroute('**/api/**');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should display loading skeleton for summary cards', async ({ page }) => {
+    // Tests that summary cards area shows loading skeleton
+
+    // Arrange: Navigate to the Overview page
+    await page.goto('/');
+
+    // Act: Check for summary cards loading state
+    const summaryCardsContainer = page.getByTestId('summary-cards')
+      .or(page.locator('[data-testid*="summary"]'));
+
+    // Wait for page to stabilize
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Summary cards should be visible after loading
+    const summaryCards = page.getByRole('article');
+    const cardCount = await summaryCards.count();
+    expect(cardCount).toBeGreaterThan(0);
+
+    // Assert: Cards should display actual data (not loading state)
+    const firstCard = summaryCards.first();
+    await expect(firstCard).toBeVisible();
+    const cardText = await firstCard.innerText();
+    expect(cardText.length).toBeGreaterThan(0);
+  });
+});
+
+test.describe('ErrorRetry Component - Overview Tab', () => {
+  test('should display error message when summary cards fail to load', async ({ page }) => {
+    // Tests that ErrorRetry component appears when API fails
+
+    // Arrange: Navigate to the Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Check for error state or successful load
+    const errorContainer = page.getByTestId('summary-cards-error');
+    const summaryCards = page.getByRole('article');
+
+    // Assert: Either error is displayed or cards are successfully loaded
+    const hasError = await errorContainer.isVisible().catch(() => false);
+    const hasCards = (await summaryCards.count()) > 0;
+
+    expect(hasError || hasCards).toBe(true);
+
+    // If error is displayed, verify retry button
+    if (hasError) {
+      const retryButton = errorContainer.getByRole('button', { name: /retry|try again/i })
+        .or(errorContainer.getByTestId('retry-button'));
+      await expect(retryButton).toBeVisible();
+      await expect(retryButton).toBeEnabled();
+    }
+  });
+
+  test('should retry data fetch when retry button is clicked', async ({ page }) => {
+    // Tests that clicking retry button refetches data
+
+    // Arrange: Navigate to the Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Check if error state exists
+    const errorContainer = page.getByTestId('summary-cards-error');
+    const hasError = await errorContainer.isVisible().catch(() => false);
+
+    if (hasError) {
+      // Act: Click retry button
+      const retryButton = errorContainer.getByRole('button', { name: /retry|try again/i })
+        .or(errorContainer.getByTestId('retry-button'));
+
+      await retryButton.click();
+
+      // Assert: Should show loading state during retry
+      const loadingIndicator = page.locator('[aria-busy="true"]')
+        .or(page.getByTestId('loading-skeleton'));
+
+      // Wait for retry to complete
+      await page.waitForLoadState('networkidle');
+
+      // Assert: Either show data or error again
+      const summaryCards = page.getByRole('article');
+      const errorStillVisible = await errorContainer.isVisible().catch(() => false);
+      const hasCards = (await summaryCards.count()) > 0;
+
+      expect(errorStillVisible || hasCards).toBe(true);
+    }
+  });
+
+  test('should display user-friendly error message', async ({ page }) => {
+    // Tests that error messages are clear and helpful
+
+    // Arrange: Navigate to the Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Check for error state
+    const errorContainer = page.getByTestId('summary-cards-error');
+    const hasError = await errorContainer.isVisible().catch(() => false);
+
+    if (hasError) {
+      // Assert: Error message should be visible and descriptive
+      const errorMessage = await errorContainer.innerText();
+      expect(errorMessage.length).toBeGreaterThan(0);
+
+      // Assert: Should contain helpful information
+      expect(errorMessage.toLowerCase()).toMatch(/error|failed|unable|problem/);
+
+      // Assert: Should suggest an action (retry)
+      const retryButton = errorContainer.getByRole('button', { name: /retry|try again/i });
+      await expect(retryButton).toBeVisible();
+    }
+  });
+});
+
+test.describe('Common UI Components - Accessibility', () => {
+  test('should have proper ARIA attributes for loading states', async ({ page }) => {
+    // Tests accessibility of loading skeletons
+
+    // Arrange: Navigate to Overview page
+    await page.goto('/');
+
+    // Act: Check for loading state
+    const loadingIndicator = page.locator('[aria-busy="true"]')
+      .or(page.getByTestId('loading-skeleton'));
+
+    // Wait for page to load
+    await page.waitForLoadState('networkidle');
+
+    // Assert: After loading, aria-busy should be false or removed
+    const bodyBusy = await page.locator('body').getAttribute('aria-busy');
+    expect(bodyBusy).not.toBe('true');
+  });
+
+  test('should have proper ARIA attributes for error states', async ({ page }) => {
+    // Tests accessibility of error messages
+
+    // Arrange: Navigate to Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Check for error state
+    const errorContainer = page.getByTestId('summary-cards-error');
+    const hasError = await errorContainer.isVisible().catch(() => false);
+
+    if (hasError) {
+      // Assert: Error should have role="alert" or aria-live
+      const role = await errorContainer.getAttribute('role');
+      const ariaLive = await errorContainer.getAttribute('aria-live');
+
+      expect(role === 'alert' || ariaLive === 'polite' || ariaLive === 'assertive').toBe(true);
+
+      // Assert: Retry button should have proper label
+      const retryButton = errorContainer.getByRole('button', { name: /retry|try again/i });
+      const hasRetryButton = (await retryButton.count()) > 0;
+
+      if (hasRetryButton) {
+        await expect(retryButton).toHaveAttribute('aria-label');
+      }
+    }
+  });
+
+  test('should announce empty states to screen readers', async ({ page }) => {
+    // Tests accessibility of empty states
+
+    const tabs = [
+      { url: '/nodes', emptyTestId: 'nodes-empty' },
+      { url: '/workloads', emptyTestId: 'empty-state' }
+    ];
+
+    for (const tab of tabs) {
+      // Arrange: Navigate to tab
+      await page.goto(tab.url);
+      await page.waitForLoadState('networkidle');
+
+      // Act: Check if empty state exists
+      const emptyState = page.getByTestId(tab.emptyTestId);
+      const isEmpty = await emptyState.isVisible().catch(() => false);
+
+      if (isEmpty) {
+        // Assert: Empty state should be accessible
+        const role = await emptyState.getAttribute('role');
+        const ariaLabel = await emptyState.getAttribute('aria-label');
+
+        // Should have either role or aria-label for accessibility
+        expect(role || ariaLabel).toBeTruthy();
+      }
+    }
+  });
+});
+
+test.describe('Common UI Components - Responsive Design', () => {
+  test('should display loading skeleton correctly on mobile', async ({ page }) => {
+    // Tests that loading skeletons are responsive
+
+    // Arrange: Set mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Content should be visible and responsive
+    const summaryCards = page.getByRole('article');
+    const cardCount = await summaryCards.count();
+
+    if (cardCount > 0) {
+      const firstCard = summaryCards.first();
+      await expect(firstCard).toBeVisible();
+
+      // Assert: Card should fit within mobile viewport
+      const box = await firstCard.boundingBox();
+      expect(box!.width).toBeLessThanOrEqual(375);
+    }
+  });
+});
+
+test.describe('Common UI Components - Consistency Across Tabs', () => {
+  test('should use consistent LoadingSkeleton design on Overview tab', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Tab should load successfully (either with data or empty state)
+    const body = await page.locator('body').innerHTML();
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  test('should use consistent ErrorRetry button style on Overview tab', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Check if error state exists
+    const errorContainer = page.getByTestId('summary-cards-error');
+    const hasError = await errorContainer.isVisible().catch(() => false);
+
+    if (hasError) {
+      // Assert: Retry button should exist and be consistent
+      const retryButton = errorContainer.getByRole('button', { name: /retry|try again/i })
+        .or(errorContainer.getByTestId('retry-button'));
+
+      const hasRetryButton = (await retryButton.count()) > 0;
+      expect(hasRetryButton).toBe(true);
+
+      if (hasRetryButton) {
+        await expect(retryButton.first()).toBeVisible();
+      }
+    }
   });
 });

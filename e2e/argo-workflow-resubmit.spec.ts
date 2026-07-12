@@ -1,3 +1,4 @@
+// Verifies: AR5 (docs/product/prd-argo.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -96,7 +97,6 @@ test.describe('Argo Workflow Resubmit - Button Visibility', () => {
 // ---------------------------------------------------------------------------
 // Group 2: Confirmation Dialog
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Workflow Resubmit - Confirmation Dialog', () => {
   test('should show confirmation dialog when Resubmit button is clicked', async ({ page }) => {
     // Arrange: Navigate to workflow detail
@@ -195,7 +195,6 @@ test.describe('Argo Workflow Resubmit - Confirmation Dialog', () => {
 // ---------------------------------------------------------------------------
 // Group 3: Accessibility
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Workflow Resubmit - Accessibility', () => {
   test('should have proper accessibility attributes on confirmation dialog', async ({ page }) => {
     // Arrange: Navigate to workflow detail and open dialog
@@ -241,7 +240,6 @@ test.describe('Argo Workflow Resubmit - Accessibility', () => {
 // ---------------------------------------------------------------------------
 // Group 4: Resubmit Execution
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Workflow Resubmit - Execution', () => {
   test('should resubmit workflow and navigate to new workflow detail', async ({ page }) => {
     // Arrange: Navigate to a succeeded workflow detail page

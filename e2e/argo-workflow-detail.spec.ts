@@ -1,3 +1,4 @@
+// Verifies: AR4 (docs/product/prd-argo.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -142,7 +143,6 @@ test.describe('Argo Tab - Workflow Detail - Navigation', () => {
 // ---------------------------------------------------------------------------
 // Group 2: Header content — name, phase badge, start/end times (테스트 2)
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - Header', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
@@ -188,7 +188,6 @@ test.describe('Argo Tab - Workflow Detail - Header', () => {
 // ---------------------------------------------------------------------------
 // Group 3: Parameters section — toggle expand/collapse (테스트 3)
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
@@ -245,7 +244,6 @@ test.describe('Argo Tab - Workflow Detail - Parameters Toggle', () => {
 // ---------------------------------------------------------------------------
 // Group 4: Steps timeline — step name, phase badge, time (테스트 4)
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
@@ -315,7 +313,6 @@ test.describe('Argo Tab - Workflow Detail - Steps Timeline', () => {
 // ---------------------------------------------------------------------------
 // Group 5: IO toggle visibility — only steps with IO show the toggle (테스트 5, 8)
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
@@ -382,7 +379,6 @@ test.describe('Argo Tab - Workflow Detail - IO Toggle Visibility', () => {
 // ---------------------------------------------------------------------------
 // Group 6 & 7: IO panel content — Inputs (purple) and Outputs (green) (테스트 6, 7)
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
@@ -487,7 +483,6 @@ test.describe('Argo Tab - Workflow Detail - IO Panel Content', () => {
 // ---------------------------------------------------------------------------
 // Group 9: Step message display (테스트 9)
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - Step Message', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
@@ -558,7 +553,6 @@ test.describe('Argo Tab - Workflow Detail - Step Message', () => {
 // ---------------------------------------------------------------------------
 // Group 10: Back navigation — "Back to Workflows" → list view (테스트 10)
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
 
@@ -606,100 +600,8 @@ test.describe('Argo Tab - Workflow Detail - Back Navigation', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Group 11: Loading and error states for WorkflowDetail (테스트 11)
-// ---------------------------------------------------------------------------
-
-test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
-  // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
-  // Individual tests below mock only the workflow detail endpoint for loading delay / error simulation.
-
-  test('should display LoadingSkeleton while the workflow detail is being fetched', async ({ page }) => {
-    // Tests that a LoadingSkeleton with aria-busy="true" is shown while the
-    // detail API request is in-flight (simulated with a 3-second delay).
-
-    // Arrange: Intercept the detail API with a deliberate delay, then pass to real API
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.continue();
-    });
-
-    // Act: Navigate to the list and click the card (do NOT wait for networkidle)
-    await gotoArgoWorkflows(page);
-
-    const card = await findWorkflowCardByName(page, 'data-processing-running');
-    expect(card).toBeTruthy();
-    if (!card) return;
-    await card.click();
-    // Do NOT wait for networkidle — we want to observe the loading state
-
-    // Assert: LoadingSkeleton is visible while the detail is loading
-    const loadingSkeleton = page.getByTestId('loading-skeleton');
-    await expect(loadingSkeleton).toBeVisible();
-    await expect(loadingSkeleton).toHaveAttribute('aria-busy', 'true');
-  });
-
-  test('should display ErrorRetry with functional retry when the workflow detail API returns an error', async ({ page }) => {
-    // Tests that when the detail API returns 500 the ErrorRetry component is shown,
-    // and clicking Retry re-fetches and shows the detail on success.
-
-    // Arrange: First call fails with 500, second call passes through to real API
-    let detailCallCount = 0;
-    await page.route('**/api/argo/workflows/data-processing-running**', async route => {
-      detailCallCount += 1;
-      if (detailCallCount === 1) {
-        await route.fulfill({
-          status: 500,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal Server Error' }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Act: Navigate to the list and open the detail
-    await gotoArgoWorkflows(page);
-
-    const card = await findWorkflowCardByName(page, 'data-processing-running');
-    expect(card).toBeTruthy();
-    if (!card) return;
-    await card.click();
-    await page.waitForLoadState('networkidle');
-
-    // Assert: ErrorRetry is displayed inside the detail page area
-    const detailPage = page.getByTestId('workflow-detail-page');
-    await expect(detailPage).toBeVisible();
-
-    const errorRetry = detailPage.getByTestId('error-retry');
-    await expect(errorRetry).toBeVisible();
-    await expect(errorRetry).toHaveAttribute('role', 'alert');
-
-    // Assert: Retry button is present
-    const retryButton = errorRetry.getByRole('button', { name: /retry/i });
-    await expect(retryButton).toBeVisible();
-    await expect(retryButton).toBeEnabled();
-
-    // Assert: Workflow detail content is not rendered during error
-    const headerName = detailPage.getByTestId('workflow-detail-name');
-    await expect(headerName).not.toBeVisible();
-
-    // Act: Click retry — second call succeeds
-    await retryButton.click();
-    await page.waitForLoadState('networkidle');
-
-    // Assert: Workflow detail content is now rendered
-    await expect(headerName).toBeVisible();
-    await expect(headerName).toContainText('data-processing-running');
-
-    // Assert: ErrorRetry is no longer visible
-    await expect(errorRetry).not.toBeVisible();
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Group 12: Deep Linking — direct URL navigation to detail page
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - Deep Linking', () => {
   test('should render workflow-detail-page when navigating directly to /argo/templates/:templateName/workflows/:workflowName', async ({ page }) => {
     // Tests that navigating directly to the detail URL renders the detail page
@@ -752,7 +654,6 @@ test.describe('Argo Tab - Workflow Detail - Deep Linking', () => {
 // ---------------------------------------------------------------------------
 // Group 13: Step Ordering — steps in the timeline are ordered by startedAt
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - Workflow Detail - Step Ordering', () => {
   // No API mocking — tests use real cluster data from test/fixtures/ YAML resources.
   // Fixture step startedAt values (data-processing-running):

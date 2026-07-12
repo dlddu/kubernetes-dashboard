@@ -13,29 +13,29 @@
 - **실행 단계**: `/secrets`로 이동 → 아코디언 목록 확인 → 네임스페이스 변경 시 재조회 및 열린 아코디언 초기화 확인.
 - **기대 결과**: 선택 네임스페이스의 시크릿만 아코디언으로 표시된다.
 - **검증 AC**: SC1
-- **자동화**: `e2e/secrets-tab.spec.ts` (Basic Rendering / Namespace Filtering)
+- **자동화**: `e2e/secrets-tab.spec.ts` (SC1 전용)
 
 ### 시나리오 2: 아코디언 키/값 열람 (Reveal/Hide)
 - **사전 조건**: 키/값이 있는 시크릿(TLS 포함) 존재.
 - **실행 단계**: 항목 펼쳐 키 목록 확인 → Reveal로 base64 디코딩 값 표시 → Hide로 마스킹 복원 → 다른 항목 펼치면 이전 항목 닫힘 확인.
 - **기대 결과**: 한 번에 하나의 아코디언만 열리고, Reveal/Hide로 값 표시·마스킹이 토글되며 TLS 키(tls.crt/tls.key)도 정상 표시된다.
 - **검증 AC**: SC2
-- **자동화**: `e2e/secrets-tab.spec.ts` (Accordion Expand/Collapse / Reveal/Hide Values / Multi-Accordion / TLS Secret)
+- **자동화**: `e2e/secrets-reveal.spec.ts` (SC2 전용)
 
 ### 시나리오 3: External Secret 재동기화 유도 (대상 Secret 삭제)
 - **사전 조건**: ESO가 관리하는 대상 Secret이 존재(ExternalSecret과 연결).
 - **실행 단계**: 해당 Secret 삭제 → 확인 다이얼로그(대상 이름·네임스페이스) 확인 → 확인 → 삭제 → ESO가 외부 저장소에서 재동기화하여 Secret이 재생성되는지 확인.
 - **기대 결과**: 확인 후 대상 Secret이 삭제되고, ESO 재동기화로 Secret이 외부 저장소 값으로 재생성된다.
 - **검증 AC**: SC3
-- **자동화**: ⚠️ **공백** — 삭제→재동기화 시나리오 전용 e2e 없음(`secrets-tab.spec.ts`에 삭제 테스트 부재). ESO 연동 e2e 또는 통합 테스트 신규 필요.
+- **자동화**: ⚠️ **공백** (SC3) — ESO 대상 Secret 삭제 → External Secret 재동기화 전용 e2e 없음. ESO 연동 e2e 또는 통합 테스트 신규 필요.
 
 ### 시나리오 4: 데이터 상태 처리
 - **사전 조건**: 로딩/실패/빈 상태(네임스페이스명 포함 빈 메시지).
 - **실행 단계**: 각 상태 확인.
 - **기대 결과**: 스켈레톤 / 재시도 가능한 에러 / 네임스페이스명을 포함한 빈 상태 메시지가 표시된다.
 - **검증 AC**: SC4
-- **자동화**: `e2e/secrets-tab.spec.ts` (Loading and Error States)
+- **자동화**: `e2e/secrets-data-states.spec.ts` (SC4 전용)
 
 ## 커버리지 요약
-- 자동화 연결됨: SC1·SC2·SC4
-- 자동화 공백: **SC3**(대상 Secret 삭제 → External Secret 재동기화)
+- 자동화 연결됨(전용 스펙 1:1): SC1·SC2·SC4
+- 자동화 공백: SC3

@@ -1,3 +1,4 @@
+// Verifies: PD2 (docs/product/prd-pods.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -137,7 +138,6 @@ test.describe('Pods API - containers field', () => {
 // ------------------------------------------------------------
 // UI Tests: Pod card — container count display
 // ------------------------------------------------------------
-
 test.describe('PodCard UI - container count display', () => {
   test('should display container count on each pod card', async ({ page }) => {
     // Arrange: Navigate to the Pods page
@@ -282,7 +282,6 @@ test.describe('PodCard UI - container count display', () => {
 // ------------------------------------------------------------
 // API Tests: GET /api/pods/logs/{namespace}/{name}
 // ------------------------------------------------------------
-
 test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
   test('should return 200 with text/plain logs for a valid pod', async ({ request }) => {
     // Arrange
@@ -401,7 +400,6 @@ test.describe('Pod Logs API - GET /api/pods/logs/{namespace}/{name}', () => {
 // ------------------------------------------------------------
 // API Tests: GET /api/pods/logs/{namespace}/{name}?follow=true (SSE streaming)
 // ------------------------------------------------------------
-
 test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?follow=true', () => {
   test('should establish SSE stream connection and receive initial log events', async ({ page, baseURL }) => {
     // Arrange
@@ -611,7 +609,6 @@ test.describe('Pod Log Streaming API - GET /api/pods/logs/{namespace}/{name}?fol
 // ------------------------------------------------------------
 // UI Tests: PodLogPanel — open and content display
 // ------------------------------------------------------------
-
 test.describe('PodLogPanel UI - panel open and content display', () => {
   test('should slide in the log panel when a pod card is clicked', async ({ page }) => {
     // Arrange: Navigate to the Pods page and wait for pod cards to render
@@ -711,7 +708,6 @@ test.describe('PodLogPanel UI - panel open and content display', () => {
 // ------------------------------------------------------------
 // UI Tests: PodLogPanel — multi-container support
 // ------------------------------------------------------------
-
 test.describe('PodLogPanel UI - multi-container pod support', () => {
   test('should display container selector dropdown for a multi-container pod', async ({ page }) => {
     // Arrange: Navigate to the Pods page and find a multi-container pod
@@ -862,7 +858,6 @@ test.describe('PodLogPanel UI - multi-container pod support', () => {
 // ------------------------------------------------------------
 // UI Tests: PodLogPanel — Follow (streaming) mode
 // ------------------------------------------------------------
-
 test.describe('PodLogPanel UI - Follow streaming mode', () => {
   test('should show streaming indicator in footer when Follow button is clicked', async ({ page }) => {
     // Arrange: Navigate to the Pods page and open the log panel
@@ -1209,7 +1204,6 @@ test.describe('PodLogPanel UI - Follow streaming mode', () => {
 // ------------------------------------------------------------
 // UI Tests: PodLogPanel — auto-scroll behavior
 // ------------------------------------------------------------
-
 test.describe('PodLogPanel UI - auto-scroll behavior', () => {
   // Helper: find and click the verbose-log-test pod card to open its log panel.
   // This pod outputs 300 initial lines + 1 line/sec streaming, ensuring the
@@ -1337,7 +1331,6 @@ test.describe('PodLogPanel UI - auto-scroll behavior', () => {
 // ------------------------------------------------------------
 // UI Tests: PodLogPanel — close interactions
 // ------------------------------------------------------------
-
 test.describe('PodLogPanel UI - panel close interactions', () => {
   test('should close the log panel when the backdrop is clicked', async ({ page }) => {
     // Arrange: Navigate to the Pods page and open the log panel

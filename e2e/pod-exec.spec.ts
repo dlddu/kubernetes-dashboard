@@ -1,3 +1,4 @@
+// Verifies: PD3 (docs/product/prd-pods.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -83,7 +84,6 @@ test.describe('Pod Exec API - parameter validation', () => {
 // ------------------------------------------------------------
 // UI Tests: Shell button on PodCard
 // ------------------------------------------------------------
-
 test.describe('PodCard UI - Shell button', () => {
   test('should display Shell button on each pod card', async ({ page }) => {
     // Arrange: Navigate to the Pods page
@@ -187,7 +187,6 @@ test.describe('PodCard UI - Shell button', () => {
 // ------------------------------------------------------------
 // UI Tests: PodExecPanel — panel open and header display
 // ------------------------------------------------------------
-
 test.describe('PodExecPanel UI - panel open and header display', () => {
   test('should display "Pod Shell" title in the exec panel header', async ({ page }) => {
     // Arrange: Navigate to the Pods page and click Shell button
@@ -268,7 +267,6 @@ test.describe('PodExecPanel UI - panel open and header display', () => {
 // ------------------------------------------------------------
 // UI Tests: PodExecPanel — container selector
 // ------------------------------------------------------------
-
 test.describe('PodExecPanel UI - container selector', () => {
   test('should display container selector dropdown in the exec panel', async ({ page }) => {
     // Arrange: Open exec panel for any pod
@@ -328,7 +326,6 @@ test.describe('PodExecPanel UI - container selector', () => {
 // ------------------------------------------------------------
 // UI Tests: PodExecPanel — terminal display
 // ------------------------------------------------------------
-
 test.describe('PodExecPanel UI - terminal display', () => {
   test('should display the terminal container in the exec panel', async ({ page }) => {
     // Arrange: Open exec panel for any pod
@@ -413,7 +410,6 @@ test.describe('PodExecPanel UI - terminal display', () => {
 // ------------------------------------------------------------
 // UI Tests: PodExecPanel — close interactions
 // ------------------------------------------------------------
-
 test.describe('PodExecPanel UI - panel close interactions', () => {
   test('should close the exec panel when the backdrop is clicked', async ({ page }) => {
     // Arrange: Open exec panel
@@ -495,7 +491,6 @@ test.describe('PodExecPanel UI - panel close interactions', () => {
 // ------------------------------------------------------------
 // UI Tests: PodExecPanel — WebSocket connection for running pod
 // ------------------------------------------------------------
-
 test.describe('PodExecPanel UI - WebSocket connection', () => {
   test('should show Connected status for a running pod with shell', async ({ page }) => {
     // Arrange: Find the busybox-test pod (running, has /bin/sh)
@@ -568,7 +563,6 @@ test.describe('PodExecPanel UI - WebSocket connection', () => {
 // ------------------------------------------------------------
 // UI Tests: PodExecPanel — all required fields displayed together
 // ------------------------------------------------------------
-
 test.describe('PodExecPanel UI - complete panel structure', () => {
   test('should display all required elements in the exec panel', async ({ page }) => {
     // Arrange: Open exec panel for any pod

@@ -1,3 +1,4 @@
+// Verifies: AR2 (docs/product/prd-argo.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -225,7 +226,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
 });
 
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () => {
   test('should display error view and allow retry when the submit API returns an error', async ({ page }) => {
     // Tests that a failed submit shows an error view inside the modal,
@@ -321,7 +321,6 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
 });
 
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Tab - WorkflowTemplate Submit - Modal Dismissal', () => {
   test('should close the Submit modal when the Cancel button is clicked', async ({ page }) => {
     // Tests that clicking the Cancel button in the Submit modal dismisses it

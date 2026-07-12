@@ -1,3 +1,4 @@
+// Verifies: PD5 (docs/product/prd-pods.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
