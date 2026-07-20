@@ -27,14 +27,14 @@
 - **실행 단계**: reconcile 액션 실행 → 동기화 요청 확인.
 - **기대 결과**: 백엔드 reconcile가 호출되고 상태가 갱신된다.
 - **검증 AC**: FX3, (V4)
-- **자동화**: `e2e/fluxcd-reconcile.spec.ts` (FX3 전용)
+- **자동화**: `e2e/fluxcd-reconcile.spec.ts` (FX3 전용). 실제 reconcile POST는 전용 픽스처 `git-repo-mut`·`kust-mut-reconcile`(test/fixtures/fluxcd-mut-fixtures.yaml)만 건드려 FX2 목록 리더와 격리한다(rct_20260712-0001).
 
 ### 시나리오 4: Kustomization suspend/resume
 - **사전 조건**: Kustomization 상세 진입.
 - **실행 단계**: suspend 실행 → 상태 배지 Suspended 반영 확인 → resume 실행 → 복귀 확인.
 - **기대 결과**: suspend/resume 토글이 리소스 상태에 반영된다.
 - **검증 AC**: FX4, (V4)
-- **자동화**: `e2e/fluxcd-suspend-resume.spec.ts` (FX4 전용)
+- **자동화**: `e2e/fluxcd-suspend-resume.spec.ts` (FX4 전용). 실제 suspend/resume POST는 전용 픽스처 `kust-mut-suspend`·`kust-mut-resume`(test/fixtures/fluxcd-mut-fixtures.yaml)만 토글해 FX2 목록 리더와 격리한다(rct_20260712-0001).
 
 ### 시나리오 5: GitRepository 브랜치 전환
 - **사전 조건**: GitRepository 상세 진입, 다중 브랜치 존재.
@@ -60,3 +60,4 @@
 ## 커버리지 요약
 - 자동화 연결됨(전용 스펙 1:1): FX1·FX2·FX3·FX4·FX5·FX6·FX7
 - 자동화 공백: 없음
+- **테스트 격리(rct_20260712-0001)**: 파일 분리 후 `workers:4` 파일 단위 병렬 실행에서 클러스터 변경 스펙(FX3 reconcile·FX4 suspend/resume)이 읽기 전용 FX2 목록 리더와 공유 kind 클러스터를 두고 레이스했다. 물리 파일 1:1을 완화(공존)하는 대신, FX3·FX4 가 FX2 가 관측하지 않는 **전용 픽스처**(`git-repo-mut`·`kust-mut-reconcile`·`kust-mut-suspend`·`kust-mut-resume`, `targetNamespace: default` 없음)만 건드리도록 격리해 **엄격한 파일 단위 1:1을 유지**한다.

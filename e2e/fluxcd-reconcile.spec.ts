@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 // ---------------------------------------------------------------------------
 test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
   test('should display "Reconcile Now" button on the GitRepository detail page', async ({ page }) => {
-    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.goto('/fluxcd/gitrepository/dashboard-test/git-repo-mut');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('gitrepository-detail-page');
@@ -19,12 +19,12 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
   });
 
   test('should transition to "Reconciling..." loading state with spinner and disabled button after clicking "Reconcile Now"', async ({ page }) => {
-    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/reconcile', async route => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       await route.continue();
     });
 
-    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.goto('/fluxcd/gitrepository/dashboard-test/git-repo-mut');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('gitrepository-detail-page');
@@ -44,16 +44,16 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
 
   test('should restore button to original state and refresh detail data after a successful Reconcile', async ({ page }) => {
     let detailFetchCount = 0;
-    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system', async route => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut', async route => {
       detailFetchCount += 1;
       await route.continue();
     });
 
-    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/reconcile', async route => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile', async route => {
       await route.continue();
     });
 
-    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.goto('/fluxcd/gitrepository/dashboard-test/git-repo-mut');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('gitrepository-detail-page');
@@ -73,7 +73,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
   });
 
   test('should display an error message when the Reconcile API returns an error', async ({ page }) => {
-    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system/reconcile', async route => {
+    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile', async route => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -81,7 +81,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
       });
     });
 
-    await page.goto('/fluxcd/gitrepository/dashboard-test/flux-system');
+    await page.goto('/fluxcd/gitrepository/dashboard-test/git-repo-mut');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('gitrepository-detail-page');
@@ -108,7 +108,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
 test.describe('FluxCD API - POST /api/fluxcd/gitrepositories/{namespace}/{name}/reconcile', () => {
   test('should return 200 and add the reconcile annotation when the GitRepository exists', async ({ request }) => {
     const response = await request.post(
-      '/api/fluxcd/gitrepositories/dashboard-test/flux-system/reconcile'
+      '/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile'
     );
 
     expect(response.ok()).toBeTruthy();
@@ -147,10 +147,10 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
 
   test('should display "Reconcile Now" button on the Kustomization detail page', async ({ page }) => {
     // Tests that the Reconcile Now button is rendered and enabled on the detail page.
-    // Fixture: app-ready (namespace: dashboard-test)
+    // Fixture: kust-mut-reconcile (namespace: dashboard-test)
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/kust-mut-reconcile');
     await page.waitForLoadState('networkidle');
 
     // Assert: Detail page container is visible
@@ -169,10 +169,10 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
   test('should transition to "Reconciling..." loading state with spinner and disabled button after clicking "Reconcile Now"', async ({ page }) => {
     // Tests that clicking Reconcile Now shows a spinner, disables the button, and
     // changes the button text to "Reconciling..." while the API request is in-flight.
-    // Fixture: app-ready (namespace: dashboard-test)
+    // Fixture: kust-mut-reconcile (namespace: dashboard-test)
 
     // Arrange: Intercept the reconcile API to hold the loading state long enough to observe it
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready/reconcile', async route => {
+    await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       await route.fulfill({
         status: 200,
@@ -182,7 +182,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     });
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/kust-mut-reconcile');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('kustomization-detail-page');
@@ -209,17 +209,17 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     //   - the spinner disappears
     //   - the button returns to enabled "Reconcile Now" state
     //   - the detail data is re-fetched (detail API called again)
-    // Fixture: app-ready (namespace: dashboard-test)
+    // Fixture: kust-mut-reconcile (namespace: dashboard-test)
 
     // Arrange: Track how many times the detail API is called to verify re-fetch
     let detailFetchCount = 0;
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready', async route => {
+    await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile', async route => {
       detailFetchCount += 1;
       await route.continue();
     });
 
     // Arrange: Reconcile API responds immediately with 200
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready/reconcile', async route => {
+    await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -228,7 +228,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     });
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/kust-mut-reconcile');
     await page.waitForLoadState('networkidle');
 
     // Assert: Detail page is rendered (initial fetch counted)
@@ -255,10 +255,10 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
   test('should display an error message when the Reconcile API returns an error', async ({ page }) => {
     // Tests that when the reconcile API returns a 500 error, an error message is shown
     // in the detail page and the button returns to its original enabled state.
-    // Fixture: app-ready (namespace: dashboard-test)
+    // Fixture: kust-mut-reconcile (namespace: dashboard-test)
 
     // Arrange: Reconcile API responds with 500
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready/reconcile', async route => {
+    await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile', async route => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -267,7 +267,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     });
 
     // Arrange: Navigate directly to the detail page
-    await page.goto('/fluxcd/kustomization/dashboard-test/app-ready');
+    await page.goto('/fluxcd/kustomization/dashboard-test/kust-mut-reconcile');
     await page.waitForLoadState('networkidle');
 
     const detailPage = page.getByTestId('kustomization-detail-page');
@@ -301,13 +301,13 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
 // ---------------------------------------------------------------------------
 test.describe('FluxCD API - POST /api/fluxcd/kustomizations/{namespace}/{name}/reconcile', () => {
   test('should return 200 and add the reconcile annotation when the Kustomization exists', async ({ request }) => {
-    // Tests that POST /api/fluxcd/kustomizations/dashboard-test/app-ready/reconcile
+    // Tests that POST /api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile
     // adds the reconcile.fluxcd.io/requestedAt annotation to the resource and returns 200.
-    // Fixture: app-ready (kustomization-ready.yaml, namespace: dashboard-test)
+    // Fixture: kust-mut-reconcile (fluxcd-mut-fixtures.yaml, namespace: dashboard-test)
 
     // Act: Call the reconcile API
     const response = await request.post(
-      '/api/fluxcd/kustomizations/dashboard-test/app-ready/reconcile'
+      '/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile'
     );
 
     // Assert: Response is successful

@@ -300,6 +300,86 @@ kubectl patch gitrepository infra-repo -n dashboard-test --type=merge --subresou
 
 log_info "FluxCD GitRepository status patching completed"
 
+# 9b. Apply DEDICATED FluxCD mutation fixtures (reconcile task rct_20260712-0001)
+# These are the ONLY resources the cluster-mutating specs (fluxcd-reconcile.spec.ts /
+# fluxcd-suspend-resume.spec.ts) touch, so their real reconcile/suspend/resume POSTs
+# never race with the read-only FX2 list reader (fluxcd-kustomizations.spec.ts).
+log_info "Applying dedicated FluxCD mutation fixtures..."
+kubectl apply -f "$SCRIPT_DIR/fluxcd-mut-fixtures.yaml"
+
+log_info "Patching dedicated FluxCD mutation fixture status subresources..."
+
+# git-repo-mut (dashboard-test): Ready=True, artifact with revision
+kubectl patch gitrepository git-repo-mut -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:00:00Z",
+        "reason": "Succeeded",
+        "message": "stored artifact for revision '\''main@sha1:abc123def456'\''"
+      }
+    ],
+    "artifact": {
+      "revision": "main@sha1:abc123def456",
+      "lastUpdateTime": "2026-03-14T06:00:00Z",
+      "url": "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/git-repo-mut/main@sha1:abc123def456.tar.gz",
+      "path": "gitrepository/dashboard-test/git-repo-mut/abc123def456.tar.gz"
+    }
+  }
+}'
+
+# kust-mut-reconcile (dashboard-test): Ready=True (FX3 reconcile target)
+kubectl patch kustomization kust-mut-reconcile -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:00:00Z",
+        "reason": "ReconciliationSucceeded",
+        "message": "Applied revision: main@sha1:abc123def456"
+      }
+    ],
+    "lastAppliedRevision": "main@sha1:abc123def456"
+  }
+}'
+
+# kust-mut-suspend (dashboard-test): Ready=True, starts unsuspended (FX4 suspend target)
+kubectl patch kustomization kust-mut-suspend -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T06:00:00Z",
+        "reason": "ReconciliationSucceeded",
+        "message": "Applied revision: main@sha1:abc123def456"
+      }
+    ],
+    "lastAppliedRevision": "main@sha1:abc123def456"
+  }
+}'
+
+# kust-mut-resume (dashboard-test): Ready=True, starts suspended (FX4 resume target)
+kubectl patch kustomization kust-mut-resume -n dashboard-test --type=merge --subresource=status -p '{
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-03-14T04:00:00Z",
+        "reason": "ReconciliationSucceeded",
+        "message": "Applied revision: main@sha1:abc123def456"
+      }
+    ],
+    "lastAppliedRevision": "main@sha1:abc123def456"
+  }
+}'
+
+log_info "Dedicated FluxCD mutation fixture status patching completed"
+
 # 10. Apply External Secrets Operator fixtures
 log_info "Applying External Secrets Operator fixtures..."
 kubectl apply -f "$SCRIPT_DIR/externalsecret-ready.yaml"

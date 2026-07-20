@@ -80,3 +80,4 @@
 | 2026-06-29 | ConfigMaps PRD(CF)·테스트 문서 추가 — V1·V7 커버, e2e 포함 | PRD 9개, AC 49개, 테스트 9개 | PRD 10개, AC 52개 전부 커버, 테스트 10개, **문서 체계 건강 유지** |
 | 2026-07-02 | 네임스페이스 URL 딥링크 AC(CM7)·테스트 시나리오 추가 — V7 확장, 단위·e2e 포함 | AC 52개 | AC 53개 전부 커버, **문서 체계 건강 유지** |
 | 2026-07-12 | e2e AC↔스펙 파일 **1:1 재구조화** — 공유 15·중복 9 분할/병합, debug 6종 `e2e/eng/`(ENG-001) 분리·health `e2e/smoke/` 이동, FluxCD 상세(FX3~6) 전용 스펙 승격·OV6 공백 재분류. 테스트 626건 무손실 | 공유·중복·고아 다수, 공백 8 | 연결 AC 48↔전용 스펙 48(전단사), 공백 5(OV6·OV7·PD6·SC3·CM3) |
+| 2026-07-20 | 위 재구조화의 e2e 회귀 수정(격리) — FluxCD **클러스터 변경 스펙(FX3 reconcile·FX4 suspend/resume)** 을 FX2 목록 리더가 관측하지 않는 **전용 픽스처**(`git-repo-mut`·`kust-mut-*`, `targetNamespace: default` 없음)로 격리. 파일 재병합(공존) 대안은 거부됨 — 별도 파일 유지, 엄격한 파일 단위 1:1 보존 | FX3·FX4 가 공유 `app-ready`/`app-suspended`/`flux-system` 을 변경해 `workers:4` 병렬에서 FX2 와 레이스 | 연결 AC 48↔전용 스펙 48 유지, 물리 파일 1:1 예외 없음 |
