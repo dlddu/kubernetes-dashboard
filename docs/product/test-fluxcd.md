@@ -27,14 +27,14 @@
 - **실행 단계**: reconcile 액션 실행 → 동기화 요청 확인.
 - **기대 결과**: 백엔드 reconcile가 호출되고 상태가 갱신된다.
 - **검증 AC**: FX3, (V4)
-- **자동화**: `e2e/fluxcd-kustomizations.spec.ts` (FX3 — Reconcile. 클러스터를 실제로 변경하는 스펙이라 FX2 목록 리더와 동일 파일에 공존시켜 Playwright가 직렬 실행하도록 함. rct_20260712-0001 참조)
+- **자동화**: `e2e/fluxcd-reconcile.spec.ts` (FX3 전용)
 
 ### 시나리오 4: Kustomization suspend/resume
 - **사전 조건**: Kustomization 상세 진입.
 - **실행 단계**: suspend 실행 → 상태 배지 Suspended 반영 확인 → resume 실행 → 복귀 확인.
 - **기대 결과**: suspend/resume 토글이 리소스 상태에 반영된다.
 - **검증 AC**: FX4, (V4)
-- **자동화**: `e2e/fluxcd-kustomizations.spec.ts` (FX4 — Suspend/Resume. 클러스터 변경 스펙이라 FX2 리더와 동일 파일에 공존, 직렬 실행 보장. rct_20260712-0001 참조)
+- **자동화**: `e2e/fluxcd-suspend-resume.spec.ts` (FX4 전용)
 
 ### 시나리오 5: GitRepository 브랜치 전환
 - **사전 조건**: GitRepository 상세 진입, 다중 브랜치 존재.
@@ -58,5 +58,5 @@
 - **자동화**: `e2e/fluxcd-data-states.spec.ts` (FX7 전용)
 
 ## 커버리지 요약
-- 자동화 연결됨: FX1·FX2·FX5·FX6·FX7 은 전용 파일 1:1. FX3·FX4 는 클러스터 변경 스펙이라 `fluxcd-kustomizations.spec.ts` 에 FX2 와 **공존**(파일 내 헤더 `// Verifies` 로 식별) — 공유 kind 클러스터에서의 테스트 격리 때문. 물리적 파일 1:1의 예외(rct_20260712-0001).
+- 자동화 연결됨(전용 스펙 1:1): FX1·FX2·FX3·FX4·FX5·FX6·FX7
 - 자동화 공백: 없음
