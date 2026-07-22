@@ -1,3 +1,4 @@
+// Verifies: AR6 (docs/product/prd-argo.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -98,7 +99,6 @@ test.describe('Argo Workflow Delete - Button Visibility', () => {
 // ---------------------------------------------------------------------------
 // Group 2: Confirmation Dialog
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Workflow Delete - Confirmation Dialog', () => {
   test('should show confirmation dialog when Delete button is clicked', async ({ page }) => {
     // Arrange: Navigate to workflow detail
@@ -210,7 +210,6 @@ test.describe('Argo Workflow Delete - Confirmation Dialog', () => {
 // ---------------------------------------------------------------------------
 // Group 3: Accessibility
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Workflow Delete - Accessibility', () => {
   test('should have proper accessibility attributes on confirmation dialog', async ({ page }) => {
     // Arrange: Navigate to workflow detail and open dialog
@@ -258,7 +257,6 @@ test.describe('Argo Workflow Delete - Accessibility', () => {
 // IMPORTANT: This test creates a new workflow and then deletes it.
 // It does NOT touch shared fixtures used by other parallel tests.
 // ---------------------------------------------------------------------------
-
 test.describe('Argo Workflow Delete - Execution', () => {
   test('should delete workflow and navigate back to workflow list', async ({ page }) => {
     // Step 1: Create a new workflow via the API so we don't touch shared fixtures

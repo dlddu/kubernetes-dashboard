@@ -1,3 +1,4 @@
+// Verifies: AR1 (docs/product/prd-argo.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -22,6 +23,7 @@ import { test, expect } from '@playwright/test';
  */
 
 // Activated: DLD-439 - WorkflowTemplate 목록 조회 구현 완료
+
 test.describe('Argo Tab - WorkflowTemplate List', () => {
   test('should display Templates section by default when navigating to Argo tab', async ({ page }) => {
     // Tests that the Argo tab renders with the Templates section visible by default
@@ -175,89 +177,4 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
     }
   });
 
-  test('should display LoadingSkeleton while workflow templates are being fetched', async ({ page }) => {
-    // Tests that LoadingSkeleton is shown during the API request
-
-    // Arrange: Intercept the workflow templates API and delay the response
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    // Act: Navigate to the Argo tab
-    await page.goto('/argo');
-
-    // Assert: LoadingSkeleton should be visible before the response arrives
-    const loadingSkeleton = page.getByTestId('loading-skeleton');
-    await expect(loadingSkeleton).toBeVisible();
-
-    // Assert: LoadingSkeleton has aria-busy="true"
-    await expect(loadingSkeleton).toHaveAttribute('aria-busy', 'true');
-  });
-
-  test('should display EmptyState with "No workflow templates found" when no templates exist', async ({ page }) => {
-    // Tests that EmptyState is rendered with the correct message when no templates exist
-    // No API mocking — uses 'dashboard-empty' namespace which has no Argo resources.
-
-    // Arrange: Navigate to the Argo tab
-    await page.goto('/argo');
-    await page.waitForLoadState('networkidle');
-
-    // Act: Filter to the 'dashboard-empty' namespace (has no Argo WorkflowTemplates)
-    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
-    await namespaceSelector.click();
-
-    const emptyNamespaceOption = page.getByRole('option', { name: /^dashboard-empty$/i })
-      .or(page.getByTestId('namespace-option-dashboard-empty'));
-    await emptyNamespaceOption.click();
-    await page.waitForLoadState('networkidle');
-
-    // Assert: EmptyState component is visible
-    const emptyState = page.getByTestId('empty-state');
-    await expect(emptyState).toBeVisible();
-
-    // Assert: EmptyState displays the correct message
-    await expect(emptyState).toContainText('No workflow templates found');
-
-    // Assert: No template cards are shown
-    const templateCards = page.getByTestId('workflow-template-card');
-    expect(await templateCards.count()).toBe(0);
-  });
-
-  test('should display ErrorRetry component when the workflow templates API returns an error', async ({ page }) => {
-    // Tests that ErrorRetry is rendered and the retry button is functional on API failure
-
-    // Arrange: Mock the workflow templates API to return a 500 error
-    await page.route('**/api/argo/workflow-templates**', async route => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Internal Server Error' }),
-      });
-    });
-
-    // Act: Navigate to the Argo tab
-    await page.goto('/argo');
-    await page.waitForLoadState('networkidle');
-
-    // Assert: ErrorRetry component is visible
-    const errorRetry = page.getByTestId('error-retry');
-    await expect(errorRetry).toBeVisible();
-
-    // Assert: ErrorRetry has role="alert" for accessibility
-    await expect(errorRetry).toHaveAttribute('role', 'alert');
-
-    // Assert: Retry button is present and enabled
-    const retryButton = errorRetry.getByRole('button', { name: /retry/i });
-    await expect(retryButton).toBeVisible();
-    await expect(retryButton).toBeEnabled();
-
-    // Assert: No template cards are shown during error state
-    const templateCards = page.getByTestId('workflow-template-card');
-    expect(await templateCards.count()).toBe(0);
-  });
 });

@@ -13,29 +13,29 @@
 - **실행 단계**: `/workloads`로 이동 → 디플로이먼트 카드와 정보 확인 → 네임스페이스 변경 시 재조회 확인.
 - **기대 결과**: 각 카드에 이름·네임스페이스·레디 비율이 표시되고, 선택 네임스페이스로 스코프된다.
 - **검증 AC**: WL1
-- **자동화**: `e2e/deployment-restart.spec.ts` (Deployment Card Display / Information Display), `e2e/namespace-filter.spec.ts`
+- **자동화**: `e2e/workloads-list.spec.ts` (WL1 전용)
 
 ### 시나리오 2: 롤링 재시작 실행
 - **사전 조건**: 재시작 대상 디플로이먼트 존재.
 - **실행 단계**: 카드의 Restart 버튼 클릭 → 확인 → 재시작 실행 및 재시작 중 상태 확인 → 완료 후 목록 갱신.
 - **기대 결과**: 확인 후 롤링 재시작이 트리거되고 목록이 갱신된다.
 - **검증 AC**: WL2
-- **자동화**: `e2e/deployment-restart.spec.ts` (Deployment Restart Button / Execution)
+- **자동화**: `e2e/workloads-restart.spec.ts` (WL2 전용)
 
 ### 시나리오 3: 재시작 전 확인 다이얼로그
 - **사전 조건**: 디플로이먼트 카드 표시.
 - **실행 단계**: Restart 클릭 → 확인 다이얼로그 표시 확인 → 대상 이름·네임스페이스, Confirm/Cancel 버튼 확인 → Cancel 시 미실행.
 - **기대 결과**: 확인 전에는 재시작이 실행되지 않고, Confirm 시에만 실행된다.
 - **검증 AC**: WL3
-- **자동화**: `e2e/deployment-restart.spec.ts` (Restart Confirmation Dialog)
+- **자동화**: `e2e/workloads-restart-confirm.spec.ts` (WL3 전용)
 
 ### 시나리오 4: 데이터 상태 처리
 - **사전 조건**: 로딩/실패/빈 상태.
 - **실행 단계**: 각 상태 확인.
 - **기대 결과**: 스켈레톤 / 재시도 가능한 에러 / 빈 상태 메시지가 표시된다.
 - **검증 AC**: WL4
-- **자동화**: `e2e/deployment-restart.spec.ts`, `e2e/common-ui-components.spec.ts`
+- **자동화**: `e2e/workloads-data-states.spec.ts` (WL4 전용)
 
 ## 커버리지 요약
-- 자동화 연결됨: WL1·WL2·WL3·WL4
+- 자동화 연결됨(전용 스펙 1:1): WL1·WL2·WL3·WL4
 - 자동화 공백: 없음

@@ -1,5 +1,6 @@
+// Engineering: ENG-001 (docs/product/eng-notes.md) — debug page diagnostic contract; not a product AC.
 import { test, expect } from '@playwright/test';
-import { enableDebugAndGenerateLogs } from './helpers/debug-setup';
+import { enableDebugAndGenerateLogs } from '../helpers/debug-setup';
 
 /**
  * E2E Tests for Debug Page - Detail View with Tabs, JSON Syntax Highlighting & Copy

@@ -1,3 +1,4 @@
+// Verifies: OV3 (docs/product/prd-overview.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -7,6 +8,7 @@ import { test, expect } from '@playwright/test';
  * These tests define the expected behavior of the NodeQuickView component,
  * which displays a quick overview of cluster nodes with CPU/Memory usage bars.
  */
+
 test.describe('NodeQuickView Component', () => {
   test('should display node items with name, status, and usage bars', async ({ page }) => {
     // Tests that NodeQuickView displays all required node information

@@ -1,0 +1,112 @@
+# Dedicated FluxCD fixtures for the cluster-MUTATING e2e specs
+# (fluxcd-reconcile.spec.ts / fluxcd-suspend-resume.spec.ts).
+#
+# Why these exist (reconcile task rct_20260712-0001):
+#   FX3 (reconcile) and FX4 (suspend/resume) issue REAL request.post mutations.
+#   Previously they targeted the shared app-ready / app-suspended / flux-system
+#   resources that the FX2 list reader (fluxcd-kustomizations.spec.ts) also
+#   observes. Under playwright workers:4 (file-level parallelism) the mutating
+#   specs ran concurrently with the read-only FX2 reader on the shared kind
+#   cluster -> nondeterministic card counts -> flaky failures.
+#
+#   Fix: give the mutating specs their OWN dedicated resources here, disjoint
+#   from anything FX2 asserts on, and with NO `targetNamespace: default` (so a
+#   reconcile never spills resources into `default` and never produces a phantom
+#   `default` namespace card in the FX2 namespace-filter view). Strict file-unit
+#   1:1 is preserved — FX3/FX4 stay in their own spec files.
+#
+# kubectl apply does not persist status; apply-all.sh patches the status
+# subresource for each of these (mirroring the other fluxcd fixtures).
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: git-repo-mut
+  namespace: dashboard-test
+spec:
+  interval: 1m
+  url: https://github.com/dlddu/kubernetes-dashboard
+  ref:
+    branch: main
+status:
+  conditions:
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2026-03-14T06:00:00Z"
+      reason: Succeeded
+      message: "stored artifact for revision 'main@sha1:abc123def456'"
+  artifact:
+    revision: "main@sha1:abc123def456"
+    lastUpdateTime: "2026-03-14T06:00:00Z"
+    url: "http://source-controller.flux-system.svc.cluster.local./gitrepository/dashboard-test/git-repo-mut/main@sha1:abc123def456.tar.gz"
+    path: "gitrepository/dashboard-test/git-repo-mut/abc123def456.tar.gz"
+---
+# FX3 reconcile target. Ready, unsuspended. No targetNamespace (no default spillover).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kust-mut-reconcile
+  namespace: dashboard-test
+spec:
+  interval: 5m
+  path: ./deploy
+  prune: false
+  sourceRef:
+    kind: GitRepository
+    name: git-repo-mut
+    namespace: dashboard-test
+status:
+  conditions:
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2026-03-14T06:00:00Z"
+      reason: ReconciliationSucceeded
+      message: "Applied revision: main@sha1:abc123def456"
+  lastAppliedRevision: "main@sha1:abc123def456"
+---
+# FX4 suspend target. Starts Ready + unsuspended; the suspend/resume test toggles it.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kust-mut-suspend
+  namespace: dashboard-test
+spec:
+  interval: 5m
+  path: ./deploy
+  prune: false
+  sourceRef:
+    kind: GitRepository
+    name: git-repo-mut
+    namespace: dashboard-test
+status:
+  conditions:
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2026-03-14T06:00:00Z"
+      reason: ReconciliationSucceeded
+      message: "Applied revision: main@sha1:abc123def456"
+  lastAppliedRevision: "main@sha1:abc123def456"
+---
+# FX4 resume target. Starts suspended; the resume test toggles it.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kust-mut-resume
+  namespace: dashboard-test
+spec:
+  interval: 10m
+  path: ./deploy
+  prune: false
+  suspend: true
+  sourceRef:
+    kind: GitRepository
+    name: git-repo-mut
+    namespace: dashboard-test
+status:
+  conditions:
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2026-03-14T04:00:00Z"
+      reason: ReconciliationSucceeded
+      message: "Applied revision: main@sha1:abc123def456"
+  lastAppliedRevision: "main@sha1:abc123def456"

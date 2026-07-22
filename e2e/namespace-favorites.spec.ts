@@ -1,3 +1,4 @@
+// Verifies: CM6 (docs/product/prd-common.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 import { setFavorites, clearFavorites } from './helpers/favorites-setup';
 
@@ -467,7 +468,6 @@ test.describe('Namespace Favorites - Toggle Behavior', () => {
 // ---------------------------------------------------------------------------
 // DLD-457: 빈 즐겨찾기 힌트 메시지
 // ---------------------------------------------------------------------------
-
 test.describe('Namespace Favorites - Empty State Hint', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -566,7 +566,6 @@ test.describe('Namespace Favorites - Empty State Hint', () => {
 // ---------------------------------------------------------------------------
 // DLD-457: 빈 즐겨찾기 힌트 메시지 - 모바일 뷰포트
 // ---------------------------------------------------------------------------
-
 test.describe('Namespace Favorites - Empty State Hint (Mobile)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });

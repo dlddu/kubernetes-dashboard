@@ -1,3 +1,4 @@
+// Verifies: PD1 (docs/product/prd-pods.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -454,84 +455,6 @@ test.describe('Pods Page - Status Badge Styling', () => {
   });
 });
 
-test.describe('Pods Page - Loading and Error States', () => {
-  test('should display loading state while fetching pod data', async ({ page }) => {
-    // Skip reason: PodsTab component not implemented yet
-    // Tests loading skeleton or spinner during data fetch
-
-    // Arrange: Navigate to the Pods page
-    await page.goto('/pods');
-
-    // Act: Look for loading indicator immediately after navigation
-    const podsPage = page.getByTestId('pods-page');
-    await expect(podsPage).toBeVisible();
-
-    // Act: Check for loading state
-    const loadingIndicator = podsPage.getByTestId('pods-loading')
-      .or(podsPage.locator('[aria-busy="true"]'))
-      .or(podsPage.locator('.loading-skeleton'));
-
-    // Wait for page to stabilize
-    await page.waitForLoadState('networkidle');
-
-    // Assert: After loading, pod cards should be displayed
-    const podCards = page.getByTestId('pod-card');
-    const cardCount = await podCards.count();
-    expect(cardCount).toBeGreaterThanOrEqual(1);
-
-    // Assert: Loading indicator should no longer be visible
-    const loadingExists = await loadingIndicator.count();
-    if (loadingExists > 0) {
-      await expect(loadingIndicator.first()).not.toBeVisible();
-    }
-  });
-
-  test('should display error message when pod data fetch fails', async ({ page }) => {
-    // Skip reason: PodsTab component not implemented yet
-    // Tests error state when API request fails
-
-    // Arrange: Navigate to the Pods page
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
-
-    // Act: Check for error state or successful data load
-    const podsPage = page.getByTestId('pods-page');
-    await expect(podsPage).toBeVisible();
-
-    const errorMessage = podsPage.getByTestId('pods-error')
-      .or(podsPage.getByText(/error loading pods|failed to fetch pods/i));
-
-    // Assert: Either error is shown or pods are loaded successfully
-    const podCards = page.getByTestId('pod-card');
-    const errorVisible = await errorMessage.count() > 0 && await errorMessage.isVisible().catch(() => false);
-    const podsVisible = (await podCards.count()) >= 1;
-
-    expect(errorVisible || podsVisible).toBeTruthy();
-  });
-
-  test('should display empty state message when no pods exist', async ({ page }) => {
-    // Tests empty state when no pods are found
-
-    // Note: This test requires a cluster with no pods
-    // or mocking the API response to return no pods
-
-    // Arrange: Navigate to the Pods page
-    await page.goto('/pods');
-    await page.waitForLoadState('networkidle');
-
-    // Act: Check if there are any pod cards
-    const podCards = page.getByTestId('pod-card');
-    const cardCount = await podCards.count();
-
-    // Assert: When no pods exist, should show empty state message
-    if (cardCount === 0) {
-      const emptyStateMessage = page.getByTestId('no-pods-message')
-        .or(page.getByText(/no pods found/i));
-      await expect(emptyStateMessage).toBeVisible();
-    }
-  });
-});
-
 test.describe('Pods Page - Navigation and Integration', () => {
   test('should be accessible from UnhealthyPodPreview view more button', async ({ page }) => {
     // Tests that clicking "view more" expands the card inline instead of navigating
@@ -798,5 +721,247 @@ test.describe('Pods Page - Accessibility', () => {
     // Note: Detailed keyboard navigation testing would require
     // knowing the exact interactive elements within pod cards
     // (e.g., links, buttons for actions)
+  });
+});
+
+test.describe('Pod Terminating Status - Pods Page', () => {
+  test('should display Terminating status for a pod being deleted', async ({ page }) => {
+    // Tests that a pod with deletionTimestamp set shows "Terminating" status
+
+    // Arrange: Navigate to the Pods page
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Get all pod cards
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(1);
+
+    // Act: Search for the terminating-test-pod
+    let foundTerminatingPod = false;
+    for (let i = 0; i < cardCount; i++) {
+      const podCard = podCards.nth(i);
+      const podName = await podCard.getByTestId('pod-name').innerText();
+
+      if (podName === 'terminating-test-pod') {
+        foundTerminatingPod = true;
+
+        // Assert: Status badge should show "Terminating"
+        const statusBadge = podCard.getByTestId('status-badge');
+        const statusText = await statusBadge.innerText();
+        expect(statusText).toBe('Terminating');
+        break;
+      }
+    }
+
+    // Assert: The terminating pod should be found in the pod list
+    expect(foundTerminatingPod).toBe(true);
+  });
+
+  test('should display warning-style badge for Terminating status', async ({ page }) => {
+    // Tests that Terminating pods show warning-style (yellow) status badge
+
+    // Arrange: Navigate to the Pods page
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Get all pod cards and find the terminating pod
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    for (let i = 0; i < cardCount; i++) {
+      const podCard = podCards.nth(i);
+      const statusBadge = podCard.getByTestId('status-badge');
+      const statusText = await statusBadge.innerText();
+
+      if (statusText === 'Terminating') {
+        // Assert: Status badge should have warning/yellow styling
+        const badgeClasses = await statusBadge.getAttribute('class');
+        expect(badgeClasses).toMatch(/yellow/i);
+        return;
+      }
+    }
+
+    // If no Terminating pod found, fail the test
+    expect(false).toBe(true);
+  });
+
+  test('should display terminating pod in dashboard-test namespace', async ({ page }) => {
+    // Tests that the terminating pod shows correct namespace
+
+    // Arrange: Navigate to the Pods page
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Find the terminating-test-pod
+    const podCards = page.getByTestId('pod-card');
+    const cardCount = await podCards.count();
+
+    for (let i = 0; i < cardCount; i++) {
+      const podCard = podCards.nth(i);
+      const podName = await podCard.getByTestId('pod-name').innerText();
+
+      if (podName === 'terminating-test-pod') {
+        // Assert: Pod should be in dashboard-test namespace
+        const podNamespace = podCard.getByTestId('pod-namespace');
+        await expect(podNamespace).toBeVisible();
+        const namespaceText = await podNamespace.innerText();
+        expect(namespaceText).toBe('dashboard-test');
+        return;
+      }
+    }
+
+    // If not found, fail the test
+    expect(false).toBe(true);
+  });
+});
+
+test.describe('Pod Terminating Status - API Verification', () => {
+  test('should return Terminating status from /api/pods/all endpoint', async ({ page }) => {
+    // Tests that the API correctly returns "Terminating" for pods with deletionTimestamp
+
+    // Arrange: Fetch all pods from the API
+    const response = await page.request.get('/api/pods/all');
+    expect(response.ok()).toBe(true);
+
+    const pods = await response.json();
+
+    // Act: Find the terminating-test-pod
+    const terminatingPod = pods.find(
+      (pod: { name: string }) => pod.name === 'terminating-test-pod'
+    );
+
+    // Assert: Pod should exist and have Terminating status
+    expect(terminatingPod).toBeTruthy();
+    expect(terminatingPod.status).toBe('Terminating');
+    expect(terminatingPod.namespace).toBe('dashboard-test');
+  });
+
+  test('should return Terminating status from /api/pods/unhealthy endpoint', async ({ page }) => {
+    // Tests that terminating pods are included in the unhealthy pods endpoint
+
+    // Arrange: Fetch unhealthy pods from the API
+    const response = await page.request.get('/api/pods/unhealthy');
+    expect(response.ok()).toBe(true);
+
+    const pods = await response.json();
+
+    // Act: Find the terminating-test-pod
+    const terminatingPod = pods.find(
+      (pod: { name: string }) => pod.name === 'terminating-test-pod'
+    );
+
+    // Assert: Terminating pod should be in unhealthy pods list
+    expect(terminatingPod).toBeTruthy();
+    expect(terminatingPod.status).toBe('Terminating');
+  });
+
+  test('should return Terminating status when filtering by namespace', async ({ page }) => {
+    // Tests that namespace filtering works correctly for terminating pods
+
+    // Arrange: Fetch pods filtered by dashboard-test namespace
+    const response = await page.request.get('/api/pods/all?ns=dashboard-test');
+    expect(response.ok()).toBe(true);
+
+    const pods = await response.json();
+
+    // Act: Find the terminating-test-pod
+    const terminatingPod = pods.find(
+      (pod: { name: string }) => pod.name === 'terminating-test-pod'
+    );
+
+    // Assert: Pod should exist with Terminating status in namespace-filtered results
+    expect(terminatingPod).toBeTruthy();
+    expect(terminatingPod.status).toBe('Terminating');
+  });
+});
+
+test.describe('BottomTabBar - Namespace Context Integration', () => {
+  test('should filter current tab data when namespace is changed', async ({ page }) => {
+    // Tests that namespace selection affects active tab's data
+
+    // Arrange: Set mobile viewport and navigate to Pods tab
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/pods');
+
+    // Wait for initial pod data to load
+    await expect(
+      page.getByTestId('pod-card').first()
+        .or(page.getByTestId('no-pods-message'))
+    ).toBeVisible({ timeout: 10000 });
+
+    // Act: Record initial pod count (all namespaces)
+    const initialPodCards = page.getByTestId('pod-card');
+    const initialCount = await initialPodCards.count();
+
+    // Act: Select "default" namespace and wait for API response
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+
+    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
+      .or(page.getByTestId('namespace-option-default'));
+
+    // Wait for pods API response after namespace selection
+    await Promise.all([
+      page.waitForResponse(resp =>
+        resp.url().includes('/api/pods') &&
+        resp.url().includes('ns=default') &&
+        resp.status() === 200
+      ),
+      defaultNamespaceOption.click(),
+    ]);
+
+    // Wait for the filtered pod list to render
+    await expect(
+      page.getByTestId('pod-card').first()
+        .or(page.getByTestId('no-pods-message'))
+    ).toBeVisible({ timeout: 10000 });
+
+    // Assert: Pod list should be filtered to default namespace
+    const filteredPodCards = page.getByTestId('pod-card');
+    const filteredCount = await filteredPodCards.count();
+
+    expect(filteredCount).toBeLessThanOrEqual(initialCount);
+
+    // Assert: All visible pods should belong to default namespace
+    if (filteredCount > 0) {
+      const firstPod = filteredPodCards.first();
+      await expect(firstPod).toContainText('default', { timeout: 5000 });
+    }
+  });
+});
+
+test.describe('Namespace Context Integration', () => {
+  test('should filter displayed data when specific namespace is selected', async ({ page }) => {
+    // Tests that resource lists respect NamespaceContext filtering
+
+    // Arrange: Navigate to Pods page with "All Namespaces" selected
+    await page.goto('/pods');
+    await page.waitForLoadState('networkidle');
+
+    // Wait for pods data to load
+    const podsPage = page.getByTestId('pods-page');
+    await expect(podsPage).toBeVisible();
+
+    // Act: Select "default" namespace from dropdown
+    const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
+    await namespaceSelector.click();
+    const defaultNamespaceOption = page.getByRole('option', { name: /^default$/i })
+      .or(page.getByTestId('namespace-option-default'));
+    await defaultNamespaceOption.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Pods page should still be visible with filtered data
+    await expect(podsPage).toBeVisible();
+
+    // Act: Select "kube-system" namespace
+    await namespaceSelector.click();
+    const kubeSystemOption = page.getByRole('option', { name: /^kube-system$/i })
+      .or(page.getByTestId('namespace-option-kube-system'));
+    await kubeSystemOption.click();
+    await page.waitForLoadState('networkidle');
+
+    // Assert: Pods page should show kube-system pods
+    await expect(podsPage).toBeVisible();
   });
 });

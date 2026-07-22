@@ -1,3 +1,4 @@
+// Verifies: OV2 (docs/product/prd-overview.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
 /**
@@ -6,6 +7,7 @@ import { test, expect } from '@playwright/test';
  * TDD Red Phase: Tests activated - components ready for implementation.
  * These tests define the expected behavior of the UnhealthyPodPreview component.
  */
+
 test.describe('UnhealthyPodPreview Component', () => {
   test('should display up to 3 unhealthy pods in preview', async ({ page }) => {
     // Tests that UnhealthyPodPreview component limits display to maximum 3 pods
@@ -161,5 +163,55 @@ test.describe('UnhealthyPodPreview Component', () => {
     const collapsedPodItems = unhealthyPodPreview.getByTestId('unhealthy-pod-item');
     const collapsedCount = await collapsedPodItems.count();
     expect(collapsedCount).toBeLessThanOrEqual(3);
+  });
+});
+
+test.describe('Pod Terminating Status - Unhealthy Pods', () => {
+  test('should include terminating pod in unhealthy pods list', async ({ page }) => {
+    // Tests that a terminating pod is considered unhealthy and appears
+    // in the unhealthy pods section on the overview page
+
+    // Arrange: Navigate to the Overview page
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Act: Locate the UnhealthyPodPreview component
+    const unhealthyPodPreview = page.getByTestId('unhealthy-pod-preview');
+    await expect(unhealthyPodPreview).toBeVisible();
+
+    // Act: Check if the terminating pod appears in unhealthy pod items
+    // or can be found via the "view more" link on the Pods page
+    const unhealthyPodItems = unhealthyPodPreview.getByTestId('unhealthy-pod-item');
+    const itemCount = await unhealthyPodItems.count();
+
+    let foundInPreview = false;
+    for (let i = 0; i < itemCount; i++) {
+      const podItem = unhealthyPodItems.nth(i);
+      const podName = await podItem.getByTestId('unhealthy-pod-name').innerText();
+      if (podName === 'terminating-test-pod') {
+        foundInPreview = true;
+
+        // Assert: Status badge should show Terminating
+        const statusBadge = podItem.getByTestId('status-badge');
+        const statusText = await statusBadge.innerText();
+        expect(statusText).toBe('Terminating');
+        break;
+      }
+    }
+
+    // If not found in preview (limited to 3), verify via the API directly
+    if (!foundInPreview) {
+      const response = await page.request.get('/api/pods/unhealthy');
+      expect(response.ok()).toBe(true);
+
+      const pods = await response.json();
+      const terminatingPod = pods.find(
+        (pod: { name: string }) => pod.name === 'terminating-test-pod'
+      );
+
+      // Assert: Terminating pod should be in unhealthy pods API response
+      expect(terminatingPod).toBeTruthy();
+      expect(terminatingPod.status).toBe('Terminating');
+    }
   });
 });

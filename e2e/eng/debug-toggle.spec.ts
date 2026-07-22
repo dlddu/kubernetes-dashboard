@@ -1,3 +1,4 @@
+// Engineering: ENG-001 (docs/product/eng-notes.md) — debug page diagnostic contract; not a product AC.
 import { test, expect } from '@playwright/test';
 
 /**

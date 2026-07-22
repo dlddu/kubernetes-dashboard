@@ -2,6 +2,22 @@
 
 This directory contains end-to-end tests using Playwright for the Kubernetes Dashboard application.
 
+## Test organization (AC ↔ spec 1:1)
+
+Top-level `e2e/*.spec.ts` files are the **AC-matching surface**: each file verifies
+exactly one Acceptance Criterion and declares it in a header comment
+(`// Verifies: <AC> (docs/product/prd-*.md)`). The mapping SSOT is the `자동화` field
+of `docs/product/test-*.md`; `docs/product/doc-tracker.md` holds the aggregate view.
+
+Two subdirectories are **excluded** from AC↔spec matching:
+- `e2e/smoke/` — infra liveness/readiness probes (not a product AC).
+- `e2e/eng/` — engineering diagnostic contracts (e.g. the `/debug` page), registered
+  in `docs/product/eng-notes.md` (ENG-NNN). Each carries an `// Engineering: ENG-NNN` header.
+
+Shared helpers live in `e2e/helpers/` and are not specs. When adding an e2e test, first
+decide which AC it covers and extend that AC's existing spec; only create a new top-level
+spec when introducing a new AC.
+
 ## Prerequisites
 
 - Node.js 20+
