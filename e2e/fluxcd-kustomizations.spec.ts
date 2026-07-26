@@ -209,11 +209,9 @@ test.describe('FluxCD Tab - Kustomization List - Namespace Filtering', () => {
     await page.goto('/flux');
     await page.waitForLoadState('networkidle');
 
-    // Act: Record total card count before filtering
+    // Act: ensure the unfiltered list has rendered at least one card
     const allKustomizationCards = page.getByTestId('kustomization-card');
     await expect(allKustomizationCards.first()).toBeVisible();
-    const totalCount = await allKustomizationCards.count();
-    expect(totalCount).toBeGreaterThanOrEqual(1);
 
     // Act: Apply namespace filter via the namespace selector in the TopBar
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
@@ -224,18 +222,33 @@ test.describe('FluxCD Tab - Kustomization List - Namespace Filtering', () => {
     await dashboardTestOption.click();
     await page.waitForLoadState('networkidle');
 
-    // Assert: Only dashboard-test namespace Kustomizations are shown
-    const filteredCards = page.getByTestId('kustomization-card');
-    const filteredCount = await filteredCards.count();
-    expect(filteredCount).toBeLessThanOrEqual(totalCount);
-    expect(filteredCount).toBeGreaterThanOrEqual(1);
-
-    // Assert: All visible cards belong to dashboard-test namespace
-    for (let i = 0; i < filteredCount; i++) {
-      const card = filteredCards.nth(i);
-      const namespaceElement = card.getByTestId('kustomization-namespace');
-      await expect(namespaceElement).toHaveText('dashboard-test');
-    }
+    // Assert: Only dashboard-test namespace Kustomizations are shown.
+    // The card list re-renders asynchronously after the filter is applied, so a
+    // one-shot count()+nth() snapshot can capture the pre-filter union — which
+    // includes the backend-app card that apply-all.sh relocates to the `default`
+    // namespace — before those stale cards detach, yielding a flaky
+    // "unexpected value default" failure under the workers:4 shard ordering
+    // (reconcile rct_20260722-0001). Poll until the filtered list settles so
+    // every visible card belongs to dashboard-test.
+    const filteredNamespaces = page
+      .getByTestId('kustomization-card')
+      .getByTestId('kustomization-namespace');
+    await expect
+      .poll(
+        async () => {
+          const namespaces = await filteredNamespaces.allTextContents();
+          return (
+            namespaces.length >= 1 &&
+            namespaces.every((ns) => ns.trim() === 'dashboard-test')
+          );
+        },
+        {
+          message:
+            'namespace filter should settle so every visible Kustomization card is in dashboard-test',
+          timeout: 10000,
+        },
+      )
+      .toBe(true);
   });
 });
 
