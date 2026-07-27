@@ -9,7 +9,7 @@
 - PRD: **10개** (탭별 9개 + 공통 셸 1개)
 - Acceptance Criteria: **53개** (가치 연결됨: 53 / 미연결: 0)
 - 테스트 문서: **10개** (AC 커버됨: 53 / 미커버: 0)
-- **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). e2e 매핑을 **AC↔스펙 파일 양방향 1:1**로 재구조화 완료(연결 AC 49 ↔ 전용 최상위 스펙 49, 공유·중복·고아 0). 남은 것은 **자동화 공백 4개**(OV6·OV7·PD6·SC3 — 전용 e2e 미작성)로, 문서 체계 외부의 구현 백로그.
+- **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). e2e 매핑을 **AC↔스펙 파일 양방향 1:1**로 재구조화 완료(연결 AC 50 ↔ 전용 최상위 스펙 50, 공유·중복·고아 0). 남은 것은 **자동화 공백 3개**(OV6·OV7·SC3 — 전용 e2e 미작성)로, 문서 체계 외부의 구현 백로그.
 
 ## PRD ↔ 테스트 문서 인덱스
 
@@ -18,7 +18,7 @@
 | OV | `prd-overview.md` | `/` | V1, V6, V7 | 7 | `test-overview.md` | OV6·OV7 |
 | ND | `prd-nodes.md` | `/nodes` | V1 | 3 | `test-nodes.md` | — |
 | WL | `prd-workloads.md` | `/workloads` | V1, V3, V7 | 4 | `test-workloads.md` | — |
-| PD | `prd-pods.md` | `/pods` | V1, V3, V6, V7 | 7 | `test-pods.md` | PD6 |
+| PD | `prd-pods.md` | `/pods` | V1, V3, V6, V7 | 7 | `test-pods.md` | — |
 | SC | `prd-secrets.md` | `/secrets` | V4, V5, V7 | 4 | `test-secrets.md` | SC3 |
 | CF | `prd-configmaps.md` | `/configmaps` | V1, V7 | 3 | `test-configmaps.md` | — |
 | ES | `prd-external-secrets.md` | `/external-secrets` | V5, V7 | 4 | `test-external-secrets.md` | — |
@@ -44,10 +44,9 @@
 1. 모든 가치에 소유자 있음 ✅ · 2. 모든 문서가 가치 참조 ✅ · 3. 모든 PRD가 가치 달성 ✅ · 4. 모든 PRD에 AC 있음 ✅ · 5. 모든 AC가 가치 달성 ✅ · 6. 모든 AC에 테스트 문서 있음 ✅ · 7. 모든 테스트가 AC 참조 ✅
 
 ### 자동화 공백 (테스트 문서는 있으나 e2e 미작성) 🟢
-1:1 재구조화 과정에서 FluxCD 상세(FX3·FX4·FX5·FX6)는 기존 `fluxcd-*` 모놀리식 스펙 안에 **이미 구현돼 있었고 문서에만 미선언**이었음이 실측으로 드러나, 전용 파일(`fluxcd-reconcile`·`fluxcd-suspend-resume`·`fluxcd-branch-switch`·`fluxcd-detail`)로 승격·연결했다. 반대로 오버뷰 스코프(OV6)는 직접 단정 테스트가 없어 공백으로 재분류했다. 이후 CM3(상단 바) 전용 스펙(`e2e/top-bar.spec.ts`)을 신설해 공백은 8→5→4로 감소:
+1:1 재구조화 과정에서 FluxCD 상세(FX3·FX4·FX5·FX6)는 기존 `fluxcd-*` 모놀리식 스펙 안에 **이미 구현돼 있었고 문서에만 미선언**이었음이 실측으로 드러나, 전용 파일(`fluxcd-reconcile`·`fluxcd-suspend-resume`·`fluxcd-branch-switch`·`fluxcd-detail`)로 승격·연결했다. 반대로 오버뷰 스코프(OV6)는 직접 단정 테스트가 없어 공백으로 재분류했다. 이후 CM3(상단 바) 전용 스펙(`e2e/top-bar.spec.ts`)·PD6(완료 파드 숨김 토글) 전용 스펙(`e2e/pods-hide-completed.spec.ts`)을 신설해 공백은 8→5→4→3으로 감소:
 - **OV6** — 오버뷰 네임스페이스 스코프 직접 검증 (전용 e2e 신규 필요; 기존 참조는 CM5 셀렉터 검증)
 - **OV7** — 메트릭 서버 부재 시 폴백 (metrics 비활성 시나리오)
-- **PD6** — 완료 파드 숨김 토글
 - **SC3** — ESO 대상 Secret 삭제 → External Secret 재동기화 (ESO 연동 e2e 필요)
 - (보강 권장) **FX6** — 상세 라이브 폴링 자동 갱신 직접 검증 · **AR4** — 워크플로우 상세 라이브 폴링
 
@@ -59,9 +58,9 @@
 
 ## 다음 단계 제안
 
-문서 체계·1:1 매핑 완성. CM3 상단 바 전용 스펙 신설로 공백 5→4. 남은 것은 공백 4건 e2e 신규 작성(후속 task):
+문서 체계·1:1 매핑 완성. PD6 완료 숨김 토글 전용 스펙 신설로 공백 4→3. 남은 것은 공백 3건 e2e 신규 작성(후속 task):
 1. **SC3 ESO 재동기화 e2e** — 외부 저장소 연동 통합 테스트.
-2. **OV6 오버뷰 스코프 · OV7 메트릭 폴백 · PD6 완료 숨김 토글** — 전용 e2e 신설.
+2. **OV6 오버뷰 스코프 · OV7 메트릭 폴백** — 전용 e2e 신설.
 3. (선택) **FX6·AR4** 상세 라이브 폴링 직접 검증 보강.
 
 ## 변경 이력
@@ -81,4 +80,5 @@
 | 2026-07-12 | e2e AC↔스펙 파일 **1:1 재구조화** — 공유 15·중복 9 분할/병합, debug 6종 `e2e/eng/`(ENG-001) 분리·health `e2e/smoke/` 이동, FluxCD 상세(FX3~6) 전용 스펙 승격·OV6 공백 재분류. 테스트 626건 무손실 | 공유·중복·고아 다수, 공백 8 | 연결 AC 48↔전용 스펙 48(전단사), 공백 5(OV6·OV7·PD6·SC3·CM3) |
 | 2026-07-20 | 위 재구조화의 e2e 회귀 수정(격리) — FluxCD **클러스터 변경 스펙(FX3 reconcile·FX4 suspend/resume)** 을 FX2 목록 리더가 관측하지 않는 **전용 픽스처**(`git-repo-mut`·`kust-mut-*`, `targetNamespace: default` 없음)로 격리. 파일 재병합(공존) 대안은 거부됨 — 별도 파일 유지, 엄격한 파일 단위 1:1 보존 | FX3·FX4 가 공유 `app-ready`/`app-suspended`/`flux-system` 을 변경해 `workers:4` 병렬에서 FX2 와 레이스 | 연결 AC 48↔전용 스펙 48 유지, 물리 파일 1:1 예외 없음 |
 | 2026-07-23 | **CM3(상단 바·반응형 셸) 전용 e2e 신설** — `e2e/top-bar.spec.ts` 추가. 앱 타이틀·`ClusterStatus`("Cluster Connected")·반응형 컨테이너 클래스(`flex-col`↔`sm:flex-row`)·모바일 세로↔데스크톱 가로 배치를 직접 단정(픽스처 무의존, 정적 셸 마크업). `test-common.md` 시나리오3 자동화 연결. CM/CM3 공백 해소 | 자동화 공백 5(OV6·OV7·PD6·SC3·CM3), 연결 AC 48↔전용 스펙 48 | 자동화 공백 4(OV6·OV7·PD6·SC3), 연결 AC 49↔전용 스펙 49 |
+| 2026-07-27 | **PD6(완료 파드 숨김 토글) 전용 e2e 신설** — `e2e/pods-hide-completed.spec.ts` 추가. `/api/pods/all` 를 route-mock 으로 Running/Succeeded 파드를 주입해 `hide-completed-toggle`(completedCount>0 시 노출)·클라이언트 필터(`filteredPods`, COMPLETED_STATUSES=succeeded/completed)·`no-visible-pods-message`("All pods are completed…") 빈 상태를 직접 단정(픽스처 무의존, 브라우저 레벨 인터셉트로 레이스 무관). `test-pods.md` 시나리오7 자동화 연결. PD6 공백 해소 | 자동화 공백 4(OV6·OV7·PD6·SC3), 연결 AC 49↔전용 스펙 49 | 자동화 공백 3(OV6·OV7·SC3), 연결 AC 50↔전용 스펙 50 |
 | 2026-07-26 | **FX2(네임스페이스 필터) e2e 레이스 안정화** — CM3 스펙 추가로 `workers:4` 샤드가 재편되며 `fluxcd-kustomizations.spec.ts:203` 이 재노출한 스냅샷 레이스(필터 적용 전 union 카운트를 `count()`+`nth()` 로 캡처 → `apply-all.sh` 가 `default` 로 이관한 `backend-app` 카드가 탈착되며 "unexpected value default" 실패)를 `expect.poll` 로 필터 정착까지 재시도하도록 수정. 픽스처·앱·커버리지 무변(FX2 게이트 유지) | CM3 PR 게이트 red(범위 밖 FX2 레이스), 연결 AC 49↔전용 스펙 49 | E2E 게이트 결정적, 연결 AC 49↔전용 스펙 49 유지 |
