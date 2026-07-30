@@ -56,6 +56,7 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
 
     // Arrange: Intercept the restart API to keep the "Restarting..." state visible
     // Without this, the API may complete too fast for the assertion to observe the state
+    // mock-exception: LAT — 'Restarting…' 전이 상태 관측 위해 restart 응답 지연; 실 restart는 즉시 완료·파괴적이라 실행 안 함 (docs/e2e-mocking-policy.md)
     await page.route('**/api/deployments/**/restart', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'Restart initiated' }) });

@@ -18,6 +18,16 @@ Shared helpers live in `e2e/helpers/` and are not specs. When adding an e2e test
 decide which AC it covers and extend that AC's existing spec; only create a new top-level
 spec when introducing a new AC.
 
+## Network mocking policy
+
+e2e runs against a **real kind cluster + real fixtures** by default. Network interception
+and response mocking (`page.route`, `route.fulfill`/`continue`/`abort`, etc.) are allowed
+**only** for cases that cannot be reproduced in the real environment and **only** when the
+site is listed in the allowlist. Each allowed interception carries a
+`// mock-exception: <CODE> — <reason>` comment immediately before the `page.route(...)`
+call, and the same entry must appear in the allowlist. The policy SSOT (allowed categories
+`ERR`/`LAT`/`ABS`/`DES` and the allowlist) is `docs/e2e-mocking-policy.md`.
+
 ## Prerequisites
 
 - Node.js 20+
