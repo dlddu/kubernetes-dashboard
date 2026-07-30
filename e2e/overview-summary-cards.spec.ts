@@ -514,6 +514,7 @@ test.describe('LoadingSkeleton Component - Overview Tab', () => {
     // Tests that LoadingSkeleton has appropriate ARIA attributes
 
     // Arrange: Delay API responses so loading skeleton stays visible long enough to test
+    // mock-exception: LAT — 로딩 스켈레톤/ARIA 관측 위해 **/api/** 응답 지연 주입; 실 응답은 즉시 완료돼 스켈레톤 상태를 못 잡음 (docs/e2e-mocking-policy.md)
     await page.route('**/api/**', async (route) => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       try {

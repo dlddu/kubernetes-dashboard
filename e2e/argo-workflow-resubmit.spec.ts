@@ -276,6 +276,7 @@ test.describe('Argo Workflow Resubmit - Execution', () => {
     const detailPage = page.getByTestId('workflow-detail-page');
     await expect(detailPage).toBeVisible();
 
+    // mock-exception: ERR — resubmit API 실패(500) 시 에러 메시지 검증; 실클러스터가 요청 시점에 500을 내게 만들 수 없음 (docs/e2e-mocking-policy.md)
     await page.route('**/api/argo/workflows/*/resubmit', async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
