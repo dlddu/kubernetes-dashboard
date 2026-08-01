@@ -8,6 +8,7 @@ test.describe('FluxCD Tab - GitRepository List - Loading, Empty & Error States',
   test('should display ErrorRetry component with retry button when the GitRepositories API returns an error', async ({ page }) => {
     // Arrange: Block ALL gitrepositories API calls with 500 until the flag is flipped.
     let shouldFail = true;
+    // mock-exception: ERR — GitRepository 목록 조회를 첫 호출만 500으로 실패시켜 ErrorRetry·재시도를 검증(플래그 기반, 재시도는 continue로 실 backend). 실클러스터가 요청 시점에 실패하도록 만들 수 없음.
     await page.route('**/api/fluxcd/gitrepositories**', async route => {
       if (shouldFail) {
         await route.fulfill({
@@ -48,6 +49,7 @@ test.describe('FluxCD Tab - GitRepository List - Loading, Empty & Error States',
 
   test('should display LoadingSkeleton with aria-busy="true" while GitRepositories are being fetched', async ({ page }) => {
     // Arrange: Intercept the gitrepositories API and delay the response
+    // mock-exception: LAT — GitRepository 목록 로딩 스켈레톤(aria-busy) 관측을 위해 응답 지연 주입 후 continue. 실 응답은 즉시 완료돼 스켈레톤 상태를 잡을 수 없음.
     await page.route('**/api/fluxcd/gitrepositories**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.continue();
@@ -100,6 +102,7 @@ test.describe('FluxCD Tab - Kustomization List - Loading, Empty & Error States',
     // Arrange: Block ALL kustomizations API calls with 500 until the flag is flipped.
     // Flag-based approach avoids race conditions when multiple concurrent fetches occur on mount.
     let shouldFail = true;
+    // mock-exception: ERR — Kustomization 목록 조회를 첫 호출만 500으로 실패시켜 ErrorRetry·재시도를 검증(플래그 기반, 재시도는 continue로 실 backend). 실클러스터가 요청 시점에 실패하도록 만들 수 없음.
     await page.route('**/api/fluxcd/kustomizations**', async route => {
       if (shouldFail) {
         await route.fulfill({
@@ -145,6 +148,7 @@ test.describe('FluxCD Tab - Kustomization List - Loading, Empty & Error States',
     // Tests that LoadingSkeleton is shown during the API request.
 
     // Arrange: Intercept both APIs and delay responses to observe loading state
+    // mock-exception: LAT — Kustomization 목록 로딩 스켈레톤 관측을 위해 응답 지연 주입(본문은 미검증, 스켈레톤 상태만 관측). 실 응답은 즉시 완료돼 관측 불가.
     await page.route('**/api/fluxcd/kustomizations**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.fulfill({
@@ -153,6 +157,7 @@ test.describe('FluxCD Tab - Kustomization List - Loading, Empty & Error States',
         body: JSON.stringify([]),
       });
     });
+    // mock-exception: LAT — 같은 로딩 테스트에서 병행 GitRepository 호출도 지연 후 continue시켜 스켈레톤이 유지되게 함. 실 응답은 즉시 완료돼 관측 불가.
     await page.route('**/api/fluxcd/gitrepositories**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.continue();

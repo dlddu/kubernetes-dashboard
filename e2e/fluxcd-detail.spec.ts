@@ -316,6 +316,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Error State', () => {
   test('should display ErrorRetry with retry button when the GitRepository detail API returns an error', async ({ page }) => {
     // Arrange: First call fails with 500, subsequent calls pass through to real API
     let detailCallCount = 0;
+    // mock-exception: ERR — GitRepository 상세 조회 첫 호출을 500으로 실패시켜 ErrorRetry UI·재시도를 검증(재시도는 continue로 실 fixture flux-system 통과). 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/fluxcd/gitrepositories/dashboard-test/flux-system', async route => {
       detailCallCount += 1;
       if (detailCallCount === 1) {
@@ -813,6 +814,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Error State', () => {
 
     // Arrange: First call fails with 500, subsequent calls pass through to real API
     let detailCallCount = 0;
+    // mock-exception: ERR — Kustomization 상세 조회 첫 호출을 500으로 실패시켜 ErrorRetry UI·재시도를 검증(재시도는 continue로 실 fixture app-ready 통과). 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/fluxcd/kustomizations/dashboard-test/app-ready**', async route => {
       detailCallCount += 1;
       if (detailCallCount === 1) {

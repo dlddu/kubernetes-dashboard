@@ -54,21 +54,33 @@ namespace로 해결), 플레이키 회피용 모킹(→ 원인 수정), 백엔�
 | 2 | `e2e/argo-workflow-resubmit.spec.ts` | `**/api/argo/workflows/*/resubmit` (POST) | `ERR` | resubmit API 실패 시 에러 메시지 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음. |
 | 3 | `e2e/overview-summary-cards.spec.ts` | `**/api/**` (지연 후 `continue`) | `LAT` | 로딩 스켈레톤/ARIA 속성 관측을 위해 응답 지연 주입 필요. 실 응답은 즉시 완료돼 스켈레톤 상태를 잡을 수 없음. 핸들러는 테스트 말미 `page.unroute`로 해제. |
 | 4 | `e2e/workloads-restart-confirm.spec.ts` | `**/api/deployments/**/restart` (지연 후 200) | `LAT` | "Restarting…" 전이 상태 관측을 위해 응답 지연 필요. 실 restart는 즉시 완료돼 관측 불가하며, 실 재시작은 파괴적이라 실행하지 않음. |
+| 5 | `e2e/fluxcd-detail.spec.ts` | `**/api/fluxcd/gitrepositories/dashboard-test/flux-system` (GET, 첫 호출 500) | `ERR` | GitRepository 상세 조회 실패 시 ErrorRetry·재시도 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음(재시도는 실 fixture로 통과). |
+| 6 | `e2e/fluxcd-detail.spec.ts` | `**/api/fluxcd/kustomizations/dashboard-test/app-ready**` (GET, 첫 호출 500) | `ERR` | Kustomization 상세 조회 실패 시 ErrorRetry·재시도 UI 검증. 동일 사유(재시도는 실 fixture app-ready로 통과). |
+| 7 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/gitrepositories**` (GET, 첫 호출 500) | `ERR` | GitRepository 목록 조회 실패 시 ErrorRetry·재시도 UI 검증. 실클러스터가 요청 시점에 실패하도록 만들 수 없음(재시도는 continue). |
+| 8 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/gitrepositories**` (GET, 지연 후 continue) | `LAT` | GitRepository 목록 로딩 스켈레톤(aria-busy) 관측 위해 응답 지연 주입. 실 응답 즉시 완료로 스켈레톤 관측 불가. |
+| 9 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/kustomizations**` (GET, 첫 호출 500) | `ERR` | Kustomization 목록 조회 실패 시 ErrorRetry·재시도 UI 검증. 동일 ERR 사유(재시도는 continue). |
+| 10 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/kustomizations**` (GET, 지연 후 빈 목록 fulfill) | `LAT` | Kustomization 목록 로딩 스켈레톤 관측 위해 응답 지연 주입(본문 미검증, 스켈레톤만 관측). 실 응답 즉시 완료로 관측 불가. |
+| 11 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/gitrepositories**` (GET, 지연 후 continue) | `LAT` | 같은 로딩 테스트의 병행 GitRepository 호출도 지연시켜 스켈레톤 유지. 실 응답 즉시 완료로 관측 불가. |
 
 ## 미판정 인터셉트 (후속 — 허용목록 아님)
 
 아래 파일들의 인터셉트는 **아직 판정되지 않았다**(등재 아님 = 현재 정책상 drift). 후속
 reconciler slice가 카테고리별로 판정해 (해당하면) 등재+주석하거나, 아니면 fixture·전용
-namespace로 대체해 **제거**한다. 편의 데이터 모킹(예: `pods-hide-completed`가 파드 목록
-전체 `fulfill`, `*-data-states`가 목록·상태 조합 고정)은 제거 대상이다.
+namespace로 대체해 **제거**한다. 판정 기준: 에러·재시도 UI를 위한 500 주입은 `ERR`,
+로딩·스켈레톤 관측을 위한 지연 주입은 `LAT`로 **등재**(정당 예외)하고, 목록·개수·상태
+조합을 고정하려는 편의 데이터 모킹(예: `pods-hide-completed`가 파드 목록 전체 `fulfill`)은
+**제거**한다. 순수 관측용 pass-through 인터셉트(`route.continue`만 하는 요청 카운터 등)는
+어느 카테고리에도 들지 않으므로 `page.on('request', …)` 등 비인터셉트 수단으로 대체해 제거한다.
+
+> 판정 완료·등재된 파일은 위 허용목록으로 이동한다. `fluxcd-detail.spec.ts`(ERR ×2)와
+> `fluxcd-data-states.spec.ts`(ERR ×2·LAT ×3)는 rct_20260731-0001 슬라이스에서 판정·등재돼
+> 아래 목록에서 제외됐다.
 
 | 파일 | 인터셉트 호출 수 |
 |------|:---------------:|
 | `e2e/fluxcd-reconcile.spec.ts` | 16 |
 | `e2e/argo-data-states.spec.ts` | 14 |
 | `e2e/fluxcd-suspend-resume.spec.ts` | 12 |
-| `e2e/fluxcd-data-states.spec.ts` | 12 |
-| `e2e/fluxcd-detail.spec.ts` | 6 |
 | `e2e/external-secrets-data-states.spec.ts` | 5 |
 | `e2e/argo-submit.spec.ts` | 5 |
 | `e2e/pods-hide-completed.spec.ts` | 2 |
