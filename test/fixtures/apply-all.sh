@@ -45,6 +45,10 @@ kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-empty -
 # 2. Apply secrets and configmaps
 log_info "Creating secrets and configmaps..."
 kubectl apply -f "$SCRIPT_DIR/secret.yaml"
+# Dedicated SC3 real-delete target (see secret-mut-fixtures.yaml header): only
+# secrets-delete-resync.spec.ts touches it, so its real DELETE never pollutes the
+# shared test-secret/tls-secret that SC1/SC2/SC4 read.
+kubectl apply -f "$SCRIPT_DIR/secret-mut-fixtures.yaml"
 kubectl apply -f "$SCRIPT_DIR/configmap.yaml"
 
 # 3. Apply pods
