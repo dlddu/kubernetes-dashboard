@@ -55,8 +55,8 @@
 - **실행 단계**: 오버뷰 진입 → 화면이 정상 렌더되고 사용률이 폴백 값으로 표시되는지 확인.
 - **기대 결과**: 빈 화면/에러 없이 capacity-allocatable 기반 폴백 사용률 표시.
 - **검증 AC**: OV7
-- **자동화**: ⚠️ **공백** (OV7) — 메트릭 서버 부재 폴백 전용 e2e 없음. kind에 metrics-server가 상주해 부재 분기를 실환경에서 재현할 수 없고, 응답 전체를 데이터-모킹하는 방식은 `docs/e2e-mocking-policy.md`의 명시적 불허(데이터 모킹)에 해당해 채택하지 않았다. 해소에는 metrics-server 부재 kind 프로파일 신설 또는 mock-policy 예외 승인 중 하나의 선결 결정이 필요(후속 task). 백엔드 폴백 계산은 `handlers/overview_test.go`가 유닛 커버.
+- **자동화**: 🟡 **e2e 면제 (비준된 영구 예외, 2026-08-02)** — metrics-server 부재 폴백은 e2e 전용 스펙을 두지 않는다. 사유: ① 폴백 응답은 정상 경로와 스키마·UI가 동일(같은 4개 요약 카드·0–100% 수치, `metricsAvailable` 류 구분 필드 없음)해 e2e로 단정할 구분 상태가 '화면 렌더·에러 없음'뿐이라 가치가 얕다; ② 전제조건(metrics-server 부재)은 kube-system의 클러스터 단일 컴포넌트라 spec 단위 격리가 불가능해(SC3의 네임스페이스 fixture와 결정적 차이) 공유 kind 클러스터를 전역 변형하면 metrics 의존 spec(OV1 등)이 깨지고(`fullyParallel:false`·`workers:4`), 회피하려면 별도 클러스터·대시보드·프로젝트 신설이 필요한데 ①의 얕은 단정 대비 비용이 과도하다; ③ 응답 데이터-모킹은 `docs/e2e-mocking-policy.md`의 명시적 불허(데이터 모킹)이며 ERR/LAT/ABS/DES 어느 카테고리에도 해당하지 않는다(폴백은 200 정상응답이라 ERR 아님, metrics-server는 kind 설치 가능이라 ABS 배제). **대체 커버리지**: 폴백 계산을 `handlers/overview_test.go`의 `TestCalculateResourceUsageFallback`(metricsMap=nil→capacity−allocatable)가 유닛으로 검증하며, AC7 PRD 검증 방법도 백엔드 기준(`getMetricsClientSafe()` nil). **재검토 트리거**: 다른 목적으로 metrics-server 부재 kind 프로파일이 도입되면 그때 실환경 e2e로 승격한다.
 
 ## 커버리지 요약
 - 자동화 연결됨(전용 스펙 1:1): OV1·OV2·OV3·OV4·OV5·OV6
-- 자동화 공백: OV7
+- e2e 면제(비준된 영구 예외, 유닛 커버): OV7 — `handlers/overview_test.go`(`TestCalculateResourceUsageFallback`)

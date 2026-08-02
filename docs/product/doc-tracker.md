@@ -9,13 +9,13 @@
 - PRD: **10개** (탭별 9개 + 공통 셸 1개)
 - Acceptance Criteria: **53개** (가치 연결됨: 53 / 미연결: 0)
 - 테스트 문서: **10개** (AC 커버됨: 53 / 미커버: 0)
-- **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). e2e 매핑을 **AC↔스펙 파일 양방향 1:1**로 재구조화 완료(연결 AC 52 ↔ 전용 최상위 스펙 52, 공유·중복·고아 0). **자동화 공백 1(OV7)** — 2026-07-30 OV6·SC3 전용 스펙을 신설해 공백 3→1. OV7(메트릭 서버 부재 폴백)은 데이터-모킹 없이 재현할 수 없어 `docs/e2e-mocking-policy.md` 정책상 보류(후속 task: metrics-server 부재 kind 프로파일 또는 mock-policy 예외 승인 후 해소).
+- **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). e2e 매핑을 **AC↔스펙 파일 양방향 1:1**로 재구조화 완료(연결 AC 52 ↔ 전용 최상위 스펙 52, 공유·중복·고아 0). **자동화 공백 0 · e2e 면제(비준 영구 예외) 1(OV7)** — 필수 AC 52 전부가 전용 스펙과 전단사이고, OV7(메트릭 서버 부재 폴백)은 2026-08-02 **e2e 면제로 비준**(e2e 비관측·전제조건 비격리·데이터모킹 정책 불허, `handlers/overview_test.go` 유닛 커버 — 사유는 `test-overview.md` §시나리오7 및 아래 §자동화 참조). 즉 AC 53 = 전용 스펙 52 + 비준 면제 1로 전부 처리.
 
 ## PRD ↔ 테스트 문서 인덱스
 
 | 코드 | PRD | 위치 | 달성 가치 | AC | 테스트 문서 | 자동화 공백 |
 |------|-----|------|-----------|----|-------------|-------------|
-| OV | `prd-overview.md` | `/` | V1, V6, V7 | 7 | `test-overview.md` | OV7 |
+| OV | `prd-overview.md` | `/` | V1, V6, V7 | 7 | `test-overview.md` | — (OV7 e2e 면제·비준) |
 | ND | `prd-nodes.md` | `/nodes` | V1 | 3 | `test-nodes.md` | — |
 | WL | `prd-workloads.md` | `/workloads` | V1, V3, V7 | 4 | `test-workloads.md` | — |
 | PD | `prd-pods.md` | `/pods` | V1, V3, V6, V7 | 7 | `test-pods.md` | — |
@@ -43,11 +43,11 @@
 ### 건강한 문서 체계의 7개 조건 — 모두 충족 ✅
 1. 모든 가치에 소유자 있음 ✅ · 2. 모든 문서가 가치 참조 ✅ · 3. 모든 PRD가 가치 달성 ✅ · 4. 모든 PRD에 AC 있음 ✅ · 5. 모든 AC가 가치 달성 ✅ · 6. 모든 AC에 테스트 문서 있음 ✅ · 7. 모든 테스트가 AC 참조 ✅
 
-### 자동화 공백 — 1건 (OV7 잔여) 🟢
-1:1 재구조화로 FluxCD 상세(FX3~6)를 전용 파일로 승격·연결하고 오버뷰 스코프(OV6)를 공백으로 재분류한 뒤, CM3·PD6에 이어 **2026-07-30 OV6·SC3 전용 스펙을 신설**해 공백은 8→5→4→3→**1**로 줄었다. 이번에 해소된 2건 + 잔여 1건:
+### 자동화 공백 0 · e2e 면제(비준 영구 예외) 1건 (OV7) 🟢
+1:1 재구조화로 FluxCD 상세(FX3~6)를 전용 파일로 승격·연결하고 오버뷰 스코프(OV6)를 공백으로 재분류한 뒤, CM3·PD6에 이어 **2026-07-30 OV6·SC3 전용 스펙을 신설**해 공백은 8→5→4→3→1로 줄었고, 마지막 1건(OV7)은 2026-08-02 **e2e 면제로 비준**되어 자동화 공백은 **0**이다. 최종 상태:
 - **OV6** ✅ → `e2e/overview-namespace-scope.spec.ts` (실 kind 클러스터에서 네임스페이스 전환 시 `GET /api/overview?ns=` 스코프 재조회를 관측; 모킹 없음)
 - **SC3** ✅ → `e2e/secrets-delete-resync.spec.ts` (삭제 확인 다이얼로그→확인 시 **실제 DELETE `/api/secrets/:ns/:name`** 발행 후 대상 아코디언 소멸을 단정. **모킹 없음** — 전용 fixture `secret-mut-delete`(`test/fixtures/secret-mut-fixtures.yaml`, `fluxcd-mut-fixtures.yaml` 격리 선례를 따름)를 실제로 삭제한다. SC1/SC2/SC4는 `test-secret`/`tls-secret`만 testid로 지목하고 `>= 2` 아코디언만 단정하므로 세 번째 전용 fixture 삭제에 무영향. ESO 재동기화 **재생성** 단정은 kind에 ESO 컨트롤러가 없어 하네스 밖 — 앱이 소유한 실삭제까지 검증)
-- **OV7** ⚠️ **잔여** → 메트릭 서버 부재 폴백. kind에 metrics-server가 상주해 부재 분기를 실환경에서 재현할 수 없고, 응답 전체를 데이터-모킹하는 방식은 `docs/e2e-mocking-policy.md`의 명시적 불허(데이터 모킹)에 해당해 채택하지 않았다. 해소에는 metrics-server 부재 kind 프로파일 신설 또는 mock-policy 예외 승인 중 하나의 선결 결정이 필요(후속 task). 백엔드 폴백 계산은 `handlers/overview_test.go`가 유닛 커버.
+- **OV7** 🟡 **e2e 면제(비준 영구 예외, 2026-08-02)** → 메트릭 서버 부재 폴백. 전용 e2e를 두지 않는다: ① 폴백은 정상 경로와 스키마·UI가 동일해 e2e 단정 가치가 '렌더·무에러'뿐, ② 전제조건(metrics-server 부재)은 클러스터 단일 컴포넌트라 spec 단위 격리 불가 → 전역 변형은 OV1 등 metrics 의존 spec을 깨고 별도 클러스터·대시보드 신설은 과도, ③ 데이터-모킹은 `docs/e2e-mocking-policy.md` 명시적 불허(ERR/LAT/ABS/DES 미해당). **대체 커버리지**: `handlers/overview_test.go`의 `TestCalculateResourceUsageFallback`(유닛)·AC7 PRD 백엔드 검증. **재검토**: 다른 목적으로 metrics-server 부재 kind 프로파일이 도입되면 실환경 e2e로 승격. (형제 `tbm_kubernetes-dashboard-e2e-mock-policy`: 신규 인터셉트 0 → 무영향.)
 - (보강 권장) **FX6** — 상세 라이브 폴링 자동 갱신 직접 검증 · **AR4** — 워크플로우 상세 라이브 폴링
 
 ### 비-AC e2e 스펙 분류 (매칭 대상 밖)
@@ -58,8 +58,8 @@
 
 ## 다음 단계 제안
 
-문서 체계·1:1 매핑 유지. 2026-07-30 OV6·SC3 전용 스펙 신설로 **자동화 공백 3→1(연결 AC 52↔전용 스펙 52)**. 남은 것:
-1. **OV7 전용 e2e (잔여 공백 1)** — 메트릭 서버 부재 폴백. 선결 결정 필요: (a) metrics-server 부재 kind 프로파일 신설로 실환경 재현, 또는 (b) `tbm_kubernetes-dashboard-e2e-mock-policy` 모델을 통해 데이터-모킹을 명시적 예외로 승인. 결정 후 별도 슬라이스로 53↔53 완성.
+문서 체계·1:1 매핑 유지. 2026-08-02 OV7을 e2e 면제로 비준해 **자동화 공백 1→0(연결 AC 52↔전용 스펙 52 + 비준 면제 1)**. 남은 것:
+1. **OV7 — e2e 면제로 비준 완료**(2026-08-02). 별도 e2e 슬라이스 불필요. 재검토 트리거: metrics-server 부재 kind 프로파일이 다른 목적으로 도입되면 그때 실환경 e2e로 승격 가능(위 §자동화 공백 참조).
 2. (선택) **FX6·AR4** 상세 라이브 폴링 직접 검증 보강.
 
 ## 변경 이력
@@ -83,3 +83,4 @@
 | 2026-07-26 | **FX2(네임스페이스 필터) e2e 레이스 안정화** — CM3 스펙 추가로 `workers:4` 샤드가 재편되며 `fluxcd-kustomizations.spec.ts:203` 이 재노출한 스냅샷 레이스(필터 적용 전 union 카운트를 `count()`+`nth()` 로 캡처 → `apply-all.sh` 가 `default` 로 이관한 `backend-app` 카드가 탈착되며 "unexpected value default" 실패)를 `expect.poll` 로 필터 정착까지 재시도하도록 수정. 픽스처·앱·커버리지 무변(FX2 게이트 유지) | CM3 PR 게이트 red(범위 밖 FX2 레이스), 연결 AC 49↔전용 스펙 49 | E2E 게이트 결정적, 연결 AC 49↔전용 스펙 49 유지 |
 | 2026-07-30 | **OV6·SC3 전용 e2e 신설로 공백 3→1** — `e2e/overview-namespace-scope.spec.ts`(OV6, 실 클러스터에서 네임스페이스 전환 시 `GET /api/overview?ns=` 스코프 재조회 관측·모킹 없음)·`e2e/secrets-delete-resync.spec.ts`(SC3, 삭제 확인→`DELETE /api/secrets/:ns/:name` 트리거 단정. 목록 GET은 실 fixture, 파괴적 DELETE만 인터셉트하는 정당 **DES** 예외로 `docs/e2e-mocking-policy.md` 허용목록 #5 등재) 추가. `test-overview.md`(OV6)·`test-secrets.md`(SC3) 자동화 연결. **OV7은 데이터-모킹 정책 위반으로 이번 슬라이스에서 제외**(후속: metrics-server 부재 kind 프로파일 또는 mock-policy 예외 승인). 직전 시도(rct_20260729-0001 att0)의 SC3 구문 결함(docstring `*/`)·형제 mock-policy 미착지 원인을 재계획으로 해소 **(SC3의 DES 모킹 접근은 2026-08-01 리뷰 반려로 real fixture 실삭제로 대체됨 — 아래 행 참조)** | 자동화 공백 3(OV6·OV7·SC3), 연결 AC 50↔전용 스펙 50 | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52 |
 | 2026-08-01 | **SC3 재작업 — 모킹 제거·전용 fixture 실삭제** — 리뷰 반려("모킹하지 말고 다른 테스트에 영향 안 받는 별도 fixture로 실제 삭제 테스트")를 반영. `e2e/secrets-delete-resync.spec.ts`를 인터셉트 0으로 재작성해 전용 fixture `secret-mut-delete`(`test/fixtures/secret-mut-fixtures.yaml`, dashboard-test)를 **실제로 DELETE**하고 대상 아코디언 소멸을 단정(앱 refetch). `fluxcd-mut-fixtures.yaml` 격리 선례를 따라 SC1/SC2/SC4(`test-secret`/`tls-secret`, `>= 2` 단정)에 무영향. `docs/e2e-mocking-policy.md` 허용목록 **DES #5 제거**(브랜치 신규 인터셉트 0 → 형제 모델 `tbm_kubernetes-dashboard-e2e-mock-policy` 무drift). ESO 재동기화 재생성은 kind에 ESO 컨트롤러가 없어 하네스 밖(후속). 전단사·공백 집계 불변 | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52, SC3=DES 모킹 | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52, SC3=real fixture 실삭제·mock 0 |
+| 2026-08-02 | **OV7 e2e 면제 비준 — 잔여 공백 1→0** — metrics-server 부재 폴백은 전용 e2e를 두지 않기로 비준. 사유: e2e 비관측(폴백=정상경로와 동일 스키마·UI)·전제조건 비격리(metrics-server는 클러스터 단일 컴포넌트, SC3 네임스페이스 fixture와 달리 spec 격리 불가)·데이터모킹 정책 불허(ERR/LAT/ABS/DES 미해당). 대체 커버리지 `handlers/overview_test.go::TestCalculateResourceUsageFallback`(유닛). `test-overview.md`·`doc-tracker.md` 면제 명기. reconciler `tbm_kubernetes-dashboard-ac-e2e` 모델 정의도 '전용 스펙 52↔필수 AC 52 + OV7 면제'로 정합. 신규 e2e 인터셉트 0 → 형제 mock-policy 무drift | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52 | 자동화 공백 0, 비준 e2e 면제 1(OV7), 연결 AC 52↔전용 스펙 52 |
