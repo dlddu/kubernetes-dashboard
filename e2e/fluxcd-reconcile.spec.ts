@@ -19,6 +19,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
   });
 
   test('should transition to "Reconciling..." loading state with spinner and disabled button after clicking "Reconcile Now"', async ({ page }) => {
+    // mock-exception: LAT — 'Reconciling…' 전이 상태 관측 위해 reconcile 응답 지연 후 continue(실 backend·전용 픽스처 git-repo-mut 통과). 실 응답은 즉시 완료돼 로딩 상태를 잡을 수 없음.
     await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       await route.continue();
@@ -43,14 +44,13 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
   });
 
   test('should restore button to original state and refresh detail data after a successful Reconcile', async ({ page }) => {
+    // 인터셉트가 아닌 관측만으로 상세 재조회 횟수를 센다(정책: 순수 pass-through 라우트 금지).
+    // reconcile 요청은 라우트 없이 실 backend로 나가 전용 픽스처 git-repo-mut를 실제로 reconcile한다.
     let detailFetchCount = 0;
-    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut', async route => {
-      detailFetchCount += 1;
-      await route.continue();
-    });
-
-    await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile', async route => {
-      await route.continue();
+    page.on('request', request => {
+      if (new URL(request.url()).pathname.endsWith('/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut')) {
+        detailFetchCount += 1;
+      }
     });
 
     await page.goto('/fluxcd/gitrepository/dashboard-test/git-repo-mut');
@@ -73,6 +73,7 @@ test.describe('FluxCD Tab - GitRepository Detail - Reconcile Button', () => {
   });
 
   test('should display an error message when the Reconcile API returns an error', async ({ page }) => {
+    // mock-exception: ERR — GitRepository reconcile API 실패(500) 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile', async route => {
       await route.fulfill({
         status: 500,
@@ -172,13 +173,10 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     // Fixture: kust-mut-reconcile (namespace: dashboard-test)
 
     // Arrange: Intercept the reconcile API to hold the loading state long enough to observe it
+    // mock-exception: LAT — 'Reconciling…' 전이 상태 관측 위해 reconcile 응답 지연 후 continue(실 backend·전용 픽스처 kust-mut-reconcile 통과). 실 응답은 즉시 완료돼 로딩 상태를 잡을 수 없음.
     await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Reconciliation triggered' }),
-      });
+      await route.continue();
     });
 
     // Arrange: Navigate directly to the detail page
@@ -211,20 +209,13 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     //   - the detail data is re-fetched (detail API called again)
     // Fixture: kust-mut-reconcile (namespace: dashboard-test)
 
-    // Arrange: Track how many times the detail API is called to verify re-fetch
+    // Arrange: 인터셉트가 아닌 관측만으로 상세 재조회 횟수를 센다(정책: 순수 pass-through 라우트 금지).
+    // reconcile 요청은 라우트 없이 실 backend로 나가 전용 픽스처 kust-mut-reconcile를 실제로 reconcile한다.
     let detailFetchCount = 0;
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile', async route => {
-      detailFetchCount += 1;
-      await route.continue();
-    });
-
-    // Arrange: Reconcile API responds immediately with 200
-    await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Reconciliation triggered' }),
-      });
+    page.on('request', request => {
+      if (new URL(request.url()).pathname.endsWith('/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile')) {
+        detailFetchCount += 1;
+      }
     });
 
     // Arrange: Navigate directly to the detail page
@@ -258,6 +249,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Reconcile Button', () => {
     // Fixture: kust-mut-reconcile (namespace: dashboard-test)
 
     // Arrange: Reconcile API responds with 500
+    // mock-exception: ERR — Kustomization reconcile API 실패(500) 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile', async route => {
       await route.fulfill({
         status: 500,
