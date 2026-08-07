@@ -27,6 +27,7 @@ test.describe('External Secrets Tab - Empty, Error & Loading States', () => {
 
   test('should display ErrorRetry component with retry button when the API returns an error', async ({ page }) => {
     let shouldFail = true;
+    // mock-exception: ERR — ExternalSecret 목록 조회를 첫 호출만 500으로 실패시켜 ErrorRetry·재시도를 검증(플래그 기반, 재시도는 continue로 실 backend). 실클러스터가 요청 시점에 실패하도록 만들 수 없음.
     await page.route('**/api/external-secrets**', async route => {
       if (shouldFail) {
         await route.fulfill({
@@ -61,6 +62,7 @@ test.describe('External Secrets Tab - Empty, Error & Loading States', () => {
   });
 
   test('should display LoadingSkeleton with aria-busy="true" while ExternalSecrets are being fetched', async ({ page }) => {
+    // mock-exception: LAT — ExternalSecret 목록 로딩 스켈레톤(aria-busy) 관측을 위해 응답 지연 주입(본문은 미검증). 실 응답은 즉시 완료돼 관측 불가.
     await page.route('**/api/external-secrets**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.fulfill({

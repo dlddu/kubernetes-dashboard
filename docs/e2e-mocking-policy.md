@@ -61,6 +61,24 @@ namespace로 해결), 플레이키 회피용 모킹(→ 원인 수정), 백엔�
 | 9 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/kustomizations**` (GET, 첫 호출 500) | `ERR` | Kustomization 목록 조회 실패 시 ErrorRetry·재시도 UI 검증. 동일 ERR 사유(재시도는 continue). |
 | 10 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/kustomizations**` (GET, 지연 후 빈 목록 fulfill) | `LAT` | Kustomization 목록 로딩 스켈레톤 관측 위해 응답 지연 주입(본문 미검증, 스켈레톤만 관측). 실 응답 즉시 완료로 관측 불가. |
 | 11 | `e2e/fluxcd-data-states.spec.ts` | `**/api/fluxcd/gitrepositories**` (GET, 지연 후 continue) | `LAT` | 같은 로딩 테스트의 병행 GitRepository 호출도 지연시켜 스켈레톤 유지. 실 응답 즉시 완료로 관측 불가. |
+| 12 | `e2e/fluxcd-reconcile.spec.ts` | `**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile` (POST, 지연 후 continue) | `LAT` | 'Reconciling…' 전이(스피너·버튼 비활성) 관측 위해 응답 지연 후 실 backend로 continue(전용 픽스처 `git-repo-mut`). 실 응답은 즉시 완료돼 전이 상태를 잡을 수 없음. |
+| 13 | `e2e/fluxcd-reconcile.spec.ts` | `**/api/fluxcd/gitrepositories/dashboard-test/git-repo-mut/reconcile` (POST, 500) | `ERR` | GitRepository reconcile 실패 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음. |
+| 14 | `e2e/fluxcd-reconcile.spec.ts` | `**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile` (POST, 지연 후 continue) | `LAT` | 'Reconciling…' 전이 관측 위해 응답 지연 후 실 backend로 continue(전용 픽스처 `kust-mut-reconcile`). 실 응답은 즉시 완료돼 관측 불가. |
+| 15 | `e2e/fluxcd-reconcile.spec.ts` | `**/api/fluxcd/kustomizations/dashboard-test/kust-mut-reconcile/reconcile` (POST, 500) | `ERR` | Kustomization reconcile 실패 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음. |
+| 16 | `e2e/fluxcd-suspend-resume.spec.ts` | `**/api/fluxcd/kustomizations/dashboard-test/kust-mut-suspend/suspend` (POST, 지연 후 continue) | `LAT` | 'Suspending…' 전이 관측 위해 응답 지연 후 실 backend로 continue(전용 픽스처 `kust-mut-suspend`, 테스트 말미 cleanup으로 resume). 실 응답은 즉시 완료돼 관측 불가. |
+| 17 | `e2e/fluxcd-suspend-resume.spec.ts` | `**/api/fluxcd/kustomizations/dashboard-test/kust-mut-resume/resume` (POST, 지연 후 continue) | `LAT` | 'Resuming…' 전이 관측 위해 응답 지연 후 실 backend로 continue(전용 픽스처 `kust-mut-resume`, cleanup으로 재suspend). 실 응답은 즉시 완료돼 관측 불가. |
+| 18 | `e2e/fluxcd-suspend-resume.spec.ts` | `**/api/fluxcd/kustomizations/dashboard-test/kust-mut-suspend/suspend` (POST, 500) | `ERR` | Suspend 실패 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음. |
+| 19 | `e2e/fluxcd-suspend-resume.spec.ts` | `**/api/fluxcd/kustomizations/dashboard-test/kust-mut-resume/resume` (POST, 500) | `ERR` | Resume 실패 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음. |
+| 20 | `e2e/argo-data-states.spec.ts` | `**/api/argo/workflows**` (GET, 지연 후 빈 목록 fulfill) | `LAT` | Workflow 목록 로딩 스켈레톤 관측 위해 응답 지연 주입(본문 미검증, 스켈레톤만 관측). 실 응답 즉시 완료로 관측 불가. |
+| 21 | `e2e/argo-data-states.spec.ts` | `**/api/argo/workflows**` (GET, 첫 호출 500) | `ERR` | Workflow 목록 조회 실패 시 ErrorRetry·재시도 검증(플래그 기반, 재시도는 continue로 실 backend). 실클러스터가 요청 시점에 실패하도록 만들 수 없음. |
+| 22 | `e2e/argo-data-states.spec.ts` | `**/api/argo/workflows/data-processing-running**` (GET, 지연 후 continue) | `LAT` | Workflow 상세 로딩 스켈레톤 관측 위해 응답 지연 후 continue(실 fixture `data-processing-running` 통과). 실 응답 즉시 완료로 관측 불가. |
+| 23 | `e2e/argo-data-states.spec.ts` | `**/api/argo/workflows/data-processing-running**` (GET, 첫 호출 500) | `ERR` | Workflow 상세 조회 실패 시 ErrorRetry·재시도 검증(재시도는 continue로 실 fixture 통과). 실클러스터가 요청 시점에 500을 내도록 만들 수 없음. |
+| 24 | `e2e/argo-data-states.spec.ts` | `**/api/argo/workflow-templates**` (GET, 지연 후 빈 목록 fulfill) | `LAT` | WorkflowTemplate 목록 로딩 스켈레톤 관측 위해 응답 지연 주입(본문 미검증). 실 응답 즉시 완료로 관측 불가. |
+| 25 | `e2e/argo-data-states.spec.ts` | `**/api/argo/workflow-templates**` (GET, 500) | `ERR` | WorkflowTemplate 목록 조회 실패 시 ErrorRetry UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음. |
+| 26 | `e2e/external-secrets-data-states.spec.ts` | `**/api/external-secrets**` (GET, 첫 호출 500) | `ERR` | ExternalSecret 목록 조회 실패 시 ErrorRetry·재시도 검증(플래그 기반, 재시도는 continue로 실 backend). 실클러스터가 요청 시점에 실패하도록 만들 수 없음. |
+| 27 | `e2e/external-secrets-data-states.spec.ts` | `**/api/external-secrets**` (GET, 지연 후 빈 목록 fulfill) | `LAT` | ExternalSecret 목록 로딩 스켈레톤(aria-busy) 관측 위해 응답 지연 주입(본문 미검증). 실 응답 즉시 완료로 관측 불가. |
+| 28 | `e2e/argo-submit.spec.ts` | `**/api/argo/workflow-templates/simple-template/submit` (POST, 첫 호출 500 → 재시도 200 fulfill) | `ERR` | submit 실패 시 에러 뷰·Retry 재시도 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없고, 재시도 성공 응답까지 실 submit으로 흘리면 클러스터에 워크플로가 생성돼 다른 spec을 오염시킴(`DES` 성격). |
+| 29 | `e2e/argo-submit.spec.ts` | `**/api/argo/workflow-templates/simple-template/submit` (POST, 지연 후 200 fulfill) | `LAT` | in-flight(확인 버튼 비활성·스피너) 상태 관측 위해 응답 지연 필요. 실 응답 즉시 완료로 관측 불가하며, 실 submit은 워크플로를 생성해 다른 spec을 오염시킴(`DES` 성격). |
 
 ## 미판정 인터셉트 (후속 — 허용목록 아님)
 
@@ -73,16 +91,17 @@ namespace로 대체해 **제거**한다. 판정 기준: 에러·재시도 UI를 
 어느 카테고리에도 들지 않으므로 `page.on('request', …)` 등 비인터셉트 수단으로 대체해 제거한다.
 
 > 판정 완료·등재된 파일은 위 허용목록으로 이동한다. `fluxcd-detail.spec.ts`(ERR ×2)와
-> `fluxcd-data-states.spec.ts`(ERR ×2·LAT ×3)는 rct_20260731-0001 슬라이스에서 판정·등재돼
-> 아래 목록에서 제외됐다.
+> `fluxcd-data-states.spec.ts`(ERR ×2·LAT ×3)는 rct_20260731-0001 슬라이스에서,
+> `fluxcd-reconcile.spec.ts`(LAT ×2·ERR ×2)·`fluxcd-suspend-resume.spec.ts`(LAT ×2·ERR ×2)·
+> `argo-data-states.spec.ts`(LAT ×3·ERR ×3)·`external-secrets-data-states.spec.ts`(ERR ×1·LAT ×1)·
+> `argo-submit.spec.ts`(ERR ×1·LAT ×1)는 rct_20260807-0001 슬라이스에서 판정·등재돼 아래 목록에서
+> 제외됐다. 같은 슬라이스에서 부당한 인터셉트 5곳도 제거했다 — 순수 pass-through 요청 카운터 3곳
+> (`fluxcd-reconcile` ×2 · `fluxcd-suspend-resume` ×1)은 `page.on('request', …)` 관측으로 대체하고,
+> no-op `continue`-only 라우트 1곳과 편의성 200 `fulfill` 1곳(`fluxcd-reconcile`)은 삭제해 실
+> mutation 픽스처(`kust-mut-reconcile`)로 흘려보냈다.
 
 | 파일 | 인터셉트 호출 수 |
 |------|:---------------:|
-| `e2e/fluxcd-reconcile.spec.ts` | 16 |
-| `e2e/argo-data-states.spec.ts` | 14 |
-| `e2e/fluxcd-suspend-resume.spec.ts` | 12 |
-| `e2e/external-secrets-data-states.spec.ts` | 5 |
-| `e2e/argo-submit.spec.ts` | 5 |
 | `e2e/pods-hide-completed.spec.ts` | 2 |
 
 > 이 섹션은 비규범(informational)이며 허용목록이 아니다. 여기 나열된 인터셉트는

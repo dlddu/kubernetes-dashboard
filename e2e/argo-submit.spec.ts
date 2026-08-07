@@ -233,6 +233,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
 
     // Arrange: First call fails, second call succeeds
     let submitCallCount = 0;
+    // mock-exception: ERR — submit API 첫 호출을 500으로 실패시켜 에러 뷰·Retry 재시도를 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없고, 재시도 성공 응답은 실 submit이 클러스터에 워크플로를 생성해 다른 spec을 오염시키므로 fulfill로 대체한다.
     await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
       submitCallCount += 1;
       if (submitCallCount === 1) {
@@ -287,6 +288,7 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
     // and a loading spinner is visible, preventing duplicate submissions
 
     // Arrange: Mock submit API with a deliberate delay to observe in-flight state
+    // mock-exception: LAT — in-flight(버튼 비활성·스피너) 상태 관측을 위해 submit 응답 지연 주입. 실 응답은 즉시 완료돼 관측 불가하며, 실 submit은 클러스터에 워크플로를 생성해 다른 spec을 오염시키므로 fulfill로 대체한다.
     await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.fulfill({

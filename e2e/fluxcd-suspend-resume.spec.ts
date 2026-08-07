@@ -60,6 +60,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Suspend/Resume Button', () =>
 
     try {
       // Arrange: Delay the suspend request (but forward to the real backend)
+      // mock-exception: LAT — 'Suspending…' 전이 상태 관측 위해 suspend 응답 지연 후 continue(실 backend·전용 픽스처 kust-mut-suspend 통과). 실 응답은 즉시 완료돼 로딩 상태를 잡을 수 없음.
       await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-suspend/suspend', async route => {
         await new Promise(resolve => setTimeout(resolve, 2000));
         await route.continue();
@@ -98,6 +99,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Suspend/Resume Button', () =>
 
     try {
       // Arrange: Delay the resume request (but forward to the real backend)
+      // mock-exception: LAT — 'Resuming…' 전이 상태 관측 위해 resume 응답 지연 후 continue(실 backend·전용 픽스처 kust-mut-resume 통과). 실 응답은 즉시 완료돼 로딩 상태를 잡을 수 없음.
       await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-resume/resume', async route => {
         await new Promise(resolve => setTimeout(resolve, 2000));
         await route.continue();
@@ -132,16 +134,17 @@ test.describe('FluxCD Tab - Kustomization Detail - Suspend/Resume Button', () =>
     //   - the detail data is re-fetched (detail API called again)
     // Fixture: kust-mut-suspend (namespace: dashboard-test)
     //
-    // No 200 mocking: the suspend call hits the real backend. The detail
-    // route is only a pass-through counter, not a mock. Cleanup resumes
-    // the fixture after the test.
+    // No 200 mocking: the suspend call hits the real backend. 상세 재조회 횟수는
+    // 인터셉트가 아닌 page.on('request') 관측으로 센다(정책: 순수 pass-through 라우트 금지).
+    // Cleanup resumes the fixture after the test.
 
     try {
       // Arrange: Track how many times the detail API is called to verify re-fetch
       let detailFetchCount = 0;
-      await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-suspend', async route => {
-        detailFetchCount += 1;
-        await route.continue();
+      page.on('request', request => {
+        if (new URL(request.url()).pathname.endsWith('/api/fluxcd/kustomizations/dashboard-test/kust-mut-suspend')) {
+          detailFetchCount += 1;
+        }
       });
 
       // Arrange: Navigate directly to the detail page
@@ -174,6 +177,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Suspend/Resume Button', () =>
     // Fixture: kust-mut-suspend (namespace: dashboard-test)
 
     // Arrange: Suspend API responds with 500
+    // mock-exception: ERR — Suspend API 실패(500) 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-suspend/suspend', async route => {
       await route.fulfill({
         status: 500,
@@ -213,6 +217,7 @@ test.describe('FluxCD Tab - Kustomization Detail - Suspend/Resume Button', () =>
     // Fixture: kust-mut-resume (namespace: dashboard-test)
 
     // Arrange: Resume API responds with 500
+    // mock-exception: ERR — Resume API 실패(500) 시 에러 메시지 UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/fluxcd/kustomizations/dashboard-test/kust-mut-resume/resume', async route => {
       await route.fulfill({
         status: 500,

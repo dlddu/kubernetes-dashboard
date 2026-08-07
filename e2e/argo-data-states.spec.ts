@@ -43,6 +43,7 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
     // Tests that LoadingSkeleton with aria-busy="true" is shown during the API request
 
     // Arrange: Intercept the workflows API and delay the response to observe loading state
+    // mock-exception: LAT — Workflow 목록 로딩 스켈레톤 관측을 위해 응답 지연 주입(본문은 미검증, 스켈레톤 상태만 관측). 실 응답은 즉시 완료돼 관측 불가.
     await page.route('**/api/argo/workflows**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.fulfill({
@@ -103,6 +104,7 @@ test.describe('Argo Tab - Workflow List - Loading, Empty & Error States', () => 
     // and a counter-based strategy would only fail the first call while the
     // second concurrent call succeeds — causing a race condition.
     let shouldFail = true;
+    // mock-exception: ERR — Workflow 목록 조회를 첫 호출만 500으로 실패시켜 ErrorRetry·재시도를 검증(플래그 기반, 재시도는 continue로 실 backend). 실클러스터가 요청 시점에 실패하도록 만들 수 없음.
     await page.route('**/api/argo/workflows**', async route => {
       if (shouldFail) {
         await route.fulfill({
@@ -162,6 +164,7 @@ test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
     // detail API request is in-flight (simulated with a 3-second delay).
 
     // Arrange: Intercept the detail API with a deliberate delay, then pass to real API
+    // mock-exception: LAT — Workflow 상세 로딩 스켈레톤 관측을 위해 응답 지연 후 continue(실 fixture data-processing-running 통과). 실 응답은 즉시 완료돼 관측 불가.
     await page.route('**/api/argo/workflows/data-processing-running**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.continue();
@@ -188,6 +191,7 @@ test.describe('Argo Tab - Workflow Detail - Loading and Error States', () => {
 
     // Arrange: First call fails with 500, second call passes through to real API
     let detailCallCount = 0;
+    // mock-exception: ERR — Workflow 상세 조회 첫 호출을 500으로 실패시켜 ErrorRetry·재시도를 검증(재시도는 continue로 실 fixture 통과). 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/argo/workflows/data-processing-running**', async route => {
       detailCallCount += 1;
       if (detailCallCount === 1) {
@@ -245,6 +249,7 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
     // Tests that LoadingSkeleton is shown during the API request
 
     // Arrange: Intercept the workflow templates API and delay the response
+    // mock-exception: LAT — WorkflowTemplate 목록 로딩 스켈레톤 관측을 위해 응답 지연 주입(본문은 미검증). 실 응답은 즉시 완료돼 관측 불가.
     await page.route('**/api/argo/workflow-templates**', async route => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await route.fulfill({
@@ -298,6 +303,7 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
     // Tests that ErrorRetry is rendered and the retry button is functional on API failure
 
     // Arrange: Mock the workflow templates API to return a 500 error
+    // mock-exception: ERR — WorkflowTemplate 목록 조회 실패(500) 시 ErrorRetry UI 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없음.
     await page.route('**/api/argo/workflow-templates**', async route => {
       await route.fulfill({
         status: 500,
