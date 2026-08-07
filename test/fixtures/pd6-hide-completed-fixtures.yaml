@@ -1,0 +1,268 @@
+# Dedicated PD6 ("Hide Completed" toggle) fixtures — reconcile rct_20260807-0002
+# (tbm_kubernetes-dashboard-e2e-mock-policy).
+#
+# e2e/pods-hide-completed.spec.ts used to fulfill GET /api/pods/all with a synthetic
+# pod list. That is data mocking, which docs/e2e-mocking-policy.md explicitly disallows
+# ("목록·개수·상태 조합을 고정하려는 데이터 모킹(→ fixture 또는 전용 namespace로 해결)").
+#
+# The spec needs three MUTUALLY EXCLUSIVE pod-state combinations, so one shared namespace
+# cannot serve them. Each combination therefore gets its own namespace and the spec deep
+# links to it via /pods?namespace=<ns> (NamespaceContext treats the URL as the source of
+# truth; fetchAllPods scopes the request server-side with ?ns=).
+#
+#   dashboard-pd6-mixed      2 Running + 2 completed  → toggle hides only the completed ones
+#   dashboard-pd6-completed  2 completed              → toggle empties the list ("all completed")
+#   dashboard-pd6-running    2 Running                → toggle is not rendered at all
+#
+# Completed pods follow the completed-pod.yaml idiom (busybox + restartPolicy: Never), so
+# they settle in phase Succeeded with container terminated reason "Completed". The backend's
+# getPodStatus() prefers the container reason over the phase, so the dashboard shows them as
+# "Completed", which the frontend's COMPLETED_STATUSES (['succeeded', 'completed']) matches.
+#
+# Only pods-hide-completed.spec.ts reads these namespaces, and the sole destructive cleanup
+# in the suite (pod-cleanup.spec.ts "Cleanup Execution") is scoped to dashboard-test, so
+# nothing deletes these pods mid-run under workers: 4.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dashboard-pd6-mixed
+  labels:
+    app: kubernetes-dashboard
+    env: test
+    purpose: e2e-testing
+  annotations:
+    description: "PD6 fixture — running and completed pods coexist"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dashboard-pd6-completed
+  labels:
+    app: kubernetes-dashboard
+    env: test
+    purpose: e2e-testing
+  annotations:
+    description: "PD6 fixture — every pod is completed"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dashboard-pd6-running
+  labels:
+    app: kubernetes-dashboard
+    env: test
+    purpose: e2e-testing
+  annotations:
+    description: "PD6 fixture — no completed pods at all"
+---
+# --- dashboard-pd6-mixed: 2 Running + 2 completed -----------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-mixed-running-1
+  namespace: dashboard-pd6-mixed
+  labels:
+    app: pd6-fixture
+    env: test
+    type: running
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "while true; do sleep 60; done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-mixed-running-2
+  namespace: dashboard-pd6-mixed
+  labels:
+    app: pd6-fixture
+    env: test
+    type: running
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "while true; do sleep 60; done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-mixed-done-1
+  namespace: dashboard-pd6-mixed
+  labels:
+    app: pd6-fixture
+    env: test
+    type: completed
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "echo done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-mixed-done-2
+  namespace: dashboard-pd6-mixed
+  labels:
+    app: pd6-fixture
+    env: test
+    type: completed
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "echo done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Never
+---
+# --- dashboard-pd6-completed: completed only ----------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-all-done-1
+  namespace: dashboard-pd6-completed
+  labels:
+    app: pd6-fixture
+    env: test
+    type: completed
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "echo done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-all-done-2
+  namespace: dashboard-pd6-completed
+  labels:
+    app: pd6-fixture
+    env: test
+    type: completed
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "echo done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Never
+---
+# --- dashboard-pd6-running: running only --------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-only-running-1
+  namespace: dashboard-pd6-running
+  labels:
+    app: pd6-fixture
+    env: test
+    type: running
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "while true; do sleep 60; done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pd6-only-running-2
+  namespace: dashboard-pd6-running
+  labels:
+    app: pd6-fixture
+    env: test
+    type: running
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - "while true; do sleep 60; done"
+    resources:
+      requests:
+        memory: "16Mi"
+        cpu: "25m"
+      limits:
+        memory: "32Mi"
+        cpu: "50m"
+  restartPolicy: Always

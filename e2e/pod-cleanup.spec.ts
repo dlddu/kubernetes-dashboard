@@ -299,8 +299,14 @@ test.describe('Pod Cleanup - Accessibility', () => {
 // They are placed last to avoid affecting other tests in this file.
 test.describe('Pod Cleanup - Cleanup Execution', () => {
   test('should execute cleanup and remove terminal pods from the list', async ({ page }) => {
-    // Arrange: Navigate to the Pods page
-    await page.goto('/pods');
+    // Arrange: Navigate to the Pods page SCOPED to dashboard-test.
+    // Unscoped, the page posts /api/pods/cleanup without ?ns=, which deletes terminal pods
+    // cluster-wide — that would eat the completed pods in the dedicated PD6 namespaces
+    // (test/fixtures/pd6-hide-completed-fixtures.yaml) and race pods-hide-completed.spec.ts
+    // under workers: 4. Scoping keeps this real deletion inside this spec's own fixtures,
+    // the same isolation principle as secret-mut-fixtures.yaml / fluxcd-mut-fixtures.yaml.
+    // All three assertion targets below live in dashboard-test, so the assertions are unchanged.
+    await page.goto('/pods?namespace=dashboard-test');
     await page.waitForLoadState('networkidle');
 
     // Get initial cleanup target count

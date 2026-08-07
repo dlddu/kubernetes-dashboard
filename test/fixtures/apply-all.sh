@@ -60,6 +60,12 @@ kubectl apply -f "$SCRIPT_DIR/verbose-pod.yaml"
 log_info "Creating completed and failed pods (will reach Succeeded/Failed state)..."
 kubectl apply -f "$SCRIPT_DIR/completed-pod.yaml"
 
+# 3.2 Apply dedicated PD6 "Hide Completed" fixtures (see the file header): three
+# namespaces whose pod-state combinations pods-hide-completed.spec.ts deep links to,
+# replacing the /api/pods/all response mock it used to install.
+log_info "Creating PD6 hide-completed fixtures (dedicated namespaces)..."
+kubectl apply -f "$SCRIPT_DIR/pd6-hide-completed-fixtures.yaml"
+
 # 4. Apply unhealthy pods (intentionally fail for testing)
 log_info "Creating unhealthy pods (will remain in ImagePullBackOff state)..."
 kubectl apply -f "$SCRIPT_DIR/unhealthy-pod.yaml"
@@ -87,6 +93,26 @@ kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/completed-test-pod-1
 kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/completed-test-pod-2 -n dashboard-test --timeout=60s
 kubectl wait --for=jsonpath='{.status.phase}'=Failed pod/failed-test-pod-1 -n dashboard-test --timeout=60s
 
+# Wait for the PD6 fixture namespaces and their pods to settle. The spec asserts exact
+# card counts per namespace, so every pod must have reached its terminal/ready state
+# before Playwright starts.
+log_info "Waiting for PD6 hide-completed fixture namespaces to be active..."
+kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-pd6-mixed --timeout=30s
+kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-pd6-completed --timeout=30s
+kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/dashboard-pd6-running --timeout=30s
+
+log_info "Waiting for PD6 running pods to be ready..."
+kubectl wait --for=condition=Ready pod/pd6-mixed-running-1 -n dashboard-pd6-mixed --timeout=60s
+kubectl wait --for=condition=Ready pod/pd6-mixed-running-2 -n dashboard-pd6-mixed --timeout=60s
+kubectl wait --for=condition=Ready pod/pd6-only-running-1 -n dashboard-pd6-running --timeout=60s
+kubectl wait --for=condition=Ready pod/pd6-only-running-2 -n dashboard-pd6-running --timeout=60s
+
+log_info "Waiting for PD6 completed pods to reach Succeeded..."
+kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/pd6-mixed-done-1 -n dashboard-pd6-mixed --timeout=60s
+kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/pd6-mixed-done-2 -n dashboard-pd6-mixed --timeout=60s
+kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/pd6-all-done-1 -n dashboard-pd6-completed --timeout=60s
+kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/pd6-all-done-2 -n dashboard-pd6-completed --timeout=60s
+
 # Wait for terminating-test-pod to be ready, then delete it to enter Terminating state
 log_info "Waiting for terminating-test-pod to be ready..."
 kubectl wait --for=condition=Ready pod/terminating-test-pod -n dashboard-test --timeout=60s
@@ -100,6 +126,12 @@ log_warn "Note: unhealthy-test-pod-1~4 are intentionally configured to fail (Ima
 log_warn "Note: completed-test-pod-1~2 are in Succeeded state (for cleanup testing)"
 log_warn "Note: failed-test-pod-1 is in Failed state (for cleanup testing)"
 log_warn "Note: terminating-test-pod is in Terminating state (long terminationGracePeriodSeconds)"
+log_warn "Note: dashboard-pd6-{mixed,completed,running} hold the PD6 hide-completed fixtures"
+echo ""
+log_info "PD6 fixture pod status:"
+kubectl get pods -n dashboard-pd6-mixed -o wide || true
+kubectl get pods -n dashboard-pd6-completed -o wide || true
+kubectl get pods -n dashboard-pd6-running -o wide || true
 echo ""
 log_info "Resources in dashboard-test namespace:"
 kubectl get all,secrets,configmaps -n dashboard-test
