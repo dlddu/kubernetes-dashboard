@@ -55,8 +55,8 @@
 - **실행 단계**: 오버뷰 진입 → 화면이 정상 렌더되고 사용률이 폴백 값으로 표시되는지 확인.
 - **기대 결과**: 빈 화면/에러 없이 capacity-allocatable 기반 폴백 사용률 표시.
 - **검증 AC**: OV7
-- **자동화**: ⚠️ **공백** (OV7) — 메트릭 서버 부재 폴백 전용 e2e 없음. kind에 metrics-server가 상주해 부재 분기를 실환경에서 재현할 수 없고, 응답 전체를 데이터-모킹하는 방식은 `docs/e2e-mocking-policy.md`의 명시적 불허(데이터 모킹)에 해당해 채택하지 않았다. 해소에는 metrics-server 부재 kind 프로파일 신설 또는 mock-policy 예외 승인 중 하나의 선결 결정이 필요(후속 task). 백엔드 폴백 계산은 `handlers/overview_test.go`가 유닛 커버.
+- **자동화**: `e2e/overview-metrics-fallback.spec.ts` (OV7 전용) — metrics-server 부재 kind 프로파일에서 실환경 재현. CI E2E 매트릭스의 `no-metrics` leg가 `INSTALL_METRICS_SERVER=false`로 생성한 전용 클러스터(별도 러너)에서 이 스펙만(`--project=no-metrics`) 실행하므로 metrics 의존 스펙(OV1 등)은 영향받지 않는다. 데이터-모킹 없이(인터셉트 0) 오버뷰가 정상 렌더되고 사용률이 capacity-allocatable 폴백 값으로 표시됨을 단정. 백엔드 폴백 계산은 `handlers/overview_test.go`가 유닛 커버.
 
 ## 커버리지 요약
-- 자동화 연결됨(전용 스펙 1:1): OV1·OV2·OV3·OV4·OV5·OV6
-- 자동화 공백: OV7
+- 자동화 연결됨(전용 스펙 1:1): OV1·OV2·OV3·OV4·OV5·OV6·OV7
+- 자동화 공백: 없음

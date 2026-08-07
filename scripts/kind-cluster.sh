@@ -6,6 +6,9 @@ set -euo pipefail
 CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubernetes-dashboard-e2e}"
 KIND_CONFIG_FILE="${KIND_CONFIG_FILE:-/tmp/kind-config.yaml}"
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/config}"
+# When "false", skip installing metrics-server so the cluster reproduces the
+# metrics-server-absent environment exercised by the OV7 fallback e2e spec.
+INSTALL_METRICS_SERVER="${INSTALL_METRICS_SERVER:-true}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -85,8 +88,12 @@ create_cluster() {
 
     log_info "Cluster created successfully"
 
-    # Install metrics-server
-    install_metrics_server
+    # Install metrics-server (skipped for the OV7 metrics-server-absent profile)
+    if [ "$INSTALL_METRICS_SERVER" = "true" ]; then
+        install_metrics_server
+    else
+        log_warn "Skipping metrics-server installation (INSTALL_METRICS_SERVER=$INSTALL_METRICS_SERVER) — OV7 fallback profile"
+    fi
 
     # Install Argo Workflows CRDs
     install_argo_crds

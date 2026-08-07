@@ -46,16 +46,17 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // OV7 (metrics-server-absent fallback) runs only in the 'no-metrics' project.
+      // Exclude it here so the default metrics-present profile does not run it.
+      testIgnore: '**/overview-metrics-fallback.spec.ts',
     },
-    // Uncomment to test on other browsers
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
+    {
+      // OV7 only. The CI E2E matrix runs this project against a kind cluster
+      // created with INSTALL_METRICS_SERVER=false (scripts/kind-cluster.sh).
+      name: 'no-metrics',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/overview-metrics-fallback.spec.ts',
+    },
   ],
 
   // Run local dev server before starting the tests

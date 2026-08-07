@@ -14,9 +14,24 @@ env:
 
 jobs:
   e2e-test:
-    name: E2E Tests with kind
+    name: E2E Tests with kind (${{ matrix.profile }})
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Metrics-server present: the full suite except the OV7 fallback spec.
+          - profile: default
+            install_metrics: "true"
+            pw_project: chromium
+            artifact_suffix: ""
+          # Metrics-server absent: only the OV7 fallback spec (real-env fallback).
+          - profile: no-metrics
+            install_metrics: "false"
+            pw_project: no-metrics
+            artifact_suffix: "-no-metrics"
 
     steps:
       - name: Checkout code
@@ -52,6 +67,8 @@ jobs:
           kubectl version --client
 
       - name: Create kind cluster
+        env:
+          INSTALL_METRICS_SERVER: ${{ matrix.install_metrics }}
         run: |
           ./scripts/kind-cluster.sh create
           ./scripts/kind-cluster.sh export-kubeconfig $KUBECONFIG
@@ -59,6 +76,7 @@ jobs:
           kubectl get nodes
 
       - name: Wait for metrics-server
+        if: matrix.profile == 'default'
         run: |
           echo "Waiting for metrics-server to serve node metrics..."
           for i in $(seq 1 60); do
@@ -111,14 +129,14 @@ jobs:
       - name: Run Playwright E2E tests
         run: |
           export BASE_URL=http://localhost:${{ env.E2E_PORT }}
-          npx playwright test
+          npx playwright test --project=${{ matrix.pw_project }}
 
       # ---- Artifacts and Cleanup ----
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report${{ matrix.artifact_suffix }}
           path: playwright-report/
           retention-days: 7
 
@@ -126,7 +144,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-results
+          name: playwright-results${{ matrix.artifact_suffix }}
           path: test-results/
           retention-days: 7
 
