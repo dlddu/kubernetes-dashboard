@@ -1,5 +1,5 @@
 // Verifies: PD6 (docs/product/prd-pods.md) — sole dedicated e2e spec for this AC.
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 /**
  * E2E Tests for the "Hide Completed" pod filter (PD6: 완료 파드 숨김 토글).
@@ -10,10 +10,21 @@ import { test, expect, type Page } from '@playwright/test';
  * (client-side `filteredPods`); if every pod is completed, an
  * "All pods are completed…" empty state is shown instead.
  *
- * These are pure client-side filter assertions, so the pod list is injected
- * deterministically by mocking `GET /api/pods/all` (fetchAllPods → buildURL
- * '/api/pods/all') with route.fulfill — no cluster fixture dependency, and the
- * mock only intercepts this page's own requests (race-safe under workers:4).
+ * Test Fixtures (test/fixtures/pd6-hide-completed-fixtures.yaml):
+ * - dashboard-pd6-mixed:     2 Running + 2 completed pods
+ * - dashboard-pd6-completed: 2 completed pods only
+ * - dashboard-pd6-running:   2 Running pods only
+ *
+ * The three cases need mutually exclusive pod-state combinations, so each gets its own
+ * namespace and this spec deep links to it with `/pods?namespace=<ns>` (NamespaceContext
+ * treats the URL as the source of truth; fetchAllPods scopes the request server-side via
+ * `?ns=`). That keeps the counts below exact without mocking `GET /api/pods/all` — data
+ * mocking is disallowed by docs/e2e-mocking-policy.md, which names fixtures and dedicated
+ * namespaces as the required alternative.
+ *
+ * The completed pods run `busybox … echo done` with restartPolicy: Never, so they settle in
+ * phase Succeeded with container terminated reason "Completed"; the backend's getPodStatus()
+ * reports the container reason, which COMPLETED_STATUSES matches.
  *
  * Distinct from sibling pods specs: pods.spec.ts (PD1, list rendering),
  * pod-cleanup.spec.ts (PD5, cleanup — its "coexistence" block exercises the
@@ -21,52 +32,14 @@ import { test, expect, type Page } from '@playwright/test';
  * This spec is the dedicated owner of the PD6 hide-completed toggle behaviour.
  */
 
-interface MockPod {
-  name: string;
-  namespace: string;
-  status: string;
-  restarts: number;
-  node: string;
-  age: string;
-  containers: string[];
-  initContainers: string[];
-}
-
-function pod(name: string, status: string): MockPod {
-  return {
-    name,
-    namespace: 'dashboard-test',
-    status,
-    restarts: 0,
-    node: 'kind-control-plane',
-    age: '5m',
-    containers: ['app'],
-    initContainers: [],
-  };
-}
-
-/** Register the /api/pods/all mock before navigation. */
-async function mockPods(page: Page, pods: MockPod[]) {
-  await page.route('**/api/pods/all**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(pods),
-    });
-  });
-}
+const MIXED_NS = 'dashboard-pd6-mixed';
+const ALL_COMPLETED_NS = 'dashboard-pd6-completed';
+const NO_COMPLETED_NS = 'dashboard-pd6-running';
 
 test.describe('Pods Tab - Hide Completed Toggle (PD6)', () => {
   test('hides completed pods and keeps running pods when toggled on', async ({ page }) => {
-    // Arrange: two Running + two Succeeded (completed) pods.
-    await mockPods(page, [
-      pod('web-1', 'Running'),
-      pod('web-2', 'Running'),
-      pod('job-done-1', 'Succeeded'),
-      pod('job-done-2', 'Succeeded'),
-    ]);
-
-    await page.goto('/pods');
+    // Arrange: the mixed fixture namespace holds two Running + two completed pods.
+    await page.goto(`/pods?namespace=${MIXED_NS}`);
     await page.waitForLoadState('networkidle');
 
     // Assert: toggle is present and reports the completed count (2).
@@ -83,27 +56,22 @@ test.describe('Pods Tab - Hide Completed Toggle (PD6)', () => {
 
     // Assert: only the two Running pods remain; the completed ones are hidden.
     await expect(cards).toHaveCount(2);
-    await expect(page.getByTestId('pod-name').filter({ hasText: 'web-1' })).toBeVisible();
-    await expect(page.getByTestId('pod-name').filter({ hasText: 'web-2' })).toBeVisible();
-    await expect(page.getByTestId('pod-name').filter({ hasText: 'job-done-1' })).toHaveCount(0);
-    await expect(page.getByTestId('pod-name').filter({ hasText: 'job-done-2' })).toHaveCount(0);
+    await expect(page.getByTestId('pod-name').filter({ hasText: 'pd6-mixed-running-1' })).toBeVisible();
+    await expect(page.getByTestId('pod-name').filter({ hasText: 'pd6-mixed-running-2' })).toBeVisible();
+    await expect(page.getByTestId('pod-name').filter({ hasText: 'pd6-mixed-done-1' })).toHaveCount(0);
+    await expect(page.getByTestId('pod-name').filter({ hasText: 'pd6-mixed-done-2' })).toHaveCount(0);
 
     // Act: turn the filter back off.
     await toggle.click();
 
     // Assert: the completed pods reappear.
     await expect(cards).toHaveCount(4);
-    await expect(page.getByTestId('pod-name').filter({ hasText: 'job-done-1' })).toBeVisible();
+    await expect(page.getByTestId('pod-name').filter({ hasText: 'pd6-mixed-done-1' })).toBeVisible();
   });
 
   test('shows the "all completed" empty state when every pod is hidden', async ({ page }) => {
-    // Arrange: only completed pods.
-    await mockPods(page, [
-      pod('job-done-1', 'Succeeded'),
-      pod('job-done-2', 'Completed'),
-    ]);
-
-    await page.goto('/pods');
+    // Arrange: this fixture namespace holds only completed pods.
+    await page.goto(`/pods?namespace=${ALL_COMPLETED_NS}`);
     await page.waitForLoadState('networkidle');
 
     const toggle = page.getByTestId('hide-completed-toggle');
@@ -122,13 +90,8 @@ test.describe('Pods Tab - Hide Completed Toggle (PD6)', () => {
   });
 
   test('does not render the toggle when there are no completed pods', async ({ page }) => {
-    // Arrange: only Running pods → completedCount === 0.
-    await mockPods(page, [
-      pod('web-1', 'Running'),
-      pod('web-2', 'Running'),
-    ]);
-
-    await page.goto('/pods');
+    // Arrange: this fixture namespace holds only Running pods → completedCount === 0.
+    await page.goto(`/pods?namespace=${NO_COMPLETED_NS}`);
     await page.waitForLoadState('networkidle');
 
     // Assert: the pods rendered, but the toggle is absent (rendered only when completedCount > 0).

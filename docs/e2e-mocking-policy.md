@@ -82,27 +82,34 @@ namespace로 해결), 플레이키 회피용 모킹(→ 원인 수정), 백엔�
 
 ## 미판정 인터셉트 (후속 — 허용목록 아님)
 
-아래 파일들의 인터셉트는 **아직 판정되지 않았다**(등재 아님 = 현재 정책상 drift). 후속
-reconciler slice가 카테고리별로 판정해 (해당하면) 등재+주석하거나, 아니면 fixture·전용
-namespace로 대체해 **제거**한다. 판정 기준: 에러·재시도 UI를 위한 500 주입은 `ERR`,
-로딩·스켈레톤 관측을 위한 지연 주입은 `LAT`로 **등재**(정당 예외)하고, 목록·개수·상태
-조합을 고정하려는 편의 데이터 모킹(예: `pods-hide-completed`가 파드 목록 전체 `fulfill`)은
-**제거**한다. 순수 관측용 pass-through 인터셉트(`route.continue`만 하는 요청 카운터 등)는
-어느 카테고리에도 들지 않으므로 `page.on('request', …)` 등 비인터셉트 수단으로 대체해 제거한다.
+**현재 0건.** `e2e/**/*.ts`에 실재하는 인터셉트는 전부 위 허용목록에 등재돼 있고, 허용목록에
+고아 등재도 없다 — **등재 29 ↔ 코드 `// mock-exception:` 주석 29로 양방향 1:1이 성립한다.**
 
-> 판정 완료·등재된 파일은 위 허용목록으로 이동한다. `fluxcd-detail.spec.ts`(ERR ×2)와
-> `fluxcd-data-states.spec.ts`(ERR ×2·LAT ×3)는 rct_20260731-0001 슬라이스에서,
-> `fluxcd-reconcile.spec.ts`(LAT ×2·ERR ×2)·`fluxcd-suspend-resume.spec.ts`(LAT ×2·ERR ×2)·
-> `argo-data-states.spec.ts`(LAT ×3·ERR ×3)·`external-secrets-data-states.spec.ts`(ERR ×1·LAT ×1)·
-> `argo-submit.spec.ts`(ERR ×1·LAT ×1)는 rct_20260807-0001 슬라이스에서 판정·등재돼 아래 목록에서
-> 제외됐다. 같은 슬라이스에서 부당한 인터셉트 5곳도 제거했다 — 순수 pass-through 요청 카운터 3곳
-> (`fluxcd-reconcile` ×2 · `fluxcd-suspend-resume` ×1)은 `page.on('request', …)` 관측으로 대체하고,
-> no-op `continue`-only 라우트 1곳과 편의성 200 `fulfill` 1곳(`fluxcd-reconcile`)은 삭제해 실
-> mutation 픽스처(`kust-mut-reconcile`)로 흘려보냈다.
+이 절은 새 인터셉트가 판정 전에 들어왔을 때를 위한 자리로 남겨 둔다. 판정 기준: 에러·재시도
+UI를 위한 500 주입은 `ERR`, 로딩·스켈레톤 관측을 위한 지연 주입은 `LAT`로 **등재**(정당
+예외)하고, 목록·개수·상태 조합을 고정하려는 편의 데이터 모킹은 fixture·전용 namespace로
+대체해 **제거**한다. 순수 관측용 pass-through 인터셉트(`route.continue`만 하는 요청 카운터
+등)는 어느 카테고리에도 들지 않으므로 `page.on('request', …)` 등 비인터셉트 수단으로 대체해
+제거한다.
 
-| 파일 | 인터셉트 호출 수 |
-|------|:---------------:|
-| `e2e/pods-hide-completed.spec.ts` | 2 |
+> **판정 이력.** `fluxcd-detail.spec.ts`(ERR ×2)와 `fluxcd-data-states.spec.ts`(ERR ×2·LAT ×3)는
+> rct_20260731-0001 슬라이스에서, `fluxcd-reconcile.spec.ts`(LAT ×2·ERR ×2)·
+> `fluxcd-suspend-resume.spec.ts`(LAT ×2·ERR ×2)·`argo-data-states.spec.ts`(LAT ×3·ERR ×3)·
+> `external-secrets-data-states.spec.ts`(ERR ×1·LAT ×1)·`argo-submit.spec.ts`(ERR ×1·LAT ×1)는
+> rct_20260807-0001 슬라이스에서 판정·등재됐다. 같은 슬라이스에서 부당한 인터셉트 5곳도 제거했다 —
+> 순수 pass-through 요청 카운터 3곳(`fluxcd-reconcile` ×2 · `fluxcd-suspend-resume` ×1)은
+> `page.on('request', …)` 관측으로 대체하고, no-op `continue`-only 라우트 1곳과 편의성 200
+> `fulfill` 1곳(`fluxcd-reconcile`)은 삭제해 실 mutation 픽스처(`kust-mut-reconcile`)로 흘려보냈다.
+>
+> 마지막으로 남아 있던 `e2e/pods-hide-completed.spec.ts`(인터셉트 2)는 **rct_20260807-0002
+> 슬라이스에서 제거**됐다. `GET /api/pods/all` 응답 전체를 합성 pod 4건으로 `fulfill` 하던 데이터
+> 모킹이라 `ERR`/`LAT`/`ABS`/`DES` 어디에도 들지 않고 명시적 불허에 해당해, 등재가 아니라 제거가
+> 유일한 경로였다. PD6의 세 케이스는 서로 배타적인 pod 상태 조합을 요구하므로 조합별 **전용
+> namespace 픽스처**(`test/fixtures/pd6-hide-completed-fixtures.yaml`의 `dashboard-pd6-mixed` ·
+> `dashboard-pd6-completed` · `dashboard-pd6-running`)를 만들고 spec이 `/pods?namespace=<ns>`로
+> deep link 하도록 바꿨다. 이때 `pod-cleanup.spec.ts`의 파괴적 "Cleanup Execution" 테스트가
+> `ns` 없이 전역 cleanup을 호출해 새 완료 픽스처를 지우는 문제가 있어, 그 테스트 1건을
+> `?namespace=dashboard-test`로 스코프해 삭제 범위를 자기 픽스처로 한정했다.
 
-> 이 섹션은 비규범(informational)이며 허용목록이 아니다. 여기 나열된 인터셉트는
+> 이 섹션은 비규범(informational)이며 허용목록이 아니다. 여기 나열되는 인터셉트는
 > 승인된 예외로 간주되지 않으며, 후속 task에서 판정·정리된다.
