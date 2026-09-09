@@ -2,21 +2,33 @@
 
 This directory contains end-to-end tests using Playwright for the Kubernetes Dashboard application.
 
-## Test organization (AC ↔ spec 1:1)
+## Test organization (scenario ↔ spec 1:1)
 
-Top-level `e2e/*.spec.ts` files are the **AC-matching surface**: each file verifies
-exactly one Acceptance Criterion and declares it in a header comment
-(`// Verifies: <AC> (docs/product/prd-*.md)`). The mapping SSOT is the `자동화` field
-of `docs/product/test-*.md`; `docs/product/doc-tracker.md` holds the aggregate view.
+Top-level `e2e/*.spec.ts` files are the **scenario-matching surface**: each file verifies
+exactly one test scenario (`### 시나리오 N` in `docs/product/test-*.md`) and declares it in a
+header comment (`// Verifies: docs/product/test-*.md#시나리오 N …`). The mapping SSOT is the
+`자동화` field of `docs/product/test-*.md`; `docs/product/doc-tracker.md` holds the aggregate
+view, the exception list and the pending-implementation table, plus a copy-pasteable recipe
+that re-measures the mapping.
 
-Two subdirectories are **excluded** from AC↔spec matching:
+The matching axis moved from AC to scenario on 2026-09-08. Most specs still carry the older
+AC-form header (`// Verifies: <AC> (docs/product/prd-*.md)`); that is a labelling backlog only
+— the mapping itself is read from the `자동화` field, not from the header. One AC may own more
+than one spec when it is covered by more than one scenario (today: PD1 → `pods.spec.ts` +
+`pods-namespace-scope.spec.ts`).
+
+Two subdirectories are **excluded** from scenario↔spec matching:
 - `e2e/smoke/` — infra liveness/readiness probes (not a product AC).
 - `e2e/eng/` — engineering diagnostic contracts (e.g. the `/debug` page), registered
   in `docs/product/eng-notes.md` (ENG-NNN). Each carries an `// Engineering: ENG-NNN` header.
 
 Shared helpers live in `e2e/helpers/` and are not specs. When adding an e2e test, first
-decide which AC it covers and extend that AC's existing spec; only create a new top-level
-spec when introducing a new AC.
+decide which **scenario** it covers and extend that scenario's existing spec; only create a
+new top-level spec when introducing a new scenario — and then add its `자동화` field in the
+test document and update the aggregate in `docs/product/doc-tracker.md` in the same change.
+A scenario that cannot be automated goes in the exception list; a scenario whose feature is
+not implemented yet goes in the pending-implementation table (both in `doc-tracker.md`).
+Never leave a scenario with no spec and no registration.
 
 ## Network mocking policy
 

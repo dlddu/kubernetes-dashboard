@@ -20,7 +20,7 @@
 ### AC1: 파드 목록 표시 (네임스페이스 스코프)
 - **설명**: 선택된 네임스페이스의 모든 파드를 카드로 표시하고, 각 카드에 파드 상태를 보여준다. 목록 상단에 표시 개수를 노출한다.
 - **달성 가치**: V1, V7
-- **검증 방법**: `GET /api/pods?ns={namespace}` 응답이 `UnhealthyPodCard`로 렌더링되고 `namespace` 변경 시 재조회되는지 확인. (`handlers/pods.go`, e2e: `e2e/pods.spec.ts`)
+- **검증 방법**: `GET /api/pods?ns={namespace}` 응답이 `UnhealthyPodCard`로 렌더링되고 `namespace` 변경 시 재조회되는지 확인. (`handlers/pods.go`, e2e: `e2e/pods.spec.ts` — 목록·카드 표시 / `e2e/pods-namespace-scope.spec.ts` — 네임스페이스 재조회)
 
 ### AC2: 파드 로그 조회
 - **설명**: 파드 카드를 선택하면 로그 패널이 열리고, 해당 파드(컨테이너)의 로그를 실시간으로 보여준다.
