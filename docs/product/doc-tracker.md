@@ -9,7 +9,8 @@
 - PRD: **10개** (탭별 9개 + 공통 셸 1개)
 - Acceptance Criteria: **53개** (가치 연결됨: 53 / 미연결: 0)
 - 테스트 문서: **10개** (AC 커버됨: 53 / 미커버: 0)
-- **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). e2e 매핑을 **AC↔스펙 파일 양방향 1:1**로 재구조화 완료(연결 AC 53 ↔ 전용 최상위 스펙 53, 공유·중복·고아 0). **자동화 공백 0** — 2026-08-07 OV7(메트릭 서버 부재 폴백) 전용 스펙 `e2e/overview-metrics-fallback.spec.ts`를 신설해 마지막 공백을 해소하고 53↔53 전단사를 완성했다. OV7은 CI E2E 매트릭스의 `no-metrics` leg(별도 러너·`INSTALL_METRICS_SERVER=false` kind 클러스터)에서 실환경 폴백을 검증한다(데이터-모킹 없음).
+- 테스트 시나리오: **54개** (`test-*.md`의 `### 시나리오 N`) — 전용 e2e 스펙 **54개**와 1:1 (예외 0 · 구현 대기 0). 상세는 아래 「테스트 시나리오 ↔ e2e 스펙 매칭」 절.
+- **건강 상태**: 🟢 **건강함** — 가치→PRD→AC→테스트 문서가 모두 연결됨(7개 조건 충족). e2e 매핑의 **판정 축은 2026-09-08부로 시나리오 축**(시나리오 ↔ 최상위 스펙 파일 양방향 1:1)이며 아래 전용 절이 SSOT다. AC 축은 **커버리지**로만 유지한다 — 연결 AC 53 ↔ 최상위 스펙 54로, AC PD1만 시나리오가 둘이라 전용 스펙을 2개(`pods.spec.ts`·`pods-namespace-scope.spec.ts`) 갖는다. **자동화 공백 0** — 2026-08-07 OV7(메트릭 서버 부재 폴백) 전용 스펙 `e2e/overview-metrics-fallback.spec.ts` 신설로 마지막 AC 공백이 해소됐고(그 시점 53↔53), 2026-09-09 시나리오 축 분할로 지금은 **시나리오 54 ↔ 스펙 54**다. OV7은 CI E2E 매트릭스의 `no-metrics` leg(별도 러너·`INSTALL_METRICS_SERVER=false` kind 클러스터)에서 실환경 폴백을 검증한다(데이터-모킹 없음).
 
 ## PRD ↔ 테스트 문서 인덱스
 
@@ -38,28 +39,130 @@
 | V6: 실시간 최신 상태 유지 | OV, PD, AR, FX, CM | OV4·OV5, PD2·PD3, AR4, FX6, CM4 | ✓ | ✅ 검증(문서) |
 | V7: 네임스페이스 포커스/개인화 | OV, WL, PD, SC, CF, ES, AR, FX, CM | OV6, WL1, PD1·PD6, SC1, CF1, ES1, AR1, FX1·FX2, CM5·CM6·CM7 | ✓ | ✅ 검증(문서) |
 
+## 테스트 시나리오 ↔ e2e 스펙 매칭 (시나리오 축 — 판정 SSOT)
+
+**판정 축**: `docs/product/test-*.md`의 `### 시나리오 N` 하나가 `e2e/` **최상위** `*.spec.ts` 하나를
+배타적으로 소유한다(양방향 1:1). 매핑의 확인 지점은 각 시나리오의 `- **자동화**:` 필드이고,
+예외·구현 대기·매칭 대상 밖 파일의 등재 SSOT는 이 문서다.
+
+**불변식** — 절대 수치가 아니라 이 식이 판정 기준이다:
+
+    (시나리오 수) − (예외 수) − (구현 대기 수) = (매칭 파일 수)
+    54 − 0 − 0 = 54  ✅   (2026-09-09 실측)
+
+동시에 「한 spec을 둘 이상의 시나리오가 지목하지 않는다(중복 0)」·「지목한 파일이 실재한다(dangling 0)」·
+「어느 시나리오도 지목하지 않는 최상위 spec이 없다(고아 0)」를 함께 만족해야 한다.
+
+### 집계 (2026-09-09)
+
+| 항목 | 값 |
+|------|---:|
+| 시나리오(문서 10개 합계) | 54 |
+| 예외(자동 검증 곤란) | 0 |
+| 구현 대기(미구현) | 0 |
+| 매칭 파일 — `e2e/` 최상위 `*.spec.ts` | 54 |
+| 공백(전용 스펙 없는 미등재 시나리오) | 0 |
+| 중복 / dangling / 고아 | 0 / 0 / 0 |
+
+| 테스트 문서 | 시나리오 | 전용 스펙 |
+|-------------|---------:|----------:|
+| `test-argo.md` | 7 | 7 |
+| `test-common.md` | 7 | 7 |
+| `test-configmaps.md` | 3 | 3 |
+| `test-external-secrets.md` | 4 | 4 |
+| `test-fluxcd.md` | 7 | 7 |
+| `test-nodes.md` | 3 | 3 |
+| `test-overview.md` | 7 | 7 |
+| `test-pods.md` | 8 | 8 |
+| `test-secrets.md` | 4 | 4 |
+| `test-workloads.md` | 4 | 4 |
+| **합계** | **54** | **54** |
+
+### 예외 목록 — 0건 (영구 면제)
+
+E2E로 **자동 검증이 곤란한** 시나리오(실클러스터 파괴적 조작, 외부 인증 흐름, 비결정적 타이밍 등)만
+여기에 등재한다. 등재된 시나리오는 전용 스펙이 없어도 drift가 아니다. **"아직 구현되지 않았다"는
+예외 사유가 아니다** — 그것은 아래 「구현 대기」다. 등재 없이 파일만 없는 시나리오는 drift다.
+
+| 시나리오 | 사유 | 대체 검증 수단 | 등재일 |
+|----------|------|----------------|--------|
+| _(없음)_ | | | |
+
+### 구현 대기 — 0건 (임시 보류)
+
+시나리오가 기술하는 **기능 자체가 아직 구현되지 않아** E2E가 관측할 대상이 없는 경우만 등재한다.
+예외(영구 면제)와 달리 임시이며, 구현이 착지하면 다음 감지에서 자동으로 1:1 판정 대상으로 복귀한다.
+이 레포에는 자매 docs-impl 모델이 없으므로 담당은 "미등록"으로 적고 구현은 이 루프 밖 백로그로 둔다.
+
+| 시나리오 | 미구현 근거 | 담당 | 해제 조건 | 등재일 |
+|----------|-------------|------|-----------|--------|
+| _(없음)_ | | | | |
+
+### 매칭 대상 밖 파일 (시나리오를 소유하지 않는 spec)
+
+`e2e/` **최상위** `*.spec.ts`만 매칭 단위다. 다음 하위 디렉터리 spec 7개는 매칭 대상 밖으로 등재한다
+(고아가 아니다 — 아래 「비-AC e2e 스펙 분류」 절과 같은 집합이며 그쪽은 AC 축 이름으로 적혀 있다):
+`e2e/smoke/health.spec.ts`(인프라 스모크) · `e2e/eng/debug-*.spec.ts` 6개(엔지니어링 진단, ENG-001).
+공유 헬퍼 `e2e/helpers/`·픽스처 `e2e/k8s/`·`e2e/README.md`도 매칭 단위가 아니다.
+
+### 기계 확인 레시피
+
+레포 루트에서 그대로 돌려 위 집계를 재현한다(문서를 읽지 않고 실측한다):
+
+```bash
+python3 - <<'PY'
+import re, glob, os, collections
+scen, refs = [], collections.Counter()
+for d in sorted(glob.glob("docs/product/test-*.md")):
+    body = open(d).read()
+    for head, rest in re.findall(r'^(### 시나리오 [^\n]*)\n(.*?)(?=^### |\Z)', body, re.M | re.S):
+        sid = re.match(r'### 시나리오 ([0-9A-Za-z-]+):', head).group(1)
+        auto = re.search(r'^- \*\*자동화\*\*:(.*)$', rest, re.M)
+        specs = set(re.findall(r'e2e/[\w./-]+\.spec\.ts', auto.group(1) if auto else ''))
+        scen.append((f"{os.path.basename(d)}#시나리오 {sid}", specs))
+        for s in specs: refs[s] += 1
+files = {os.path.relpath(p) for p in glob.glob("e2e/*.spec.ts")}
+print("시나리오", len(scen), "| 지목 spec", len(refs), "| 매칭 파일", len(files))
+print("선언 0/2+ :", [i for i, s in scen if len(s) != 1])
+print("중복(2+ 시나리오가 한 파일):", [f for f, c in refs.items() if c > 1])
+print("dangling:", sorted(set(refs) - files), "| 고아:", sorted(files - set(refs)))
+PY
+```
+
+기대 출력: `시나리오 54 | 지목 spec 54 | 매칭 파일 54` 와 나머지 세 줄이 모두 빈 목록.
+(숫자는 시나리오·스펙이 늘면 함께 변한다 — 판정은 위 **불변식**으로 한다.)
+
+> 이 매칭을 강제하는 CI 게이트는 아직 없다. 현재 유일한 관측자는 외부 정합성 루프
+> (`tbm_kubernetes-dashboard-scenario-e2e`)이며, 위 레시피가 사람이 손으로 재는 방법이다.
+
 ## 위험 진단
 
 ### 건강한 문서 체계의 7개 조건 — 모두 충족 ✅
 1. 모든 가치에 소유자 있음 ✅ · 2. 모든 문서가 가치 참조 ✅ · 3. 모든 PRD가 가치 달성 ✅ · 4. 모든 PRD에 AC 있음 ✅ · 5. 모든 AC가 가치 달성 ✅ · 6. 모든 AC에 테스트 문서 있음 ✅ · 7. 모든 테스트가 AC 참조 ✅
 
-### 자동화 공백 — 0건 (전단사 완성) 🟢
-1:1 재구조화로 FluxCD 상세(FX3~6)를 전용 파일로 승격·연결하고 오버뷰 스코프(OV6)를 공백으로 재분류한 뒤, CM3·PD6·OV6·SC3에 이어 **2026-08-07 OV7 전용 스펙을 신설**해 공백은 8→5→4→3→1→**0**으로 줄어 53↔53 전단사가 완성됐다. 최근 해소분:
+### 자동화 공백 — 0건 (AC 축 커버리지) 🟢
+> 이 절은 **AC 축**의 이력이다. 파일 단위 1:1 판정은 위 「테스트 시나리오 ↔ e2e 스펙 매칭」 절로 옮겨졌다(2026-09-08).
+
+1:1 재구조화로 FluxCD 상세(FX3~6)를 전용 파일로 승격·연결하고 오버뷰 스코프(OV6)를 공백으로 재분류한 뒤, CM3·PD6·OV6·SC3에 이어 **2026-08-07 OV7 전용 스펙을 신설**해 공백은 8→5→4→3→1→**0**으로 줄었다(그 시점 53↔53). 2026-09-09 PD1의 시나리오 분할로 최상위 스펙은 54가 됐고 AC 축은 53 AC ↔ 54 스펙(PD1만 2개)이 됐다 — AC 커버리지 공백은 여전히 0. 최근 해소분:
 - **OV6** ✅ → `e2e/overview-namespace-scope.spec.ts` (실 kind 클러스터에서 네임스페이스 전환 시 `GET /api/overview?ns=` 스코프 재조회를 관측; 모킹 없음)
 - **SC3** ✅ → `e2e/secrets-delete-resync.spec.ts` (삭제 확인 다이얼로그→확인 시 **실제 DELETE `/api/secrets/:ns/:name`** 발행 후 대상 아코디언 소멸을 단정. **모킹 없음** — 전용 fixture `secret-mut-delete`(`test/fixtures/secret-mut-fixtures.yaml`, `fluxcd-mut-fixtures.yaml` 격리 선례를 따름)를 실제로 삭제한다. SC1/SC2/SC4는 `test-secret`/`tls-secret`만 testid로 지목하고 `>= 2` 아코디언만 단정하므로 세 번째 전용 fixture 삭제에 무영향. ESO 재동기화 **재생성** 단정은 kind에 ESO 컨트롤러가 없어 하네스 밖 — 앱이 소유한 실삭제까지 검증)
 - **OV7** ✅ → `e2e/overview-metrics-fallback.spec.ts` (메트릭 서버 부재 폴백). CI E2E 매트릭스의 `no-metrics` leg가 `INSTALL_METRICS_SERVER=false`로 생성한 전용 kind 클러스터(별도 러너)에서 이 스펙만 실행해 실환경 폴백을 검증한다 — 공유 클러스터/OV1 등 metrics 의존 스펙 무영향, 데이터-모킹 없음(인터셉트 0 → 형제 `tbm_kubernetes-dashboard-e2e-mock-policy` 무drift). 백엔드 폴백 계산은 `handlers/overview_test.go`가 유닛 커버.
 - (보강 권장) **FX6** — 상세 라이브 폴링 자동 갱신 직접 검증 · **AR4** — 워크플로우 상세 라이브 폴링
 
 ### 비-AC e2e 스펙 분류 (매칭 대상 밖)
-`e2e/` 최상위 `*.spec.ts`만 AC↔스펙 매칭 대상이다. 다음 하위 디렉터리는 매칭에서 제외한다:
+> 시나리오 축에서도 같은 집합이 매칭 대상 밖이다(위 「매칭 대상 밖 파일」 참조).
+
+`e2e/` 최상위 `*.spec.ts`만 매칭 대상이다. 다음 하위 디렉터리는 매칭에서 제외한다:
 - `e2e/smoke/health.spec.ts` — 인프라 liveness/readiness 스모크(제품 AC 아님).
 - `e2e/eng/debug-*.spec.ts` (6개) — 디버그 페이지 진단 계약. `docs/product/eng-notes.md`의 **ENG-001**에 등재. (2026-07-12 사용자 결정: 삭제하지 않고 엔지니어링 노트로 분리·연결.)
 - (보강 권장) **AR4** — 워크플로우 상세 라이브 폴링 자동 갱신
 
 ## 다음 단계 제안
 
-문서 체계·1:1 매핑 유지. 2026-08-07 OV7 전용 스펙 신설로 **자동화 공백 0(연결 AC 53↔전용 스펙 53, 전단사 완성)**. 남은 것:
+문서 체계·1:1 매핑 유지. 2026-09-09 시나리오 축 전단사 완성(**54↔54, 예외 0 · 구현 대기 0**). 남은 것:
 1. (선택) **FX6·AR4** 상세 라이브 폴링 직접 검증 보강.
+2. (선택) 나머지 52개 최상위 스펙의 헤더 선언을 AC 축(`// Verifies: <AC> …`)에서 시나리오 축으로 일괄 이관. 매핑의 확인 지점은 `자동화:` 필드라 **정합성에는 영향 없다**(표기 통일 목적).
+3. (선택) `test-pods.md#시나리오 2`의 두 번째 테스트(`Namespace Context Integration`)는 네임스페이스 전환 후 페이지 가시성만 단정한다 — 카드별 네임스페이스 일치까지 단정하도록 보강 여지. 첫 번째 테스트가 `ns=default` 응답 대기와 필터 결과를 이미 단정하므로 매핑 자체는 성립.
 
 ## 변경 이력
 
@@ -83,3 +186,4 @@
 | 2026-07-30 | **OV6·SC3 전용 e2e 신설로 공백 3→1** — `e2e/overview-namespace-scope.spec.ts`(OV6, 실 클러스터에서 네임스페이스 전환 시 `GET /api/overview?ns=` 스코프 재조회 관측·모킹 없음)·`e2e/secrets-delete-resync.spec.ts`(SC3, 삭제 확인→`DELETE /api/secrets/:ns/:name` 트리거 단정. 목록 GET은 실 fixture, 파괴적 DELETE만 인터셉트하는 정당 **DES** 예외로 `docs/e2e-mocking-policy.md` 허용목록 #5 등재) 추가. `test-overview.md`(OV6)·`test-secrets.md`(SC3) 자동화 연결. **OV7은 데이터-모킹 정책 위반으로 이번 슬라이스에서 제외**(후속: metrics-server 부재 kind 프로파일 또는 mock-policy 예외 승인). 직전 시도(rct_20260729-0001 att0)의 SC3 구문 결함(docstring `*/`)·형제 mock-policy 미착지 원인을 재계획으로 해소 **(SC3의 DES 모킹 접근은 2026-08-01 리뷰 반려로 real fixture 실삭제로 대체됨 — 아래 행 참조)** | 자동화 공백 3(OV6·OV7·SC3), 연결 AC 50↔전용 스펙 50 | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52 |
 | 2026-08-01 | **SC3 재작업 — 모킹 제거·전용 fixture 실삭제** — 리뷰 반려("모킹하지 말고 다른 테스트에 영향 안 받는 별도 fixture로 실제 삭제 테스트")를 반영. `e2e/secrets-delete-resync.spec.ts`를 인터셉트 0으로 재작성해 전용 fixture `secret-mut-delete`(`test/fixtures/secret-mut-fixtures.yaml`, dashboard-test)를 **실제로 DELETE**하고 대상 아코디언 소멸을 단정(앱 refetch). `fluxcd-mut-fixtures.yaml` 격리 선례를 따라 SC1/SC2/SC4(`test-secret`/`tls-secret`, `>= 2` 단정)에 무영향. `docs/e2e-mocking-policy.md` 허용목록 **DES #5 제거**(브랜치 신규 인터셉트 0 → 형제 모델 `tbm_kubernetes-dashboard-e2e-mock-policy` 무drift). ESO 재동기화 재생성은 kind에 ESO 컨트롤러가 없어 하네스 밖(후속). 전단사·공백 집계 불변 | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52, SC3=DES 모킹 | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52, SC3=real fixture 실삭제·mock 0 |
 | 2026-08-07 | **OV7 전용 e2e 신설 — 실환경 메트릭 부재 폴백(공백 1→0, 전단사 완성)** — `e2e/overview-metrics-fallback.spec.ts`(최상위) 추가. CI E2E 워크플로를 matrix(`default`|`no-metrics`)로 확장하고 `scripts/kind-cluster.sh`에 `INSTALL_METRICS_SERVER`(기본 true) 게이트 추가 — `no-metrics` leg는 별도 러너에서 metrics-server 없는 kind 클러스터를 띄워 이 스펙만(`--project=no-metrics`) 실행(playwright.config.ts 프로젝트 분리). metrics 의존 스펙(OV1 등)은 `default` leg(다른 클러스터)라 무영향. 인터셉트 0 → 형제 `tbm_kubernetes-dashboard-e2e-mock-policy` 무drift. `test-overview.md`(OV7)·본 문서 집계 갱신. 앱 코드 무변경(폴백은 기존·유닛 커버) | 자동화 공백 1(OV7), 연결 AC 52↔전용 스펙 52 | 자동화 공백 0, 연결 AC 53↔전용 스펙 53(전단사 완성) |
+| 2026-09-09 | **시나리오 축 1:1 확립 — `pods.spec.ts` 분할 + 시나리오 축 등재 신설** (정합성 task `rct_20260909-0001`) — `test-pods.md#시나리오 1`(목록·카드 정보)과 `#시나리오 2`(네임스페이스 스코프)가 함께 지목하던 `e2e/pods.spec.ts`에서 네임스페이스 컨텍스트 describe 2개를 `e2e/pods-namespace-scope.spec.ts`로 **단언 무변경 이동**(33 테스트 = 31 + 2, 인터셉트 0). 두 시나리오의 `자동화:` 필드를 각 전용 파일로 갱신하고, 본 문서에 **시나리오 축** 절(집계·예외 표 0행·구현 대기 표 0행·매칭 대상 밖 등재·기계 확인 레시피)을 신설. 앱 코드·픽스처·CI 배선 무변경 | 시나리오 54, 매칭 파일 53, 공유 1건(54 ≠ 53), 시나리오 축 등재 부재 | 시나리오 54 − 예외 0 − 구현 대기 0 = **매칭 파일 54**(중복·dangling·고아 0), 시나리오 축 등재 완비 |
