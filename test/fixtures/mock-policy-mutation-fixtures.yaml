@@ -1,0 +1,41 @@
+# Dedicated targets for argo-submit ERR/LAT and workloads-restart-confirm LAT.
+# Workflow submissions are real persisted CRs; the spec deletes only its returned
+# workflow name. The zero-replica Deployment exercises the real restart annotation
+# without rolling pods that another spec observes. No other spec mutates these.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dashboard-mock-policy
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: submit-policy-template
+  namespace: dashboard-mock-policy
+spec:
+  entrypoint: main
+  suspend: true
+  templates:
+    - name: main
+      container:
+        image: busybox
+        command: [echo, "mock-policy real submit"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restart-policy-target
+  namespace: dashboard-mock-policy
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: restart-policy-target
+  template:
+    metadata:
+      labels:
+        app: restart-policy-target
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine

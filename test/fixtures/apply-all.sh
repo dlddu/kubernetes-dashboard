@@ -142,6 +142,7 @@ kubectl get pods -n dashboard-test -o wide
 
 # 6. Apply Argo Workflows fixtures
 log_info "Applying Argo Workflows fixtures..."
+kubectl apply -f "$SCRIPT_DIR/mock-policy-mutation-fixtures.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-template-with-params.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-template-no-params.yaml"
 kubectl apply -f "$SCRIPT_DIR/workflow-template-empty-runs.yaml"
