@@ -148,10 +148,15 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
     await page.goto('/argo');
     await page.waitForLoadState('networkidle');
 
-    // Act: Record total template count before filtering
+    // Both namespaces must be present so an unchanged list cannot pass the filter check.
     const allTemplateCards = page.getByTestId('workflow-template-card');
+    await expect(allTemplateCards.getByTestId('workflow-template-namespace').filter({
+      hasText: /^dashboard-test$/,
+    }).first()).toBeVisible();
+    await expect(allTemplateCards.getByTestId('workflow-template-namespace').filter({
+      hasText: /^dashboard-mock-policy$/,
+    })).toBeVisible();
     const totalCount = await allTemplateCards.count();
-    expect(totalCount).toBeGreaterThanOrEqual(1);
 
     // Act: Apply namespace filter via the namespace selector in the TopBar
     const namespaceSelector = page.getByTestId('namespace-selector').locator('button[role="combobox"]');
@@ -159,22 +164,30 @@ test.describe('Argo Tab - WorkflowTemplate List', () => {
 
     const dashboardTestOption = page.getByRole('option', { name: /^dashboard-test$/i })
       .or(page.getByTestId('namespace-option-dashboard-test'));
+    // networkidle may already be satisfied while the namespace request is still pending.
+    const filteredResponsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return response.request().method() === 'GET'
+        && url.pathname === '/api/argo/workflow-templates'
+        && url.searchParams.get('ns') === 'dashboard-test';
+    });
     await dashboardTestOption.click();
-    await page.waitForLoadState('networkidle');
+    const filteredResponse = await filteredResponsePromise;
+    expect(filteredResponse.ok()).toBeTruthy();
+    const filteredTemplates: Array<{ namespace: string }> = await filteredResponse.json();
+    expect(filteredTemplates.length).toBeGreaterThan(0);
+    expect(filteredTemplates.length).toBeLessThan(totalCount);
+    const expectedNamespaces = Array(filteredTemplates.length).fill('dashboard-test');
+    expect(filteredTemplates.map((template) => template.namespace)).toEqual(expectedNamespaces);
 
-    // Assert: Only dashboard-test namespace templates are shown
+    await expect(namespaceSelector).toHaveText('dashboard-test');
+    await expect(page).toHaveURL(/[?&]namespace=dashboard-test(?:&|$)/);
+
+    // Wait for the complete rendered list, not a snapshot of cards from the previous response.
     const filteredTemplateCards = page.getByTestId('workflow-template-card');
-    const filteredCount = await filteredTemplateCards.count();
-    expect(filteredCount).toBeLessThanOrEqual(totalCount);
-    expect(filteredCount).toBeGreaterThanOrEqual(1);
-
-    // Assert: All visible cards belong to dashboard-test namespace
-    for (let i = 0; i < filteredCount; i++) {
-      const card = filteredTemplateCards.nth(i);
-      const namespaceElement = card.getByTestId('workflow-template-namespace');
-      const namespaceText = await namespaceElement.innerText();
-      expect(namespaceText).toBe('dashboard-test');
-    }
+    await expect(filteredTemplateCards).toHaveCount(filteredTemplates.length);
+    await expect(filteredTemplateCards.getByTestId('workflow-template-namespace'))
+      .toHaveText(expectedNamespaces);
   });
 
 });
