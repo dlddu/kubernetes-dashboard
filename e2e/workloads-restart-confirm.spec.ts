@@ -1,5 +1,6 @@
 // Verifies: WL3 (docs/product/prd-workloads.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 
 test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
   test('should display Confirm and Cancel buttons in dialog', async ({ page }) => {
@@ -113,6 +114,14 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
     expect(response.value.status()).toBe(200);
     if (assertions.status === 'rejected') throw assertions.reason;
     await expect(confirmDialog).not.toBeVisible();
+
+    // KUBECONFIG points to the same disposable kind cluster as the dashboard.
+    const deployment = JSON.parse(execFileSync('kubectl', [
+      'get', 'deployment', 'restart-policy-target', '-n', 'dashboard-mock-policy', '-o', 'json',
+    ], { encoding: 'utf8', timeout: 10_000 }));
+    expect(deployment.spec.replicas).toBe(0);
+    expect(deployment.spec.template.metadata.annotations['kubectl.kubernetes.io/restartedAt'])
+      .toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   test('should close dialog when Cancel button is clicked', async ({ page }) => {
