@@ -1,5 +1,5 @@
 // Verifies: AR2 (docs/product/prd-argo.md) — sole dedicated e2e spec for this AC.
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * E2E Tests for Argo WorkflowTemplate Submit
@@ -20,6 +20,8 @@ import { test, expect } from '@playwright/test';
  * - workflow-template-no-params.yaml: simple-template (no params)
  * - workflow-template-empty-runs.yaml: empty-runs-template (no params, no workflow runs)
  * All fixtures are in the dashboard-test namespace.
+ * Error/loading mutations use mock-policy-mutation-fixtures.yaml instead:
+ * submit-policy-template in dashboard-mock-policy, with per-response cleanup.
  *
  * Related Issue: DLD-440 - 작업 3-1: WorkflowTemplate Submit — e2e 테스트 작성 (skipped)
  * Parent Issue:  DLD-435 - Argo WorkflowTemplate Submit 기능 추가
@@ -56,6 +58,47 @@ async function findCardByName(
 }
 
 // ---------------------------------------------------------------------------
+const mutationTemplate = 'submit-policy-template';
+const mutationNamespace = 'dashboard-mock-policy';
+const mutationSubmitPath = `/api/argo/workflow-templates/${mutationTemplate}/submit`;
+
+// Wait for the real response even if a loading assertion fails, then clean up only
+// the workflow returned by this request. Shared Argo fixtures are never deleted.
+async function withSubmittedWorkflow(
+  page: Page,
+  submit: () => Promise<void>,
+  assertSuccess: () => Promise<void>,
+) {
+  const responsePromise = page.waitForResponse(response =>
+    new URL(response.url()).pathname === mutationSubmitPath &&
+    response.request().method() === 'POST',
+  );
+  const [actionResult, responseResult] = await Promise.allSettled([submit(), responsePromise]);
+  if (responseResult.status === 'rejected') throw responseResult.reason;
+  const response = responseResult.value;
+  expect(response.status()).toBe(200);
+  const workflow = await response.json();
+  expect(workflow.namespace).toBe(mutationNamespace);
+  expect(workflow.name).toMatch(/^submit-policy-template-[a-z0-9-]+$/);
+  const workflowPath = `/api/argo/workflows/${encodeURIComponent(workflow.name)}`;
+
+  try {
+    const persisted = await page.request.get(workflowPath);
+    expect(persisted.ok()).toBe(true);
+    expect(await persisted.json()).toMatchObject({
+      name: workflow.name,
+      namespace: mutationNamespace,
+      templateName: mutationTemplate,
+    });
+    if (actionResult.status === 'rejected') throw actionResult.reason;
+    await assertSuccess();
+  } finally {
+    const deleted = await page.request.delete(workflowPath);
+    expect(deleted.ok()).toBe(true);
+    await expect.poll(async () => (await page.request.get(workflowPath)).status()).toBe(404);
+  }
+}
+
 
 test.describe('Argo Tab - WorkflowTemplate Submit - Happy Path', () => {
   test('should open SubmitModal when Submit button is clicked on a template card', async ({ page }) => {
@@ -233,8 +276,8 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
 
     // Arrange: First call fails, second call succeeds
     let submitCallCount = 0;
-    // mock-exception: ERR — submit API 첫 호출을 500으로 실패시켜 에러 뷰·Retry 재시도를 검증. 실클러스터가 요청 시점에 500을 내도록 만들 수 없고, 재시도 성공 응답은 실 submit이 클러스터에 워크플로를 생성해 다른 spec을 오염시키므로 fulfill로 대체한다.
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
+    // mock-exception: ERR — 실클러스터가 요청 시점에 500을 내도록 만들 수 없어 첫 실패만 주입. 재시도는 전용 fixture에 실 submit하며 생성된 workflow만 삭제한다.
+    await page.route('**/api/argo/workflow-templates/submit-policy-template/submit', async route => {
       submitCallCount += 1;
       if (submitCallCount === 1) {
         await route.fulfill({
@@ -243,17 +286,13 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
           body: JSON.stringify({ error: 'Internal Server Error' }),
         });
       } else {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-        });
+        await route.continue();
       }
     });
 
     await gotoArgo(page);
 
-    const card = await findCardByName(page, 'simple-template');
+    const card = await findCardByName(page, mutationTemplate);
     expect(card).toBeTruthy();
     if (!card) return;
 
@@ -274,33 +313,29 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
     await expect(retryButton).toBeVisible();
     await expect(retryButton).toBeEnabled();
 
-    // Act: Click retry — second call will succeed
-    await retryButton.click();
-
-    // Assert: Success view replaces the error view
-    const successView = submitDialog.getByTestId('submit-success-view');
-    await expect(successView).toBeVisible();
-    await expect(errorView).not.toBeVisible();
+    await withSubmittedWorkflow(page, () => retryButton.click(), async () => {
+      const successView = submitDialog.getByTestId('submit-success-view');
+      await expect(successView).toBeVisible();
+      await expect(errorView).not.toBeVisible();
+      expect(submitCallCount).toBe(2);
+    });
   });
 
   test('should disable the confirm button and show a loading spinner while submitting', async ({ page }) => {
     // Tests that during the in-flight POST request the confirm button is disabled
     // and a loading spinner is visible, preventing duplicate submissions
 
-    // Arrange: Mock submit API with a deliberate delay to observe in-flight state
-    // mock-exception: LAT — in-flight(버튼 비활성·스피너) 상태 관측을 위해 submit 응답 지연 주입. 실 응답은 즉시 완료돼 관측 불가하며, 실 submit은 클러스터에 워크플로를 생성해 다른 spec을 오염시키므로 fulfill로 대체한다.
-    await page.route('**/api/argo/workflow-templates/simple-template/submit', async route => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ name: 'simple-template-xyz99', namespace: 'dashboard-test' }),
-      });
+    let releaseSubmit!: () => void;
+    const submitGate = new Promise<void>(resolve => { releaseSubmit = resolve; });
+    // mock-exception: LAT — 실 응답은 즉시 완료돼 in-flight 상태를 관측할 수 없어 어서션까지 지연. 해제 후 전용 fixture에 실 submit하고 생성된 workflow만 삭제한다.
+    await page.route('**/api/argo/workflow-templates/submit-policy-template/submit', async route => {
+      await submitGate;
+      await route.continue();
     });
 
     await gotoArgo(page);
 
-    const card = await findCardByName(page, 'simple-template');
+    const card = await findCardByName(page, mutationTemplate);
     expect(card).toBeTruthy();
     if (!card) return;
 
@@ -311,14 +346,17 @@ test.describe('Argo Tab - WorkflowTemplate Submit - Error & Loading States', () 
 
     // Act: Click the confirm button to start the submit
     const confirmButton = submitDialog.getByTestId('confirm-button');
-    await confirmButton.click();
-
-    // Assert: Confirm button is disabled while the request is in-flight
-    await expect(confirmButton).toBeDisabled();
-
-    // Assert: Loading spinner is visible
-    const spinner = submitDialog.getByTestId('submit-spinner');
-    await expect(spinner).toBeVisible();
+    await withSubmittedWorkflow(page, async () => {
+      try {
+        await confirmButton.click();
+        await expect(confirmButton).toBeDisabled();
+        await expect(submitDialog.getByTestId('submit-spinner')).toBeVisible();
+      } finally {
+        releaseSubmit();
+      }
+    }, async () => {
+      await expect(submitDialog.getByTestId('submit-success-view')).toBeVisible();
+    });
   });
 });
 

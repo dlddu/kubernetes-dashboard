@@ -1,5 +1,6 @@
 // Verifies: WL3 (docs/product/prd-workloads.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 
 test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
   test('should display Confirm and Cancel buttons in dialog', async ({ page }) => {
@@ -54,37 +55,37 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
   test('should show "Restarting..." state when Confirm button is clicked', async ({ page }) => {
     // Tests that confirming restart shows a loading/restarting state
 
-    // Arrange: Intercept the restart API to keep the "Restarting..." state visible
-    // Without this, the API may complete too fast for the assertion to observe the state
-    // mock-exception: LAT — 'Restarting…' 전이 상태 관측 위해 restart 응답 지연; 실 restart는 즉시 완료·파괴적이라 실행 안 함 (docs/e2e-mocking-policy.md)
-    await page.route('**/api/deployments/**/restart', async route => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'Restart initiated' }) });
+    let releaseRestart!: () => void;
+    const restartGate = new Promise<void>(resolve => { releaseRestart = resolve; });
+    // mock-exception: LAT — 실 응답은 즉시 완료돼 'Restarting…' 관측까지 지연. 해제 후 전용 0-replica Deployment에 실 restart 요청을 전달한다.
+    await page.route('**/api/deployments/dashboard-mock-policy/restart-policy-target/restart', async route => {
+      await restartGate;
+      await route.continue();
     });
 
     // Arrange: Navigate to the Workloads page
     await page.goto('/workloads');
     await page.waitForLoadState('networkidle');
 
-    // Act: Get the nginx-test deployment card and click Restart
+    // This fixture owns the real restart mutation; other tests keep nginx-test.
     const deploymentCards = page.getByTestId('deployment-card');
     const cardCount = await deploymentCards.count();
-    let nginxDeploymentCard = null;
+    let restartDeploymentCard = null;
 
     for (let i = 0; i < cardCount; i++) {
       const card = deploymentCards.nth(i);
       const nameElement = card.getByTestId('deployment-name');
       const nameText = await nameElement.innerText();
-      if (nameText === 'nginx-test') {
-        nginxDeploymentCard = card;
+      if (nameText === 'restart-policy-target') {
+        restartDeploymentCard = card;
         break;
       }
     }
 
-    expect(nginxDeploymentCard).toBeTruthy();
-    if (!nginxDeploymentCard) return;
+    expect(restartDeploymentCard).toBeTruthy();
+    if (!restartDeploymentCard) return;
 
-    const restartButton = nginxDeploymentCard.getByTestId('restart-button');
+    const restartButton = restartDeploymentCard.getByTestId('restart-button');
     await restartButton.click();
 
     // Act: Locate the confirmation dialog and click Confirm
@@ -92,13 +93,35 @@ test.describe('Workloads Tab - Restart Confirmation Dialog', () => {
     await expect(confirmDialog).toBeVisible();
 
     const confirmButton = confirmDialog.getByTestId('confirm-button');
-    await confirmButton.click();
+    const responsePromise = page.waitForResponse(response =>
+      new URL(response.url()).pathname ===
+        '/api/deployments/dashboard-mock-policy/restart-policy-target/restart' &&
+      response.request().method() === 'POST',
+    );
+    const [assertions, response] = await Promise.allSettled([
+      (async () => {
+        try {
+          await confirmButton.click();
+          await expect(confirmButton).toHaveAttribute('aria-busy', 'true');
+          await expect(confirmButton).toContainText(/restarting/i);
+        } finally {
+          releaseRestart();
+        }
+      })(),
+      responsePromise,
+    ]);
+    if (response.status === 'rejected') throw response.reason;
+    expect(response.value.status()).toBe(200);
+    if (assertions.status === 'rejected') throw assertions.reason;
+    await expect(confirmDialog).not.toBeVisible();
 
-    // Assert: Should show "Restarting..." state in the confirm button
-    await expect(confirmButton).toHaveAttribute('aria-busy', 'true');
-
-    // Assert: The text should indicate restarting state
-    await expect(confirmButton).toContainText(/restarting/i);
+    // KUBECONFIG points to the same disposable kind cluster as the dashboard.
+    const deployment = JSON.parse(execFileSync('kubectl', [
+      'get', 'deployment', 'restart-policy-target', '-n', 'dashboard-mock-policy', '-o', 'json',
+    ], { encoding: 'utf8', timeout: 10_000 }));
+    expect(deployment.spec.replicas).toBe(0);
+    expect(deployment.spec.template.metadata.annotations['kubectl.kubernetes.io/restartedAt'])
+      .toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   test('should close dialog when Cancel button is clicked', async ({ page }) => {
