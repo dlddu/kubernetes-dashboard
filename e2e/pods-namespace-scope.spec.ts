@@ -1,7 +1,7 @@
 // Verifies: docs/product/test-pods.md#시나리오 2 (네임스페이스 스코프 반영) — sole dedicated e2e spec for this scenario.
 // AC: PD1 (docs/product/prd-pods.md), shared with e2e/pods.spec.ts (test-pods.md#시나리오 1).
 // Provenance: both describes below were moved verbatim out of e2e/pods.spec.ts on 2026-09-09
-//   (scenario-axis 1:1 split — see docs/product/doc-tracker.md, "테스트 시나리오 ↔ e2e 스펙 매칭").
+//   (scenario-axis 1:1 split — see docs/product/doc-tracker/, "테스트 시나리오 ↔ e2e 스펙 매칭").
 //   No assertion was added, removed or edited by that move.
 import { test, expect } from '@playwright/test';
 

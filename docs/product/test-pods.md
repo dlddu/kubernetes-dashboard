@@ -66,4 +66,4 @@
 
 ## 커버리지 요약
 - 자동화 연결됨(시나리오 ↔ 전용 스펙 1:1): 시나리오 1~8 전부. 시나리오 1·2는 AC PD1을 공유하지만 각자 전용 스펙을 갖는다(`pods.spec.ts` / `pods-namespace-scope.spec.ts`).
-- 자동화 공백: 없음 (예외 0 · 구현 대기 0 — 등재 SSOT: `doc-tracker.md`)
+- 자동화 공백: 없음 (예외 0 · 구현 대기 0 — 등재 SSOT: `doc-tracker/`)

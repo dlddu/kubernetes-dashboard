@@ -7,7 +7,7 @@ This directory contains end-to-end tests using Playwright for the Kubernetes Das
 Top-level `e2e/*.spec.ts` files are the **scenario-matching surface**: each file verifies
 exactly one test scenario (`### 시나리오 N` in `docs/product/test-*.md`) and declares it in a
 header comment (`// Verifies: docs/product/test-*.md#시나리오 N …`). The mapping SSOT is the
-`자동화` field of `docs/product/test-*.md`; `docs/product/doc-tracker.md` holds the aggregate
+`자동화` field of `docs/product/test-*.md`; `docs/product/doc-tracker/` holds the aggregate
 view, the exception list and the pending-implementation table, plus a copy-pasteable recipe
 that re-measures the mapping.
 
@@ -25,9 +25,9 @@ Two subdirectories are **excluded** from scenario↔spec matching:
 Shared helpers live in `e2e/helpers/` and are not specs. When adding an e2e test, first
 decide which **scenario** it covers and extend that scenario's existing spec; only create a
 new top-level spec when introducing a new scenario — and then add its `자동화` field in the
-test document and update the aggregate in `docs/product/doc-tracker.md` in the same change.
+test document and update the aggregate in `docs/product/doc-tracker/` in the same change.
 A scenario that cannot be automated goes in the exception list; a scenario whose feature is
-not implemented yet goes in the pending-implementation table (both in `doc-tracker.md`).
+not implemented yet goes in the pending-implementation table (both in `doc-tracker/`).
 Never leave a scenario with no spec and no registration.
 
 ## Network mocking policy
