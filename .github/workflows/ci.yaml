@@ -244,19 +244,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # 이미지는 언제나 커밋 SHA 태그로 올린다. 운영은 이 태그를 deploy 브랜치에서
+      # 고정해 당기므로(아래 `pin`), PR 빌드가 올린 이미지는 운영에 닿지 않는다.
+      # `:latest` 는 main 푸시에서만 함께 옮긴다(로컬·수동 확인용, 운영은 쓰지 않음).
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && format('ghcr.io/{0}:latest', github.repository) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run Docker container test
         run: |
-          docker pull ghcr.io/${{ github.repository }}:latest
-          docker run -d -p 8080:8080 --name test-container ghcr.io/${{ github.repository }}:latest
+          docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
+          docker run -d -p 8080:8080 --name test-container ghcr.io/${{ github.repository }}:${{ github.sha }}
           sleep 5
 
           # Test liveness endpoint
@@ -277,6 +282,73 @@ jobs:
 
           docker stop test-container
           echo "Docker container tests passed!"
+
+  pin:
+    name: pin deployment image (main only)
+    needs: [docker-build]
+    # main 푸시에서만 운영 매니페스트를 이 SHA 로 고정해 deploy 브랜치로 발행한다.
+    # Flux 는 main 이 아니라 deploy 를 추적한다(flux-cd
+    # `cluster/infrastructure/60-apps/kubernetes-dashboard-app.yaml`).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    permissions:
+      # 이 job 만 deploy 브랜치에 push 한다.
+      contents: write
+    steps:
+      # 방금 빌드한 커밋 그대로를 deploy 의 부모로 삼는다. 전체 히스토리는 아래
+      # 「더 새 커밋이 이미 발행됐는가」 조상 판정에 쓴다.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Pin k8s/deployment.yaml image to ${{ github.sha }}
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          f=k8s/deployment.yaml
+          sed -i -E "s#(ghcr\.io/dlddu/kubernetes-dashboard):[A-Za-z0-9._-]+#\1:${SHA}#g" "$f"
+
+          # sed 가 조용히 빗나가지 않았는지 확인한다: 고정되지 않은 참조가 없고,
+          # 고정된 참조가 최소 하나 있어야 한다.
+          leftover=$(grep -oE "ghcr\.io/dlddu/kubernetes-dashboard:[A-Za-z0-9._-]+" "$f" \
+                       | grep -v ":${SHA}\$" || true)
+          if [ -n "$leftover" ]; then
+            echo "::error::$f: 고정되지 않은 이미지 참조가 남았습니다:"
+            echo "$leftover"
+            exit 1
+          fi
+          n=$(grep -cE "ghcr\.io/dlddu/kubernetes-dashboard:${SHA}" "$f" || true)
+          [ "$n" -ge 1 ] || { echo "::error::$f: 고정된 참조가 없습니다"; exit 1; }
+
+          # 「main@SHA + 고정 커밋 하나」를 deploy 로 force-push 한다. main 은 ruleset 으로
+          # 보호되어 봇이 직접 커밋할 수 없다. 기본 GITHUB_TOKEN 의 push 는 새 워크플로를
+          # 트리거하지 않는다.
+          git fetch --no-tags origin +refs/heads/deploy:refs/remotes/origin/deploy 2>/dev/null || true
+          old=$(git rev-parse -q --verify refs/remotes/origin/deploy || true)
+
+          # 늦게 끝난 옛 실행이 더 새 배포를 덮지 않게 한다. deploy 끝 커밋의
+          # Source-Commit 트레일러가 이 SHA 의 후손이면 건너뛴다.
+          # (롤백은 main 에 revert PR 을 올리는 것 — 그 머지가 새 SHA 로 다시 여기를 탄다.)
+          if [ -n "$old" ]; then
+            cur=$(git log -1 --format='%(trailers:key=Source-Commit,valueonly)' "$old" | tr -d '[:space:]')
+            if [ -n "$cur" ] && [ "$cur" != "$SHA" ] && git merge-base --is-ancestor "$SHA" "$cur" 2>/dev/null; then
+              echo "deploy 는 이미 더 새로운 main 커밋(${cur})을 가리킨다 — 건너뜀."
+              exit 0
+            fi
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -a --allow-empty \
+            -m "deploy: kubernetes-dashboard 이미지를 ${SHA} 로 고정" \
+            -m "Source-Commit: ${SHA}"
+
+          # lease 로 「읽은 뒤 누가 먼저 밀었으면」 실패시킨다(old 가 비면 = 브랜치가 없어야 함).
+          git push --force-with-lease="refs/heads/deploy:${old}" origin HEAD:refs/heads/deploy
 
   k8s-manifest-validation:
     name: Kubernetes Manifest Validation
