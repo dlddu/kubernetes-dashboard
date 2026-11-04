@@ -1,9 +1,5 @@
-# Makefile for E2E testing
-# This file contains targets for running E2E tests with kind cluster
-
 .PHONY: e2e-setup e2e-teardown e2e-test e2e-cluster-create e2e-cluster-delete e2e-fixtures e2e-deploy e2e-undeploy e2e-run e2e-all
 
-# E2E test configuration
 KIND_CLUSTER_NAME ?= kubernetes-dashboard-e2e
 KUBECONFIG_PATH ?= $(PWD)/kubeconfig
 E2E_IMAGE_NAME ?= kubernetes-dashboard:e2e

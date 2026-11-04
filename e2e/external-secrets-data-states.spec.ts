@@ -1,9 +1,5 @@
-// Verifies: ES4 (docs/product/prd-external-secrets.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
-// ---------------------------------------------------------------------------
-// Group 4: UI — Empty / Error / Loading states
-// ---------------------------------------------------------------------------
 test.describe('External Secrets Tab - Empty, Error & Loading States', () => {
   test('should display EmptyState when the selected namespace has no ExternalSecrets', async ({ page }) => {
     await page.goto('/external-secrets');
@@ -53,7 +49,6 @@ test.describe('External Secrets Tab - Empty, Error & Loading States', () => {
 
     expect(await page.getByTestId('external-secret-card').count()).toBe(0);
 
-    // Allow next call to succeed and retry
     shouldFail = false;
     await retryButton.click();
     await page.waitForLoadState('networkidle');
