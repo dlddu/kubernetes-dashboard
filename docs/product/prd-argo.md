@@ -20,7 +20,7 @@
 ### AC1: 워크플로우 템플릿 목록 표시 (네임스페이스 스코프)
 - **설명**: 선택된 네임스페이스의 워크플로우 템플릿을 카드로 표시하고, 카드를 누르면 해당 템플릿의 워크플로우 목록으로 이동한다.
 - **달성 가치**: V1, V7
-- **검증 방법**: `GET /api/argo/templates?ns={namespace}` 응답이 `WorkflowTemplateCard`로 렌더링되고 라우팅이 동작하는지 확인. (`handlers/argo_templates.go`, e2e: `e2e/argo-templates.spec.ts`)
+- **검증 방법**: `GET /api/argo/workflow-templates?ns={namespace}` 응답이 `WorkflowTemplateCard`로 렌더링되고 라우팅이 동작하는지 확인. (`handlers/argo_templates.go`, e2e: `e2e/argo-templates.spec.ts`)
 
 ### AC2: 템플릿에서 워크플로우 제출
 - **설명**: 템플릿 카드의 제출을 누르면 `SubmitModal`이 열리고, 파라미터를 입력해 워크플로우를 제출할 수 있다. 제출 후 해당 템플릿의 워크플로우 목록으로 이동한다.
