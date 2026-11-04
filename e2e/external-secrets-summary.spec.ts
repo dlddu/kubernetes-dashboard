@@ -1,9 +1,5 @@
-// Verifies: ES2 (docs/product/prd-external-secrets.md) — sole dedicated e2e spec for this AC.
 import { test, expect } from '@playwright/test';
 
-// ---------------------------------------------------------------------------
-// Group 2: UI — Summary cards
-// ---------------------------------------------------------------------------
 test.describe('External Secrets Tab - Summary Cards', () => {
   test('should display Total, Ready, and Not Ready summary cards with correct counts', async ({ page }) => {
     await page.goto('/external-secrets');

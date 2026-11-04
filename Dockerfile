@@ -1,72 +1,52 @@
-# Stage 1: Build Frontend
 FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
-# Copy frontend package files
 COPY frontend/package*.json ./
 
-# Install dependencies
 RUN npm ci
 
-# Copy frontend source
 COPY frontend/ ./
 
-# Build frontend
 RUN npm run build
 
-# Stage 2: Build Backend
 FROM golang:1.23-alpine AS backend-builder
 
 WORKDIR /app
 
-# Copy go mod files and local replace targets
 COPY go.mod go.sum* ./
 COPY internal/argoversioned/go.mod internal/argoversioned/go.sum* ./internal/argoversioned/
 COPY internal/fluxcdversioned/go.mod internal/fluxcdversioned/go.sum* ./internal/fluxcdversioned/
 
-# Download dependencies
 RUN go mod download
 
-# Copy source code
 COPY . .
 
-# Copy built frontend from previous stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Ensure go.mod is tidy before building
 RUN go mod tidy
 
-# Build Go binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kubernetes-dashboard .
 
-# Stage 3: Final Runtime Image
 FROM alpine:3.19
 
 # Add ca-certificates for HTTPS and git for branch listing
 RUN apk --no-cache add ca-certificates git
 
-# Create non-root user
 RUN addgroup -g 1000 appuser && \
     adduser -D -u 1000 -G appuser appuser
 
 WORKDIR /app
 
-# Copy binary from builder
 COPY --from=backend-builder /app/kubernetes-dashboard .
 
-# Change ownership
 RUN chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER appuser
 
-# Expose port
 EXPOSE 8080
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/livez || exit 1
 
-# Run the application
 CMD ["./kubernetes-dashboard"]

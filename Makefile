@@ -1,6 +1,5 @@
 .PHONY: help test test-go test-frontend test-docker test-k8s test-scaffolding test-e2e build clean
 
-# Include E2E testing targets
 include Makefile.e2e
 
 help: ## Show this help message
