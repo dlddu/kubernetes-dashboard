@@ -15,7 +15,7 @@
 
 | 판정일 | 범위 | 현재 줄 수 | 지문 | 판정 | 결과 |
 |---|---|---|---|---|---|
-| 2026-11-04 | `.github/workflows/ci.yaml` | 10 | 0f1f79690ed9 | — | |
+| 2026-11-04 | `.github/workflows/ci.yaml` | 28 | a92132524dbb | — | |
 | 2026-11-04 | `.github/workflows/e2e.yaml` | 7 | 5ed652f39002 | — | |
 | 2026-11-04 | `Dockerfile` | 1 | 3c1cac637a36 | 완료 | git 설치 사유 1줄 유지, 나머지 제거 — [passes/2026-11-04-infra-and-first-e2e.md](passes/2026-11-04-infra-and-first-e2e.md) |
 | 2026-11-04 | `e2e/argo-data-states.spec.ts` | 8 | 5013fd1fc749 | 완료 | 유지 8줄(관측·경쟁 함정, fixture 불변식) — [passes/2026-11-04-infra-and-first-e2e.md](passes/2026-11-04-infra-and-first-e2e.md) |
@@ -28,11 +28,11 @@
 | 2026-11-04 | `e2e/common-unhealthy-badge.spec.ts` | 3 | 4b62f1d3b99d | 완료 | 유지 3줄(회귀 방지 사유) — [passes/2026-11-04-infra-and-first-e2e.md](passes/2026-11-04-infra-and-first-e2e.md) |
 | 2026-11-04 | `e2e/configmaps-accordion.spec.ts` | 32 | b8d5825f7a8b | — | |
 | 2026-11-04 | `e2e/configmaps-tab.spec.ts` | 24 | 296853256e52 | — | |
-| 2026-11-04 | `e2e/eng/debug-back-button.spec.ts` | 21 | c2a8f3c969e3 | — | |
-| 2026-11-04 | `e2e/eng/debug-context.spec.ts` | 98 | 0a4076787bbd | — | |
-| 2026-11-04 | `e2e/eng/debug-detail-view.spec.ts` | 55 | 8d235489b846 | — | |
-| 2026-11-04 | `e2e/eng/debug-page-layout.spec.ts` | 43 | 4d1546d063d5 | — | |
-| 2026-11-04 | `e2e/eng/debug-route.spec.ts` | 156 | 0b13137f1942 | — | |
+| 2026-11-05 | `e2e/eng/debug-back-button.spec.ts` | 1 | 2a624bacf74e | 완료 | ENG-001 머리 표지 1줄 유지, 나머지 제거 — [passes/2026-11-05-eng-debug-specs.md](passes/2026-11-05-eng-debug-specs.md) |
+| 2026-11-05 | `e2e/eng/debug-context.spec.ts` | 1 | 9ee26a77e315 | 완료 | ENG-001 머리 표지 1줄 유지, 나머지 제거 — [passes/2026-11-05-eng-debug-specs.md](passes/2026-11-05-eng-debug-specs.md) |
+| 2026-11-05 | `e2e/eng/debug-detail-view.spec.ts` | 1 | dd011db64f82 | 완료 | ENG-001 머리 표지 1줄 유지, 나머지 제거 — [passes/2026-11-05-eng-debug-specs.md](passes/2026-11-05-eng-debug-specs.md) |
+| 2026-11-05 | `e2e/eng/debug-page-layout.spec.ts` | 1 | 50ecefa6e61e | 완료 | ENG-001 머리 표지 1줄 유지, 나머지 제거 — [passes/2026-11-05-eng-debug-specs.md](passes/2026-11-05-eng-debug-specs.md) |
+| 2026-11-05 | `e2e/eng/debug-route.spec.ts` | 1 | 26e21cc9e96e | 완료 | ENG-001 머리 표지 1줄 유지, 나머지 제거 — [passes/2026-11-05-eng-debug-specs.md](passes/2026-11-05-eng-debug-specs.md) |
 | 2026-11-04 | `e2e/eng/debug-toggle.spec.ts` | 103 | bc71969f9797 | — | |
 | 2026-11-04 | `e2e/external-secrets-card-status.spec.ts` | 11 | 9632a946fc6e | — | |
 | 2026-11-04 | `e2e/external-secrets-data-states.spec.ts` | 1 | dc4ed9904545 | 완료 | 유지 1줄(fixture 불변식) — [passes/2026-11-04-infra-and-first-e2e.md](passes/2026-11-04-infra-and-first-e2e.md) |
@@ -45,8 +45,7 @@
 | 2026-11-04 | `e2e/fluxcd-kustomizations.spec.ts` | 152 | 76a4d882b5da | — | |
 | 2026-11-04 | `e2e/fluxcd-reconcile.spec.ts` | 74 | 95bb2b701918 | — | |
 | 2026-11-04 | `e2e/fluxcd-suspend-resume.spec.ts` | 117 | 2d1c3851093b | — | |
-| 2026-11-04 | `e2e/helpers/debug-setup.ts` | 10 | 1f6e17510aae | — | |
-| 2026-11-04 | `e2e/helpers/favorites-setup.ts` | 7 | 899e3cff3d79 | — | |
+| 2026-11-05 | `e2e/helpers/debug-setup.ts` | 3 | 294883beebca | 완료 | 재로드 사유 3줄 유지, 나머지 제거 — [passes/2026-11-05-eng-debug-specs.md](passes/2026-11-05-eng-debug-specs.md) |
 | 2026-11-04 | `e2e/namespace-favorites.spec.ts` | 174 | 80314f3647b5 | — | |
 | 2026-11-04 | `e2e/namespace-filter.spec.ts` | 117 | eb46dcdb0fe8 | — | |
 | 2026-11-04 | `e2e/node-quick-view.spec.ts` | 124 | 99a20cc5d999 | — | |
